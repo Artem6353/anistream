@@ -1,0 +1,18 @@
+name: Daily episode push
+on:
+  schedule:
+    - cron: "0 15 * * *"  # 18:00 MSK
+  workflow_dispatch:
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci --omit=dev || npm i web-push --no-save
+      - run: node scripts/send-push.mjs
+        env:
+          VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
+          VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
+          PUSH_CONTACT: ${{ secrets.PUSH_CONTACT }}

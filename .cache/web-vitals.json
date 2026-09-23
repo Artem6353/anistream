@@ -1,0 +1,63 @@
+{
+  "generatedAt": "2026-09-23T17:47:36.358Z",
+  "base": "http://127.0.0.1:3100",
+  "method": "chromium CDP PerformanceObserver (playwright-core headless shell), desktop 1280x800",
+  "results": [
+    {
+      "page": "Тайтл",
+      "path": "/anime/sousou-no-frieren",
+      "cold": {
+        "lcpMs": 812,
+        "cls": 0.0013,
+        "fcpMs": 524
+      },
+      "warm": {
+        "lcpMs": 532,
+        "cls": 0.0013,
+        "fcpMs": 532
+      }
+    },
+    {
+      "page": "Главная",
+      "path": "/",
+      "cold": {
+        "lcpMs": 596,
+        "cls": 0,
+        "fcpMs": 492
+      },
+      "warm": {
+        "lcpMs": 596,
+        "cls": 0,
+        "fcpMs": 596
+      }
+    },
+    {
+      "page": "Каталог",
+      "path": "/catalog",
+      "cold": {
+        "lcpMs": 1064,
+        "cls": 0.095,
+        "fcpMs": 292
+      },
+      "warm": {
+        "lcpMs": 560,
+        "cls": 0,
+        "fcpMs": 408
+      }
+    },
+    {
+      "page": "Плеер",
+      "path": "/anime/sousou-no-frieren/1",
+      "cold": {
+        "lcpMs": 404,
+        "cls": 0.0567,
+        "fcpMs": 316
+      },
+      "warm": {
+        "lcpMs": 624,
+        "cls": 0.0567,
+        "fcpMs": 528
+      }
+    }
+  ]
+}

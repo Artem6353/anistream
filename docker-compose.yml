@@ -1,0 +1,18 @@
+services:
+  web:
+    build: .
+    ports: ["3000:3000"]
+    env_file: [.env.local]
+    environment:
+      KODIK_BRIDGE_URL: http://kodik-bridge:8765
+      MULTIPLAYER_BRIDGE_URL: http://multi-bridge:8766
+    depends_on: [kodik-bridge, multi-bridge]
+    restart: unless-stopped
+  kodik-bridge:
+    build: { context: ., dockerfile: Dockerfile.bridge, args: { BRIDGE: kodik_bridge.py } }
+    env_file: [.env.local]
+    restart: unless-stopped
+  multi-bridge:
+    build: { context: ., dockerfile: Dockerfile.bridge, args: { BRIDGE: multi_player_bridge.py } }
+    env_file: [.env.local]
+    restart: unless-stopped

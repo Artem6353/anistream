@@ -1,0 +1,44 @@
+import Link from 'next/link';
+import type { Title } from '@/lib/types';
+import { TYPE_LABELS, genreLabel } from '@/lib/labels';
+import { episodesWord } from '@/lib/format';
+import { PosterArt } from './PosterArt';
+import { BookmarkButton } from './BookmarkButton';
+import { IconPlay, IconStar } from '@/components/ui/icons';
+
+/** Карточка тайтла: постер, рейтинг, быстрые действия. */
+export function PosterCard({ title, progress }: { title: Title; progress?: number }) {
+  return (
+    <article className="card">
+      <Link className="card__media" href={`/anime/${title.slug}`} aria-label={title.ru}>
+        <PosterArt src={title.poster} seed={title.slug} initials={title.romaji} alt={`Постер: ${title.ru}`} />
+        {title.score > 0 ? (
+          <span className="card__score" title={`Рейтинг ${title.score} / 10`}>
+            <IconStar size={11} />
+            {title.score.toFixed(1)}
+          </span>
+        ) : null}
+        <span className="card__foot">
+          <span>{title.year}</span>
+          {title.episodes > 1 ? <span>{title.episodes} {episodesWord(title.episodes)}</span> : <span>{TYPE_LABELS[title.type]}</span>}
+        </span>
+        <span className="card__play" aria-hidden>
+          <IconPlay size={18} />
+        </span>
+        {progress !== undefined && progress > 0 ? (
+          <span className="card__progress" style={{ width: `${Math.min(100, progress)}%` }} />
+        ) : null}
+      </Link>
+      <div className="card__body">
+        <h3 className="card__title">
+          <Link href={`/anime/${title.slug}`}>{title.ru}</Link>
+        </h3>
+        <p className="card__meta">
+          <span className="card__type">{TYPE_LABELS[title.type]}</span>
+          <span className="card__genre">{genreLabel(title.genres[0] ?? '')}</span>
+        </p>
+      </div>
+      <BookmarkButton slug={title.slug} className="card__bookmark" />
+    </article>
+  );
+}

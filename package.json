@@ -1,0 +1,48 @@
+{
+  "name": "anistream",
+  "version": "2.0.0",
+  "private": true,
+  "description": "AniStream 2.0 — каталог и плеер аниме: Next.js App Router, RSC, офлайн-каталог + живые провайдеры",
+  "scripts": {
+    "predev": "node -e \"if(!require('fs').existsSync('node_modules/next')){console.error('\\n✗ Нет node_modules. Сначала выполните:  npm install\\n');process.exit(1)}\"",
+    "dev": "next dev",
+    "prestart": "node -e \"if(!require('fs').existsSync('node_modules/next')){console.error('\\n✗ Нет node_modules. Сначала выполните:  npm install\\n');process.exit(1)}\"",
+    "build": "NODE_OPTIONS=--max-old-space-size=700 next build --webpack",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "smoke": "node scripts/smoke.mjs",
+    "check:kodik": "node scripts/check-kodik.mjs",
+    "prewarm": "node -e \"if(!require('fs').existsSync('node_modules/next')){console.error('\\n✗ Нет node_modules. Сначала выполните:  npm install\\n');process.exit(1)}\"",
+    "warm": "node scripts/warm-providers.mjs",
+    "prehydrate": "node -e \"if(!require('fs').existsSync('node_modules/next')){console.error('\\n✗ Нет node_modules. Сначала выполните:  npm install\\n');process.exit(1)}\"",
+    "hydrate": "node scripts/hydrate-embeds.mjs",
+    "import-legacy": "node scripts/import-legacy-cache.mjs",
+    "enrich": "node scripts/enrich-shikimori-resumable.mjs",
+    "test": "vitest run",
+    "preflight": "npm run check:env && npm run typecheck && npm run test && npm run build && (npm run start & sleep 8) && npm run smoke",
+    "check:env": "node scripts/check-env.mjs",
+    "check:posters": "node scripts/check-posters.mjs",
+    "clean:titles": "node scripts/clean-titles.mjs report",
+    "loadtest": "node scripts/loadtest.mjs",
+    "backup": "node scripts/backup-titles.mjs",
+    "measure:vitals": "node scripts/measure-web-vitals.mjs"
+  },
+  "dependencies": {
+    "@sentry/browser": "^11.0.0",
+    "hls.js": "^1.7.3",
+    "kodikwrapper": "^3.1.0",
+    "next": "16.3.5",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/web-push": "^3.6.4",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.11"
+  }
+}

@@ -1,0 +1,22 @@
+name: backup-weekly
+on:
+  schedule: [{ cron: '0 3 * * 0' }]
+  workflow_dispatch: {}
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - name: Snapshot data to backups branch
+        run: |
+          git config user.name "backup-bot"
+          git config user.email "backup-bot@users.noreply.github.com"
+          git checkout --orphan backups-tmp
+          git rm -rf . > /dev/null
+          mkdir -p data
+          cp ../$GITHUB_WORKSPACE/lib/data/titles.json data/titles-$(date +%F).json 2>/dev/null || true
+          cp ../$GITHUB_WORKSPACE/lib/data/manual-sources.json data/manual-$(date +%F).json 2>/dev/null || true
+          git add -A
+          git commit -m "backup $(date +%F)" || echo "nothing to commit"
+          git push -f origin backups-tmp:backups

@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.env*.local
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+backups/
+test-results/
+playwright-report/
+.cache/warm-summary.json
+
+data/vapid.json
+.cache/img/

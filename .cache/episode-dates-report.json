@@ -1,0 +1,100 @@
+{
+  "generatedAt": "2026-09-23T16:55:27.207Z",
+  "finishedTotal": 4843,
+  "withEpisodeDates": 4829,
+  "coveragePct": 99.7,
+  "targetPct": 80,
+  "targetMet": true,
+  "withoutDatesByType": {
+    "tv": 7,
+    "movie": 3,
+    "ova": 2,
+    "special": 2
+  },
+  "withoutDatesSamples": [
+    {
+      "slug": "naruto-shippuuden",
+      "type": "tv",
+      "episodes": 500,
+      "year": 2007
+    },
+    {
+      "slug": "bleach",
+      "type": "tv",
+      "episodes": 366,
+      "year": 2004
+    },
+    {
+      "slug": "dragon-ball-z",
+      "type": "tv",
+      "episodes": 291,
+      "year": 1989
+    },
+    {
+      "slug": "pocket-monsters",
+      "type": "tv",
+      "episodes": 276,
+      "year": 1997
+    },
+    {
+      "slug": "boruto-naruto-next-generations",
+      "type": "tv",
+      "episodes": 293,
+      "year": 2017
+    },
+    {
+      "slug": "keroro-gunsou",
+      "type": "tv",
+      "episodes": 358,
+      "year": 2004
+    },
+    {
+      "slug": "doraemon-1979",
+      "type": "tv",
+      "episodes": 1787,
+      "year": 1979
+    },
+    {
+      "slug": "yuuri-on-ice-the-movie-ice-adolescence",
+      "type": "movie",
+      "episodes": 1,
+      "year": 0
+    },
+    {
+      "slug": "kanojo-to-kanojo-no-neko",
+      "type": "ova",
+      "episodes": 1,
+      "year": 0
+    },
+    {
+      "slug": "ten-count",
+      "type": "movie",
+      "episodes": 1,
+      "year": 0
+    },
+    {
+      "slug": "soul-eater-late-show",
+      "type": "special",
+      "episodes": 51,
+      "year": 2008
+    },
+    {
+      "slug": "dragon-ball-specials",
+      "type": "special",
+      "episodes": 2,
+      "year": 0
+    },
+    {
+      "slug": "rain-town",
+      "type": "movie",
+      "episodes": 1,
+      "year": 0
+    },
+    {
+      "slug": "utsu-musume-sayuri",
+      "type": "ova",
+      "episodes": 1,
+      "year": 0
+    }
+  ]
+}

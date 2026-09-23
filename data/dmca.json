@@ -1,0 +1,12 @@
+[
+ {
+  "id": "3fb3cfad-d822-4e76-9747-0af47df602d9",
+  "ts": 1790176877270,
+  "email": "t@t.ru",
+  "url": "https://x/anime/one-piece",
+  "rights": true,
+  "text": "тестовое заявление правообладателя для проверки флоу dmca",
+  "slug": "one-piece",
+  "status": "new"
+ }
+]

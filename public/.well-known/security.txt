@@ -1,0 +1,7 @@
+# TODO(домен): замените example.com на ваш прод-домен во всех строках ниже
+# (файл статический — env сюда не попадает; делается один раз при деплое).
+Contact: mailto:security@example.com
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: ru, en
+Canonical: https://example.com/.well-known/security.txt
+Policy: https://example.com/disclaimer

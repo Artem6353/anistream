@@ -1,0 +1,17 @@
+# Caddy на VPS: bridge за bearer-токеном (A0.1a)
+bridge.example.com {
+  @authed {
+    header Authorization "Bearer {$BRIDGE_TOKEN}"
+  }
+  handle @authed {
+    reverse_proxy /kodik/* 127.0.0.1:8765 {
+      uri strip_prefix /kodik
+    }
+    reverse_proxy /multi/* 127.0.0.1:8766 {
+      uri strip_prefix /multi
+    }
+  }
+  handle {
+    respond 401
+  }
+}

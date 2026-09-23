@@ -1,0 +1,11 @@
+[Unit]
+Description=AniStream multi-player bridge (anime-parsers)
+After=network.target
+[Service]
+WorkingDirectory=/opt/anistream
+ExecStart=/usr/bin/python3 bridges/multi_player_bridge.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+[Install]
+WantedBy=multi-user.target

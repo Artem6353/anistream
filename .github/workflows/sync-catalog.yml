@@ -1,0 +1,28 @@
+name: Sync catalog (auto-add new anime)
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # каждые 6 часов (ТЗ 3.4)
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --omit=dev || true
+      - name: expand catalog (new titles + franchise links + characters)
+        run: node scripts/expand-catalog.mjs 12
+      - name: commit if changed
+        run: |
+          git config user.name "anistream-bot"
+          git config user.email "bot@anistream.local"
+          git add lib/data/titles.json
+          git diff --cached --quiet || git commit -m "chore(catalog): auto-sync $(date -u +%F-%H%M)"
+          git diff --cached --quiet || git push
