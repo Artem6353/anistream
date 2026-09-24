@@ -7,10 +7,23 @@ import { BookmarkButton } from './BookmarkButton';
 import { IconPlay, IconStar } from '@/components/ui/icons';
 
 /** Карточка тайтла: постер, рейтинг, быстрые действия. */
-export function PosterCard({ title, progress }: { title: Title; progress?: number }) {
+export function PosterCard({
+  title,
+  progress,
+  resumeEpisode,
+  resumeHref,
+}: {
+  title: Title;
+  progress?: number;
+  /** Последняя просмотренная серия — для подписи «Продолжить с серии N» (рейл «Продолжить просмотр»). */
+  resumeEpisode?: number;
+  /** Переопределение ссылки карточки (например, сразу на плеер последней просмотренной серии). */
+  resumeHref?: string;
+}) {
+  const href = resumeHref ?? `/anime/${title.slug}`;
   return (
     <article className="card">
-      <Link className="card__media" href={`/anime/${title.slug}`} aria-label={title.ru}>
+      <Link className="card__media" href={href} aria-label={title.ru}>
         <PosterArt src={title.poster} seed={title.slug} initials={title.romaji} alt={`Постер: ${title.ru}`} />
         {title.score > 0 ? (
           <span className="card__score" title={`Рейтинг ${title.score} / 10`}>
@@ -31,12 +44,17 @@ export function PosterCard({ title, progress }: { title: Title; progress?: numbe
       </Link>
       <div className="card__body">
         <h3 className="card__title">
-          <Link href={`/anime/${title.slug}`}>{title.ru}</Link>
+          <Link href={href}>{title.ru}</Link>
         </h3>
         <p className="card__meta">
           <span className="card__type">{TYPE_LABELS[title.type]}</span>
           <span className="card__genre">{genreLabel(title.genres[0] ?? '')}</span>
         </p>
+        {resumeEpisode ? (
+          <p className="card__resume">
+            {title.episodes > 1 ? `Продолжить с серии ${resumeEpisode}` : 'Продолжить просмотр'}
+          </p>
+        ) : null}
       </div>
       <BookmarkButton slug={title.slug} className="card__bookmark" />
     </article>
