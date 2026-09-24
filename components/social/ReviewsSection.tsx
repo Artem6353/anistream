@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { addReview, loadReviews, voteReview, fetchCaptcha, SOCIAL_MODE, type ReviewItem, type CaptchaChallenge } from '@/lib/social';
 import { useLibrary } from '@/lib/library';
 import { timeAgo } from '@/lib/format';
@@ -23,21 +24,10 @@ export function ReviewsSection({ slug }: { slug: string }) {
   const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [tsToken, setTsToken] = useState('');
   const [formError, setFormError] = useState('');
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
   const { settings } = useLibrary();
 
-  useEffect(() => {
-    if (!USE_TURNSTILE) return;
-    const w = window as unknown as { aniTurnstileCb?: (t: string) => void; turnstile?: { reset: (el?: string) => void } };
-    w.aniTurnstileCb = (t: string) => setTsToken(t);
-    if (document.querySelector('script[data-turnstile]')) return;
-    const s = document.createElement('script');
-    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-    s.async = true;
-    s.defer = true;
-    s.dataset.turnstile = '1';
-    document.head.appendChild(s);
-  }, []);
-
+  // Старая математическая капча — только для фолбэка, когда Turnstile недоступен
   useEffect(() => {
     if (SOCIAL_MODE !== 'supabase' || USE_TURNSTILE) return;
     let cancelled = false;
@@ -63,6 +53,12 @@ export function ReviewsSection({ slug }: { slug: string }) {
   const submit = async () => {
     const clean = text.trim().slice(0, 2000);
     if (!clean) return;
+
+    if (USE_TURNSTILE && !tsToken) {
+      setFormError('Подождите, идёт проверка на бота…');
+      return;
+    }
+
     const res = await addReview(
       {
         slug,
@@ -71,28 +67,33 @@ export function ReviewsSection({ slug }: { slug: string }) {
         text: clean,
         parent: tab === 'comments' ? replyTo : null,
       },
-      SOCIAL_MODE === 'supabase' && !USE_TURNSTILE && captcha ? { token: captcha.token, answer: Number(captchaAnswer) } : undefined,
+      SOCIAL_MODE === 'supabase' && !USE_TURNSTILE && captcha
+        ? { token: captcha.token, answer: Number(captchaAnswer) }
+        : undefined,
       USE_TURNSTILE ? tsToken : undefined,
     );
+
     if (res.error) {
       setFormError(res.error);
       if (!USE_TURNSTILE) {
         const c = await fetchCaptcha();
         if (c) setCaptcha(c);
       } else {
-        (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
+        turnstileRef.current?.reset();
         setTsToken('');
       }
       setCaptchaAnswer('');
       return;
     }
+
     setFormError('');
     setItems((prev) => [res.item!, ...prev]);
     setText('');
     setReplyTo(null);
     setCaptchaAnswer('');
+
     if (USE_TURNSTILE) {
-      (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
+      turnstileRef.current?.reset();
       setTsToken('');
     } else if (SOCIAL_MODE === 'supabase') {
       const c = await fetchCaptcha();
@@ -109,22 +110,45 @@ export function ReviewsSection({ slug }: { slug: string }) {
             <IconStar size={13} /> {avg.toFixed(1)} · {reviews.length}
           </span>
         ) : null}
-        <span className="reviews__mode" title={SOCIAL_MODE === 'supabase' ? 'Общие отзывы (Supabase)' : 'Локальный режим: отзывы видны в этом браузере; для общих включите Supabase (docs/DEPLOY.md)'}>
+        <span
+          className="reviews__mode"
+          title={
+            SOCIAL_MODE === 'supabase'
+              ? 'Общие отзывы (Supabase)'
+              : 'Локальный режим: отзывы видны в этом браузере; для общих включите Supabase (docs/DEPLOY.md)'
+          }
+        >
           {SOCIAL_MODE === 'supabase' ? 'общий режим' : 'локальный режим'}
         </span>
       </div>
 
       <div className="profile-tabs" role="tablist">
-        <button role="tab" aria-selected={tab === 'reviews'} className={tab === 'reviews' ? 'is-active' : ''} onClick={() => setTab('reviews')}>
+        <button
+          role="tab"
+          aria-selected={tab === 'reviews'}
+          className={tab === 'reviews' ? 'is-active' : ''}
+          onClick={() => setTab('reviews')}
+        >
           Отзывы · {reviews.length}
         </button>
-        <button role="tab" aria-selected={tab === 'comments'} className={tab === 'comments' ? 'is-active' : ''} onClick={() => setTab('comments')}>
+        <button
+          role="tab"
+          aria-selected={tab === 'comments'}
+          className={tab === 'comments' ? 'is-active' : ''}
+          onClick={() => setTab('comments')}
+        >
           Комментарии · {comments.length}
         </button>
       </div>
 
       <div className="reviews__form">
-        <input className="input" placeholder="Ваше имя" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
+        <input
+          className="input"
+          placeholder="Ваше имя"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={40}
+        />
         {tab === 'reviews' ? (
           <label className="reviews__rating">
             Оценка
@@ -142,18 +166,60 @@ export function ReviewsSection({ slug }: { slug: string }) {
             Ответ на комментарий ✕
           </button>
         ) : null}
-        <textarea className="input reviews__text" placeholder={tab === 'reviews' ? 'Ваш отзыв об аниме…' : 'Написать комментарий…'} value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} rows={3} />
+        <textarea
+          className="input reviews__text"
+          placeholder={tab === 'reviews' ? 'Ваш отзыв об аниме…' : 'Написать комментарий…'}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          maxLength={2000}
+          rows={3}
+        />
+
         {USE_TURNSTILE ? (
-          <div className="cf-turnstile" data-sitekey={TURNSTILE_KEY} data-callback="aniTurnstileCb" />
+          <div style={{ margin: '8px 0' }}>
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={TURNSTILE_KEY}
+              options={{ theme: 'dark', size: 'flexible' }}
+              onSuccess={(token) => {
+                setTsToken(token);
+                setFormError('');
+              }}
+              onError={() => {
+                setTsToken('');
+                setFormError('Ошибка Turnstile. Обновите страницу и попробуйте снова.');
+              }}
+              onExpire={() => {
+                setTsToken('');
+              }}
+            />
+          </div>
         ) : null}
+
         {SOCIAL_MODE === 'supabase' && !USE_TURNSTILE && captcha ? (
           <label className="reviews__rating">
             {captcha.question}
-            <input className="input" style={{ width: 80 }} value={captchaAnswer} onChange={(e) => setCaptchaAnswer(e.target.value)} inputMode="numeric" />
+            <input
+              className="input"
+              style={{ width: 80 }}
+              value={captchaAnswer}
+              onChange={(e) => setCaptchaAnswer(e.target.value)}
+              inputMode="numeric"
+            />
           </label>
         ) : null}
-        {formError ? <p className="panel__note" style={{ color: 'var(--danger)' }}>{formError}</p> : null}
-        <button className="btn btn--primary btn--md" onClick={submit}>
+
+        {formError ? (
+          <p className="panel__note" style={{ color: 'var(--danger)' }}>
+            {formError}
+          </p>
+        ) : null}
+
+        <button
+          className="btn btn--primary btn--md"
+          onClick={submit}
+          disabled={USE_TURNSTILE && !tsToken}
+        >
           Отправить
         </button>
       </div>
@@ -172,10 +238,26 @@ export function ReviewsSection({ slug }: { slug: string }) {
             </div>
             <p className="review__text">{r.text}</p>
             <div className="review__actions">
-              <button type="button" className="review__vote" onClick={async () => { await voteReview(slug, r.id, 1); setItems((p) => p.map((x) => (x.id === r.id ? { ...x, likes: x.likes + 1 } : x))); }}>
+              <button
+                type="button"
+                className="review__vote"
+                onClick={async () => {
+                  await voteReview(slug, r.id, 1);
+                  setItems((p) => p.map((x) => (x.id === r.id ? { ...x, likes: x.likes + 1 } : x)));
+                }}
+              >
                 👍 {r.likes}
               </button>
-              <button type="button" className="review__vote" onClick={async () => { await voteReview(slug, r.id, -1); setItems((p) => p.map((x) => (x.id === r.id ? { ...x, dislikes: x.dislikes + 1 } : x))); }}>
+              <button
+                type="button"
+                className="review__vote"
+                onClick={async () => {
+                  await voteReview(slug, r.id, -1);
+                  setItems((p) =>
+                    p.map((x) => (x.id === r.id ? { ...x, dislikes: x.dislikes + 1 } : x)),
+                  );
+                }}
+              >
                 👎 {r.dislikes}
               </button>
               {tab === 'comments' ? (
@@ -199,7 +281,9 @@ export function ReviewsSection({ slug }: { slug: string }) {
               : null}
           </li>
         ))}
-        {(tab === 'reviews' ? reviews : comments).length === 0 ? <li className="reviews__empty">Пока пусто — будьте первым!</li> : null}
+        {(tab === 'reviews' ? reviews : comments).length === 0 ? (
+          <li className="reviews__empty">Пока пусто — будьте первым!</li>
+        ) : null}
       </ul>
     </section>
   );

@@ -28,6 +28,7 @@
     "measure:vitals": "node scripts/measure-web-vitals.mjs"
   },
   "dependencies": {
+    "@marsidev/react-turnstile": "1.6.1",
     "@sentry/browser": "^11.0.0",
     "hls.js": "^1.7.3",
     "kodikwrapper": "^3.1.0",
