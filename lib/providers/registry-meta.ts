@@ -32,15 +32,15 @@ export function providersWithAvailability(): ProviderMeta[] {
 
 /**
  * Демо-потоки: тестовые MP4 из открытых CDN, работают из любой страны.
- * Раньше использовался Google gtv-videos-bucket, но в 2026 Google закрыл
- * публичный доступ (AccessDenied) — ссылки заменены на W3C + Blender + test-videos.
+ * Раньше использовался Google gtv-videos-bucket — в 2026 Google закрыл
+ * публичный доступ (AccessDenied). W3C media и Blender download тоже
+ * начали отдавать 404. Оставлены три независимых источника с H.264 MP4,
+ * которые проверены вручную: test-videos.co.uk, archive.org, filesamples.com.
  */
 const DEMO_URLS = [
-  'https://media.w3.org/2010/05/sintel/trailer.mp4',
-  'https://media.w3.org/2010/05/bunny/movie.mp4',
-  'https://media.w3.org/2010/05/video/movie_300.mp4',
-  'https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4',
   'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4',
+  'https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4',
+  'https://filesamples.com/samples/video/mp4/sample_640x360.mp4',
 ];
 
 export function demoStream(slug: string, episode: number): string {
