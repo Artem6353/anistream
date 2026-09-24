@@ -54,10 +54,11 @@ export async function POST(
   const existing = (await existingRes.json()) as Array<{ kind: 'like' | 'dislike' }>;
   const prev = existing[0]?.kind ?? null;
 
-  let deltaLikes = 0;
-  let deltaDislikes = 0;
-
-  // 2) Мутируем review_reactions: insert / delete / update
+  // 2) Мутируем только review_reactions: insert / delete / update.
+  //    reviews.likes / reviews.dislikes НЕ трогаем: их пересчитывает
+  //    триггер в БД (after insert/update/delete on review_reactions → count(*)).
+  //    Любая запись сюда по схеме read-modify-write конфликтует с триггером
+  //    и даёт двойной счётчик (один клик → +2).
   if (prev === null) {
     const ins = await supaFetch('review_reactions', {
       method: 'POST',
@@ -65,16 +66,12 @@ export async function POST(
       body: JSON.stringify({ review_id: reviewId, user_id: userId, kind }),
     });
     if (!ins.ok) return NextResponse.json({ error: 'supabase error' }, { status: 502 });
-    if (kind === 'like') deltaLikes = 1;
-    else deltaDislikes = 1;
   } else if (prev === kind) {
     const del = await supaFetch(
       `review_reactions?review_id=eq.${encodeURIComponent(reviewId)}&user_id=eq.${encodeURIComponent(userId)}`,
       { method: 'DELETE' },
     );
     if (!del.ok) return NextResponse.json({ error: 'supabase error' }, { status: 502 });
-    if (kind === 'like') deltaLikes = -1;
-    else deltaDislikes = -1;
   } else {
     const upd = await supaFetch(
       `review_reactions?review_id=eq.${encodeURIComponent(reviewId)}&user_id=eq.${encodeURIComponent(userId)}`,
@@ -85,37 +82,20 @@ export async function POST(
       },
     );
     if (!upd.ok) return NextResponse.json({ error: 'supabase error' }, { status: 502 });
-    if (kind === 'like') {
-      deltaLikes = 1;
-      deltaDislikes = -1;
-    } else {
-      deltaLikes = -1;
-      deltaDislikes = 1;
-    }
   }
 
-  // 3) Обновляем счётчики в reviews
+  // 3) Читаем актуальные счётчики из reviews одним запросом:
+  //    эти значения уже посчитаны триггером — их и возвращаем клиенту.
   const reviewRes = await supaFetch(
     `reviews?id=eq.${encodeURIComponent(reviewId)}&select=likes,dislikes`,
   );
   if (!reviewRes.ok) return NextResponse.json({ error: 'supabase error' }, { status: 502 });
   const review = ((await reviewRes.json()) as Array<{ likes: number; dislikes: number }>)[0];
-  if (!review) return NextResponse.json({ error: 'review not found' }, { status: 404 });
-
-  const nextLikes = Math.max(0, (review.likes ?? 0) + deltaLikes);
-  const nextDislikes = Math.max(0, (review.dislikes ?? 0) + deltaDislikes);
-
-  const upd = await supaFetch(`reviews?id=eq.${encodeURIComponent(reviewId)}`, {
-    method: 'PATCH',
-    headers: { Prefer: 'return=minimal' },
-    body: JSON.stringify({ likes: nextLikes, dislikes: nextDislikes }),
-  });
-  if (!upd.ok) return NextResponse.json({ error: 'supabase error' }, { status: 502 });
 
   return NextResponse.json({
     ok: true,
-    likes: nextLikes,
-    dislikes: nextDislikes,
+    likes: review?.likes ?? 0,
+    dislikes: review?.dislikes ?? 0,
     myReaction: prev === kind ? null : kind,
   });
 }

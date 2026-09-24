@@ -491,3 +491,38 @@ web-push подписки на серии (3.0, VAPID + cron), аккаунты 
    reload не сбрасывают, >24 ч перезаписывается), сценарии A–E (авто-пуш истории/списка без
    кнопок, ≤4 POST/мин, аноним — 0 запросов при живом localStorage, ручная кнопка + toast).
    Финальная пересборка с реальным `.env.local` + smoke.
+
+## 21. Итерация 3.4: конфликт счётчиков реакций — триггер БД vs read-modify-write в API (24.09.2026)
+
+1. **Проблема**: в прод-Supabase на `public.review_reactions` стоят триггеры
+   (after insert/update/delete), пересчитывающие `public.reviews.likes/dislikes` как
+   `count(*)` — это единственный источник правды для счётчиков. Но
+   `app/api/social/reviews/[id]/react/route.ts` дополнительно писал в `reviews.likes/dislikes`
+   сам по схеме read-modify-write (`likes = current + delta`). Поскольку чтение выполнялось
+   ПОСЛЕ срабатывания триггера, API прибавляло delta поверх уже пересчитанного значения:
+   один клик 👍 → +2 лайка при одной строке в `review_reactions`. Механизм воспроизведён
+   на моке PostgREST с симуляцией триггеров: старая последовательность (мутация → чтение →
+   +delta → PATCH reviews) даёт `likes=2`; новая (мутация → чтение → возврат) — `likes=1`.
+2. **Правка** (единственный изменённый файл кода): из route.ts удалены `deltaLikes`/
+   `deltaDislikes` со всеми присваиваниями в трёх ветках мутации, итоговый `PATCH reviews`
+   и ветка `404 review not found`. Осталось: проверки `supabaseConfigured()`/`reviewId`/`kind`,
+   rate-limit `react:{ip}` 30/мин, `getOrCreateUserId()`, чтение предыдущей реакции
+   (`review_reactions?...&select=kind`), insert/delete/update в `review_reactions`, затем
+   ОДИН SELECT `reviews?id=eq...&select=likes,dislikes` — значения, уже посчитанные
+   триггером, возвращаются клиенту как есть (`likes: review?.likes ?? 0`,
+   `myReaction: prev === kind ? null : kind`). Guard `!reviewRes.ok → 502` сохранён
+   (единый стиль обработки ошибок supaFetch). Триггеры/схема БД, `ReviewsSection.tsx`,
+   `POST /api/social/reviews`, `lib/userId.ts`, `lib/sync.ts`, `lib/library.ts`,
+   `app/api/push/*` — не тронуты.
+3. **Верификация**: `tsc --noEmit` чисто, vitest 26/26, prod-сборка. API-приёмка
+   (Next :3100 + мок :54399 с триггерами) **17/17**: A — один клик → `likes=1` (не 2),
+   1 строка; B — toggle off → 0/0 строк; C — снова 1; D — 👍→👎: likes=0, dislikes=1,
+   1 строка kind=dislike; E — 10 кликов ×0.5 с (выделенный IP): 10×200, чётный финал
+   likes=0/0 строк (+доп. 7 кликов → 1/1); F — создание отзыва: likes=0/dislikes=0, виден
+   в списке; kind≠like/dislike → 400; регрессия GET myReaction. UI-приёмка (Playwright,
+   /anime/one-piece): фаза 1 **13/13** (счётчик «👍 1» а не 2, is-active, персист и
+   подсветка myReaction после reload, создание отзыва через капчу, 0 pageerror), фаза 2
+   (E через UI) **4/4**: 9×200 + 1×429 — 10-й клик отбит middleware-лимитом 10 req/мин
+   на /api/social/reviews (1 GET страницы + 10 POST с одного IP); финал likes=1/1 строка,
+   UI синхронен с БД, чётность в рамках критерия «0 или 1». Финальная чистая пересборка
+   с реальным `.env.local`, smoke — All routes OK.
