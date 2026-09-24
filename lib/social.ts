@@ -18,6 +18,7 @@ export interface ReviewItem {
   likes: number;
   dislikes: number;
   parent: string | null;
+  myReaction?: 'like' | 'dislike' | null;
 }
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
@@ -111,4 +112,27 @@ export async function voteReview(slug: string, id: string, dir: 1 | -1): Promise
   if (dir === 1) item.likes += 1;
   else item.dislikes += 1;
   lsSave(slug, items);
+}
+
+export async function reactToReview(
+  reviewId: string,
+  kind: 'like' | 'dislike',
+): Promise<{
+  ok: boolean;
+  likes?: number;
+  dislikes?: number;
+  myReaction?: 'like' | 'dislike' | null;
+  error?: string;
+}> {
+  try {
+    const r = await fetch(`/api/social/reviews/${reviewId}/react`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind }),
+    });
+    if (!r.ok) return { ok: false, error: `HTTP ${r.status}` };
+    return await r.json();
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'network error' };
+  }
 }
