@@ -113,6 +113,18 @@ export const library = {
   clearHistory() {
     commit({ history: [] });
   },
+  /** Мерж истории из облака (побеждает свежий updatedAt), newest-first, лимит 60. */
+  mergeHistory(remote: HistoryEntry[]) {
+    load();
+    const map = new Map<string, HistoryEntry>();
+    for (const h of state.history) map.set(`${h.slug}:${h.episode}`, h);
+    for (const r of remote) {
+      const k = `${r.slug}:${r.episode}`;
+      const cur = map.get(k);
+      if (!cur || (r.updatedAt ?? 0) > (cur.updatedAt ?? 0)) map.set(k, r);
+    }
+    commit({ history: [...map.values()].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0)).slice(0, 60) });
+  },
   clearAll() {
     commit({ bookmarks: [], history: [] });
   },
