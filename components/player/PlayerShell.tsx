@@ -176,6 +176,27 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
     return () => clearInterval(id);
   }, [duration, episode, title.slug, isEmbed]);
 
+  /* Фолбэк истории для iframe-источников (Kodik / CVH / AniBoom).
+   * Из кросс-доменного embed нельзя читать currentTime, поэтому при заходе
+   * на серию с таким источником пишем запись один раз с position: 0 — серия
+   * попадает в /profile/history и «Продолжить просмотр».
+   * Защита от затирания реального прогресса: если для (slug, episode) уже
+   * есть запись с position > 0 и updatedAt моложе 24 часов — НЕ трогаем
+   * (пример: смотрели Demo 5 минут, затем переключились на CVH).
+   * Нативному video не мешает: его интервал выше перезапишет запись
+   * реальной позицией, если пользователь вернётся на file-источник. */
+  const embedLoggedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (selected?.kind !== 'embed') return;
+    const key = `${title.slug}:${episode}`;
+    if (embedLoggedRef.current === key) return; // один раз за заход на серию
+    embedLoggedRef.current = key;
+    const FRESH_MS = 24 * 60 * 60 * 1000;
+    const prev = library.state.history.find((h) => h.slug === title.slug && h.episode === episode);
+    if (prev && prev.position > 0 && Date.now() - (prev.updatedAt ?? 0) < FRESH_MS) return;
+    library.saveProgress({ slug: title.slug, episode, position: 0, duration: 0, updatedAt: Date.now() });
+  }, [selected?.kind, selected?.id, title.slug, episode]);
+
   /* оверлей следующей серии */
   useEffect(() => {
     if (!duration || !nextEpisode || isEmbed) return;
