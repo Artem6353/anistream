@@ -20,6 +20,16 @@ async function swReady(timeoutMs = 8000): Promise<ServiceWorkerRegistration | nu
   ]);
 }
 
+async function deleteFromServer(endpoint: string): Promise<void> {
+  try {
+    await fetch(`/api/push/subscribe?endpoint=${encodeURIComponent(endpoint)}`, {
+      method: 'DELETE',
+    });
+  } catch {
+    /* молча: не блокируем основной флоу */
+  }
+}
+
 export function PushButton() {
   const [state, setState] = useState<'idle' | 'on'>('idle');
   const toast = useToast();
@@ -81,9 +91,12 @@ export function PushButton() {
             return;
           }
 
+          // Если уже есть подписка — удаляем её и синхронно чистим БД
           const existing = await reg.pushManager.getSubscription();
           if (existing) {
+            const oldEndpoint = existing.endpoint;
             await existing.unsubscribe().catch(() => {});
+            await deleteFromServer(oldEndpoint);
           }
 
           const sub = await reg.pushManager.subscribe({
