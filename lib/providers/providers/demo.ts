@@ -8,7 +8,7 @@ export function demoSources(ctx: ProviderContext): EpisodeSource[] {
       id: 'demo:720',
       label: 'Тест-поток (оригинал)',
       providerId: 'demo',
-      providerName: 'AniStream Demo',
+      providerName: 'AniNova Demo',
       kind: 'file',
       files: [{ quality: '720', url: demoStream(ctx.slug, ctx.episode), type: 'mp4' }],
       voice: 'unknown',

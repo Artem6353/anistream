@@ -1,5 +1,5 @@
 /* ============================================================
-   AniStream 2.0 — дизайн-система
+   AniNova — дизайн-система
    Токены → базовые стили → компоненты → адаптив → движение
    ============================================================ */
 
@@ -439,11 +439,11 @@ input, select {
   place-items: center;
 }
 
-/* ---------------- Герой ---------------- */
+/* ---------------- Герой (ТЗ 4.1, блок 2) ---------------- */
 
 .hero {
   position: relative;
-  min-height: clamp(420px, 62vh, 640px);
+  min-height: 520px;
   display: flex;
   align-items: flex-end;
   overflow: hidden;
@@ -466,6 +466,11 @@ input, select {
   transform: scale(1.04);
   filter: saturate(1.05);
 }
+/* Нет баннера — постер с блюром и затемнением (ТЗ 2.1) */
+.hero__bg--blurred {
+  filter: blur(20px) brightness(0.5);
+  transform: scale(1.1);
+}
 .hero__slide.is-active .hero__bg {
   animation: heroZoom 14s ease-out forwards;
 }
@@ -477,31 +482,52 @@ input, select {
     transform: scale(1);
   }
 }
+.hero__slide.is-active .hero__bg--blurred {
+  animation: heroZoomBlurred 14s ease-out forwards;
+}
+@keyframes heroZoomBlurred {
+  from {
+    transform: scale(1.14);
+  }
+  to {
+    transform: scale(1.1);
+  }
+}
 .hero__scrim {
   position: absolute;
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(to top, var(--bg) 4%, rgba(11, 13, 17, 0.55) 40%, rgba(11, 13, 17, 0.18) 70%),
-    linear-gradient(to right, rgba(11, 13, 17, 0.82) 12%, rgba(11, 13, 17, 0.25) 55%, transparent 80%);
+    linear-gradient(to top, var(--bg) 0%, transparent 40%),
+    linear-gradient(to right, rgba(0, 0, 0, 0.85) 0%, transparent 60%);
 }
 .hero__content {
-  padding-bottom: 56px;
+  padding-bottom: 48px;
   padding-top: 90px;
+}
+.hero__inner {
   display: flex;
   flex-direction: column;
   gap: 14px;
   align-items: flex-start;
+  max-width: 640px;
+}
+.hero__meta {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+  letter-spacing: 0.01em;
 }
 .hero__title {
-  font-size: clamp(30px, 5vw, 54px);
+  font-size: clamp(2rem, 4vw, 3.5rem);
   font-weight: 800;
   letter-spacing: -0.03em;
-  max-width: 16ch;
+  color: #fff;
+  max-width: 640px;
   text-wrap: balance;
 }
 .hero__desc {
-  max-width: 52ch;
+  max-width: 640px;
   color: #cdd6e4;
   font-size: 15.5px;
   display: -webkit-box;
@@ -514,21 +540,34 @@ input, select {
   gap: 10px;
   margin-top: 6px;
 }
+/* ghost-кнопка на тёмном бэкдропе должна оставаться читаемой */
+.hero__actions .btn--ghost {
+  color: #e8edf5;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+}
+.hero__actions .btn--ghost:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
+/* Индикатор ротации: полоски, не точки (ТЗ 2.2) */
 .hero__dots {
   display: flex;
-  gap: 7px;
+  gap: 6px;
   margin-top: 14px;
 }
 .hero__dot {
-  width: 22px;
+  width: 8px;
   height: 4px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.25);
-  transition: background 0.2s, width 0.25s;
+  background: #98a3b8;
+  opacity: 0.4;
+  transition: opacity 0.2s, width 0.25s, background 0.2s;
 }
 .hero__dot.is-active {
+  width: 24px;
   background: var(--grad);
-  width: 34px;
+  opacity: 1;
 }
 .hero__arrow {
   position: absolute;
@@ -543,6 +582,15 @@ input, select {
 .hero__arrow--right {
   right: 18px;
 }
+@media (max-width: 760px) {
+  .hero {
+    min-height: 380px;
+  }
+  .hero__content {
+    padding-bottom: 32px;
+    padding-top: 72px;
+  }
+}
 
 .meta-badges {
   display: flex;
@@ -553,7 +601,7 @@ input, select {
 /* ---------------- Секции и ленты ---------------- */
 
 .section-title {
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -879,7 +927,7 @@ input, select {
 .detail__backdrop {
   position: absolute;
   inset: 0 0 auto 0;
-  height: 380px;
+  height: 440px;
   z-index: -2;
   overflow: hidden;
 }
@@ -890,20 +938,23 @@ input, select {
   filter: blur(2px) saturate(1.1);
   opacity: 0.55;
 }
+/* ТЗ 4.1 (4.1): два градиента, как на Hero главной */
 .detail__backdrop::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(11, 13, 17, 0.4), var(--bg) 92%);
+  background:
+    linear-gradient(to top, var(--bg) 0%, transparent 40%),
+    linear-gradient(to right, rgba(0, 0, 0, 0.85) 0%, transparent 60%);
 }
 .detail__inner {
   display: grid;
-  grid-template-columns: 250px 1fr;
+  grid-template-columns: 240px 1fr;
   gap: 30px;
   padding-top: 34px;
 }
 .detail__poster {
-  border-radius: var(--radius);
+  border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--line-strong);
   box-shadow: var(--shadow-2);
@@ -927,8 +978,9 @@ input, select {
 }
 .detail__actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
 }
 /* Итерация 3.6, задача 3: маленькая ссылка «Смотреть с начала» рядом с «Продолжить с серии N». */
 .watch-restart {
@@ -942,11 +994,12 @@ input, select {
 .watch-restart:hover {
   color: var(--text);
 }
+/* ТЗ 4.1 (4.1): инфо-таблица 3 колонки × 2 строки, внутри карточки 24px */
 .detail__facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px 18px;
-  padding: 14px 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 18px;
+  padding: 24px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: var(--bg-elev);
@@ -966,7 +1019,7 @@ input, select {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
   gap: 30px;
-  padding: 30px 0 40px;
+  padding: 32px 0;
   align-items: start;
 }
 
@@ -1182,13 +1235,17 @@ input, select {
   justify-content: space-between;
   padding: 18px 20px;
   opacity: 0;
-  transition: opacity 0.25s;
+  transition: opacity 0.2s;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 25%, transparent 65%, rgba(0, 0, 0, 0.72));
   pointer-events: none;
 }
 .player.is-ui .player__ui {
   opacity: 1;
   pointer-events: auto;
+}
+/* ТЗ 4.1 (3.4): курсор скрывается вместе с контролами */
+.player:not(.is-ui) {
+  cursor: none;
 }
 .player__top {
   display: flex;
@@ -1238,30 +1295,72 @@ input, select {
   cursor: pointer;
   display: flex;
   align-items: center;
+  touch-action: none;
 }
 .player__seek::before {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
-  height: 4px;
+  height: 6px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+  transition: height 0.15s ease;
 }
 .player__buffered {
   position: absolute;
-  height: 4px;
+  height: 6px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  transition: height 0.15s ease;
 }
 .player__progress {
   position: absolute;
-  height: 4px;
-  border-radius: 4px;
-  background: var(--grad);
-}
-.player__seek:hover::before, .player__seek:hover .player__progress {
   height: 6px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #8b5cf6, #ec4899);
+  transition: height 0.15s ease;
+}
+.player__seek:hover::before,
+.player__seek:hover .player__progress,
+.player__seek:hover .player__buffered,
+.player__seek.is-drag::before,
+.player__seek.is-drag .player__progress,
+.player__seek.is-drag .player__buffered {
+  height: 8px;
+}
+/* Ручка в конце заполнения (ТЗ 3.2): 12px, видна при hover/drag */
+.player__handle {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.65);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.15s ease;
+  pointer-events: none;
+}
+.player__seek:hover .player__handle,
+.player__seek.is-drag .player__handle {
+  transform: translate(-50%, -50%) scale(1);
+}
+/* Tooltip с временем под курсором (ТЗ 3.2) */
+.player__seektip {
+  position: absolute;
+  bottom: 24px;
+  transform: translateX(-50%);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(12, 14, 20, 0.92);
+  border: 1px solid var(--line-strong);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #e8edf5;
+  white-space: nowrap;
+  pointer-events: none;
 }
 .player__controls {
   display: flex;
@@ -1272,19 +1371,52 @@ input, select {
 .player__cluster {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
 }
 .player .icon-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  flex-shrink: 0;
   background: rgba(255, 255, 255, 0.08);
   border-color: transparent;
   color: #fff;
 }
 .player .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.18);
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.16);
+  transform: scale(1.08);
+}
+/* Кнопка скорости «1.0×» (ТЗ 3.3) */
+.player__ratebtn {
+  width: auto;
+  min-width: 40px;
+  padding: 0 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.player__flagbtn {
+  font-size: 19px;
+  line-height: 1;
+}
+/* Громкость: слайдер выезжает при hover (ТЗ 3.3) */
+.player__volwrap {
+  display: inline-flex;
+  align-items: center;
 }
 .player__volume {
-  width: 84px;
+  width: 0;
+  opacity: 0;
+  margin-left: 0;
   accent-color: var(--accent);
+  transition: width 0.2s ease, opacity 0.2s ease, margin-left 0.2s ease;
+}
+.player__volwrap:hover .player__volume,
+.player__volwrap:focus-within .player__volume {
+  width: 84px;
+  opacity: 1;
+  margin-left: 8px;
 }
 .player__time {
   font-size: 12.5px;
@@ -1332,21 +1464,21 @@ input, select {
   display: flex;
   gap: 8px;
 }
-/* Итерация 3.6, задача 2: баннер «Продолжить с MM:SS» над видео (только file-источники). */
+/* Итерация 3.6, задача 2: баннер «Продолжить с MM:SS» над видео (только file-источники).
+   ТЗ 4.1 (3.6): top-right 16px, blur 8px, скругление 8px, автоскрытие 10 с. */
 .player__resume {
   position: absolute;
-  top: 56px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 16px;
+  right: 16px;
   z-index: 4;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  border-radius: 12px;
-  background: rgba(12, 14, 20, 0.88);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.75);
   border: 1px solid var(--line-strong);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(8px);
   white-space: nowrap;
 }
 .player__resume-text {
@@ -1365,8 +1497,16 @@ input, select {
     flex-direction: column;
     gap: 8px;
     white-space: normal;
-    width: calc(100% - 32px);
+    left: 16px;
+    width: auto;
   }
+}
+/* ТЗ 4.1 (3.1): строчка-подсказка для embed-источников */
+.player__embed-hint {
+  margin: 8px 2px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted-2);
 }
 .player__menu, .player__episodes {
   position: absolute;
@@ -2009,8 +2149,14 @@ input, select {
   .detail__inner {
     grid-template-columns: 1fr;
   }
+  /* ТЗ 4.1 (4.1): постер 160×240 и вертикальная инфо-таблица на мобильных */
   .detail__poster {
-    max-width: 200px;
+    max-width: 160px;
+  }
+  .detail__facts {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 18px;
   }
   .card {
     width: 148px;
@@ -2136,9 +2282,16 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
 }
 .player-bar {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 14px;
   padding: 12px 0;
+}
+/* ТЗ 4.1 (3.7): «серия N из M» и бейдж источника — по одной базовой линии */
+.player-bar > .icon-btn {
+  align-self: center;
+}
+.player-bar__meta {
+  align-self: baseline;
 }
 .player-bar__title {
   display: flex;
@@ -2663,6 +2816,11 @@ html[data-tv='true'] .card:focus-within .card__media {
 .episode-row.is-active { background: color-mix(in srgb, var(--accent) 22%, transparent); color: #fff; }
 .episode-row__num { font-weight: 800; }
 .player-side__foot { padding-top: 4px; }
+/* ТЗ 4.1 (3.8): «К описанию» со стрелкой ↓, hover — accent */
+.player-side__foot .btn--outline:hover {
+  color: var(--accent-2);
+  border-color: var(--accent);
+}
 
 /* ================= Порядок просмотра, персонажи, галерея, график ================= */
 
@@ -2677,7 +2835,17 @@ html[data-tv='true'] .card:focus-within .card__media {
   border-radius: 12px;
   background: var(--surface);
 }
-.watchorder__item.is-current { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.watchorder__item.is-current {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.watchorder__more {
+  margin-top: 2px;
+}
+/* ТЗ 4.1 (4.4): кнопка аккордеона графика — внизу, ghost */
+.epguide__showall {
+  margin-top: 10px;
+}
 .watchorder__num { font-weight: 800; color: var(--muted-2); text-align: center; }
 .watchorder__body a { font-weight: 600; font-size: 13.5px; }
 .watchorder__body a:hover { color: var(--accent-2); }
@@ -2771,7 +2939,19 @@ html[data-tv='true'] .card:focus-within .card__media {
   .player-side { position: static; max-height: none; }
 }
 
-.detail-extra { display: flex; flex-direction: column; gap: 4px; padding-top: 6px; }
+.detail-extra { display: flex; flex-direction: column; gap: 32px; padding-top: 0; }
+/* ТЗ 4.1 (4.2): ссылка-источник под описанием + сворачиваемое альтернативное описание */
+.detail__desc-src { margin: 10px 0 0; font-size: 12px; color: var(--muted-2); }
+.detail__desc-src .detail__shiki-link { margin-left: 2px; }
+.detail__alt-desc { margin-top: 12px; border: 1px dashed var(--line); border-radius: 10px; padding: 10px 14px; }
+.detail__alt-desc summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); list-style: none; }
+.detail__alt-desc summary::-webkit-details-marker { display: none; }
+.detail__alt-desc summary::before { content: '▸ '; color: var(--accent-2); }
+.detail__alt-desc[open] summary::before { content: '▾ '; }
+.detail__alt-desc[open] summary { margin-bottom: 8px; color: var(--text); }
+/* ТЗ 4.1 (4.6): поле «Перейти к серии» в блоке серий */
+.episodes__jump { margin: 0 0 12px; }
+.episodes__jump-input { width: min(260px, 100%); }
 
 /* ---------------- Legal / consent / age gate ---------------- */
 .legal { padding: 32px 0 48px; display: flex; flex-direction: column; gap: 14px; max-width: 860px; }
@@ -2886,13 +3066,12 @@ html[data-tv='true'] .card:focus-within .card__media {
   pointer-events: none;
 }
 
-/* ---------- Сетка главной: контент + сайдбар 340px (задача 3) ---------- */
+/* ---------- Сетка главной: контент + сайдбар 340px (задача 3; 4.1 — Hero вынесен
+   на всю ширину, сетка живёт внутри .container) ---------- */
 .home-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 28px;
-  width: min(1280px, 100% - 48px);
-  margin-inline: auto;
+  gap: 32px;
   align-items: start;
 }
 .home-layout__main {
@@ -2905,6 +3084,14 @@ html[data-tv='true'] .card:focus-within .card__media {
 .home-layout__main .rail {
   padding-inline: 0;
   mask-image: linear-gradient(to right, transparent, #000 2%, #000 98%, transparent);
+}
+.home-layout__main .rail-head {
+  width: 100%;
+  margin-inline: 0;
+}
+.home-layout__sidebar {
+  position: sticky;
+  top: 80px;
 }
 
 .home-sidebar {
@@ -3326,10 +3513,13 @@ html[data-tv='true'] .card:focus-within .card__media {
 }
 
 /* ---------- Адаптив ---------- */
-@media (max-width: 1100px) {
+@media (max-width: 1024px) {
   .home-layout {
     grid-template-columns: 1fr;
     gap: 20px;
+  }
+  .home-layout__sidebar {
+    position: static;
   }
   .home-sidebar {
     position: static;

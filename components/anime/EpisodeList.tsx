@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type { Title } from '@/lib/types';
 import { useEffect, useState } from 'react';
 import { useLibrary } from '@/lib/library';
@@ -11,7 +11,10 @@ import { IconCheck, IconPlay } from '@/components/ui/icons';
 export function EpisodeList({ title }: { title: Title }) {
   const { history } = useLibrary();
   const pathname = usePathname();
+  const router = useRouter();
   const [avail, setAvail] = useState<Record<number, string> | null>(null);
+  /* ТЗ 4.1 (4.6): поле «Перейти к серии» — Enter открывает указанную серию. */
+  const [jump, setJump] = useState('');
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/availability/${title.slug}`)
@@ -34,6 +37,26 @@ export function EpisodeList({ title }: { title: Title }) {
         <h2 className="section-title">Серии</h2>
         <span className="episodes__count">{title.episodes} шт.</span>
       </div>
+      <form
+        className="episodes__jump"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const n = Number(jump);
+          if (Number.isInteger(n) && n >= 1 && n <= title.episodes) {
+            router.push(`/anime/${title.slug}/${n}`);
+            setJump('');
+          }
+        }}
+      >
+        <input
+          className="input episodes__jump-input"
+          inputMode="numeric"
+          placeholder={`Перейти к серии (1–${title.episodes})`}
+          value={jump}
+          onChange={(e) => setJump(e.target.value.replace(/\D/g, '').slice(0, 4))}
+          aria-label="Перейти к серии"
+        />
+      </form>
       {chunks > 1 ? (
         <div className="chips" style={{ marginBottom: 10 }}>
           {Array.from({ length: chunks }, (_, i) => (

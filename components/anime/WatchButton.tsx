@@ -26,7 +26,7 @@ export function WatchButton({ slug, episodes }: { slug: string; episodes: number
     return (
       <Link className="btn btn--primary btn--lg" href={`/anime/${slug}/1`}>
         <IconPlay size={16} />
-        Смотреть онлайн
+        Смотреть с 1-й серии
       </Link>
     );
   }

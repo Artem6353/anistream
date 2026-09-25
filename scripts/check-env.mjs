@@ -34,7 +34,7 @@ const groups = [
     },
     soft: {
       NEXT_PUBLIC_SITE_URL: 'без него canonical/OG/sitemap указывают на localhost',
-      NEXT_PUBLIC_SITE_NAME: 'бренд в шапке/metadata (по умолчанию AniStream)',
+      NEXT_PUBLIC_SITE_NAME: 'бренд в шапке/metadata (по умолчанию AniNova)',
     },
   },
   {

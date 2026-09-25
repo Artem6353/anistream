@@ -9,7 +9,7 @@ export async function aniskipSkipTimes(malId: number, episode: number): Promise<
   try {
     const url = `https://api.aniskip.com/v2/skip-times/${malId}/${episode}?types=op&types=ed&episodeLength=0`;
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'AniStream/2.0 (educational catalog)' },
+      headers: { 'User-Agent': 'AniNova/2.0 (educational catalog)' },
       next: { revalidate: 86400 },
     });
     if (!res.ok) return undefined;

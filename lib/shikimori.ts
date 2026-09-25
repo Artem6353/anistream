@@ -18,7 +18,7 @@ export interface ShikimoriFull extends ShikimoriBrief {
 }
 
 const HOSTS = ['https://shikimori.io', 'https://shikimori.one'];
-const ua = () => ({ 'User-Agent': process.env.SHIKIMORI_USER_AGENT ?? 'AniStream/2.0 (+http://localhost:3000)' });
+const ua = () => ({ 'User-Agent': process.env.SHIKIMORI_USER_AGENT ?? 'AniNova/2.0 (+http://localhost:3000)' });
 
 async function get<T>(path: string): Promise<T> {
   let lastErr: unknown;

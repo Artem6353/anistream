@@ -9,12 +9,12 @@ import { library, useLibrary } from '@/lib/library';
 import { formatTime } from '@/lib/format';
 import { Switch } from '@/components/ui/Switch';
 import {
+  IconArrowDown,
   IconBack10,
   IconChevronLeft,
   IconExpand,
   IconFwd10,
   IconGauge,
-  IconList,
   IconPause,
   IconPip,
   IconPlay,
@@ -22,7 +22,7 @@ import {
   IconVolumeX,
 } from '@/components/ui/icons';
 
-const RATES = [0.75, 1, 1.25, 1.5, 2];
+const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const PROVIDER_ORDER = ['manual', 'kodik', 'cvh', 'aniboom', 'demo'];
 const PROVIDER_NAMES: Record<string, string> = {
   kodik: 'Kodik',
@@ -74,6 +74,10 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   /* Баннер «Продолжить с MM:SS» (итерация 3.6, задача 2): только file-источники,
    * без автоперемотки — пользователь сам решает, продолжить или начать сначала. */
   const [resumeAt, setResumeAt] = useState<number | null>(null);
+  /* ТЗ 4.1, блок 3: dropdown скорости у панели контролов + tooltip таймлайна. */
+  const [rateOpen, setRateOpen] = useState(false);
+  const [seekHover, setSeekHover] = useState<{ pct: number; t: number } | null>(null);
+  const dragging = useRef(false);
 
   const sources = data.sources ?? [];
   const selected: EpisodeSource | undefined = useMemo(
@@ -160,7 +164,8 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   const poke = useCallback(() => {
     setUiVisible(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => setUiVisible(false), 2800);
+    /* ТЗ 4.1 (3.4): контролы скрываются через 3 секунды бездействия при воспроизведении. */
+    hideTimer.current = setTimeout(() => setUiVisible(false), 3000);
   }, []);
   useEffect(() => poke(), [poke, playing]);
 
@@ -213,6 +218,57 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   useEffect(() => {
     if (resumeAt !== null && time > 10) setResumeAt(null);
   }, [resumeAt, time]);
+  /* ТЗ 4.1 (3.6): автоскрытие баннера «Продолжить» через 10 секунд. */
+  useEffect(() => {
+    if (resumeAt === null) return;
+    const t = setTimeout(() => setResumeAt(null), 10000);
+    return () => clearTimeout(t);
+  }, [resumeAt]);
+
+  /* ТЗ 4.1 (3.5): мобильные жесты — двойной тап слева/справа = ±10 с,
+   * горизонтальный свайп = перемотка. Только нативный video. */
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || isEmbed) return;
+    let sx = 0;
+    let sy = 0;
+    let st = 0;
+    let lastTapT = 0;
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      sx = t.clientX;
+      sy = t.clientY;
+      st = Date.now();
+    };
+    const onEnd = (e: TouchEvent) => {
+      const t = e.changedTouches[0];
+      const dx = t.clientX - sx;
+      const dy = t.clientY - sy;
+      const dt = Date.now() - st;
+      if (dt < 600 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && Number.isFinite(v.duration)) {
+        e.preventDefault();
+        const secs = Math.max(-120, Math.min(120, Math.round(dx / 10)));
+        v.currentTime = Math.max(0, Math.min(v.duration, v.currentTime + secs));
+        return;
+      }
+      if (dt < 300 && Math.abs(dx) < 20 && Math.abs(dy) < 20) {
+        const now = Date.now();
+        if (now - lastTapT < 300) {
+          const rect = v.getBoundingClientRect();
+          v.currentTime = Math.max(0, v.currentTime + (t.clientX < rect.left + rect.width / 2 ? -10 : 10));
+          lastTapT = 0;
+        } else {
+          lastTapT = now;
+        }
+      }
+    };
+    v.addEventListener('touchstart', onStart, { passive: true });
+    v.addEventListener('touchend', onEnd, { passive: false });
+    return () => {
+      v.removeEventListener('touchstart', onStart);
+      v.removeEventListener('touchend', onEnd);
+    };
+  }, [isEmbed]);
 
   /* оверлей следующей серии */
   useEffect(() => {
@@ -275,9 +331,19 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goNext, poke]);
 
-  const skipWindow = undefined as [number, number] | undefined;
   const progressPct = duration ? (time / duration) * 100 : 0;
   const bufferedPct = duration ? (buffered / duration) * 100 : 0;
+
+  /* ТЗ 4.1 (3.2): клик и drag по таймлайну + tooltip с временем под курсором. */
+  const seekRatio = (clientX: number, el: HTMLElement) => {
+    const rect = el.getBoundingClientRect();
+    return Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+  };
+  const seekTo = (clientX: number, el: HTMLElement) => {
+    const v = videoRef.current;
+    if (!v || !duration) return;
+    v.currentTime = seekRatio(clientX, el) * duration;
+  };
 
   const grouped = PROVIDER_ORDER.map((pid) => ({
     pid,
@@ -420,61 +486,102 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                 </div>
                 <div className="player__bottom">
                   <div
-                    className="player__seek"
+                    className={`player__seek ${dragging.current ? 'is-drag' : ''}`}
                     role="slider"
                     aria-label="Позиция воспроизведения"
                     aria-valuemin={0}
                     aria-valuemax={Math.round(duration)}
                     aria-valuenow={Math.round(time)}
                     onPointerDown={(e) => {
-                      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                      const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-                      const v = videoRef.current;
-                      if (v && duration) v.currentTime = ratio * duration;
+                      const el = e.currentTarget as HTMLElement;
+                      dragging.current = true;
+                      el.setPointerCapture(e.pointerId);
+                      seekTo(e.clientX, el);
+                    }}
+                    onPointerMove={(e) => {
+                      const el = e.currentTarget as HTMLElement;
+                      const ratio = seekRatio(e.clientX, el);
+                      setSeekHover({ pct: ratio * 100, t: ratio * duration });
+                      if (dragging.current) seekTo(e.clientX, el);
+                    }}
+                    onPointerUp={() => {
+                      dragging.current = false;
+                    }}
+                    onPointerLeave={() => {
+                      dragging.current = false;
+                      setSeekHover(null);
                     }}
                   >
                     <span className="player__buffered" style={{ width: `${bufferedPct}%` }} />
                     <span className="player__progress" style={{ width: `${progressPct}%` }} />
+                    <span className="player__handle" style={{ left: `${progressPct}%` }} aria-hidden />
+                    {seekHover ? (
+                      <span className="player__seektip" style={{ left: `${seekHover.pct}%` }} aria-hidden>
+                        {formatTime(seekHover.t)}
+                      </span>
+                    ) : null}
                   </div>
                   <div className="player__controls">
                     <div className="player__cluster">
                       <button className="icon-btn" onClick={() => (playing ? videoRef.current?.pause() : void videoRef.current?.play())} aria-label={playing ? 'Пауза' : 'Смотреть'}>
-                        {playing ? <IconPause size={20} /> : <IconPlay size={20} />}
+                        {playing ? <IconPause size={24} /> : <IconPlay size={24} />}
                       </button>
                       <button className="icon-btn" onClick={() => (videoRef.current!.currentTime -= 10)} aria-label="Назад на 10 секунд">
-                        <IconBack10 size={18} />
+                        <IconBack10 size={22} />
                       </button>
                       <button className="icon-btn" onClick={() => (videoRef.current!.currentTime += 10)} aria-label="Вперёд на 10 секунд">
-                        <IconFwd10 size={18} />
+                        <IconFwd10 size={22} />
                       </button>
-                      <button className="icon-btn" onClick={() => (videoRef.current!.muted = !muted)} aria-label={muted ? 'Включить звук' : 'Выключить звук'}>
-                        {muted || volume === 0 ? <IconVolumeX size={18} /> : <IconVolume size={18} />}
-                      </button>
-                      <input
-                        className="player__volume"
-                        type="range"
-                        min={0}
-                        max={1}
-                        step={0.05}
-                        value={muted ? 0 : volume}
-                        onChange={(e) => {
-                          const v = videoRef.current;
-                          if (!v) return;
-                          v.volume = Number(e.target.value);
-                          v.muted = v.volume === 0;
-                        }}
-                        aria-label="Громкость"
-                      />
+                      <span className="player__volwrap">
+                        <button className="icon-btn" onClick={() => (videoRef.current!.muted = !muted)} aria-label={muted ? 'Включить звук' : 'Выключить звук'}>
+                          {muted || volume === 0 ? <IconVolumeX size={22} /> : <IconVolume size={22} />}
+                        </button>
+                        <input
+                          className="player__volume"
+                          type="range"
+                          min={0}
+                          max={1}
+                          step={0.05}
+                          value={muted ? 0 : volume}
+                          onChange={(e) => {
+                            const v = videoRef.current;
+                            if (!v) return;
+                            v.volume = Number(e.target.value);
+                            v.muted = v.volume === 0;
+                          }}
+                          aria-label="Громкость"
+                        />
+                      </span>
                       <span className="player__time">
                         {formatTime(time)} / {formatTime(duration)}
                       </span>
                     </div>
                     <div className="player__cluster">
-                      <button className="icon-btn" onClick={() => setReportOpen(true)} aria-label="Пожаловаться на источник">
+                      <button
+                        className={`icon-btn player__ratebtn ${rateOpen ? 'is-active' : ''}`}
+                        onClick={() => {
+                          setRateOpen((v) => !v);
+                          setMenuOpen(false);
+                          setReportOpen(false);
+                        }}
+                        aria-label="Скорость воспроизведения"
+                        aria-expanded={rateOpen}
+                      >
+                        {rate}×
+                      </button>
+                      <button className="icon-btn player__flagbtn" onClick={() => setReportOpen(true)} aria-label="Пожаловаться на источник">
                         ⚑
                       </button>
-                      <button className={`icon-btn ${menuOpen ? 'is-active' : ''}`} onClick={() => setMenuOpen((v) => !v)} aria-label="Настройки плеера" aria-expanded={menuOpen}>
-                        <IconGauge size={18} />
+                      <button
+                        className={`icon-btn ${menuOpen ? 'is-active' : ''}`}
+                        onClick={() => {
+                          setMenuOpen((v) => !v);
+                          setRateOpen(false);
+                        }}
+                        aria-label="Настройки плеера"
+                        aria-expanded={menuOpen}
+                      >
+                        <IconGauge size={22} />
                       </button>
                       <button
                         className="icon-btn"
@@ -484,10 +591,10 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                         }}
                         aria-label="Картинка в картинке"
                       >
-                        <IconPip size={18} />
+                        <IconPip size={22} />
                       </button>
                       <button className="icon-btn" onClick={toggleFullscreen} aria-label="Полный экран">
-                        <IconExpand size={18} />
+                        <IconExpand size={22} />
                       </button>
                     </div>
                   </div>
@@ -521,21 +628,6 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
 
               {menuOpen ? (
                 <div className="player__menu" role="menu" aria-label="Настройки плеера">
-                  <p className="player__menu-title">Скорость</p>
-                  <div className="player__rates">
-                    {RATES.map((r) => (
-                      <button
-                        key={r}
-                        className={`chip ${rate === r ? 'is-active' : ''}`}
-                        onClick={() => {
-                          setRate(r);
-                          if (videoRef.current) videoRef.current.playbackRate = r;
-                        }}
-                      >
-                        {r}×
-                      </button>
-                    ))}
-                  </div>
                   {files.length > 1 ? (
                     <>
                       <p className="player__menu-title">Качество</p>
@@ -551,9 +643,34 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                   <Switch label="Автопереход к следующей серии" checked={settings.autoplayNext} onChange={(v) => library.setSettings({ autoplayNext: v })} />
                 </div>
               ) : null}
+
+              {/* ТЗ 4.1 (3.3): скорость — отдельный dropdown 0.5…2 */}
+              {rateOpen ? (
+                <div className="player__menu" role="menu" aria-label="Скорость воспроизведения">
+                  <p className="player__menu-title">Скорость</p>
+                  <div className="player__rates">
+                    {RATES.map((r) => (
+                      <button
+                        key={r}
+                        className={`chip ${rate === r ? 'is-active' : ''}`}
+                        onClick={() => {
+                          setRate(r);
+                          if (videoRef.current) videoRef.current.playbackRate = r;
+                          setRateOpen(false);
+                        }}
+                      >
+                        {r}×
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </>
           )}
         </div>
+
+        {/* ТЗ 4.1 (3.1): для embed-источников наши контролы скрыты — подсказка */}
+        {isEmbed && selected?.embedUrl ? <p className="player__embed-hint">Управление внутри плеера провайдера</p> : null}
 
         {/* горизонтальный скролл-бар серий под плеером (ТЗ 2.1) */}
         <div className="epbar-wrap">
@@ -656,7 +773,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
         )}
         <div className="player-side__foot">
           <Link className="btn btn--outline btn--sm" href={`/anime/${title.slug}`}>
-            <IconList size={14} /> К описанию и графику серий
+            <IconArrowDown size={14} /> К описанию
           </Link>
         </div>
       </aside>

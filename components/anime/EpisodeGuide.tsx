@@ -1,5 +1,6 @@
 import type { Title } from '@/lib/types';
 import { formatClock } from '@/lib/format';
+import { EpisodeGuideRows, type EpisodeGuideRow } from './EpisodeGuideRows';
 
 const MSK = 'Europe/Moscow';
 
@@ -15,8 +16,7 @@ export function EpisodeGuide({ title }: { title: Title }) {
   const isUp = title.status === 'upcoming';
   const isOn = title.status === 'ongoing';
 
-  type Row = { ep: string; name: string; date: string; time: string; status: string };
-  let rows: Row[] = [];
+  let rows: EpisodeGuideRow[] = [];
   if (isUp) {
     rows = [
       {
@@ -73,30 +73,7 @@ return (
               ? 'Все серии вышли; точные даты и время премьеры серий — по московскому времени (AniList).'
               : `Все серии вышли (${title.year || 'год неизвестен'}). Точные даты дозаполняются скриптом fetch-episode-dates.`}
       </p>
-      <table className="epguide__table">
-        <thead>
-          <tr>
-            <th>№</th>
-            <th>Название</th>
-            <th>Дата выхода</th>
-            <th>Время</th>
-            <th>Статус</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.ep}>
-              <td>{r.ep === '—' ? '—' : `${r.ep} серия`}</td>
-              <td>{r.name ?? `Episode ${r.ep}`}</td>
-              <td>{r.date}</td>
-              <td>{r.time || '—'}</td>
-              <td>
-                <span className={`epguide__status ${r.status === 'вышла' ? 'is-done' : 'is-wait'}`}>{r.status}</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <EpisodeGuideRows rows={rows} />
       {title.episodes > 60 && !isOn && !isUp ? (
         <p className="panel__note">Показаны первые 60 серий из {title.episodes}.</p>
       ) : null}

@@ -1,35 +1,33 @@
-import Link from 'next/link';
 import type { Title } from '@/lib/types';
 import { watchOrder, REL_LABELS } from '@/lib/franchise';
 import { titleById } from '@/lib/catalog';
 import { TYPE_LABELS } from '@/lib/labels';
+import { WatchOrderList, type WatchOrderItem } from './WatchOrderList';
 
-/** Порядок просмотра франшизы: сезоны, OVA, фильмы, спешлы — в хронологии (ТЗ 2.3). */
+/**
+ * Порядок просмотра франшизы: сезоны, OVA, фильмы, спешлы — в хронологии (ТЗ 2.3).
+ * ТЗ 4.1 (4.3): тяжёлый расчёт остаётся на сервере, аккордеон («первые 5 + Показать всё»)
+ * рисует клиентский WatchOrderList.
+ */
 export function WatchOrder({ title }: { title: Title }) {
   const order = watchOrder(title, titleById);
   if (order.length < 2) return null;
+  const items: WatchOrderItem[] = order.map((t) => {
+    const rel = t.relations?.find((r) => r.id === title.anilistId);
+    return {
+      slug: t.slug,
+      ru: t.ru,
+      typeLabel: TYPE_LABELS[t.type],
+      year: t.year,
+      relLabel: rel ? (REL_LABELS[rel.type] ?? rel.type) : undefined,
+      isCurrent: t.anilistId === title.anilistId,
+    };
+  });
   return (
     <section className="watchorder" aria-label="Порядок просмотра">
       <h2 className="section-title">Порядок просмотра</h2>
       <p className="panel__note">Все связанные части франшизы в хронологическом порядке: что смотреть после этого тайтла.</p>
-      <ol className="watchorder__list">
-        {order.map((t, i) => {
-          const rel = t.relations?.find((r) => r.id === title.anilistId);
-          return (
-            <li key={t.anilistId} className={`watchorder__item ${t.anilistId === title.anilistId ? 'is-current' : ''}`}>
-              <span className="watchorder__num">{i + 1}</span>
-              <span className="watchorder__body">
-                <Link href={`/anime/${t.slug}`}>{t.ru}</Link>
-                <span className="watchorder__meta">
-                  {TYPE_LABELS[t.type]} · {t.year}
-                  {rel ? ` · ${REL_LABELS[rel.type] ?? rel.type}` : ''}
-                </span>
-              </span>
-              {t.anilistId === title.anilistId ? <span className="player-flag player-flag--ok">вы здесь</span> : null}
-            </li>
-          );
-        })}
-      </ol>
+      <WatchOrderList items={items} />
     </section>
   );
 }

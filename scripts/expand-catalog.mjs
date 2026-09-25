@@ -13,7 +13,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const ARGS = process.argv.slice(2);
 const REPORT = ARGS.includes('--report');
 const PAGES = Number(ARGS.find((a) => !a.startsWith('--')) ?? 100);
-const UA = { 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (AniStream catalog sync)' };
+const UA = { 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (AniNova catalog sync)' };
 const F = `{ id idMal title{romaji english} format status season seasonYear episodes averageScore favourites genres
   coverImage{large} bannerImage trailer{id site} description(asHtml:false)
   characters(page:1,perPage:6,sort:ROLE){edges{role node{id name{full} image{large}}}}

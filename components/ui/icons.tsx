@@ -186,6 +186,12 @@ export const IconCommand = (p: P) => (
     <path d="M9 9V6a3 3 0 1 0-3 3h3Zm0 0v6m0-6h6m-6 6v3a3 3 0 1 1-3-3h3Zm6-6h3a3 3 0 1 0-3-3v3Zm0 6v3a3 3 0 1 0 3-3h-3Zm0-6v6" />
   </svg>
 );
+export const IconArrowDown = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M12 4v15" />
+    <path d="m6 13 6 6 6-6" />
+  </svg>
+);
 export const IconSword = (p: P) => (
   <svg {...base(p)}>
     <path d="M14.5 17.5 3 6V3h3l11.5 11.5" />

@@ -28,7 +28,7 @@ const clean = (s) =>
         .replace(/\s+/g, ' ')
         .trim();
 
-const UA = { 'User-Agent': process.env.SHIKIMORI_USER_AGENT ?? 'AniStream/2.0 (+http://localhost:3000)' };
+const UA = { 'User-Agent': process.env.SHIKIMORI_USER_AGENT ?? 'AniNova/2.0 (+http://localhost:3000)' };
 const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

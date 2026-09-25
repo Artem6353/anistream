@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 
 export const revalidate = 3600;
 import { getTitle, similarTitles } from '@/lib/catalog';
-import { TYPE_LABELS, STATUS_LABELS, SEASON_LABELS, genreLabel } from '@/lib/labels';
+import { TYPE_LABELS, genreLabel } from '@/lib/labels';
 import { MetaBadges } from '@/components/anime/MetaBadges';
 import { ExpandableText } from '@/components/anime/ExpandableText';
 import { TrailerCard } from '@/components/anime/TrailerCard';
@@ -46,6 +46,12 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
   const title = getTitle(slug);
   if (!title || title.hidden) notFound();
   const similar = similarTitles(title);
+  /* ТЗ 4.1 (4.2): показываем одно основное описание; shikimori-вариант уходит
+   * в сворачиваемый блок «Альтернативное описание» (по умолчанию свёрнут). */
+  const altDesc =
+    title.description && title.shikimori?.description && title.shikimori.description.trim() !== title.description.trim()
+      ? title.shikimori.description
+      : null;
 
   const ld = {
     '@context': 'https://schema.org',
@@ -99,6 +105,10 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
             </div>
             <dl className="detail__facts">
               <div>
+                <dt>Рейтинг</dt>
+                <dd>{title.score > 0 ? `${title.score.toFixed(1)} / 10` : '—'}</dd>
+              </div>
+              <div>
                 <dt>Тип</dt>
                 <dd>{TYPE_LABELS[title.type]}</dd>
               </div>
@@ -107,42 +117,16 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
                 <dd>{title.episodes}</dd>
               </div>
               <div>
-                <dt>Жанры</dt>
-                <dd>{title.genres.slice(0, 4).map((g) => genreLabel(g)).join(', ')}</dd>
-              </div>
-              {title.source ? (
-                <div>
-                  <dt>Первоисточник</dt>
-                  <dd>{SOURCE_LABELS[title.source] ?? title.source}</dd>
-                </div>
-              ) : null}
-              <div>
-                <dt>Сезон</dt>
-                <dd>{title.season ? `${SEASON_LABELS[title.season]} ${title.year}` : title.year}</dd>
+                <dt>Длительность</dt>
+                <dd>{title.duration ? `${title.duration} мин / серия` : '—'}</dd>
               </div>
               <div>
-                <dt>Статус</dt>
-                <dd>{STATUS_LABELS[title.status]}</dd>
+                <dt>Студия</dt>
+                <dd>{title.studios?.length ? title.studios.join(', ') : '—'}</dd>
               </div>
-              {title.duration ? (
-                <div>
-                  <dt>Длительность</dt>
-                  <dd>{title.duration} мин / серия</dd>
-                </div>
-              ) : null}
               <div>
-                <dt>Рейтинг</dt>
-                <dd>{title.score > 0 ? `${title.score.toFixed(1)} / 10` : '—'}</dd>
-              </div>
-              {title.studios?.length ? (
-                <div>
-                  <dt>Студия</dt>
-                  <dd>{title.studios.join(', ')}</dd>
-                </div>
-              ) : null}
-              <div>
-                <dt>Возраст</dt>
-                <dd>{title.isAdult ? '18+' : '13+'}</dd>
+                <dt>Первоисточник</dt>
+                <dd>{title.source ? (SOURCE_LABELS[title.source] ?? title.source) : '—'}</dd>
               </div>
             </dl>
             <div className="chips">
@@ -168,18 +152,21 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
                 lines={4}
               />
             </div>
-            {title.shikimori?.description ? (
-              <div style={{ marginTop: 22 }}>
-                <h3 className="section-title" style={{ fontSize: 15, marginBottom: 8 }}>
-                  Описание по данным Shikimori{' '}
-                  <a className="detail__shiki-link" href={`https://shikimori.io/animes/${title.shikimori.id}`} target="_blank" rel="noopener noreferrer">
-                    shikimori.io ↗
-                  </a>
-                </h3>
-                <ExpandableText text={title.shikimori.description} lines={3} />
-              </div>
+            {title.shikimori?.id ? (
+              <p className="detail__desc-src">
+                Источник:{' '}
+                <a className="detail__shiki-link" href={`https://shikimori.io/animes/${title.shikimori.id}`} target="_blank" rel="noopener noreferrer">
+                  Shikimori ↗
+                </a>
+              </p>
             ) : null}
-            <div style={{ marginTop: 26 }}>
+            {altDesc ? (
+              <details className="detail__alt-desc">
+                <summary>Альтернативное описание</summary>
+                <ExpandableText text={altDesc} lines={6} />
+              </details>
+            ) : null}
+            <div style={{ marginTop: 24 }}>
               <TrailerCard title={title} />
             </div>
           </section>
@@ -193,7 +180,7 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
         <div className="detail-extra">
           <WatchOrder title={title} />
           {title.characters?.length ? (
-            <div style={{ marginTop: 22 }}>
+            <div>
               <h2 className="section-title">Персонажи</h2>
               <div className="chars">
                 {title.characters.slice(0, 12).map((c) => (
@@ -211,16 +198,17 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
               </div>
             </div>
           ) : null}
-          {title.screenshots?.length ? (
-            <div style={{ marginTop: 22 }}>
+          {/* ТЗ 4.1 (4.5): кадры — минимум 4, иначе секцию не показываем; максимум 6 */}
+          {title.screenshots && title.screenshots.length >= 4 ? (
+            <div>
               <h2 className="section-title">Кадры из аниме</h2>
-              <GalleryLightbox images={title.screenshots.slice(0, 8)} title={title.ru} />
+              <GalleryLightbox images={title.screenshots.slice(0, 6)} title={title.ru} />
             </div>
           ) : null}
-          <div style={{ marginTop: 24 }}>
+          <div>
             <EpisodeGuide title={title} />
           </div>
-          <div style={{ marginTop: 26 }}>
+          <div>
             <ReviewsSection slug={title.slug} />
           </div>
         </div>

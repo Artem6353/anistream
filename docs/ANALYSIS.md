@@ -787,3 +787,87 @@ SettingsPanel заменены одиночные строковые литер�
 (ранее — тёмная подложка с врезкой). (5) Hero главной живёт в суженной колонке main (markup ТЗ),
 full-bleed герой исчез. (6) lib/config/providers.config.ts и lib/*.ts (UA, site.name по
 умолчанию) не переименованы — вне разрешённого контура задач 1.
+
+## 26. Итерация 4.1: закрытие темы стиля — бренд-литералы, Hero full-bleed, плеер, страница тайтла (22.09.2026)
+
+Правило итерации: визуал и текст, не логика. Запрещённый контур не тронут: lib/sync.ts,
+lib/library.ts, lib/catalog.ts, lib/data/titles.json, app/api/* (не менялись), middleware.ts,
+схема Supabase, ключи localStorage anistream:* (проверено в браузере: anistream:history,
+anistream:lastsrc:*). Разрешённое исключение lib/providers/* — только строковые литералы бренда.
+Перед стартом пользователем создаётся ветка design-2-backup; коммиты — после каждого блока.
+
+### Блок 1 — мелкие доработки
+- 1.1 «AniStream Demo» → «AniNova Demo»: lib/providers/registry-meta.ts (label),
+  lib/providers/bridge.ts (fallback-имя), lib/providers/providers/demo.ts (providerName);
+  TG-алерт в lib/providers/registry.ts «⚠ AniStream:» → «⚠ AniNova:»; комментарий lib/types.ts.
+  SettingsPanel.tsx и PlayerShell.tsx уже содержали «AniNova Demo» с итерации 4.0.
+  Приёмочный grep по lib/providers/, components/, app/ — пусто.
+- 1.2 UA и site.name по умолчанию: lib/aniskip.ts, lib/shikimori.ts,
+  lib/config/providers.config.ts (NEXT_PUBLIC_SITE_NAME ?? 'AniNova', shikimori UA),
+  комментарий app/globals.css; заодно scripts/*.mjs (fetch-episode-dates, refresh-shikimori,
+  enrich-shikimori-resumable, expand-catalog, check-env) и description в package.json.
+  app/img/route.ts уже был AniNova; в kodik.ts/cvh.ts/aniboom.ts бренд-литералов не оказалось.
+  Внутренние ключи anistream-captcha-secret / anistream_admin / anistream-analytics НЕ тронуты
+  (природа ключей anistream:* — переименование сломало бы auth/cookie/DOM-ид).
+- 1.3 Hero вынесен из .home-layout__main на всю ширину (app/page.tsx): Hero → container →
+  .home-layout (main + сайдбар). .home-layout: gap 32px, без собственной ширины (живёт в
+  .container); .home-layout__sidebar sticky top 80px; брейкпоинт одной колонки 1100→1024px;
+  выровнен .rail-head внутри main (был смещён на 24px относительно карточек).
+
+### Блок 2 — Hero главной (components/anime/Hero.tsx + CSS)
+- Бэкдроп: два градиента по ТЗ (to top var(--bg)→transparent 40%; to right rgba(0,0,0,.85)→transparent 60%);
+  нет баннера → постер с filter: blur(20px) brightness(0.5) (класс .hero__bg--blurred).
+- Контент слева, .hero__inner max-width 640px; заголовок clamp(2rem,4vw,3.5rem) белый;
+  мета-строка «год · тип · эпизоды · рейтинг» 14px var(--muted) вместо набора бейджей;
+  описание line-clamp 3; кнопки «Смотреть» (primary+play) и «Подробнее» (ghost, читаемый фон).
+- Высота: desktop 520px, mobile (≤760px) 380px.
+- Индикатор ротации: полоски — активная 24px accent-градиент, остальные 8px серые opacity .4.
+
+### Блок 3 — плеер (components/player/PlayerShell.tsx + CSS + icons.tsx)
+- 3.1 embed (CVH/Kodik/AniBoom): наши контролы и не рендерились под iframe; добавлена строчка
+  «Управление внутри плеера провайдера» (.player__embed-hint); остаются bar серий, панель озвучек,
+  «К описанию». Проверено живьём на закэшированном CVH-источнике.
+- 3.2 Таймлайн: 6px в покое → 8px hover (transition 150ms); заполнение linear-gradient(90deg,#8b5cf6,#ec4899);
+  буфер rgba(255,255,255,.15); пустая часть rgba(255,255,255,.06); ручка 12px на конце заполнения (hover/drag);
+  tooltip с временем под курсором; drag реализован pointer-capture (клик был и раньше).
+- 3.3 Кнопки: иконки 22–24px, touch-target 40×40 (flex-shrink:0 — на 390px не сжимались), зазор 12px,
+  hover: color var(--accent) + scale(1.08); aria-label на всех. Громкость: слайдер выезжает при hover.
+  Скорость — отдельная кнопка «1×» с dropdown 0.5/0.75/1/1.25/1.5/2 (RATES расширен); в меню шестерёнки
+  остались качество и автопереход. Порядок слева направо по ТЗ.
+- 3.4 Скрытие контролов: 3 c бездействия (было 2.8), fade 200ms, курсор скрывается (.player:not(.is-ui){cursor:none}).
+- 3.5 Мобильные жесты: двойной тап слева/справа ∓10 c, горизонтальный свайп — перемотка (dx/10, ±120 c),
+  только нативный video; существующее не ломали.
+- 3.6 Баннер «Продолжить»: top-right 16px, rgba(0,0,0,.75), blur(8px), radius 8px, автоскрытие 10 c;
+  кнопки «Продолжить»/«Начать сначала» работают как прежде.
+- 3.7 player-bar переведён на align-items: baseline — «серия N из M» и бейдж источника на одной базовой линии.
+- 3.8 Кнопка «К описанию» в боковой панели: иконка IconArrowDown (новый в icons.tsx) + hover accent.
+
+### Блок 4 — страница тайтла (app/anime/[slug]/page.tsx + компоненты)
+- 4.1 Бэкдроп с двумя градиентами (как Hero), высота 440px; постер 240×360 / mobile 160×240, radius 12px, тень;
+  инфо-таблица 3×2: Рейтинг·Тип·Эпизоды / Длительность·Студия·Первоисточник (убраны Сезон, Статус, Жанры,
+  Возраст — дублируются бейджами/чипами); кнопки: primary «Продолжить с серии N»/«Смотреть с 1-й серии»
+  (WatchButton, лейбл обновлён), «Добавить в список» с иконкой bookmark (ListStatusButton), зазор 12px.
+- 4.2 Одно описание; под ним ссылка «Источник: Shikimori ↗»; shikimori-вариант уходит в свёрнутый
+  <details> «Альтернативное описание» (проверено на trigun).
+- 4.3 «Порядок просмотра»: серверный расчёт (lib/franchise не тащим в клиент) + клиентский WatchOrderList —
+  первые 5, «Показать всё (N)»/«Свернуть»; активная строка — accent-подсветка (фон + рамка).
+- 4.4 «График выхода серий»: клиентский EpisodeGuideRows — первые 8, кнопка внизу ghost «Показать все (N)»,
+  внутреннего скролла не было и нет.
+- 4.5 Кадры: секция только при ≥4 кадрах, иначе скрыта; показ до 6. В текущем titles.json максимум 2 кадра —
+  секция скрыта везде (позитивная ветка проверена кодом).
+- 4.6 Блок «Серии»: сетка и чанки как были + поле «Перейти к серии (1–N)», Enter открывает серию (роутер).
+- 4.8 Ритм: .detail-extra gap 32px, .detail__columns padding 32px 0, .section-title 20px + планка 4px,
+  внутри инфо-карточки 24px; убраны inline-marginTop из разметки.
+
+### Регресс и приёмка
+typecheck чисто; build ok; vitest 26/26; smoke All routes OK; /api/social/reviews?limit=5 → local/[];
+ключи anistream:* не изменились; прогресс пишется (saveProgress 5 c), баннер и озвучки с сохранением позиции
+работают; мобильный 390px без горизонтального скролла на главной, в плеере и на тайтле.
+
+### Отклонения
+(1) Внутренние идентификаторы anistream-captcha-secret, anistream_admin, anistream-analytics оставлены
+(ключи/секреты, не бренд); приёмочный grep их не учитывает. (2) README.md, docs/, .env.example сохраняют
+историческое имя AniStream (документация/пример конфигурации; бренд в UI и UA заменён). (3) Секция кадров
+скрыта на всех тайтлах: в titles.json нет тайтлов с ≥4 кадрами — поведение по ТЗ. (4) «Подробнее» в Hero —
+ghost по ТЗ, для читаемости добавлен полупрозрачный фон. (5) drag/жесты/автоскрытие баннера — минимальные
+добавления взаимодействия, прямо предписанные ТЗ блока 3; логика источников/прогресса не менялась.

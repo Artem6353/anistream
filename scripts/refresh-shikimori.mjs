@@ -8,7 +8,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const path = join(here, '../lib/data/titles.json');
 const titles = JSON.parse(readFileSync(path, 'utf8'));
 
-const UA = { 'User-Agent': 'AniStream catalog (next.js; educational)' };
+const UA = { 'User-Agent': 'AniNova catalog (next.js; educational)' };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function getJson(url) {

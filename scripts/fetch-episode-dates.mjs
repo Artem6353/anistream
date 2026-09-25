@@ -21,7 +21,7 @@ const FILE = 'lib/data/titles.json';
 const UA = {
   'Content-Type': 'application/json',
   Accept: 'application/json',
-  'User-Agent': process.env.SHIKIMORI_USER_AGENT || 'Mozilla/5.0 (AniStream sync; contact: admin@example.com)',
+  'User-Agent': process.env.SHIKIMORI_USER_AGENT || 'Mozilla/5.0 (AniNova sync; contact: admin@example.com)',
 };
 const SAVE_EVERY = Number(process.env.SAVE_EVERY ?? 8); // батчей между записями
 const SLEEP_MS = Number(process.env.SLEEP_MS ?? 750); // пауза между запросами (rate-limit AniList)

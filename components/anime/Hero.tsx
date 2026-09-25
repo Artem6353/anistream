@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { Title } from '@/lib/types';
 import { artUri } from '@/lib/art';
-import { MetaBadges } from './MetaBadges';
+import { TYPE_LABELS } from '@/lib/labels';
 import { IconChevronLeft, IconChevronRight, IconPlay, IconSparkles } from '@/components/ui/icons';
 
 /** Герой-карусель: автопрокрутка, клавиатура, уважение к reduce-motion. */
@@ -50,8 +50,8 @@ export function Hero({ slides }: { slides: Title[] }) {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            className="hero__bg"
-            src={s.banner ?? artUri(s.slug, s.romaji, true)}
+            className={`hero__bg ${s.banner ? '' : 'hero__bg--blurred'}`}
+            src={s.banner ?? s.poster ?? artUri(s.slug, s.romaji, true)}
             alt=""
             loading={i === 0 ? 'eager' : 'lazy'}
             fetchPriority={i === 0 ? 'high' : 'low'}
@@ -63,30 +63,41 @@ export function Hero({ slides }: { slides: Title[] }) {
       ))}
       <div className="hero__scrim" aria-hidden />
       <div className="hero__content container">
-        <MetaBadges title={active} />
-        <h1 className="hero__title">{active.ru}</h1>
-        <p className="hero__desc">{active.description}</p>
-        <div className="hero__actions">
-          <Link className="btn btn--primary btn--lg" href={`/anime/${active.slug}/${active.episodes > 1 ? 1 : ''}`.replace(/\/$/, '')}>
-            <IconPlay size={16} />
-            Смотреть
-          </Link>
-          <Link className="btn btn--outline btn--lg" href={`/anime/${active.slug}`}>
-            <IconSparkles size={16} />
-            Подробнее
-          </Link>
-        </div>
-        <div className="hero__dots" role="tablist" aria-label="Слайды">
-          {slides.map((s, i) => (
-            <button
-              key={s.slug}
-              role="tab"
-              aria-selected={i === index}
-              aria-label={`Слайд ${i + 1}: ${s.ru}`}
-              className={`hero__dot ${i === index ? 'is-active' : ''}`}
-              onClick={() => go(i)}
-            />
-          ))}
+        <div className="hero__inner">
+          <p className="hero__meta">
+            {[
+              active.year ? String(active.year) : '',
+              TYPE_LABELS[active.type],
+              active.episodes > 1 ? `${active.episodes} сер.` : '',
+              active.score > 0 ? `★ ${active.score.toFixed(1)}` : '',
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+          <h1 className="hero__title">{active.ru}</h1>
+          <p className="hero__desc">{active.description}</p>
+          <div className="hero__actions">
+            <Link className="btn btn--primary btn--lg" href={`/anime/${active.slug}/${active.episodes > 1 ? 1 : ''}`.replace(/\/$/, '')}>
+              <IconPlay size={16} />
+              Смотреть
+            </Link>
+            <Link className="btn btn--ghost btn--lg" href={`/anime/${active.slug}`}>
+              <IconSparkles size={16} />
+              Подробнее
+            </Link>
+          </div>
+          <div className="hero__dots" role="tablist" aria-label="Слайды">
+            {slides.map((s, i) => (
+              <button
+                key={s.slug}
+                role="tab"
+                aria-selected={i === index}
+                aria-label={`Слайд ${i + 1}: ${s.ru}`}
+                className={`hero__dot ${i === index ? 'is-active' : ''}`}
+                onClick={() => go(i)}
+              />
+            ))}
+          </div>
         </div>
       </div>
       <button type="button" className="icon-btn hero__arrow hero__arrow--left" onClick={() => go(index - 1)} aria-label="Предыдущий слайд">

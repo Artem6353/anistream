@@ -23,7 +23,7 @@ export async function HomeSidebar() {
   const counts = new Map(genreStats().map((g) => [g.slug, g.count]));
 
   return (
-    <aside className="home-sidebar" aria-label="Обзор дня">
+    <aside className="home-layout__sidebar home-sidebar" aria-label="Обзор дня">
       <section className="sidebar-block">
         <h2 className="sidebar-block__title">Топ недели</h2>
         <ol className="sidebar-top">

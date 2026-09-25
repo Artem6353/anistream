@@ -93,7 +93,7 @@ export function providerLabel(provider: string): string {
     case 'aniboom':
       return 'AniBoom';
     case 'demo':
-      return 'AniStream Demo';
+      return 'AniNova Demo';
     default:
       return provider;
   }

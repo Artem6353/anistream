@@ -1,4 +1,4 @@
-/** Доменная модель каталога AniStream. */
+/** Доменная модель каталога AniNova. */
 
 export type TitleType = 'tv' | 'movie' | 'ona' | 'ova' | 'special';
 export type TitleStatus = 'ongoing' | 'finished' | 'upcoming';

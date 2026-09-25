@@ -162,7 +162,7 @@ export async function resolveEpisodeSources(ctx: ProviderContext): Promise<Episo
 
   if (Object.keys(errors).length) {
     void logProviderErrors(ctx.slug, ctx.episode, errors);
-    if (metricErrorBump()) void sendTgAlert(`⚠ AniStream: 20+ ошибок парсеров за час (последняя: ${ctx.slug} ep${ctx.episode} ${JSON.stringify(errors).slice(0, 120)})`);
+    if (metricErrorBump()) void sendTgAlert(`⚠ AniNova: 20+ ошибок парсеров за час (последняя: ${ctx.slug} ep${ctx.episode} ${JSON.stringify(errors).slice(0, 120)})`);
   }
   metricLatency(Date.now() - t0);
 

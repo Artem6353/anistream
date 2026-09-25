@@ -38,7 +38,7 @@ export function getProvidersConfig(): ProvidersConfig {
   const env = process.env;
   return {
     site: {
-      name: env.NEXT_PUBLIC_SITE_NAME ?? 'AniStream',
+      name: env.NEXT_PUBLIC_SITE_NAME ?? 'AniNova',
       url: env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
     },
     demo: {
@@ -76,7 +76,7 @@ export function getProvidersConfig(): ProvidersConfig {
     },
     shikimori: {
       enabled: bool(env.SHIKIMORI_ENABLED, true),
-      userAgent: env.SHIKIMORI_USER_AGENT ?? 'AniStream/2.0 (+http://localhost:3000)',
+      userAgent: env.SHIKIMORI_USER_AGENT ?? 'AniNova/2.0 (+http://localhost:3000)',
     },
     aniskip: {
       enabled: bool(env.ANISKIP_ENABLED, true),

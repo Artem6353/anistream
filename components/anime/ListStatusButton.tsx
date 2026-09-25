@@ -5,7 +5,7 @@ import { library, useLibrary } from '@/lib/library';
 import { useToast } from '@/components/ui/Toaster';
 import type { ListStatus } from '@/lib/types';
 import { LIST_STATUS_LABELS } from '@/lib/labels';
-import { IconCheck, IconList } from '@/components/ui/icons';
+import { IconBookmark, IconCheck } from '@/components/ui/icons';
 
 /** Кнопка-выпадашка списков просмотра (как «Добавить в список» на AnimeGO, но локально). */
 export function ListStatusButton({ slug }: { slug: string }) {
@@ -26,7 +26,7 @@ export function ListStatusButton({ slug }: { slug: string }) {
   return (
     <div className="listbtn" ref={ref}>
       <button type="button" className={`btn btn--outline btn--md ${current ? 'is-active' : ''}`} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-        <IconList size={15} />
+        <IconBookmark size={15} />
         {current ? LIST_STATUS_LABELS[current] : 'Добавить в список'}
       </button>
       {open ? (
