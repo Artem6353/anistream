@@ -2,6 +2,7 @@
 
 import { useLibrary } from '@/lib/library';
 import { useTitles } from '@/lib/useTitles';
+import { timeAgo } from '@/lib/format';
 import type { HistoryEntry } from '@/lib/types';
 import { Rail } from './Rail';
 import { PosterCard } from './PosterCard';
@@ -40,6 +41,9 @@ export function ContinueWatchingRail() {
           progress={(h.position / Math.max(1, h.duration)) * 100}
           resumeEpisode={h.episode}
           resumeHref={`/anime/${h.slug}/${h.episode}`}
+          // Итерация 3.6, задача 4: для iframe-записей (duration === 0) позиция
+          // недоступна — вместо «Продолжить с серии N» показываем «Открыто N назад».
+          resumeNote={h.duration > 0 ? undefined : `Открыто ${timeAgo(h.updatedAt)}`}
         />
       ))}
     </Rail>

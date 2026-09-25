@@ -12,6 +12,7 @@ export function PosterCard({
   progress,
   resumeEpisode,
   resumeHref,
+  resumeNote,
 }: {
   title: Title;
   progress?: number;
@@ -19,6 +20,9 @@ export function PosterCard({
   resumeEpisode?: number;
   /** Переопределение ссылки карточки (например, сразу на плеер последней просмотренной серии). */
   resumeHref?: string;
+  /** Замена подписи (итерация 3.6, задача 4): для iframe-источников позиция недоступна,
+   *  поэтому вместо «Продолжить с серии N» показываем «Открыто N назад». */
+  resumeNote?: string;
 }) {
   const href = resumeHref ?? `/anime/${title.slug}`;
   return (
@@ -52,7 +56,7 @@ export function PosterCard({
         </p>
         {resumeEpisode ? (
           <p className="card__resume">
-            {title.episodes > 1 ? `Продолжить с серии ${resumeEpisode}` : 'Продолжить просмотр'}
+            {resumeNote ?? (title.episodes > 1 ? `Продолжить с серии ${resumeEpisode}` : 'Продолжить просмотр')}
           </p>
         ) : null}
       </div>

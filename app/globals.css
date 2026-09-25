@@ -930,6 +930,18 @@ input, select {
   gap: 10px;
   flex-wrap: wrap;
 }
+/* Итерация 3.6, задача 3: маленькая ссылка «Смотреть с начала» рядом с «Продолжить с серии N». */
+.watch-restart {
+  align-self: center;
+  font-size: 12.5px;
+  color: var(--muted-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+.watch-restart:hover {
+  color: var(--text);
+}
 .detail__facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1320,6 +1332,42 @@ input, select {
   display: flex;
   gap: 8px;
 }
+/* Итерация 3.6, задача 2: баннер «Продолжить с MM:SS» над видео (только file-источники). */
+.player__resume {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(12, 14, 20, 0.88);
+  border: 1px solid var(--line-strong);
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+}
+.player__resume-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.player__resume-actions {
+  display: inline-flex;
+  gap: 8px;
+}
+@media (max-width: 560px) {
+  .player__resume {
+    flex-direction: column;
+    gap: 8px;
+    white-space: normal;
+    width: calc(100% - 32px);
+  }
+}
 .player__menu, .player__episodes {
   position: absolute;
   right: 20px;
@@ -1453,6 +1501,21 @@ input, select {
 }
 .history__play {
   opacity: 0.6;
+}
+/* Итерация 3.6: колонка подписей карточки истории (заголовок / мета / бар / «Продолжить с MM:SS»). */
+.history__info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.history__resume {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-2);
 }
 
 .settings {

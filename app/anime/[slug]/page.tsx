@@ -21,8 +21,8 @@ import { BookmarkButton } from '@/components/anime/BookmarkButton';
 import { Rail } from '@/components/anime/Rail';
 import { PosterCard } from '@/components/anime/PosterCard';
 import { PosterArt } from '@/components/anime/PosterArt';
+import { WatchButton } from '@/components/anime/WatchButton';
 import { artUri } from '@/lib/art';
-import { IconPlay } from '@/components/ui/icons';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -93,10 +93,7 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
               {title.shikimori?.ru ? ` · ${title.shikimori.ru}` : ''}
             </p>
             <div className="detail__actions">
-              <Link className="btn btn--primary btn--lg" href={`/anime/${title.slug}/1`}>
-                <IconPlay size={16} />
-                Смотреть онлайн
-              </Link>
+              <WatchButton slug={title.slug} episodes={title.episodes} />
               <ListStatusButton slug={title.slug} />
               <BookmarkButton slug={title.slug} className="bookmark-btn--big" />
             </div>

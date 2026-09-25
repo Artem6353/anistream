@@ -71,6 +71,9 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   const [reportOpen, setReportOpen] = useState(false);
   const [reportText, setReportText] = useState('');
   const [reportSent, setReportSent] = useState(false);
+  /* Баннер «Продолжить с MM:SS» (итерация 3.6, задача 2): только file-источники,
+   * без автоперемотки — пользователь сам решает, продолжить или начать сначала. */
+  const [resumeAt, setResumeAt] = useState<number | null>(null);
 
   const sources = data.sources ?? [];
   const selected: EpisodeSource | undefined = useMemo(
@@ -104,8 +107,10 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   }, [episode, title.slug]);
 
   const keepTime = useRef(0);
+  const switchingSrc = useRef(false);
   const chooseSource = (id: string) => {
     keepTime.current = videoRef.current?.currentTime ?? 0;
+    switchingSrc.current = true; // на loadedmetadata не показывать баннер — позицию вернёт restore
     setSelectedId(id);
     setQuality('');
     try {
@@ -141,6 +146,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
     }
     const restore = () => {
       if (keepTime.current > 5 && keepTime.current < (video.duration || 0) - 10) video.currentTime = keepTime.current;
+      switchingSrc.current = false;
     };
     video.addEventListener('loadedmetadata', restore, { once: true });
     return () => {
@@ -196,6 +202,17 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
     if (prev && prev.position > 0 && Date.now() - (prev.updatedAt ?? 0) < FRESH_MS) return;
     library.saveProgress({ slug: title.slug, episode, position: 0, duration: 0, updatedAt: Date.now() });
   }, [selected?.kind, selected?.id, title.slug, episode]);
+
+  /* Жизненный цикл баннера «Продолжить» (итерация 3.6, задача 2):
+   * сброс при смене серии/тайтла; автоскрытие, если пользователь сам
+   * смотрит дальше 10-й секунды. */
+  useEffect(() => {
+    setResumeAt(null);
+    switchingSrc.current = false;
+  }, [episode, title.slug]);
+  useEffect(() => {
+    if (resumeAt !== null && time > 10) setResumeAt(null);
+  }, [resumeAt, time]);
 
   /* оверлей следующей серии */
   useEffect(() => {
@@ -316,8 +333,18 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                 onPause={() => setPlaying(false)}
                 onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
                 onLoadedMetadata={(e) => {
-                  setDuration(e.currentTarget.duration);
-                  e.currentTarget.playbackRate = rate;
+                  const v = e.currentTarget;
+                  setDuration(v.duration);
+                  v.playbackRate = rate;
+                  /* Баннер «Продолжить» (итерация 3.6, задача 2): только нативные источники
+                   * (loadedmetadata у iframe не бывает), position ≥ 5 c и не «почти досмотрел»
+                   * (position ≤ duration − 30). При смене озвучки баннер не показываем —
+                   * там позицию возвращает restore по keepTime. */
+                  if (switchingSrc.current) return;
+                  const prev = library.state.history.find((hh) => hh.slug === title.slug && hh.episode === episode);
+                  if (prev && prev.position >= 5 && Number.isFinite(v.duration) && prev.position <= v.duration - 30 && v.currentTime < 5) {
+                    setResumeAt(prev.position);
+                  }
                 }}
                 onProgress={(e) => {
                   const v = e.currentTarget;
@@ -335,6 +362,37 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                   <track key={st.lang} kind="subtitles" srcLang={st.lang} src={st.url} label={st.lang} default={st.lang === 'ru'} />
                 ))}
               </video>
+              {resumeAt !== null ? (
+                <div className="player__resume" role="status" aria-label="Продолжить просмотр">
+                  <span className="player__resume-text">
+                    <IconPlay size={14} /> Продолжить с {formatTime(resumeAt)}
+                  </span>
+                  <span className="player__resume-actions">
+                    <button
+                      type="button"
+                      className="btn btn--primary btn--sm"
+                      onClick={() => {
+                        const v = videoRef.current;
+                        if (v) v.currentTime = resumeAt;
+                        setResumeAt(null);
+                      }}
+                    >
+                      Продолжить
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        const v = videoRef.current;
+                        if (v) v.currentTime = 0;
+                        setResumeAt(null);
+                      }}
+                    >
+                      Начать сначала
+                    </button>
+                  </span>
+                </div>
+              ) : null}
               {data.status === 'loading' ? <div className="player__status">Собираем источники…</div> : null}
               {data.status === 'error' ? <div className="player__status player__status--error">Источники недоступны: {data.message}</div> : null}
               {nextIn !== null && nextEpisode ? (
