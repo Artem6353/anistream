@@ -1,17 +1,36 @@
-/* Расширение каталога до 5000+ тайтлов AniList + связи франшиз + персонажи + трейлеры + эфиры.
-   Три прохода (итерация 3.7):
-     1) sort:POPULARITY_DESC                    — PAGES страниц (топ популярных, как раньше);
-     2) status:RELEASING, sort:TRENDING_DESC    — 5 страниц (250 свежих онгоингов с растущим трендом);
+/* Расширение каталога: проходы AniList + связи франшиз + персонажи + трейлеры + эфиры.
+   Базовые проходы (каждый запуск, включая cron):
+     1) sort:POPULARITY_DESC                     — PAGES страниц (топ популярных, как раньше);
+     2) status:RELEASING, sort:TRENDING_DESC     — 5 страниц (250 свежих онгоингов с растущим трендом);
      3) status:NOT_YET_RELEASED, sort:START_DATE — 3 страницы (150 анонсов ближайшего времени).
+   Глубокие проходы (разовое расширение, --deep или DEEP=1/true; в cron НЕ участвуют):
+     4) sort:FAVOURITES_DESC     стр. 60–100, порог favourites ≥ 60;
+     5) format:MOVIE, POPULARITY стр. 13–22,  порог favourites ≥ 30;
+     6) format:ONA,   POPULARITY стр. 9–14,   порог favourites ≥ 30;
+     7) format:OVA,   POPULARITY стр. 11–16,  порог favourites ≥ 30.
+   Зачем: AniList API имеет жёсткий потолок 5000 записей на окно запроса
+   ("Page depth exceeds maximum allowed for API requests (5000 entries)"), а окно
+   популярности каталог уже покрыл целиком — новые тайтлы берутся из альтернативных
+   окон (рейтинг избранного, форматные топы, онгоинги/анонсы).
+   MAX_NEW (по умолчанию 400 при --deep, 0 = без лимита) — жёсткая квота новых тайтлов:
+   при её достижении прекращается и добывание страниц, и добавление; остаток пула
+   достаётся следующему запуску (проходы идемпотентны).
+   Все запросы идут с isAdult:false — каталог сохраняет чистую политику 18+.
+
    Проходы собирают общий массив media, затем дедупликация по anilistId (первое вхождение
    выигрывает). Существующие тайтлы не перезаписываются — только дозаполняются пропущенные
    relations/characters/airing (идемпотентно: повторный запуск ничего не добавляет).
-   Запуск: node scripts/expand-catalog.mjs [PAGES=100] [--report]
+   Слаги существующих тайтлов НЕ переименовываются никогда (их URL и кэш провайдеров
+   остаются живы); суффикс -<anilistId> получает только НОВЫЙ тайтл при коллизии слага.
+   Запуск: node scripts/expand-catalog.mjs [PAGES=100] [--report] [--deep]
+   Env: DEEP=1|true, MAX_NEW=<число>
    --report: после обхода вывести в stdout таблицу «Добавлено / Обновлено / Пропущено (уже есть)». */
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const ARGS = process.argv.slice(2);
 const REPORT = ARGS.includes('--report');
+const DEEP = ARGS.includes('--deep') || process.env.DEEP === '1' || process.env.DEEP === 'true';
+const MAX_NEW = Number(process.env.MAX_NEW || (DEEP ? 400 : 0));
 const PAGES = Number(ARGS.find((a) => !a.startsWith('--')) ?? 100);
 const UA = { 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (AniNova catalog sync)' };
 const F = `{ id idMal title{romaji english} format status season seasonYear episodes averageScore favourites genres
@@ -25,6 +44,15 @@ const PASSES = [
   { label: 'онгоинги', pages: 5, filter: 'status:RELEASING,sort:TRENDING_DESC' },
   { label: 'анонсы', pages: 3, filter: 'status:NOT_YET_RELEASED,sort:START_DATE' },
 ];
+if (DEEP) {
+  PASSES.push(
+    { label: 'favourites·deep', from: 60, pages: 100, filter: 'sort:FAVOURITES_DESC', minFavs: 60 },
+    { label: 'фильмы·deep', from: 13, pages: 22, filter: 'format:MOVIE,sort:POPULARITY_DESC', minFavs: 30 },
+    { label: 'ONA·deep', from: 9, pages: 14, filter: 'format:ONA,sort:POPULARITY_DESC', minFavs: 30 },
+    { label: 'OVA·deep', from: 11, pages: 16, filter: 'format:OVA,sort:POPULARITY_DESC', minFavs: 30 },
+  );
+  console.log(`глубокое расширение: ВКЛ · MAX_NEW=${MAX_NEW || 'без лимита'} · проходы: favourites(60–100, fav≥60), фильмы(13–22, fav≥30), ONA(9–14, fav≥30), OVA(11–16, fav≥30)`);
+}
 
 const titles = JSON.parse(readFileSync('lib/data/titles.json', 'utf8'));
 const have = new Map(titles.map((t) => [t.anilistId, t]));
@@ -36,11 +64,20 @@ const cleanText = (s) => String(s)
   .replace(/\s+/g, ' ')
   .trim();
 
+/* Квота MAX_NEW: newSeen — новые кандидаты, прошедшие порог качества (minFavs).
+   Добывание страниц/проходов прекращается, как только кандидатов достаточно;
+   точное отсечение до MAX_NEW делает финальный цикл добавления. */
+const newSeen = new Set();
+const capReached = () => MAX_NEW > 0 && newSeen.size >= MAX_NEW;
+
 async function fetchPass(pass) {
   const out = [];
-  for (let page = 1; page <= pass.pages; page++) {
+  const from = pass.from ?? 1;
+  const minFavs = pass.minFavs ?? 0;
+  for (let page = from; page <= pass.pages; page++) {
+    if (capReached()) { console.log(`\n[${pass.label}] квота MAX_NEW=${MAX_NEW} набрана — проход остановлен`); break; }
     const q = {
-      query: `query($page:Int){ Page(page:$page,perPage:50){ media(type:ANIME,${pass.filter}) ${F} } }`,
+      query: `query($page:Int){ Page(page:$page,perPage:50){ media(type:ANIME,isAdult:false,${pass.filter}) ${F} } }`,
       variables: { page },
     };
     let j = null;
@@ -54,18 +91,26 @@ async function fetchPass(pass) {
     }
     const media = j?.data?.Page?.media ?? [];
     if (!media.length) { console.log(`\n[${pass.label}] стр ${page} пуста — стоп`); break; }
-    out.push(...media);
-    process.stdout.write(`\r[${pass.label}] стр ${page}/${pass.pages} · получено ${out.length}`);
+    for (const m of media) {
+      if (have.has(m.id)) { out.push(m); continue; } // существующий — для дозаполнения связей
+      if ((m.favourites ?? 0) < minFavs) continue;   // ниже порога качества — не берём
+      newSeen.add(m.id);
+      out.push(m);
+    }
+    process.stdout.write(`\r[${pass.label}] стр ${page}/${pass.pages} · получено ${out.length} · новых-кандидатов ${newSeen.size}${MAX_NEW ? '/' + MAX_NEW : ''}`);
     await new Promise((r2) => setTimeout(r2, 700));
   }
-  console.log(`\r[${pass.label}] готово: ${out.length} media                                    `);
+  console.log(`\r[${pass.label}] готово: ${out.length} media · новых-кандидатов всего ${newSeen.size}          `);
   return out;
 }
 
 const raw = [];
-for (const pass of PASSES) raw.push(...(await fetchPass(pass)));
+for (const pass of PASSES) {
+  if (capReached()) { console.log(`проход «${pass.label}» пропущен: квота MAX_NEW=${MAX_NEW} уже набрана`); continue; }
+  raw.push(...(await fetchPass(pass)));
+}
 
-// общая дедупликация по anilistId: первый проход выигрывает (POPULARITY → TRENDING → START_DATE)
+// общая дедупликация по anilistId: первый проход выигрывает (POPULARITY → TRENDING → START_DATE → deep)
 const uniq = new Map();
 for (const m of raw) if (!uniq.has(m.id)) uniq.set(m.id, m);
 console.log(`дедупликация: ${raw.length} → ${uniq.size} уникальных`);
@@ -73,6 +118,7 @@ console.log(`дедупликация: ${raw.length} → ${uniq.size} уника
 const added = [];
 let updated = 0;
 let skipped = 0;
+let capped = 0;
 for (const m of uniq.values()) {
   if (have.has(m.id)) {
     const t = have.get(m.id);
@@ -89,9 +135,15 @@ for (const m of uniq.values()) {
       t.airing = m.airingSchedule.nodes.map((n) => ({ ep: n.episode, at: n.airingAt * 1000 }));
       touched = true;
     }
+    // self-heal: последующие прогоны добирают постер/описание, если их не было
+    // (у части свежих онгоингов/анонсов AniList заполняет их позже)
+    if (!t.poster && m.coverImage?.large) { t.poster = m.coverImage.large; touched = true; }
+    if (!t.banner && m.bannerImage) { t.banner = m.bannerImage; touched = true; }
+    if (!t.description && m.description) { t.description = cleanText(m.description).slice(0, 400); touched = true; }
     if (touched) updated++; else skipped++;
     continue;
   }
+  if (MAX_NEW && added.length >= MAX_NEW) { capped++; continue; } // жёсткое отсечение по квоте
   const eps = m.episodes || (m.format === 'MOVIE' ? 1 : m.status === 'RELEASING' ? 24 : 12);
   const t = {
     anilistId: m.id,
@@ -121,15 +173,26 @@ for (const m of uniq.values()) {
   have.set(m.id, t);
   added.push(t);
 }
+if (capped) console.log(`квота MAX_NEW=${MAX_NEW}: ${capped} кандидатов остались на следующий запуск`);
 
 const all = [...have.values()].sort((a, b) => b.favourites - a.favourites);
-const seen = new Set();
-for (const t of all) { if (seen.has(t.slug)) t.slug = `${t.slug}-${t.anilistId}`; seen.add(t.slug); }
+// Слаги существующих тайтлов неприкосновенны (URL/кэш провайдеров не должны тухнуть);
+// суффикс -<anilistId> — только новым при коллизии.
+const addedIds = new Set(added.map((t) => t.anilistId));
+const usedSlugs = new Set();
+for (const t of all) if (!addedIds.has(t.anilistId)) usedSlugs.add(t.slug);
+let renamed = 0;
+for (const t of all) {
+  if (addedIds.has(t.anilistId) && usedSlugs.has(t.slug)) { t.slug = `${t.slug}-${t.anilistId}`; renamed++; }
+  usedSlugs.add(t.slug);
+}
+if (renamed) console.log(`коллизии слагов: ${renamed} новых тайтлов получили суффикс -<anilistId>`);
 writeFileSync('lib/data/titles.json', JSON.stringify(all));
-console.log(`итог: ${all.length} тайтлов (добавлено ${added.length})`);
+console.log(`итог: ${all.length} тайтлов (добавлено ${added.length}${MAX_NEW ? `, квота ${MAX_NEW}` : ''})`);
 if (REPORT) {
   console.log('');
   console.log(`Добавлено: ${added.length}`);
   console.log(`Обновлено: ${updated}`);
   console.log(`Пропущено (уже есть): ${skipped}`);
+  console.log(`Не добавлено из-за квоты MAX_NEW: ${capped}`);
 }

@@ -1,8 +1,17 @@
 name: Sync catalog (auto-add new anime)
 on:
   schedule:
-    - cron: "0 */6 * * *"   # каждые 6 часов (ТЗ 3.4)
-  workflow_dispatch:        # push-триггера нет и не добавляем: коммит бота не должен запускать новый цикл
+    - cron: "0 */6 * * *"   # каждые 6 часов (ТЗ 3.4): базовые проходы (популярные/онгоинги/анонсы), без deep
+  workflow_dispatch:        # ручной запуск: разовое глубокое расширение каталога (+350–400 тайтлов)
+    inputs:
+      deep:
+        description: "Глубокое расширение: хвосты favourites/фильмы/ONA/OVA (разовая порция новых тайтлов)"
+        type: boolean
+        default: true
+      max_new:
+        description: "Квота новых тайтлов MAX_NEW (0 = без лимита)"
+        type: string
+        default: "400"
 permissions:
   contents: write
 jobs:
@@ -18,7 +27,12 @@ jobs:
           cache: npm
       - run: npm ci --omit=dev || true
       - name: expand catalog (new titles + franchise links + characters)
-        run: node scripts/expand-catalog.mjs 12
+        env:
+          # На scheduled-запусках inputs пустые: DEEP='' (глубокие проходы выключены),
+          # MAX_NEW='' → 0 (без квоты) — поведение cron не меняется.
+          DEEP: ${{ inputs.deep }}
+          MAX_NEW: ${{ inputs.max_new }}
+        run: node scripts/expand-catalog.mjs 12 --report
       - name: enrich with Shikimori (RU titles, descriptions, screenshots)
         run: node scripts/enrich-shikimori-resumable.mjs
         continue-on-error: true
