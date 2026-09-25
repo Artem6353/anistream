@@ -2,7 +2,7 @@ name: Sync catalog (auto-add new anime)
 on:
   schedule:
     - cron: "0 */6 * * *"   # каждые 6 часов (ТЗ 3.4)
-  workflow_dispatch:
+  workflow_dispatch:        # push-триггера нет и не добавляем: коммит бота не должен запускать новый цикл
 permissions:
   contents: write
 jobs:
@@ -19,10 +19,23 @@ jobs:
       - run: npm ci --omit=dev || true
       - name: expand catalog (new titles + franchise links + characters)
         run: node scripts/expand-catalog.mjs 12
+      - name: enrich with Shikimori (RU titles, descriptions, screenshots)
+        run: node scripts/enrich-shikimori-resumable.mjs
+        continue-on-error: true
+        timeout-minutes: 25
+      - name: fetch episode dates for finished titles
+        run: node scripts/fetch-episode-dates.mjs
+        continue-on-error: true
+        timeout-minutes: 20
       - name: commit if changed
         run: |
           git config user.name "anistream-bot"
           git config user.email "bot@anistream.local"
           git add lib/data/titles.json
+          # кэши — по одному с || true: git add с несуществующим pathspec падает (fatal: pathspec
+          # did not match any files, exit 128), а bridge в GH Actions не запускается, поэтому
+          # providers-resolve-cache.json на раннере может отсутствовать. .cache/img/ не добавляем.
+          git add .cache/providers-resolve-cache.json 2>/dev/null || true
+          git add .cache/episode-dates-report.json 2>/dev/null || true
           git diff --cached --quiet || git commit -m "chore(catalog): auto-sync $(date -u +%F-%H%M)"
           git diff --cached --quiet || git push

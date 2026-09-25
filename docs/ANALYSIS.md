@@ -647,3 +647,65 @@ F: `tsc --noEmit` чисто, vitest 26/26, `npm run build` успешно (49 c
 `app/globals.css` (+.history__info/.history__resume/.player__resume/
 .watch-restart). Не тронуты: `lib/library.ts`, `lib/sync.ts`, `AutoSync.tsx`,
 `app/api/*`, схема Supabase, `middleware.ts`, `EpisodeList.tsx`.
+
+## 24. Итерация 3.7: автоцикл каталога — онгоинги/анонсы + Shikimori + даты серий в GitHub Actions (25.09.2026)
+
+**Проблема (сообщение пользователя).** `sync-catalog.yml` (каждые 6 ч) запускал
+только `expand-catalog.mjs 12` — один проход `sort:POPULARITY_DESC` (топ-600).
+Новые онгоинги с низким рейтингом и анонсы не попадали в каталог, а добавленные
+тайтлы не получали RU-название/описание/кадры (Shikimori) и точные даты эпизодов
+(`epdates`) — эти скрипты запускались вручную.
+
+**Решения по задачам ТЗ.**
+
+1. **Три прохода в `scripts/expand-catalog.mjs`.** Запрос-поля (`F`), маппинг
+   полей тайтла, retry-логика (6 попыток, backoff на 429), пауза 700 мс между
+   страницами, финальная сортировка по favourites и дедуп slug — без изменений.
+   Проход 1: `sort:POPULARITY_DESC`, PAGES страниц (аргумент CLI, как раньше).
+   Проход 2: `status:RELEASING, sort:TRENDING_DESC`, 5 страниц (250).
+   Проход 3: `status:NOT_YET_RELEASED, sort:START_DATE`, 3 страницы (150).
+   Все проходы складываются в общий массив, дедупликация по `anilistId`
+   (Map, первое вхождение выигрывает), затем один цикл обработки: существующие
+   тайтлы только дозаполняются (relations/characters/airing при пустых полях,
+   как раньше), новые создаются тем же конструктором объекта. Флаг `--report`
+   (в любой позиции аргументов) печатает в stdout «Добавлено: N / Обновлено: M /
+   Пропущено (уже есть): K»; Обновлено считается только если дозаполнено
+   хотя бы одно поле реальными данными.
+
+2. **Workflow `.github/workflows/sync-catalog.yml`.** После expand добавлены
+   шаги `node scripts/enrich-shikimori-resumable.mjs` (continue-on-error: true,
+   timeout-minutes: 25) и `node scripts/fetch-episode-dates.mjs`
+   (continue-on-error: true, timeout-minutes: 20) — сами скрипты не менялись.
+   Оба пишут прогресс в `lib/data/titles.json` периодически, поэтому даже при
+   таймауте наработанное уходит в коммит. Триггеры не менялись: только
+   `schedule` + `workflow_dispatch`, `push:` в `on:` нет (проверено — пункт 4 ТЗ).
+
+3. **Коммит-шаг.** `git add lib/data/titles.json` + кэши
+   `.cache/providers-resolve-cache.json` и `.cache/episode-dates-report.json`.
+   **Отклонение от буквального ТЗ:** кэши добавляются отдельными командами с
+   `2>/dev/null || true`, а не одной строкой. Причина (проверено на реальном
+   git): `git add A B C` при отсутствии B даёт `fatal: pathspec ... did not
+   match any files` и exit 128 — шаг упал бы, коммита не было бы вовсе; на
+   раннере bridge не запускается, и providers-resolve-cache.json там может
+   отсутствовать. Построчный вариант ведёт себя ровно так, как ожидало ТЗ
+   («не найдёт — не упадёт»). `.cache/img/` не добавляется.
+
+**Приёмка (песочница, реальный AniList API).**
+A: `node scripts/expand-catalog.mjs 1 --report` → 450 media (50+250+150) →
+449 уникальных (1 пересечение между проходами) → «Добавлено: 359 / Обновлено: 0 /
+Пропущено: 90», итог 5361 тайтлов; среди новых 215 `ongoing` и 144 `upcoming`;
+структура ключей нового тайтла идентична выдаче прежнего скрипта; 5002 старых
+тайтлов на месте, ни одно поле не изменено; slug/anilistId уникальны.
+Повторный запуск `1 --report` → «Добавлено: 0 / Обновлено: 0 / Пропущено: 449»,
+titles.json байт-в-байт идентичен (md5 совпал) — идемпотентность.
+B/C: запуск workflow в GH Actions и прод-проверка — на стороне пользователя
+(из песочницы нет доступа к репозиторию/Vercel).
+D: `tsc --noEmit` чисто, vitest 26/26, `npm run build` успешно (95 c, единственный
+warning — известный фреймворковый process.cwd/Edge Runtime); titles.json
+восстановлен из бэкапа (md5 = исходный), 5002 тайтла целы.
+
+**Файлы итерации:** `scripts/expand-catalog.mjs` (переписан: три прохода +
+дедупликация + --report), `.github/workflows/sync-catalog.yml` (+2 шага,
+построчный git add кэшей), `docs/ANALYSIS.md` (§24). Не тронуты:
+`enrich-shikimori-resumable.mjs`, `fetch-episode-dates.mjs`, `hydrate-embeds.mjs`,
+`warm-providers.mjs`, схема titles.json, остальные workflow.
