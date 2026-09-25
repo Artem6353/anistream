@@ -7,9 +7,46 @@ const SUPA_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 const SUPA_SERVICE =
   process.env.SUPABASE_SERVICE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
+type ReviewItem = Record<string, unknown> & { id: string };
+
+// Подтягиваем реакции текущего пользователя (если cookie есть)
+async function attachMyReactions(items: ReviewItem[]) {
+  const userId = await getUserId();
+  if (!userId || !items.length) return;
+  const ids = items.map((i) => i.id).filter(Boolean);
+  const reactionsRes = await fetch(
+    `${SUPA_URL}/rest/v1/review_reactions?user_id=eq.${encodeURIComponent(userId)}&review_id=in.(${ids
+      .map((id) => encodeURIComponent(id))
+      .join(',')})&select=review_id,kind`,
+    { headers: { apikey: SUPA_ANON, Authorization: `Bearer ${SUPA_ANON}` } },
+  );
+  if (reactionsRes.ok) {
+    const reactions = (await reactionsRes.json()) as Array<{ review_id: string; kind: string }>;
+    const map = new Map(reactions.map((x) => [x.review_id, x.kind]));
+    for (const item of items) {
+      item.myReaction = map.get(item.id) ?? null;
+    }
+  }
+}
+
 export async function GET(request: Request) {
-  const slug = new URL(request.url).searchParams.get('slug') ?? '';
+  const params = new URL(request.url).searchParams;
+  const slug = params.get('slug') ?? '';
+  const limitParam = params.get('limit');
   if (!supabaseConfigured()) return NextResponse.json({ mode: 'local', items: [] });
+
+  // Ветка для виджета «свежие отзывы» на главной: последние N отзывов по всему каталогу
+  if (limitParam) {
+    const limit = Math.max(1, Math.min(20, Number.parseInt(limitParam, 10) || 5));
+    const r = await fetch(
+      `${SUPA_URL}/rest/v1/reviews?order=ts.desc&limit=${limit}`,
+      { headers: { apikey: SUPA_ANON, Authorization: `Bearer ${SUPA_ANON}` } },
+    );
+    if (!r.ok) return NextResponse.json({ mode: 'supabase', items: [] }, { status: 502 });
+    const items = (await r.json()) as ReviewItem[];
+    await attachMyReactions(items);
+    return NextResponse.json({ mode: 'supabase', items });
+  }
 
   const r = await fetch(
     `${SUPA_URL}/rest/v1/reviews?slug=eq.${encodeURIComponent(slug)}&order=ts.desc&limit=200`,
@@ -17,26 +54,8 @@ export async function GET(request: Request) {
   );
   if (!r.ok) return NextResponse.json({ mode: 'supabase', items: [] }, { status: 502 });
 
-  const items = (await r.json()) as Array<Record<string, unknown> & { id: string }>;
-
-  // Подтягиваем реакции текущего пользователя (если cookie есть)
-  const userId = await getUserId();
-  if (userId && items.length) {
-    const ids = items.map((i) => i.id).filter(Boolean);
-    const reactionsRes = await fetch(
-      `${SUPA_URL}/rest/v1/review_reactions?user_id=eq.${encodeURIComponent(userId)}&review_id=in.(${ids
-        .map((id) => encodeURIComponent(id))
-        .join(',')})&select=review_id,kind`,
-      { headers: { apikey: SUPA_ANON, Authorization: `Bearer ${SUPA_ANON}` } },
-    );
-    if (reactionsRes.ok) {
-      const reactions = (await reactionsRes.json()) as Array<{ review_id: string; kind: string }>;
-      const map = new Map(reactions.map((x) => [x.review_id, x.kind]));
-      for (const item of items) {
-        item.myReaction = map.get(item.id) ?? null;
-      }
-    }
-  }
+  const items = (await r.json()) as ReviewItem[];
+  await attachMyReactions(items);
 
   return NextResponse.json({ mode: 'supabase', items });
 }

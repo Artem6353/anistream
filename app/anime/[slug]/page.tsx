@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const t = getTitle(slug);
   if (!t) notFound();
   return {
-    title: `${t.ru} (${t.year || '—'}) смотреть онлайн — AniStream`,
+    title: `${t.ru} (${t.year || '—'}) смотреть онлайн — AniNova`,
     description: (t.description || t.shikimori?.description || `Смотреть ${t.ru} онлайн: серии, озвучки, график выхода.`).slice(0, 150),
     alternates: { canonical: `/anime/${t.slug}` },
     openGraph: {
@@ -229,7 +229,7 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
       {similar.length ? (
         <Rail title="Похожее">
           {similar.map((t) => (
-            <PosterCard key={t.slug} title={t} />
+            <PosterCard key={t.slug} title={t} showBadge={false} />
           ))}
         </Rail>
       ) : null}

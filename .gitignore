@@ -12,3 +12,5 @@ playwright-report/
 
 data/vapid.json
 .cache/img/
+
+screenshots/

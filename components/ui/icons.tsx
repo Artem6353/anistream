@@ -186,3 +186,30 @@ export const IconCommand = (p: P) => (
     <path d="M9 9V6a3 3 0 1 0-3 3h3Zm0 0v6m0-6h6m-6 6v3a3 3 0 1 1-3-3h3Zm6-6h3a3 3 0 1 0-3-3v3Zm0 6v3a3 3 0 1 0 3-3h-3Zm0-6v6" />
   </svg>
 );
+export const IconSword = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M14.5 17.5 3 6V3h3l11.5 11.5" />
+    <path d="M13 19l6-6" />
+    <path d="M16 16l4 4" />
+    <path d="M19 21l2-2" />
+  </svg>
+);
+export const IconHeart = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z" />
+  </svg>
+);
+export const IconMask = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 4c2.7 1.2 5.3 1.8 8 1.8S17.3 5.2 20 4v7.5c0 5-3.6 8.5-8 8.5s-8-3.5-8-8.5V4Z" />
+    <path d="M8.5 10.5h.01" />
+    <path d="M15.5 10.5h.01" />
+    <path d="M9 14.5c.9.8 1.9 1.2 3 1.2s2.1-.4 3-1.2" />
+  </svg>
+);
+export const IconPlanet = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="5.2" />
+    <ellipse cx="12" cy="12" rx="10" ry="3.4" transform="rotate(-16 12 12)" />
+  </svg>
+);

@@ -54,7 +54,7 @@ export default async function PlayerPage({ params }: Props) {
       {similar.length ? (
         <Rail title="Похожее">
           {similar.map((t) => (
-            <PosterCard key={t.slug} title={t} />
+            <PosterCard key={t.slug} title={t} showBadge={false} />
           ))}
         </Rail>
       ) : null}

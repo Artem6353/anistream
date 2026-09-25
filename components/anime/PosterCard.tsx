@@ -1,10 +1,18 @@
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
 import type { Title } from '@/lib/types';
-import { TYPE_LABELS, genreLabel } from '@/lib/labels';
+import { STATUS_LABELS, TYPE_LABELS, genreLabel } from '@/lib/labels';
 import { episodesWord } from '@/lib/format';
 import { PosterArt } from './PosterArt';
 import { BookmarkButton } from './BookmarkButton';
 import { IconPlay, IconStar } from '@/components/ui/icons';
+
+/** Цвета статусных плашек (ТЗ 4.0, задача 6). */
+const BADGE_COLORS: Record<string, string> = {
+  ongoing: 'var(--success)',
+  finished: '#60a5fa',
+  upcoming: 'var(--warn)',
+};
 
 /** Карточка тайтла: постер, рейтинг, быстрые действия. */
 export function PosterCard({
@@ -13,6 +21,7 @@ export function PosterCard({
   resumeEpisode,
   resumeHref,
   resumeNote,
+  showBadge = true,
 }: {
   title: Title;
   progress?: number;
@@ -23,12 +32,22 @@ export function PosterCard({
   /** Замена подписи (итерация 3.6, задача 4): для iframe-источников позиция недоступна,
    *  поэтому вместо «Продолжить с серии N» показываем «Открыто N назад». */
   resumeNote?: string;
+  /** Плашка статуса (онгоинг/завершён/анонс) на постере; отключается в рейлах «Похожее». */
+  showBadge?: boolean;
 }) {
   const href = resumeHref ?? `/anime/${title.slug}`;
   return (
     <article className="card">
       <Link className="card__media" href={href} aria-label={title.ru}>
         <PosterArt src={title.poster} seed={title.slug} initials={title.romaji} alt={`Постер: ${title.ru}`} />
+        {showBadge ? (
+          <span
+            className="card__badge"
+            style={{ '--badge-color': BADGE_COLORS[title.status] } as CSSProperties}
+          >
+            {STATUS_LABELS[title.status]}
+          </span>
+        ) : null}
         {title.score > 0 ? (
           <span className="card__score" title={`Рейтинг ${title.score} / 10`}>
             <IconStar size={11} />

@@ -12,6 +12,7 @@ import { todayIndex } from '@/lib/schedule';
 import { HomeSchedule } from '@/components/schedule/HomeSchedule';
 import { ForYouRail } from '@/components/anime/ForYouRail';
 import { IconCalendar, IconGrid, IconSparkles } from '@/components/ui/icons';
+import { HomeSidebar } from '@/components/home/Sidebar';
 
 export const revalidate = 3600;
 
@@ -21,7 +22,8 @@ export default async function HomePage() {
   const today = todayIndex();
 
   return (
-    <>
+    <div className="home-layout">
+      <div className="home-layout__main">
       <Hero slides={heroSlides()} />
 
       <div className="page-section">
@@ -83,7 +85,7 @@ export default async function HomePage() {
       <section className="container">
         <div className="about-card">
           <h2>
-            <IconSparkles size={18} /> Как устроен AniStream 2.0
+            <IconSparkles size={18} /> Как устроен AniNova 2.0
           </h2>
           <p>
             Каталог собран из метаданных AniList и дополнен русскими описаниями; расписание выхода серий подтягивается
@@ -106,6 +108,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-    </>
+      </div>
+      <HomeSidebar />
+    </div>
   );
 }

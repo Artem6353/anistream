@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     return new Response(cached, { headers: cacheHeaders(parsed) });
   } catch {}
 
-  const up = await fetch(parsed, { headers: { 'User-Agent': 'Mozilla/5.0 (AniStream image proxy)' } });
+  const up = await fetch(parsed, { headers: { 'User-Agent': 'Mozilla/5.0 (AniNova image proxy)' } });
   if (!up.ok) return NextResponse.json({ error: 'upstream ' + up.status }, { status: 502 });
   const buf = Buffer.from(await up.arrayBuffer());
   try {

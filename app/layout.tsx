@@ -16,8 +16,8 @@ import { I18nProvider } from '@/lib/i18n';
 export const metadata: Metadata = {
   metadataBase: new URL(getProvidersConfig().site.url),
   title: {
-    default: 'AniStream — каталог аниме: онгоинги, расписание и плеер',
-    template: '%s · AniStream',
+    default: 'AniNova — каталог аниме: онгоинги, расписание и плеер',
+    template: '%s · AniNova',
   },
   description:
     'Каталог аниме с русскими описаниями: подборки, жанры, живое расписание выхода серий, локальная история просмотров и плеер с автопереходом.',
@@ -25,8 +25,8 @@ export const metadata: Metadata = {
   alternates: { languages: { ru: '/', en: '/?lang=en' } },
   openGraph: {
     type: 'website',
-    siteName: 'AniStream',
-    title: 'AniStream — каталог аниме',
+    siteName: 'AniNova',
+    title: 'AniNova — каталог аниме',
     description: 'Подборки, жанры, расписание и плеер. Метаданные AniList, локальный профиль без регистрации.',
   },
 };

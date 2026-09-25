@@ -51,7 +51,7 @@ export function SettingsPanel() {
             value={settings.defaultProvider}
             onChange={(e) => library.setSettings({ defaultProvider: e.target.value })}
           >
-            <option value="demo">AniStream Demo (без ключей)</option>
+            <option value="demo">AniNova Demo (без ключей)</option>
             <option value="kodik">Kodik (нужен KODIK_TOKEN)</option>
             <option value="aniboom">Aniboom (в разработке)</option>
           </select>

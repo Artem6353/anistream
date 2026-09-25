@@ -11,7 +11,7 @@ import { IconGrid, IconList } from '@/components/ui/icons';
 
 export const revalidate = 1800;
 export const metadata: Metadata = {
-  title: 'Каталог аниме онлайн — все тайтлы, фильтры и жанры — AniStream',
+  title: 'Каталог аниме онлайн — все тайтлы, фильтры и жанры — AniNova',
   alternates: { canonical: '/catalog' },
   description: 'Полный каталог аниме: фильтры по годам, жанрам, типу, статусу и длине; виды «сетка» и «список».',
 };

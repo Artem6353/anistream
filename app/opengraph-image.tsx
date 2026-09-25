@@ -17,7 +17,7 @@ export default function OpenGraphImage() {
           gap: 18,
           padding: 72,
           color: '#eef2f8',
-          backgroundImage: `url(${artUri('anistream-hero', 'AS', true)})`,
+          backgroundImage: `url(${artUri('aninova-hero', 'AN', true)})`,
           backgroundSize: 'cover',
         }}
       >
@@ -38,7 +38,7 @@ export default function OpenGraphImage() {
           >
             AS
           </div>
-          <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-0.02em' }}>AniStream</div>
+          <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-0.02em' }}>AniNova</div>
         </div>
         <div style={{ fontSize: 54, fontWeight: 800, letterSpacing: '-0.03em', maxWidth: 900 }}>
           Каталог аниме: онгоинги, расписание и плеер

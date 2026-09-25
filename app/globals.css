@@ -2832,3 +2832,530 @@ html[data-tv='true'] .card:focus-within .card__media {
 .source--skeleton .source__name { width: 60%; }
 .source--skeleton .source__meta { width: 40%; }
 @keyframes skeleton { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* ============================================================
+   AniNova: редизайн ТЗ 4.0 — сетка главной с сайдбаром, плотность,
+   статусные бейджи, расписание v2, компактный футер
+   ============================================================ */
+
+/* ---------- Плотность главной (задача 5) ---------- */
+.page-section {
+  padding: 14px 0;
+}
+.rail-section {
+  padding: 14px 0;
+}
+.rail {
+  gap: 10px;
+}
+@media (min-width: 561px) {
+  .card {
+    width: 200px;
+  }
+}
+.section-title {
+  position: relative;
+  padding-left: 14px;
+}
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 1.05em;
+  border-radius: 2px;
+  background: var(--grad);
+}
+
+/* ---------- Статусный бейдж на постере (задача 6) ---------- */
+.card__badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: 3px 8px 4px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #0b0d11;
+  background: var(--badge-color, var(--accent));
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+/* ---------- Сетка главной: контент + сайдбар 340px (задача 3) ---------- */
+.home-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 28px;
+  width: min(1280px, 100% - 48px);
+  margin-inline: auto;
+  align-items: start;
+}
+.home-layout__main {
+  min-width: 0;
+}
+.home-layout__main .container {
+  width: 100%;
+  margin-inline: 0;
+}
+.home-layout__main .rail {
+  padding-inline: 0;
+  mask-image: linear-gradient(to right, transparent, #000 2%, #000 98%, transparent);
+}
+
+.home-sidebar {
+  position: sticky;
+  top: calc(var(--header-h) + 16px);
+  max-height: calc(100vh - var(--header-h) - 32px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 2px 6px 10px 2px;
+  scrollbar-width: thin;
+}
+.sidebar-block {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+.sidebar-block__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sidebar-block__meta {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--muted-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.sidebar-block__empty {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.sidebar-block__empty a {
+  color: var(--accent-2);
+}
+.sidebar-block__more {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-2);
+}
+
+.sidebar-top {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.sidebar-top__row {
+  display: grid;
+  grid-template-columns: 16px 34px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  color: var(--text);
+  text-decoration: none;
+}
+.sidebar-top__row:hover .sidebar-top__name {
+  color: var(--accent-2);
+}
+.sidebar-top__rank {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--muted-2);
+  text-align: center;
+}
+.sidebar-top__poster {
+  width: 34px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+.sidebar-top__name {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sidebar-top__score {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--warn);
+}
+
+.sidebar-airing {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.sidebar-airing__row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 9px;
+  color: var(--text);
+  text-decoration: none;
+}
+.sidebar-airing__time {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-2);
+  padding-top: 1px;
+}
+.sidebar-airing__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.sidebar-airing__name {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sidebar-airing__ep {
+  font-size: 11px;
+  color: var(--muted-2);
+}
+
+.sidebar-moods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.sidebar-mood {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-elev);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.2s;
+}
+.sidebar-mood:hover {
+  border-color: var(--line-strong);
+}
+.sidebar-mood svg {
+  color: var(--accent);
+}
+.sidebar-mood__label {
+  font-size: 12px;
+  font-weight: 700;
+}
+.sidebar-mood__count {
+  font-size: 11px;
+  color: var(--muted-2);
+}
+
+.sidebar-reviews {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sidebar-review + .sidebar-review {
+  border-top: 1px dashed var(--line);
+  padding-top: 9px;
+}
+.sidebar-review__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+.sidebar-review__name {
+  font-weight: 700;
+}
+.sidebar-review__rating {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--warn);
+}
+.sidebar-review__text {
+  margin: 2px 0 4px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sidebar-review__meta {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted-2);
+}
+.sidebar-review__meta a {
+  color: var(--muted);
+  font-weight: 600;
+}
+.sidebar-reviews__skeleton {
+  height: 118px;
+  border-radius: 10px;
+  background: linear-gradient(100deg, var(--surface) 40%, var(--surface-2) 50%, var(--surface) 60%);
+  background-size: 200% 100%;
+  animation: sidebar-shimmer 1.2s linear infinite;
+}
+@keyframes sidebar-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ---------- Расписание v2 (задача 7) ---------- */
+.schedule--v2 .schedule__today {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 18px;
+}
+.schedule__today-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.schedule__today-head h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+.schedule__today-count {
+  font-size: 12px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.schedule__today-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+.schedule__entry--big {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-areas:
+    'poster time'
+    'poster info';
+  gap: 4px 12px;
+  align-items: start;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-elev);
+}
+.schedule__entry--big .schedule__poster {
+  grid-area: poster;
+  width: 56px;
+  height: 76px;
+}
+.schedule__entry--big .schedule__time {
+  grid-area: time;
+  justify-self: end;
+}
+.schedule__entry--big .schedule__info {
+  grid-area: info;
+}
+.schedule__entry--big .schedule__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.schedule__week {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.schedule__day--compact {
+  min-height: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+.schedule__day--compact .schedule__day-head {
+  margin-bottom: 6px;
+}
+.schedule__entry--compact {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 0;
+}
+.schedule__entry--compact .schedule__poster {
+  grid-column: 1;
+  grid-row: 1;
+  width: 30px;
+  height: 40px;
+  border-radius: 5px;
+}
+.schedule__entry--compact .schedule__info {
+  grid-column: 2;
+  grid-row: 1;
+}
+.schedule__entry--compact .schedule__time {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  white-space: nowrap;
+}
+.schedule__entry--compact .schedule__info {
+  min-width: 0;
+}
+.schedule__entry--compact .schedule__time {
+  font-size: 10.5px;
+}
+.schedule__entry--compact .schedule__title {
+  font-size: 12px;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.schedule__entry--compact .schedule__meta {
+  font-size: 10.5px;
+}
+.schedule__showall {
+  margin-top: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.schedule__showall:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+.schedule__dayrow {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--muted-2);
+}
+.schedule__dayrow-name {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* ---------- Компактный футер (задача 8) ---------- */
+.footer--compact {
+  margin-top: 32px;
+  padding: 24px 0 16px;
+}
+.footer--compact .footer__grid {
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 24px;
+}
+.footer--compact .footer__brand p {
+  margin-top: 8px;
+  font-size: 12.5px;
+  max-width: 42ch;
+}
+.footer__docs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+}
+.footer--compact .footer__col a {
+  font-size: 12.5px;
+}
+.footer--compact .footer__bottom {
+  margin-top: 18px;
+  padding-top: 12px;
+  font-size: 12px;
+}
+
+/* ---------- Адаптив ---------- */
+@media (max-width: 1100px) {
+  .home-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .home-sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+@media (max-width: 900px) {
+  .schedule__week {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .home-sidebar {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .schedule__week {
+    grid-template-columns: 1fr;
+  }
+  .footer--compact .footer__grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}

@@ -28,7 +28,7 @@ const PROVIDER_NAMES: Record<string, string> = {
   kodik: 'Kodik',
   cvh: 'CVH (AnimeGo)',
   aniboom: 'AniBoom',
-  demo: 'AniStream Demo',
+  demo: 'AniNova Demo',
   manual: 'Ручной источник',
 };
 

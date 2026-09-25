@@ -54,10 +54,10 @@ export function SiteHeader() {
       </a>
       <header className={`header ${scrolled ? 'is-scrolled' : ''}`}>
         <div className="container header__inner">
-          <Link className="header__brand" href="/" aria-label="AniStream — на главную">
+          <Link className="header__brand" href="/" aria-label="AniNova — на главную">
             <Logo />
             <span className="header__brand-text">
-              AniStream
+              AniNova
               <em>каталог аниме</em>
             </span>
           </Link>

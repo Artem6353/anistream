@@ -709,3 +709,81 @@ warning — известный фреймворковый process.cwd/Edge Runti
 построчный git add кэшей), `docs/ANALYSIS.md` (§24). Не тронуты:
 `enrich-shikimori-resumable.mjs`, `fetch-episode-dates.mjs`, `hydrate-embeds.mjs`,
 `warm-providers.mjs`, схема titles.json, остальные workflow.
+
+## 25. Итерация 4.0: ребрендинг AniStream → AniNova + редизайн главной, расписания и футера (25.09.2026)
+
+**Задачи ТЗ.** (1) Переименование бренда только в UI (components/, app/); (2) новый лого-набор
+(выбран вариант V6 — «N» с искрой-новой); (3) правый сайдбар главной 340 px с четырьмя блоками;
+(4) ветка `?limit=N` в GET `/api/social/reviews`; (5) плотность главной; (6) статусные бейджи на
+PosterCard; (7) редизайн /schedule (крупный блок «Сегодня», компактные дни, пустые дни строкой);
+(8) компактный футер.
+
+**Лого.** История вариантов: V1–V4 — генеративные плитки (AI), V5 — рукописный SVG («N» на
+градиенте #8b5cf6→#ec4899), V6 = V5 + искра-нова справа сверху (выбор пользователя). Артефакты:
+`public/logo-icon.svg` (64×64), `logo-icon.png` (512), `logo-icon-192.png`, `favicon.png` (32),
+`logo-icon-maskable.png` (512, full-bleed + safe zone 0.7), `logo-mono.svg` (белый глиф для OG),
+заменены `app/icon.svg` и `public/icon-maskable.svg`; `components/layout/Logo.tsx` переведён на
+`<img src="/logo-icon.svg">` с сохранением пропа size; manifest перечисляет шесть иконок
+(any: svg/512/192/32 + maskable: svg/512).
+
+**Переименование.** Точечно заменены строки бренда: SiteHeader (aria-label, текст), Footer,
+PlayerShell (`demo: 'AniNova Demo'`), SettingsPanel (текст опции), metadata app/layout.tsx,
+app/manifest.ts, app/opengraph-image.tsx (включая seed арта `aninova-hero`/`AN`),
+app/anime/[slug]/(page|opengraph-image).tsx, app/(catalog|search|genre/[slug])/page.tsx,
+app/page.tsx («Как устроен AniNova 2.0»), app/img/route.ts (UA прокси). Приёмочный grep
+`grep -ri anistream --include=*.tsx --include=*.ts components/ app/` без исключений
+`anistream:` (ключи localStorage), `anistream-catalog`, `Artem6353` — пуст. Ключи localStorage
+`anistream:*` не переименовывались (запрет ТЗ), проверено runtime: пишутся `anistream:history`,
+`anistream:lastsrc:*`.
+
+**Сайдбар (`components/home/Sidebar.tsx`, серверный + клиентский `RecentReviews.tsx`).**
+Блок 1 «Топ недели»: topTitles(5), ранг/постер/скор. Блок 2 «Сегодня в эфире»: groupByDay(getWeekSchedule())
+по todayIndex(), время в Европе/Moscow через Intl, ссылка «Всё расписание». Блок 3 «Жанры под
+настроение»: 4 плитки с новыми иконками IconSword/IconHeart/IconMask/IconPlanet и счётчиками
+genreStats(). Блок 4 «Свежие отзывы»: клиентский fetch `/api/social/reviews?limit=5`, имена тайтлов
+догружаются `/api/titles?slugs=`; в local-режиме — вежливое пустое состояние. Обёртка главной:
+`.home-layout` (grid minmax(0,1fr)+340px), Hero и рейлы внутри `.home-layout__main` с локальными
+переопределениями `.container`/`.rail` (rail теряет full-bleed padding). Сайдбар sticky
+(top header+16) с внутренним скроллом — осознанное отклонение, иначе длинная колонка ломала бы
+прокрутку страницы.
+
+**Эндпоинт отзывов.** GET получил ветку `?limit=N` (кламп 1..20, по умолчанию 5): запрос без
+фильтра slug, order ts.desc; join myReaction вынесен в общий `attachMyReactions()` для обеих
+веток — поведение slug-ветки не изменилось.
+
+**Плотность и бейджи.** `.page-section`/`.rail-section` padding 14px 0, `.rail` gap 10px,
+`.card` 200 px (десктоп, мобильные 148 px сохранены), у `.section-title` акцентная планка
+`::before` 4 px (var(--grad)). PosterCard: опциональный проп `showBadge` (default true), плашка
+`.card__badge` с CSS-переменной `--badge-color` (ongoing=#34d399, finished=#60a5fa,
+upcoming=#fbbf24); в рейлах «Похожее» (страницы тайтла и серии) бейджи выключены.
+
+**Расписание v2 (`ScheduleBoard.tsx`).** Крупная секция «Сегодня · день, дата» со счётчиком
+выходов и карточками 56×76; остальные 6 дней — компактные колонки 3×2 (≤5 строк + кнопка
+«Показать все (N)»/«Свернуть»); пустые дни — одна пунктирная строка «выходов нет» на всю ширину
+сетки. TodayList для главной не тронут.
+
+**Футер.** `footer--compact`: 3 колонки (бренд+описание, «Документы» сеткой 2×2, «О проекте»
+со ссылкой AniList), нижняя строка © + права; padding 24/0/16, margin-top 32. Добавлен ключ
+i18n `docs` (RU/EN).
+
+**Приёмка (песочница).** A: grep бренда пуст. B: все лого-файлы и /manifest.webmanifest,
+/opengraph-image, /icon.svg — 200; в manifest 6 иконок, name/short_name = AniNova. C: computed
+styles главной — grid `912px 340px`, 4 блока, position sticky, ширина сайдбара 340 px; MSK-время
+в блоке эфиров; local-режим отзывов даёт пустое состояние. D: `/api/social/reviews?limit=5` →
+`{"mode":"local","items":[]}` (Supabase не настроен), slug-ветка 200. E: padding `.page-section`
+14px 0, gap рейла 10px, карточка 200 px, планка заголовка 4 px. F: /catalog?status=ongoing —
+24 бейджа «Онгоинг» rgb(52,211,153); в «Похожее» бейджей 0. G: /schedule — секция today (3 входа),
+4 компактных дня, 2 строки пустых дней, кнопки «Показать все (N)»; mobile 390 px без
+горизонтального скролла. H: регресс — tsc чисто, vitest 26/26, build ok, smoke «All routes OK»,
+плеер с перехватом probe.mp4: currentTime +19.9 s за 20 s_wall, ошибок консоли нет (кроме
+внешних CERT санбокса); ключи localStorage прежние. Скриншоты before/after: home (desktop+mobile),
+title, schedule (desktop+mobile), footer, sidebar, catalog — в /screenshots.
+
+**Отклонения.** (1) lib/providers/* не тронут (запрет ТЗ): в плеере и TG-алертах остаётся лейбл
+«AniStream Demo»/«AniStream» — видимая строка в панели источников плеера. (2) В PlayerShell и
+SettingsPanel заменены одиночные строковые литералы бренда (точечно, без переписывания
+компонентов). (3) Сайдбар sticky с внутренним скроллом: на низких вьюпортах четвёртый блок
+уходит во fold панели. (4) icon-maskable переведён на full-bleed градиент с глифом в safe zone
+(ранее — тёмная подложка с врезкой). (5) Hero главной живёт в суженной колонке main (markup ТЗ),
+full-bleed герой исчез. (6) lib/config/providers.config.ts и lib/*.ts (UA, site.name по
+умолчанию) не переименованы — вне разрешённого контура задач 1.

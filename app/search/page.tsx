@@ -5,7 +5,7 @@ import { SearchForm } from '@/components/layout/SearchForm';
 
 export const metadata: Metadata = {
   title: 'Поиск',
-  description: 'Поиск по каталогу AniStream: русские и ромадзи-названия, жанры, годы.',
+  description: 'Поиск по каталогу AniNova: русские и ромадзи-названия, жанры, годы.',
 };
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {

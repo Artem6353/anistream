@@ -15,7 +15,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   if (!GENRE_LABELS[slug]) notFound();
-  return { title: `Аниме жанра ${GENRE_LABELS[slug]} — список тайтлов — AniStream`, alternates: { canonical: `/genre/${slug}` } };
+  return { title: `Аниме жанра ${GENRE_LABELS[slug]} — список тайтлов — AniNova`, alternates: { canonical: `/genre/${slug}` } };
 }
 
 export default async function GenrePage({ params, searchParams }: Props) {

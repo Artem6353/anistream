@@ -9,7 +9,7 @@ export const contentType = 'image/png';
 export default async function TitleOpenGraphImage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const title = getTitle(slug);
-  if (!title) return new ImageResponse(<div style={{ fontSize: 40 }}>AniStream</div>, size);
+  if (!title) return new ImageResponse(<div style={{ fontSize: 40 }}>AniNova</div>, size);
 
   let banner: ArrayBuffer | null = null;
   try {
@@ -64,7 +64,7 @@ export default async function TitleOpenGraphImage({ params }: { params: Promise<
             </div>
             <div style={{ display: 'flex', fontSize: 46, fontWeight: 800, letterSpacing: '-0.03em', color: '#eef2f8', lineHeight: 1.1 }}>{title.ru}</div>
             <div style={{ display: 'flex', fontSize: 22, color: '#cdd6e4', lineHeight: 1.4 }}>{title.description.length > 140 ? title.description.slice(0, 140) + '…' : title.description}</div>
-            <div style={{ display: 'flex', fontSize: 20, color: '#a78bfa', fontWeight: 700 }}>AniStream — смотреть онлайн</div>
+            <div style={{ display: 'flex', fontSize: 20, color: '#a78bfa', fontWeight: 700 }}>AniNova — смотреть онлайн</div>
           </div>
         </div>
       </div>
