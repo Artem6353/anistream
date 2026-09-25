@@ -15,7 +15,10 @@ export function rateLimit(key: string, limit: number, windowMs = 60_000): boolea
 export const LIMITS: { prefix: string; limit: number }[] = [
   { prefix: '/api/search', limit: 30 },
   { prefix: '/api/providers', limit: 60 },
-  { prefix: '/api/social/reviews', limit: 10 },
+  // Реакции на отзывы: специфичное правило ДО общего.
+  // Иначе клики по лайкам/дизлайкам упираются в общий лимит 10/мин слишком быстро.
+  { prefix: '/api/social/reviews/', limit: 30 },
+  { prefix: '/api/social/reviews', limit: 30 },
   { prefix: '/api/reco', limit: 30 },
   { prefix: '/api/availability', limit: 60 },
 ];
