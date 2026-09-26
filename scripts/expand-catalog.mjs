@@ -48,6 +48,12 @@ if (DEEP) {
     { label: 'score·ONA·deep', from: 1, pages: 100, filter: 'sort:SCORE_DESC,format:ONA', minScore: 65 },
     { label: 'fresh·FINISHED·deep', from: 1, pages: 100, filter: 'sort:START_DATE_DESC,status:FINISHED', minScore: 65 },
   );
+  // Годовые окна POPULARITY_DESC (2026→2004): каждое окно ≤5000 записей, реальный total
+  // меньше (проход сам останавливается на пустой странице). Хвосты годовых топов —
+  // основной резерв новых тайтлов после исчерпания шести окон выше.
+  for (let y = 2026; y >= 2004; y--) {
+    PASSES.push({ label: `year·${y}·deep`, from: 1, pages: 100, filter: `seasonYear:${y},sort:POPULARITY_DESC`, minScore: 65 });
+  }
   console.log(`глубокое расширение: ВКЛ · MAX_NEW=${MAX_NEW || 'без лимита'} · 6 окон: favourites(60–100,fav≥30), score≥65×TV/MOVIE/OVA/ONA, START_DATE_DESC+FINISHED`);
 }
 
