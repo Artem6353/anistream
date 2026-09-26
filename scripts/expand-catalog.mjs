@@ -25,7 +25,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const ARGS = process.argv.slice(2);
 const REPORT = ARGS.includes('--report');
 const DEEP = ARGS.includes('--deep') || process.env.DEEP === '1' || process.env.DEEP === 'true';
-const MAX_NEW = Number(process.env.MAX_NEW || (DEEP ? 5000 : 0));
+const MAX_NEW = Number(process.env.MAX_NEW || (DEEP ? 3000 : 0));
 const PAGES = Number(ARGS.find((a) => !a.startsWith('--')) ?? 100);
 const UA = { 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (AniNova catalog sync)' };
 const F = `{ id idMal title{romaji english} format status season seasonYear episodes averageScore favourites genres
@@ -52,7 +52,29 @@ if (DEEP) {
   // меньше (проход сам останавливается на пустой странице). Хвосты годовых топов —
   // основной резерв новых тайтлов после исчерпания шести окон выше.
   for (let y = 2026; y >= 2004; y--) {
-    PASSES.push({ label: `year·${y}·deep`, from: 1, pages: 100, filter: `seasonYear:${y},sort:POPULARITY_DESC`, minScore: 65 });
+    PASSES.push({ label: `year·${y}·deep`, from: 1, pages: 100, filter: `seasonYear:${y},sort:POPULARITY_DESC`, minScore: 60, minFavs: 10 });
+  }
+  // Блок A: окна жанр×год (12 жанров × 2024→2020 = 60 окон), гейты мягче:
+  // score≥60 и fav≥10. Окна сортировок POPULARITY/SCORE/START_DATE исчерпаны
+  // (потолок AniList 5000/окно), жанровые окна дают новый срез ранжирования.
+  const GENRES = ['Action', 'Drama', 'Fantasy', 'Romance', 'Comedy', 'Slice of Life', 'Sci-Fi', 'Horror', 'Mystery', 'Supernatural', 'Sports', 'Music'];
+  // Расширение блока A (замеры 2026-09-26): форматные окна, давшие выход новых:
+  // SPECIAL ~8 новых/стр, TV_SHORT ~2/стр; годовые окна перегейтованы на score≥60/fav≥10.
+  PASSES.push(
+    { label: 'format·SPECIAL·deep', from: 1, pages: 100, filter: 'format:SPECIAL,sort:POPULARITY_DESC', minScore: 60, minFavs: 10 },
+    { label: 'format·TV_SHORT·deep', from: 1, pages: 100, filter: 'format:TV_SHORT,sort:POPULARITY_DESC', minScore: 60, minFavs: 10 },
+  );
+  for (const g of GENRES) {
+    for (let y = 2024; y >= 2020; y--) {
+      PASSES.push({
+        label: `genre·${g}·${y}·deep`,
+        from: 1,
+        pages: 100,
+        filter: `genre_in:["${g}"],seasonYear:${y},sort:POPULARITY_DESC`,
+        minScore: 60,
+        minFavs: 10,
+      });
+    }
   }
   console.log(`глубокое расширение: ВКЛ · MAX_NEW=${MAX_NEW || 'без лимита'} · 6 окон: favourites(60–100,fav≥30), score≥65×TV/MOVIE/OVA/ONA, START_DATE_DESC+FINISHED`);
 }
@@ -106,10 +128,17 @@ async function fetchPass(pass) {
   return out;
 }
 
+const ONLY = process.env.ONLY_PASS ?? ''; // тестовый хелпер: прогон только окон с подстрокой в label
+const ACTIVE = ONLY ? PASSES.filter((p) => p.label.includes(ONLY)) : PASSES;
 const raw = [];
-for (const pass of PASSES) {
+let passIdx = 0;
+for (const pass of ACTIVE) {
   if (capReached()) { console.log(`проход «${pass.label}» пропущен: квота MAX_NEW=${MAX_NEW} уже набрана`); continue; }
   raw.push(...(await fetchPass(pass)));
+  passIdx++;
+  if (DEEP && passIdx % 10 === 0) {
+    console.log(`окно ${passIdx}/${ACTIVE.length} · получено ${raw.length} · новых ${newSeen.size}${MAX_NEW ? '/' + MAX_NEW : ''}`);
+  }
 }
 
 // дедуп по anilistId: первый проход выигрывает
