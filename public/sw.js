@@ -69,3 +69,39 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+/* Пуш-уведомления (аудит блок 3): без этих обработчиков браузер получает push,
+   но ничего не показывает. Клик открывает раздел расписания (или url из payload). */
+self.addEventListener('push', (event) => {
+  let data = { title: 'AniNova', body: 'Новые серии уже на сайте' };
+  try {
+    if (event.data) data = { ...data, ...event.data.json() };
+  } catch {
+    /* payload не JSON — оставляем дефолт */
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'AniNova', {
+      body: data.body || '',
+      icon: '/logo-icon-192.png',
+      badge: '/logo-icon-192.png',
+      tag: 'anistream-push',
+      data: { url: data.url || '/schedule' },
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url ?? '/schedule';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if ('focus' in client && client.url.startsWith(self.location.origin)) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    }),
+  );
+});

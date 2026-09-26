@@ -36,8 +36,22 @@ if (!subs.length) {
 }
 console.log(`подписок: ${subs.length}`);
 
-// 2) Собираем эфиры сегодня из AniList
-const day = new Date().getDay();
+// 2) Payload: тестовый (--test) или эфиры за сегодня; день недели — МСК (аудит блок 3)
+const mskDay = (ms) =>
+  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(
+    new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Moscow', weekday: 'short' }).format(new Date(ms)),
+  );
+const TEST = process.argv.includes('--test');
+let payload;
+if (TEST) {
+  payload = JSON.stringify({
+    title: 'AniNova: тест push',
+    body: 'Проверка доставки. Если вы это видите — push-пайплайн работает end-to-end.',
+    url: '/schedule',
+  });
+  console.log('режим: тестовый payload');
+} else {
+const day = mskDay(Date.now());
 const start = Math.floor(Date.now() / 1000);
 const q = {
   query: `query($start:Int!,$end:Int!){ Page(page:1,perPage:30){ airingSchedules(airingAt_greater:$start,airingAt_lesser:$end){ airingAt episode media{ id title{romaji} } } } }`,
@@ -50,20 +64,22 @@ const r = await fetch('https://graphql.anilist.co', {
 });
 const j = await r.json();
 const rows = (j?.data?.Page?.airingSchedules ?? []).filter(
-  (x) => (new Date(x.airingAt * 1000).getDay() + 6) % 7 === (day + 6) % 7,
+  (x) => mskDay(x.airingAt * 1000) === day,
 );
 if (!rows.length) {
   console.log('сегодня эфиров нет');
   process.exit(0);
 }
 
-const payload = JSON.stringify({
+payload = JSON.stringify({
   title: 'Сегодня выходят серии',
   body: rows
     .slice(0, 5)
     .map((x) => `${x.media.title.romaji} · серия ${x.episode}`)
     .join('\n'),
+  url: '/schedule',
 });
+}
 
 // 3) Отправляем + чистим мёртвые подписки
 let ok = 0;
