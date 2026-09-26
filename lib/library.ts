@@ -18,6 +18,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoplayNext: true,
   accent: 'violet',
   customAccent: null,
+  theme: 'system',
   reduceMotion: false,
   tvMode: false,
   defaultProvider: 'demo',

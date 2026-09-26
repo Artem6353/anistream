@@ -8,8 +8,8 @@ import dynamic from 'next/dynamic';
 
 // CommandPalette — тяжёлый оверлей: грузим лениво только на клиенте (ТЗ блок 8)
 const CommandPalette = dynamic(() => import('./CommandPalette').then((m) => m.CommandPalette), { ssr: false });
-import { useLibrary } from '@/lib/library';
-import { IconBookmark, IconCommand, IconSearch, IconSettings } from '@/components/ui/icons';
+import { library, useLibrary } from '@/lib/library';
+import { IconBookmark, IconCommand, IconSearch, IconSettings, IconMoon, IconSun, IconMonitor } from '@/components/ui/icons';
 import { useI18n } from '@/lib/i18n'; // LanguageSwitcher убран (ТЗ блок 7): сайт только RU; код i18n оставлен на будущее
 
 const NAV = [
@@ -23,7 +23,8 @@ export function SiteHeader() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const { bookmarks } = useLibrary();
+  const [themeMenu, setThemeMenu] = useState(false);
+  const { bookmarks, settings } = useLibrary();
   const { t } = useI18n();
 
   useEffect(() => {
@@ -81,6 +82,43 @@ export function SiteHeader() {
                 <IconCommand size={11} />K
               </kbd>
             </button>
+            <div className="theme-switch">
+              <button
+                type="button"
+                className="icon-btn header__icon"
+                aria-label="Тема оформления"
+                title="Тема оформления"
+                onClick={() => {
+                  if (window.innerWidth < 640) {
+                    const order = ['dark', 'light', 'system'] as const;
+                    const cur = order.indexOf((settings.theme ?? 'system') as (typeof order)[number]);
+                    library.setSettings({ theme: order[(cur + 1) % 3] });
+                  } else {
+                    setThemeMenu((v) => !v);
+                  }
+                }}
+              >
+                {settings.theme === 'light' ? <IconSun size={17} /> : settings.theme === 'dark' ? <IconMoon size={17} /> : <IconMonitor size={17} />}
+              </button>
+              {themeMenu ? (
+                <div className="theme-menu" role="menu">
+                  {(['dark', 'light', 'system'] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      role="menuitem"
+                      className={`theme-menu__item ${settings.theme === m ? 'is-active' : ''}`}
+                      onClick={() => {
+                        library.setSettings({ theme: m });
+                        setThemeMenu(false);
+                      }}
+                    >
+                      {m === 'dark' ? '🌙 Тёмная' : m === 'light' ? '☀️ Светлая' : '🖥️ Системная'}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
             <Link className="icon-btn header__icon" href="/profile/bookmarks" aria-label={`Закладки (${bookmarks.length})`} title="Закладки">
               <IconBookmark size={17} />
               {bookmarks.length > 0 ? <span className="header__count">{bookmarks.length}</span> : null}

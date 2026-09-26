@@ -103,6 +103,8 @@ export interface Settings {
   accent: string;
   /** Кастомный акцент (hex) из пикера настроек (ТЗ блок 5); перекрывает пресет accent. */
   customAccent?: string | null;
+  /** Тема оформления (ТЗ блок 13): dark | light | system (дефолт). */
+  theme: 'dark' | 'light' | 'system';
   reduceMotion: boolean;
   tvMode: boolean;
   defaultProvider: string;

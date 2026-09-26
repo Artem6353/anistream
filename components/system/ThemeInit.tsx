@@ -26,11 +26,19 @@ export function ThemeInit() {
   const { settings } = useLibrary();
   useEffect(() => {
     const root = document.documentElement;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const applyTheme = () => {
+      const mode = settings.theme ?? 'system';
+      root.dataset.theme = mode === 'system' ? (mq.matches ? 'dark' : 'light') : mode;
+    };
+    applyTheme();
+    mq.addEventListener('change', applyTheme);
     const hex = typeof settings.customAccent === 'string' && /^#[0-9a-f]{6}$/i.test(settings.customAccent) ? settings.customAccent : null;
     const accent = ACCENTS[settings.accent] ?? ACCENTS.violet;
     root.style.setProperty('--accent', hex ?? accent.a);
     root.style.setProperty('--accent-2', hex ?? accent.b);
     root.dataset.reduceMotion = settings.reduceMotion ? 'true' : 'false';
-  }, [settings.accent, settings.customAccent, settings.reduceMotion]);
+    return () => mq.removeEventListener('change', applyTheme);
+  }, [settings.accent, settings.customAccent, settings.reduceMotion, settings.theme]);
   return <script dangerouslySetInnerHTML={{ __html: PRE_HYDRATE }} />;
 }
