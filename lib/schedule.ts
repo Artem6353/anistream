@@ -57,10 +57,10 @@ export function demoWeek(): ScheduleEntry[] {
   const pool = [...TITLES].sort((a, b) => b.favourites - a.favourites).slice(0, 28);
   return pool
     .map((t) => {
-      const h = hashStr(t.slug);
+      const h = hashStr(t.slug) >>> 0; // unsigned: отрицательный хеш давал NaN at
       const weekday = h % 7;
-      const hour = 10 + (h >> 4) % 13;
-      const minute = [0, 15, 30, 45][(h >> 8) % 4];
+      const hour = 10 + (h >>> 4) % 13;
+      const minute = [0, 15, 30, 45][(h >>> 8) % 4];
       const at = (start + weekday * 86400 + hour * 3600 + minute * 60) * 1000;
       return {
         at,

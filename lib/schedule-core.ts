@@ -10,7 +10,9 @@ const WD: Record<string, number> = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat
 
 /** Индекс дня недели в МСК: 0=Пн … 6=Вс. */
 export function mskDayIndex(ms: number): number {
-  const wd = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Moscow', weekday: 'short' }).format(new Date(ms));
+  const d = new Date(ms);
+  if (!Number.isFinite(d.getTime())) return -1; // битая дата не роняет рендер
+  const wd = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Moscow', weekday: 'short' }).format(d);
   return WD[wd] ?? 0;
 }
 
