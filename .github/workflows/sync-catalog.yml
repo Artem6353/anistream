@@ -11,7 +11,7 @@ on:
       max_new:
         description: "Квота новых тайтлов MAX_NEW (0 = без лимита)"
         type: string
-        default: "400"
+        default: "5000"
 permissions:
   contents: write
 jobs:
@@ -28,11 +28,12 @@ jobs:
       - run: npm ci --omit=dev || true
       - name: expand catalog (new titles + franchise links + characters)
         env:
-          # На scheduled-запусках inputs пустые: DEEP='' (глубокие проходы выключены),
-          # MAX_NEW='' → 0 (без квоты) — поведение cron не меняется.
+          # dispatch: deep/max_new из inputs; cron: deep выключен, квота 200 (ТЗ блок 12).
           DEEP: ${{ inputs.deep }}
-          MAX_NEW: ${{ inputs.max_new }}
+          MAX_NEW: ${{ github.event_name == 'workflow_dispatch' && inputs.max_new || '200' }}
         run: node scripts/expand-catalog.mjs 12 --report
+      - name: remove hentai (18+ policy, safety net)
+        run: node scripts/remove-hentai.mjs
       - name: enrich with Shikimori (RU titles, descriptions, screenshots)
         run: node scripts/enrich-shikimori-resumable.mjs
         continue-on-error: true
