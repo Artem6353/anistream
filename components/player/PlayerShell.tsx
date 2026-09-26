@@ -81,8 +81,15 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
 
   const sources = data.sources ?? [];
   const selected: EpisodeSource | undefined = useMemo(
-    () => sources.find((s) => s.id === selectedId) ?? sources.find((s) => s.providerId !== 'demo') ?? sources[0],
-    [sources, selectedId],
+    () =>
+      sources.find((s) => s.id === selectedId) ??
+      // провайдер по умолчанию из настроек (ТЗ блок 6): берём его источник, если он есть в серии
+      (settings.defaultProvider && settings.defaultProvider !== 'demo'
+        ? sources.find((s) => s.providerId === settings.defaultProvider)
+        : undefined) ??
+      sources.find((s) => s.providerId !== 'demo') ??
+      sources[0],
+    [sources, selectedId, settings.defaultProvider],
   );
   const isEmbed = selected?.kind === 'embed';
   const files = selected?.files ?? [];
