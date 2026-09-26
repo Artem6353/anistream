@@ -57,8 +57,7 @@ export async function POST(
   // 2) Мутируем только review_reactions: insert / delete / update.
   //    reviews.likes / reviews.dislikes НЕ трогаем: их пересчитывает
   //    триггер в БД (after insert/update/delete on review_reactions → count(*)).
-  //    Любая запись сюда по схеме read-modify-write конфликтует с триггером
-  //    и даёт двойной счётчик (один клик → +2).
+  //    Колонки id в таблице нет — она не нужна, PK составной (review_id, user_id).
   if (prev === null) {
     const ins = await supaFetch('review_reactions', {
       method: 'POST',
