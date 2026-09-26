@@ -55,14 +55,13 @@ export async function POST(
   const prev = existing[0]?.kind ?? null;
 
   // 2) Мутируем только review_reactions: insert / delete / update.
-  //    reviews.likes / reviews.dislikes НЕ трогаем: их пересчитывает
-  //    триггер в БД (after insert/update/delete on review_reactions → count(*)).
-  //    Колонки id в таблице нет — она не нужна, PK составной (review_id, user_id).
+  //    reviews.likes / reviews.dislikes НЕ трогаем — их пересчитывает триггер.
+  //    Колонки id в таблице нет: PK составной (review_id, user_id).
   if (prev === null) {
     const ins = await supaFetch('review_reactions', {
       method: 'POST',
       headers: { Prefer: 'return=minimal' },
-      body: JSON.stringify({ id: crypto.randomUUID(), review_id: reviewId, user_id: userId, kind }),
+      body: JSON.stringify({ review_id: reviewId, user_id: userId, kind }),
     });
     if (!ins.ok) return NextResponse.json({ error: 'supabase error' }, { status: 502 });
   } else if (prev === kind) {
@@ -83,8 +82,7 @@ export async function POST(
     if (!upd.ok) return NextResponse.json({ error: 'supabase error' }, { status: 502 });
   }
 
-  // 3) Читаем актуальные счётчики из reviews одним запросом:
-  //    эти значения уже посчитаны триггером — их и возвращаем клиенту.
+  // 3) Читаем актуальные счётчики из reviews (уже посчитаны триггером)
   const reviewRes = await supaFetch(
     `reviews?id=eq.${encodeURIComponent(reviewId)}&select=likes,dislikes`,
   );
