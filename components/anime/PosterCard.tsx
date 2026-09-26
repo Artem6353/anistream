@@ -1,18 +1,21 @@
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import type { Title } from '@/lib/types';
-import { STATUS_LABELS, TYPE_LABELS, genreLabel } from '@/lib/labels';
+import { TYPE_LABELS, genreLabel } from '@/lib/labels';
 import { episodesWord } from '@/lib/format';
 import { PosterArt } from './PosterArt';
 import { BookmarkButton } from './BookmarkButton';
 import { IconPlay, IconStar } from '@/components/ui/icons';
 
-/** Цвета статусных плашек (ТЗ 4.0, задача 6). */
-const BADGE_COLORS: Record<string, string> = {
-  ongoing: 'var(--success)',
-  finished: '#60a5fa',
-  upcoming: 'var(--warn)',
-};
+/** Плашка статуса на карточке (аудит, блок 1): только три случая, «Завершён» НЕ рендерится.
+    ongoing → «Онгоинг» (зелёный), upcoming → «Анонс» (синий),
+    finished && year >= 2025 → «Новинка» (фиолетовый); остальное — без плашки. */
+function statusBadge(t: Title): { label: string; color: string } | null {
+  if (t.status === 'ongoing') return { label: 'Онгоинг', color: '#10b981' };
+  if (t.status === 'upcoming') return { label: 'Анонс', color: '#3b82f6' };
+  if (t.status === 'finished' && t.year >= 2025) return { label: 'Новинка', color: '#8b5cf6' };
+  return null;
+}
 
 /** Карточка тайтла: постер, рейтинг, быстрые действия. */
 export function PosterCard({
@@ -32,20 +35,21 @@ export function PosterCard({
   /** Замена подписи (итерация 3.6, задача 4): для iframe-источников позиция недоступна,
    *  поэтому вместо «Продолжить с серии N» показываем «Открыто N назад». */
   resumeNote?: string;
-  /** Плашка статуса (онгоинг/завершён/анонс) на постере; отключается в рейлах «Похожее». */
+  /** Плашка статуса (онгоинг/анонс/новинка) на постере; отключается в рейлах «Похожее». */
   showBadge?: boolean;
 }) {
   const href = resumeHref ?? `/anime/${title.slug}`;
+  const badge = statusBadge(title);
   return (
     <article className="card">
       <Link className="card__media" href={href} aria-label={title.ru}>
         <PosterArt src={title.poster} seed={title.slug} initials={title.romaji} alt={`Постер: ${title.ru}`} />
-        {showBadge ? (
+        {showBadge && badge ? (
           <span
             className="card__badge"
-            style={{ '--badge-color': BADGE_COLORS[title.status] } as CSSProperties}
+            style={{ '--badge-color': badge.color } as CSSProperties}
           >
-            {STATUS_LABELS[title.status]}
+            {badge.label}
           </span>
         ) : null}
         {title.score > 0 ? (
