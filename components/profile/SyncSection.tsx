@@ -147,8 +147,18 @@ export function SyncSection() {
               onClick={() =>
                 act(async () => {
                   const j = await signUp(email, password);
+                  // Аудит блок 4: после регистрации пользователь залогинен сразу.
+                  // Если Supabase-проект с отключённым Confirm email — signUp сам вернёт
+                  // токены; иначе пробуем signIn сразу (без подтверждения он успешен).
+                  if (!j.access_token) {
+                    try {
+                      await signIn(email, password);
+                    } catch {
+                      /* включено подтверждение email — вход после письма */
+                    }
+                  }
                   setLogged(isSessionValid());
-                  toast(j.access_token ? 'Аккаунт создан' : 'Аккаунт создан (подтвердите email, если включено)');
+                  toast(isSessionValid() ? 'Аккаунт создан — вы вошли' : 'Аккаунт создан: подтвердите email и войдите');
                 }, 'up')
               }
             >
