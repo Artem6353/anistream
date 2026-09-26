@@ -63,7 +63,7 @@ export async function POST(
     const ins = await supaFetch('review_reactions', {
       method: 'POST',
       headers: { Prefer: 'return=minimal' },
-      body: JSON.stringify({ review_id: reviewId, user_id: userId, kind }),
+      body: JSON.stringify({ id: crypto.randomUUID(), review_id: reviewId, user_id: userId, kind }),
     });
     if (!ins.ok) return NextResponse.json({ error: 'supabase error' }, { status: 502 });
   } else if (prev === kind) {

@@ -100,7 +100,9 @@ export async function POST(request: Request) {
   };
   const r = await fetch(`${SUPA_URL}/rest/v1/reviews`, {
     method: 'POST',
-    headers: { apikey: SUPA_ANON, Authorization: `Bearer ${SUPA_ANON}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    // RLS: insert в reviews разрешён ТОЛЬКО service_role (аудит, блок 5) —
+    // анонимный ключ получал 403 и отзыв не сохранялся.
+    headers: { apikey: SUPA_SERVICE, Authorization: `Bearer ${SUPA_SERVICE}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
     body: JSON.stringify(item),
   });
   if (!r.ok) return NextResponse.json({ error: 'supabase error' }, { status: 502 });
