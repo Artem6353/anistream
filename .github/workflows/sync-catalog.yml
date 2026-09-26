@@ -11,7 +11,7 @@ on:
       max_new:
         description: "Квота новых тайтлов MAX_NEW (0 = без лимита)"
         type: string
-        default: "5000"
+        default: "3000"
 permissions:
   contents: write
 jobs:
@@ -34,14 +34,32 @@ jobs:
         run: node scripts/expand-catalog.mjs 12 --report
       - name: remove hentai (18+ policy, safety net)
         run: node scripts/remove-hentai.mjs
-      - name: enrich with Shikimori (RU titles, descriptions, screenshots)
-        run: node scripts/enrich-shikimori-resumable.mjs
+      - name: enrich with Shikimori (batched)
         continue-on-error: true
-        timeout-minutes: 25
-      - name: fetch episode dates for finished titles
-        run: node scripts/fetch-episode-dates.mjs
+        timeout-minutes: 90
+        run: |
+          git config user.name "anistream-bot"
+          git config user.email "bot@anistream.local"
+          for i in 1 2 3 4 5 6; do
+            node scripts/enrich-shikimori-resumable.mjs --limit 500 || true
+            git add lib/data/titles.json
+            git diff --cached --quiet || git commit -m "chore(catalog): enrich batch $i" || true
+            git push || true
+            echo "batch $i done"
+          done
+      - name: fetch episode dates for finished titles (batched)
         continue-on-error: true
-        timeout-minutes: 20
+        timeout-minutes: 60
+        run: |
+          git config user.name "anistream-bot"
+          git config user.email "bot@anistream.local"
+          for i in 1 2 3; do
+            node scripts/fetch-episode-dates.mjs --limit 500 || true
+            git add lib/data/titles.json .cache/episode-dates-report.json 2>/dev/null || true
+            git diff --cached --quiet || git commit -m "chore(catalog): dates batch $i" || true
+            git push || true
+            echo "dates batch $i done"
+          done
       - name: commit if changed
         run: |
           git config user.name "anistream-bot"

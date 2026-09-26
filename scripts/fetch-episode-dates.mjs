@@ -24,6 +24,8 @@ const UA = {
   'User-Agent': process.env.SHIKIMORI_USER_AGENT || 'Mozilla/5.0 (AniNova sync; contact: admin@example.com)',
 };
 const SAVE_EVERY = Number(process.env.SAVE_EVERY ?? 8); // батчей между записями
+// --limit N (ТЗ блок B): обработать не более N pending-тайтлов за запуск — для батчей в workflow
+const LIMIT = Number((process.argv.find((a) => a.startsWith('--limit')) ?? '').replace('--limit', '').replace('=', '') || 0);
 const SLEEP_MS = Number(process.env.SLEEP_MS ?? 750); // пауза между запросами (rate-limit AniList)
 const CHUNK = 50;
 
@@ -133,7 +135,8 @@ function applyStartDate(t, sd) {
 }
 
 // --- Шаг 1: батчи по 50 id для всех finished без дат -------------------------
-const pending = finished.filter((t) => !hasDates(t) && Number(t.episodes ?? 0) <= 250);
+let pending = finished.filter((t) => !hasDates(t) && Number(t.episodes ?? 0) <= 250);
+if (LIMIT > 0) pending = pending.slice(0, LIMIT);
 const longPending = finished.filter((t) => !hasDates(t) && Number(t.episodes ?? 0) > 250);
 console.log(`pending: ${pending.length} (батчи) + ${longPending.length} (гиганты >250 серий)`);
 

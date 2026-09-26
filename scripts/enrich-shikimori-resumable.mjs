@@ -9,6 +9,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 const P = 'lib/data/titles.json';
 const CONC = Number(process.env.CONCURRENCY ?? 5);
+// --limit N (ТЗ блок B): обработать не более N тайтлов за запуск — для батчей в workflow
+const LIMIT = Number((process.argv.find((a) => a.startsWith('--limit')) ?? '').replace('--limit', '').replace('=', '') || 0);
 const titles = JSON.parse(readFileSync(P, 'utf8'));
 
 const clean = (s) =>
@@ -70,7 +72,8 @@ async function getJson(url) {
   return null;
 }
 
-const pending = titles.filter((t) => !t.shikimoriChecked);
+let pending = titles.filter((t) => !t.shikimoriChecked);
+if (LIMIT > 0) pending = pending.slice(0, LIMIT);
 console.log(`обогащению подлежат: ${pending.length} из ${titles.length} (проверенные пропускаются)`);
 
 let done = 0;
@@ -114,7 +117,7 @@ async function worker() {
     }
     t.shikimoriChecked = true;
     done++;
-    if (done % 40 === 0) {
+    if (done % 20 === 0) {
       writeFileSync(P, JSON.stringify(titles));
       const sec = (Date.now() - started) / 1000;
       const eta = ((sec / done) * (queue.length)).toFixed(0);
