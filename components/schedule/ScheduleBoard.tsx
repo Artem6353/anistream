@@ -6,7 +6,7 @@ import type { ScheduleEntry } from '@/lib/types';
 import { WEEKDAYS, WEEKDAYS_SHORT } from '@/lib/labels';
 import { formatClock, formatDate, plural } from '@/lib/format';
 import { PosterArt } from '@/components/anime/PosterArt';
-import { todayIndex } from '@/lib/schedule-core';
+import { mskDayIndex, todayIndex } from '@/lib/schedule-core';
 import { IconCalendar } from '@/components/ui/icons';
 
 /**
@@ -18,7 +18,7 @@ export function ScheduleBoard({ entries, live }: { entries: ScheduleEntry[]; liv
   const today = todayIndex();
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const byDay = (d: number) =>
-    entries.filter((e) => (new Date(e.at).getDay() + 6) % 7 === d).sort((a, b) => a.at - b.at);
+    entries.filter((e) => mskDayIndex(e.at) === d).sort((a, b) => a.at - b.at);
 
   const todayEntries = byDay(today);
   const otherDays = Array.from({ length: 6 }, (_, i) => (today + 1 + i) % 7);
@@ -27,8 +27,8 @@ export function ScheduleBoard({ entries, live }: { entries: ScheduleEntry[]; liv
     <div className="schedule schedule--v2">
       <p className={`schedule__note ${live ? 'schedule__note--live' : ''}`}>
         {live
-          ? 'Неделя выхода серий по данным AniList, время ваше локальное.'
-          : 'Живое расписание AniList загружается… показан демо-набор каталога.'}
+          ? 'Неделя выхода серий по данным AniList. Время — московское (МСК).'
+          : 'AniList недоступен — показана неделя из кэша (демо). Живые данные подгрузятся автоматически.'}
       </p>
 
       <section className="schedule__today" aria-label={`Сегодня: ${WEEKDAYS[today]}`}>
@@ -97,7 +97,7 @@ export function ScheduleBoard({ entries, live }: { entries: ScheduleEntry[]; liv
 /** Блок «Сегодня выходит» для главной. */
 export function TodayList({ entries, live }: { entries: ScheduleEntry[]; live: boolean }) {
   const today = todayIndex();
-  const list = entries.filter((e) => (new Date(e.at).getDay() + 6) % 7 === today).slice(0, 9);
+  const list = entries.filter((e) => mskDayIndex(e.at) === today).slice(0, 9);
   return (
     <div className="container">
       {list.length ? (
@@ -109,7 +109,7 @@ export function TodayList({ entries, live }: { entries: ScheduleEntry[]; live: b
       ) : (
         <p className="schedule__empty">Сегодня эфиров нет — загляните в недельное расписание.</p>
       )}
-      {!live ? <p className="schedule__note">Демо-расписание: живые данные AniList подгрузятся автоматически.</p> : null}
+      {!live ? <p className="schedule__note">Данные из кэша (демо-неделя): живые данные AniList подгрузятся автоматически.</p> : null}
     </div>
   );
 }

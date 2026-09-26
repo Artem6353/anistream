@@ -19,13 +19,14 @@ export function formatTime(sec: number): string {
   return `${h ? h + ':' : ''}${mm}:${String(s).padStart(2, '0')}`;
 }
 
+/** Аудит блок 2: время и даты расписания — всегда МСК (Europe/Moscow),
+ *  независимо от таймзоны устройства пользователя или сервера Vercel (UTC). */
 export function formatClock(ms: number): string {
-  const d = new Date(ms);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return new Intl.DateTimeFormat('ru-RU', { timeZone: 'Europe/Moscow', hour: '2-digit', minute: '2-digit' }).format(new Date(ms));
 }
 
 export function formatDate(ms: number): string {
-  return new Date(ms).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+  return new Intl.DateTimeFormat('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long' }).format(new Date(ms));
 }
 
 export function timeAgo(ms: number): string {

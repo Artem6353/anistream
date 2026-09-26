@@ -6,7 +6,7 @@ import type { ScheduleEntry } from '@/lib/types';
 import { WEEKDAYS } from '@/lib/labels';
 import { formatClock, formatDate } from '@/lib/format';
 import { PosterArt } from '@/components/anime/PosterArt';
-import { todayIndex } from '@/lib/schedule-core';
+import { mskDayIndex, todayIndex } from '@/lib/schedule-core';
 import { IconChevronRight } from '@/components/ui/icons';
 
 /** Двухколоночный блок главной: аккордеон расписания + лента обновлений (AnimeGO-style). */
@@ -34,7 +34,7 @@ export function HomeSchedule({ fallback }: { fallback: ScheduleEntry[] }) {
 
   const today = todayIndex();
   const days = Array.from({ length: 7 }, (_, i) => i);
-  const byDay = (d: number) => entries.filter((e) => (new Date(e.at).getDay() + 6) % 7 === d).sort((a, b) => a.at - b.at);
+  const byDay = (d: number) => entries.filter((e) => mskDayIndex(e.at) === d).sort((a, b) => a.at - b.at);
   const updates = byDay(today).slice(0, 10);
 
   return (
