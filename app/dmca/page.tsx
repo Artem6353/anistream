@@ -1,40 +1,46 @@
-'use client';
+import type { Metadata } from 'next';
+export const metadata: Metadata = { title: 'DMCA — жалоба на контент', robots: { index: false } };
 
-import { useState } from 'react';
+function contactEmail(): string {
+  const url = process.env.NEXT_PUBLIC_SITE_URL ?? '';
+  const domain = url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+  const ok = domain.includes('.') && !domain.startsWith('localhost') && !domain.startsWith('127.');
+  return `dmca@${ok ? domain : 'example.com'}`;
+}
 
-/** DMCA-флоу (A1.1): форма заявления → тикет в админку → скрытие тайтла. */
 export default function DmcaPage() {
-  const [form, setForm] = useState({ email: '', url: '', rights: false, text: '' });
-  const [state, setState] = useState<'idle' | 'ok' | string>('idle');
+  const contact = contactEmail();
   return (
     <div className="container legal">
-      <h1>Жалоба правообладателя (DMCA)</h1>
+      <h1>DMCA: как подать жалобу</h1>
+      <p>Если вы правообладатель и нашли на сайте свой контент — напишите нам, мы уберем его быстро.</p>
       <p>
-        Заполните форму — тикет попадёт администратору, спорный материал будет скрыт из каталога в течение 24 часов.
-        Ложные заявления преследуются по закону.
+        <strong>Куда писать.</strong> На {contact} с темой «DMCA» или через форму жалобы на странице серии
+        (кнопка «Пожаловаться» → тип «Права правообладателя»).
       </p>
-      <form
-        className="reviews__form"
-        style={{ maxWidth: 640 }}
-        onSubmit={async (e) => {
-          e.preventDefault();
-          const r = await fetch('/api/dmca', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
-          setState(r.ok ? 'ok' : ((await r.json()).error as string) ?? 'ошибка');
-        }}
-      >
-        <input className="input" type="email" required placeholder="Email для связи" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-        <input className="input" required placeholder="URL тайтла на сайте (https://…/anime/…)" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
-        <label className="check">
-          <input type="checkbox" checked={form.rights} onChange={(e) => setForm({ ...form, rights: e.target.checked })} required />
-          <span>Подтверждаю, что являюсь правообладателем или уполномоченным представителем</span>
-        </label>
-        <textarea className="input reviews__text" required rows={5} placeholder="Текст заявления: какие права нарушены, какие материалы" value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} />
-        <button className="btn btn--primary btn--md" type="submit">
-          Отправить заявление
-        </button>
-        {state === 'ok' ? <p className="panel__note" style={{ color: 'var(--success)' }}>Тикет принят, мы свяжемся по указанному email.</p> : null}
-        {state !== 'ok' && state !== 'idle' ? <p className="panel__note" style={{ color: 'var(--danger)' }}>{state}</p> : null}
-      </form>
+      <p>
+        <strong>Что указать в письме.</strong> 1) Какой именно контент защищён: название, тайтл, серию, ссылку
+        на страницу у нас. 2) Кто вы: имя или компания, контакт для ответа. 3) Подтверждение прав: ссылка на
+        регистрацию, лицензию или официальный релиз. 4) Фразу «Я подтверждаю, что информация в жалобе точна и я
+        уполномочен действовать от имени правообладателя».
+      </p>
+      <p>
+        <strong>Сроки.</strong> Мы отвечаем в течение 24 часов. Тайтл или серия скрываются из каталога сразу
+        после проверки письма — обычно в тот же день.
+      </p>
+      <p>
+        <strong>Важно понимать.</strong> Мы не храним видеофайлы: страницы серий показывают embed-плееры
+        сторонних источников (см. «Отказ от ответственности»). По жалобе мы убираем тайтл из каталога и ссылки
+        на плееры; при необходимости помогаем связаться с площадкой, которая хостит видео.
+      </p>
+      <p>
+        <strong>Ложные жалобы.</strong> Заведомо ложная жалоба о нарушениях может повлечь ответственность по
+        закону вашей страны. Пишите только о контенте, права на который действительно у вас.
+      </p>
+      <p>
+        <strong>Статус жалобы.</strong> Каждая жалоба получает номер и статус («новая», «скрыто», «отклонено с
+        причиной»). Узнать статус можно ответным письмом с тем же номером.
+      </p>
     </div>
   );
 }
