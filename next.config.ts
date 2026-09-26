@@ -3,7 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   outputFileTracingIncludes: {
-    '/**': ['./lib/data/titles.json'],
+    '/**': ['./lib/data/titles.json', './.cache/providers-resolve-cache.json'],
   },
   images: {
     remotePatterns: [
