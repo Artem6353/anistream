@@ -51,5 +51,10 @@ jobs:
           # providers-resolve-cache.json на раннере может отсутствовать. .cache/img/ не добавляем.
           git add .cache/providers-resolve-cache.json 2>/dev/null || true
           git add .cache/episode-dates-report.json 2>/dev/null || true
-          git diff --cached --quiet || git commit -m "chore(catalog): auto-sync $(date -u +%F-%H%M)"
-          git diff --cached --quiet || git push
+          # ВАЖНО (фикс прогона #11): проверять staged-изменения ДО коммита. Прежняя схема
+          # «... || git commit; ... || git push» никогда не пушила: после коммита индекс чист,
+          # --cached --quiet даёт exit 0, и push пропускался — коммит терялся на раннере.
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(catalog): auto-sync $(date -u +%F-%H%M)"
+            git push
+          fi
