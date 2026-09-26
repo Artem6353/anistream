@@ -7,7 +7,7 @@ import { Logo } from './Logo';
 import { CommandPalette } from './CommandPalette';
 import { useLibrary } from '@/lib/library';
 import { IconBookmark, IconCommand, IconSearch, IconSettings } from '@/components/ui/icons';
-import { useI18n, LanguageSwitcher } from '@/lib/i18n';
+import { useI18n } from '@/lib/i18n'; // LanguageSwitcher убран (ТЗ блок 7): сайт только RU; код i18n оставлен на будущее
 
 const NAV = [
   { href: '/catalog', key: 'catalog' },
@@ -82,7 +82,6 @@ export function SiteHeader() {
               <IconBookmark size={17} />
               {bookmarks.length > 0 ? <span className="header__count">{bookmarks.length}</span> : null}
             </Link>
-            <LanguageSwitcher />
             <Link className="icon-btn header__icon" href="/profile/settings" aria-label="Настройки" title="Настройки">
               <IconSettings size={17} />
             </Link>
