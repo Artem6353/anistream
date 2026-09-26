@@ -10,7 +10,7 @@ import { SwRegister } from '@/components/system/SwRegister';
 import dynamic from 'next/dynamic';
 
 // TvMode — клиентский оверлей стрелочной навигации: не нужен в SSR-бандле (ТЗ блок 8)
-const TvMode = dynamic(() => import('@/components/system/TvMode').then((m) => m.TvMode), { ssr: false });
+const TvMode = dynamic(() => import('@/components/system/TvMode').then((m) => m.TvMode));
 import { CookieConsent } from '@/components/system/CookieConsent';
 import { ClientMonitoring } from '@/components/system/ClientMonitoring';
 import { AutoSync } from '@/components/system/AutoSync';

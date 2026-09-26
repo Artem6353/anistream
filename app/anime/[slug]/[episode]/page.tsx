@@ -7,7 +7,7 @@ import { getTitle } from '@/lib/catalog';
 import dynamic from 'next/dynamic';
 
 // Плеер (hls.js + контролы) — только клиент и лениво: минус ~100 КБ из First Load JS (ТЗ блок 8)
-const PlayerShell = dynamic(() => import('@/components/player/PlayerShell').then((m) => m.PlayerShell), { ssr: false });
+const PlayerShell = dynamic(() => import('@/components/player/PlayerShell').then((m) => m.PlayerShell));
 import { Rail } from '@/components/anime/Rail';
 import { PosterCard } from '@/components/anime/PosterCard';
 import { similarTitles } from '@/lib/catalog';
