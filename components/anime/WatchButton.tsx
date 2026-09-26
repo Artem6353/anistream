@@ -14,7 +14,7 @@ import { IconPlay } from '@/components/ui/icons';
  * Серия берётся из самой свежей записи slug по updatedAt (история хранится
  * newest-first, но перестраховываемся явным максимумом — как в рейле).
  */
-export function WatchButton({ slug, episodes }: { slug: string; episodes: number }) {
+export function WatchButton({ slug, episodes, type }: { slug: string; episodes: number; type?: string }) {
   const { history } = useLibrary();
   let entry: HistoryEntry | undefined;
   for (const h of history) {
@@ -22,16 +22,18 @@ export function WatchButton({ slug, episodes }: { slug: string; episodes: number
     if (!entry || (h.updatedAt ?? 0) > (entry.updatedAt ?? 0)) entry = h;
   }
 
+  const isMovie = type === 'movie';
+
   if (!entry) {
     return (
       <Link className="btn btn--primary btn--lg" href={`/anime/${slug}/1`}>
         <IconPlay size={16} />
-        Смотреть с 1-й серии
+        {isMovie ? 'Смотреть' : 'Смотреть с 1-й серии'}
       </Link>
     );
   }
 
-  if (episodes <= 1) {
+  if (isMovie || episodes <= 1) {
     return (
       <Link className="btn btn--primary btn--lg" href={`/anime/${slug}/1`}>
         <IconPlay size={16} />

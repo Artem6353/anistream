@@ -99,7 +99,7 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
               {title.shikimori?.ru ? ` · ${title.shikimori.ru}` : ''}
             </p>
             <div className="detail__actions">
-              <WatchButton slug={title.slug} episodes={title.episodes} />
+              <WatchButton slug={title.slug} episodes={title.episodes} type={title.type} />
               <ListStatusButton slug={title.slug} />
               <BookmarkButton slug={title.slug} className="bookmark-btn--big" />
             </div>
