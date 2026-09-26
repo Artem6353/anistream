@@ -23,20 +23,31 @@ export async function GET(request: Request) {
   }
   if (!ALLOWED.includes(parsed.hostname)) return NextResponse.json({ error: 'host not allowed' }, { status: 403 });
 
-  const file = path.join(DIR, createHash('sha1').update(url).digest('hex') + (parsed.pathname.endsWith('.png') ? '.png' : '.jpg'));
+  // AVIF → WebP → оригинал: вариант по Accept клиента, кэш на каждый вариант (ТЗ блок 8)
+  const accept = request.headers.get('accept') ?? '';
+  const variant = accept.includes('image/avif') ? 'avif' : accept.includes('image/webp') ? 'webp' : 'orig';
+  const ext = variant === 'avif' ? '.avif' : variant === 'webp' ? '.webp' : parsed.pathname.endsWith('.png') ? '.png' : '.jpg';
+  const ctype = variant === 'avif' ? 'image/avif' : variant === 'webp' ? 'image/webp' : ext === '.png' ? 'image/png' : 'image/jpeg';
+  const file = path.join(DIR, createHash('sha1').update(`${url}:${variant}`).digest('hex') + ext);
   try {
     const cached = await fs.readFile(file);
-    return new Response(cached, { headers: cacheHeaders(parsed) });
+    return new Response(cached, { headers: { ...cacheHeaders(parsed), 'content-type': ctype } });
   } catch {}
 
-  const up = await fetch(parsed, { headers: { 'User-Agent': 'Mozilla/5.0 (AniNova image proxy)' } });
+  const up = await fetch(parsed, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (AniNova image proxy)',
+      Accept: variant === 'avif' ? 'image/avif,image/webp,image/*,*/*;q=0.8' : variant === 'webp' ? 'image/webp,image/*,*/*;q=0.8' : 'image/*,*/*;q=0.8',
+    },
+  });
   if (!up.ok) return NextResponse.json({ error: 'upstream ' + up.status }, { status: 502 });
   const buf = Buffer.from(await up.arrayBuffer());
+  const upstreamType = up.headers.get('content-type') ?? ctype;
   try {
     await fs.mkdir(DIR, { recursive: true });
     await fs.writeFile(file, buf);
   } catch {}
-  return new Response(buf, { headers: cacheHeaders(parsed) });
+  return new Response(buf, { headers: { ...cacheHeaders(parsed), 'content-type': upstreamType } });
 }
 
 function cacheHeaders(parsed: URL): HeadersInit {

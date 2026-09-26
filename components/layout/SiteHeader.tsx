@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Logo } from './Logo';
-import { CommandPalette } from './CommandPalette';
+import dynamic from 'next/dynamic';
+
+// CommandPalette — тяжёлый оверлей: грузим лениво только на клиенте (ТЗ блок 8)
+const CommandPalette = dynamic(() => import('./CommandPalette').then((m) => m.CommandPalette), { ssr: false });
 import { useLibrary } from '@/lib/library';
 import { IconBookmark, IconCommand, IconSearch, IconSettings } from '@/components/ui/icons';
 import { useI18n } from '@/lib/i18n'; // LanguageSwitcher убран (ТЗ блок 7): сайт только RU; код i18n оставлен на будущее

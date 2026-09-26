@@ -4,7 +4,10 @@ import { notFound } from 'next/navigation';
 
 export const revalidate = 3600;
 import { getTitle } from '@/lib/catalog';
-import { PlayerShell } from '@/components/player/PlayerShell';
+import dynamic from 'next/dynamic';
+
+// Плеер (hls.js + контролы) — только клиент и лениво: минус ~100 КБ из First Load JS (ТЗ блок 8)
+const PlayerShell = dynamic(() => import('@/components/player/PlayerShell').then((m) => m.PlayerShell), { ssr: false });
 import { Rail } from '@/components/anime/Rail';
 import { PosterCard } from '@/components/anime/PosterCard';
 import { similarTitles } from '@/lib/catalog';

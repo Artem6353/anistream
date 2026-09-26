@@ -59,6 +59,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  /* статика Next и шрифты — cache-first на год (ТЗ блок 8) */
+  if (url.origin === self.location.origin && url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(
+      caches.open(CACHE).then(async (cache) => {
+        const hit = await cache.match(req);
+        if (hit) return hit;
+        try {
+          const res = await fetch(req);
+          if (res.ok) cache.put(req, res.clone());
+          return res;
+        } catch {
+          return hit || Response.error();
+        }
+      }),
+    );
+    return;
+  }
+
   /* навигация: сеть → кэш-оболочка (офлайн) */
   if (req.mode === 'navigate') {
     event.respondWith(

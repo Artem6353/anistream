@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { IconCalendar, IconGrid, IconHome, IconSearch, IconUser } from '@/components/ui/icons';
 import { useState } from 'react';
-import { CommandPalette } from './CommandPalette';
+import dynamic from 'next/dynamic';
+
+const CommandPalette = dynamic(() => import('./CommandPalette').then((m) => m.CommandPalette), { ssr: false });
 import { useI18n } from '@/lib/i18n';
 
 const ITEMS = [
