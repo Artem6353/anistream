@@ -29,6 +29,25 @@ const clean = (s) =>
         .trim();
 
 const UA = { 'User-Agent': process.env.SHIKIMORI_USER_AGENT ?? 'AniNova/2.0 (+http://localhost:3000)' };
+const ANILIST_UA = { 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (AniNova catalog sync)' };
+
+/** Дозаполнение персонажей (ТЗ блок 3): если у тайтла <6 персонажей — тянем из AniList.
+    Запрос делается ТОЛЬКО для таких тайтлов (обычно их единицы), чтобы не жечь rate-limit. */
+async function anilistCharacters(anilistId) {
+  const q = {
+    query: `query($id:Int){ Media(id:$id,type:ANIME){ characters(page:1,perPage:6,sort:ROLE){ edges{ role node{ id name{ full } image{ large } } } } } }`,
+    variables: { id: anilistId },
+  };
+  for (let a = 0; a < 4; a++) {
+    try {
+      const r = await fetch('https://graphql.anilist.co', { method: 'POST', headers: ANILIST_UA, body: JSON.stringify(q) });
+      if (r.status === 429) { await sleep(5000 * (a + 1)); continue; }
+      const j = await r.json();
+      return (j?.data?.Media?.characters?.edges ?? []).map((e) => ({ name: e.node.name.full, img: e.node.image?.large ?? null, role: e.role }));
+    } catch { await sleep(1500 * (a + 1)); }
+  }
+  return null;
+}
 const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -85,8 +104,13 @@ async function worker() {
       if (t.shikimori.ru) t.ru = t.shikimori.ru;
       if (desc) t.description = desc;
       const shots = (full?.screenshots ?? []).map((sc) => sc?.original).filter(Boolean);
-      if (shots.length) t.screenshots = shots.slice(0, 8).map((u) => (u.startsWith('http') ? u : u.startsWith('//') ? 'https:' + u : 'https://shikimori.io' + u));
+      if (shots.length) t.screenshots = shots.slice(0, 12).map((u) => (u.startsWith('http') ? u : u.startsWith('//') ? 'https:' + u : 'https://shikimori.io' + u));
       enriched++;
+    }
+    if ((t.characters?.length ?? 0) < 6) {
+      const chars = await anilistCharacters(t.anilistId);
+      if (chars?.length) t.characters = chars;
+      await sleep(300); // бережно к rate-limit AniList
     }
     t.shikimoriChecked = true;
     done++;
