@@ -101,6 +101,8 @@ export interface Settings {
   displayName?: string;
   autoplayNext: boolean;
   accent: string;
+  /** Кастомный акцент (hex) из пикера настроек (ТЗ блок 5); перекрывает пресет accent. */
+  customAccent?: string | null;
   reduceMotion: boolean;
   tvMode: boolean;
   defaultProvider: string;

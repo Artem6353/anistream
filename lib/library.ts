@@ -17,6 +17,7 @@ const K_LISTS = 'anistream:lists';
 export const DEFAULT_SETTINGS: Settings = {
   autoplayNext: true,
   accent: 'violet',
+  customAccent: null,
   reduceMotion: false,
   tvMode: false,
   defaultProvider: 'demo',

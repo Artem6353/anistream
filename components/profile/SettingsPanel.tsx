@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { library, useLibrary } from '@/lib/library';
 import { ACCENTS } from '@/lib/labels';
 import { Switch } from '@/components/ui/Switch';
@@ -8,6 +9,7 @@ import { SyncSection } from './SyncSection';
 import { PushButton } from './PushButton';
 
 export function SettingsPanel() {
+  const [pick, setPick] = useState<string>(() => library.state.settings.customAccent ?? '#8b5cf6');
   const { settings, bookmarks, history } = useLibrary();
   const toast = useToast();
 
@@ -46,6 +48,7 @@ export function SettingsPanel() {
         />
         <label className="field">
           <span className="field__label">Провайдер плеера по умолчанию</span>
+          <span className="field__hint">Какой источник использовать первым. Demo — тестовый поток, всегда работает.</span>
           <select
             className="input"
             value={settings.defaultProvider}
