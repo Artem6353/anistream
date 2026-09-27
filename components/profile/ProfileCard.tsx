@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { library, useLibrary } from '@/lib/library';
-import { isSessionValid, supaRest, supaWhoami, storageUpload } from '@/lib/sync';
+import { isSessionValid, supaRest, supaWhoami, supaUserEmail, storageUpload } from '@/lib/sync';
 import { cropImage } from '@/lib/crop';
 import { BANNER_GRADIENTS, type PublicProfile } from './ProfileHeader';
 import { ACHIEVEMENTS, readUnlocked } from '@/lib/achievements';
@@ -37,7 +37,13 @@ export function ProfileCard() {
         const r = await supaRest('GET', `profiles?user_id=eq.${uid}&select=*`);
         const row = ((await r.json()) as PublicProfile[])[0] ?? null;
         setProfile(row);
-        setUsername(row?.username ?? '');
+        let name = row?.username ?? '';
+        if (!name) {
+          // профиль создан без username → ник в отзывах не был ссылкой; предлагаем основу из email
+          const email = await supaUserEmail();
+          if (email) name = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_-]+/g, '-').slice(0, 24);
+        }
+        setUsername(name ?? '');
         setBio(row?.bio ?? '');
         setPinned(row?.pinned_achievements ?? []);
       } catch {}

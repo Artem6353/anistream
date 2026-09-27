@@ -314,4 +314,17 @@ export async function storageUpload(bucket: string, objectPath: string, blob: Bl
 
 export { saveTokens as applyAuthTokens };
 export { whoami as supaWhoami };
+
+/** Email текущего пользователя (/auth/v1/user) — для автозаполнения username профиля. */
+export async function supaUserEmail(): Promise<string | null> {
+  try {
+    const token = await ensureFresh();
+    const r = await fetch(`${SUPA_URL}/auth/v1/user`, { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${token}` } });
+    if (!r.ok) return null;
+    const j = (await r.json()) as { email?: string };
+    return j.email ?? null;
+  } catch {
+    return null;
+  }
+}
 export { notifyAuthChange, takeAuthAction, queueAuthAction } from '@/lib/auth-gate';
