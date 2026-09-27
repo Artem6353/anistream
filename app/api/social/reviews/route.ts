@@ -29,6 +29,37 @@ async function attachMyReactions(items: ReviewItem[]) {
   }
 }
 
+// ТЗ блок 17: авторы отзывов — профиль (аватар, имя, бейджи) + число серий из
+// profile_history (service_key) для статуса уровня.
+async function attachAuthors(items: ReviewItem[]) {
+  const SERVICE = process.env.SUPABASE_SERVICE_KEY;
+  const ids = [...new Set(items.map((i) => String(i.user_id ?? '')).filter(Boolean))];
+  if (!ids.length || !SUPA_URL) return;
+  const key = SERVICE || SUPA_ANON;
+  const inList = `(${ids.map((id) => encodeURIComponent(`"${id}"`)).join(',')})`;
+  const [profRes, histRes] = await Promise.all([
+    fetch(`${SUPA_URL}/rest/v1/profiles?user_id=in.${inList}&select=user_id,username,avatar_url,pinned_achievements`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    }),
+    SERVICE
+      ? fetch(`${SUPA_URL}/rest/v1/profile_history?user_id=in.${inList}&select=user_id&limit=10000`, {
+          headers: { apikey: key, Authorization: `Bearer ${key}` },
+        })
+      : Promise.resolve(null),
+  ]);
+  const profiles = profRes.ok ? ((await profRes.json()) as Array<{ user_id: string; username: string | null; avatar_url: string | null; pinned_achievements: string[] | null }>) : [];
+  const pmap = new Map(profiles.map((p) => [p.user_id, p]));
+  let counts = new Map<string, number>();
+  if (histRes && histRes.ok) {
+    const rows = (await histRes.json()) as Array<{ user_id: string }>;
+    for (const row of rows) counts.set(row.user_id, (counts.get(row.user_id) ?? 0) + 1);
+  }
+  for (const item of items) {
+    const p = pmap.get(String(item.user_id ?? ''));
+    if (p) item.author = { username: p.username, avatar_url: p.avatar_url, pinned: p.pinned_achievements, episodes: counts.get(p.user_id) ?? 0 };
+  }
+}
+
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const slug = params.get('slug') ?? '';
@@ -56,6 +87,7 @@ export async function GET(request: Request) {
 
   const items = (await r.json()) as ReviewItem[];
   await attachMyReactions(items);
+  await attachAuthors(items);
 
   return NextResponse.json({ mode: 'supabase', items });
 }
@@ -72,6 +104,7 @@ export async function POST(request: Request) {
     parent?: string | null;
     captcha?: { token?: string; answer?: number };
     turnstile?: string;
+    uid?: string | null;
   };
   const turnstileSecret = process.env.TURNSTILE_SECRET;
   if (turnstileSecret) {
@@ -97,6 +130,7 @@ export async function POST(request: Request) {
     likes: 0,
     dislikes: 0,
     parent: body.parent ?? null,
+    user_id: typeof body.uid === 'string' && body.uid ? body.uid : null,
   };
   const r = await fetch(`${SUPA_URL}/rest/v1/reviews`, {
     method: 'POST',

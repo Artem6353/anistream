@@ -7,6 +7,8 @@ import { addReview, loadReviews, reactToReview, fetchCaptcha, SOCIAL_MODE, type 
 import { useLibrary } from '@/lib/library';
 import { timeAgo } from '@/lib/format';
 import { IconStar } from '@/components/ui/icons';
+import { ReviewAuthor } from '@/components/social/ReviewAuthor';
+import { supaWhoami } from '@/lib/sync';
 
 /** Turnstile (A3.1): включается только в supabase-режиме и только при заданном site key.
  *  Сервер требует токен, если задан TURNSTILE_SECRET (app/api/social/reviews/route.ts). */
@@ -82,9 +84,14 @@ export function ReviewsSection({ slug }: { slug: string }) {
     }
     const clean = text.trim().slice(0, 2000);
     if (!clean) return;
+    let uid: string | null = null;
+    if (isSessionValid()) {
+      uid = await supaWhoami().catch(() => null);
+    }
     const res = await addReview(
       {
         slug,
+        uid,
         name: name.trim() || 'Гость',
         rating: tab === 'reviews' ? rating : null,
         text: clean,
@@ -181,7 +188,7 @@ export function ReviewsSection({ slug }: { slug: string }) {
         {(tab === 'reviews' ? reviews : comments).map((r) => (
           <li key={r.id} className="review">
             <div className="review__head">
-              <strong>{r.name}</strong>
+              <ReviewAuthor author={r.author ?? null} name={r.name} />
               {r.rating !== null ? (
                 <span className="review__rating">
                   <IconStar size={11} /> {r.rating}
@@ -217,7 +224,7 @@ export function ReviewsSection({ slug }: { slug: string }) {
                   .map((c) => (
                     <div key={c.id} className="review review--child">
                       <div className="review__head">
-                        <strong>{c.name}</strong>
+                        <ReviewAuthor author={c.author ?? null} name={c.name} />
                         <span className="review__ts">{timeAgo(c.ts)}</span>
                       </div>
                       <p className="review__text">{c.text}</p>

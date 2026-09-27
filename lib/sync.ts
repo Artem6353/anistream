@@ -306,3 +306,5 @@ export async function storageUpload(bucket: string, objectPath: string, blob: Bl
 }
 
 export { saveTokens as applyAuthTokens };
+export { whoami as supaWhoami };
+export { notifyAuthChange, takeAuthAction, queueAuthAction } from '@/lib/auth-gate';

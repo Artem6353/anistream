@@ -19,6 +19,9 @@ export interface ReviewItem {
   dislikes: number;
   parent: string | null;
   myReaction?: 'like' | 'dislike' | null;
+  /** supabase uid автора (ТЗ блок 17) — для аватара/бейджей/уровня. */
+  uid?: string | null;
+  author?: { username?: string | null; avatar_url?: string | null; pinned?: string[] | null; episodes?: number } | null;
 }
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
