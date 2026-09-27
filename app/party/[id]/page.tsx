@@ -74,7 +74,7 @@ export default function PartyPage({ params }: { params: Promise<{ id: string }> 
   };
 
   const pickTitle = async (slug: string, episode: number) => {
-    const r = await fetch(`/api/providers/${slug}/${episode}`).catch(() => null);
+    const r = await fetch(`/api/providers/${slug}/${episode}?files=1`).catch(() => null);
     const j = r?.ok ? await r.json() : null;
     const all = (j?.sources ?? []) as Array<{ id: string; label: string; kind: string; providerId?: string; files?: Array<{ url: string; quality?: string }> }>;
     // Баг 1: годны все file-источники (MP4 и HLS, включая Kodik-direct), demo — в конец списка

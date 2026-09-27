@@ -65,6 +65,9 @@ export interface ProviderContext {
   isAdult: boolean;
   episode: number;
   totalEpisodes: number;
+  /** Party-режим: не использовать кэш, если в нём нет file-источников
+      (embed-кэш не пригоден для синхронизации) — идти в live-провайдеры за HLS/MP4. */
+  preferFiles?: boolean;
 }
 
 export type ResolveOutcome = { sources: EpisodeSource[]; error?: string; skip?: SkipWindow };

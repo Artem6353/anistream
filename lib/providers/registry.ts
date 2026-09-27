@@ -89,7 +89,11 @@ export async function resolveEpisodeSources(ctx: ProviderContext): Promise<Episo
   /* 1) cache-first */
   const t0 = Date.now();
   const cached = await cacheGet(key);
-  if (cached && cached.sources.length) {
+  const cacheUsable =
+    cached &&
+    cached.sources.length &&
+    !(ctx.preferFiles && !cached.sources.some((s) => s.kind === 'file' && (s.files?.length ?? 0) > 0));
+  if (cacheUsable) {
     metrics.cacheHit++;
     metricLatency(Date.now() - t0);
     return withDemo({ ...cached, fromCache: true, cachedAt: cached.cachedAt ?? Date.now() }, ctx);

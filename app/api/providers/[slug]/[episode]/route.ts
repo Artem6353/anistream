@@ -34,9 +34,11 @@ export async function GET(request: Request, { params }: Props) {
   const title = getTitle(slug);
   if (!title) return NextResponse.json({ error: 'title not found' }, { status: 404 });
   const episode = Math.max(1, Math.min(title.episodes, Number(episodeRaw) || 1));
+  const preferFiles = new URL(request.url).searchParams.get('files') === '1';
 
   try {
-    const sources = await resolveOnce(`${slug}:${episode}`, contextFromTitle(title, episode));
+    const ctx = { ...contextFromTitle(title, episode), preferFiles };
+    const sources = await resolveOnce(`${slug}:${episode}${preferFiles ? ':files' : ''}`, ctx);
     return NextResponse.json(
       { ...sources, providers: providersWithAvailability() },
       { headers: { 'Cache-Control': sources.fromCache ? 'public, s-maxage=3600' : 'no-store' } },
