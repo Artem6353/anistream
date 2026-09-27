@@ -12,7 +12,10 @@ import {
   isSessionValid,
   refreshAccessToken,
   SessionExpiredError,
+  signInWithGoogle,
+  notifyAuthChange,
 } from '@/lib/sync';
+import { IconGoogle } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/Toaster';
 
 /** Аккаунт и синхронизация списков/истории между устройствами (ТЗ 2.2 + refresh_token). */
@@ -108,6 +111,7 @@ export function SyncSection() {
             onClick={() => {
               clearToken();
               setLogged(false);
+              notifyAuthChange();
               toast('Вы вышли');
             }}
           >
@@ -116,6 +120,22 @@ export function SyncSection() {
         )}
       </div>
       {!logged && (
+        <>
+        <button
+          type="button"
+          className="btn btn--google btn--md"
+          disabled={!!busy}
+          onClick={() => {
+            setBusy('google');
+            signInWithGoogle().catch((e) => {
+              setBusy('');
+              toast(`Google: ${e.message}`);
+            });
+          }}
+        >
+          <IconGoogle size={16} />
+          Продолжить с Google
+        </button>
         <form
           className="reviews__form"
           onSubmit={(e) => {
@@ -123,6 +143,7 @@ export function SyncSection() {
             act(async () => {
               await signIn(email, password);
               setLogged(true);
+              notifyAuthChange();
               toast('Вход выполнен');
             }, 'in');
           }}
@@ -166,6 +187,7 @@ export function SyncSection() {
             </button>
           </div>
         </form>
+        </>
       )}
     </section>
   );
