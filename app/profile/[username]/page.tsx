@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ProfileHeader, type PublicProfile } from '@/components/profile/ProfileHeader';
+import { FollowButton } from '@/components/social/FollowButton';
 
 export const metadata: Metadata = { title: 'Профиль пользователя' };
 export const revalidate = 60;
@@ -19,9 +20,24 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const rows = r.ok ? ((await r.json()) as PublicProfile[]) : [];
   const profile = rows?.[0];
   if (!profile) notFound();
+  // счётчики подписок (ТЗ 20.1)
+  let followers = 0;
+  let following = 0;
+  try {
+    const [fa, fb] = await Promise.all([
+      fetch(`${SUPA}/rest/v1/follows?select=follower_id&following_id=eq.${profile.user_id}`, { headers: { apikey: KEY, Authorization: `Bearer ${KEY}` } }),
+      fetch(`${SUPA}/rest/v1/follows?select=following_id&follower_id=eq.${profile.user_id}`, { headers: { apikey: KEY, Authorization: `Bearer ${KEY}` } }),
+    ]);
+    followers = fa.ok ? ((await fa.json()) as unknown[]).length : 0;
+    following = fb.ok ? ((await fb.json()) as unknown[]).length : 0;
+  } catch {}
   return (
     <div className="container">
-      <ProfileHeader profile={profile} />
+      <ProfileHeader profile={profile} followers={followers} following={following}>
+        <div className="pheader__actions">
+          <FollowButton targetId={profile.user_id} />
+        </div>
+      </ProfileHeader>
       <p className="pheader__pubnote">Публичный профиль AniNova. Списки и история владельца приватны.</p>
     </div>
   );

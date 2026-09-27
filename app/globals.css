@@ -3768,3 +3768,14 @@ a.review__author-name:hover { color: var(--accent); text-decoration: underline; 
 .ach-card__bar > span { display: block; height: 100%; background: var(--grad); }
 .ach-card__progress { color: var(--muted-2); font-size: 11px; }
 .ach-detail__how, .ach-detail__progress, .ach-detail__date { color: var(--muted); font-size: 14px; }
+
+/* ТЗ 20.1: лента и кнопка действий профиля */
+.pheader__actions { display: flex; gap: 8px; margin: 12px 0 0; flex-wrap: wrap; }
+.feed__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.feed__item { display: flex; gap: 10px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.feed__avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex: none; }
+.feed__avatar--guest { display: inline-flex; align-items: center; justify-content: center; background: var(--surface-2); color: var(--muted); font-weight: 700; }
+.feed__text { font-size: 14px; color: var(--muted); }
+.feed__text strong { color: var(--text); }
+.feed__text a { color: var(--accent); }
+.feed__text small { color: var(--muted-2); }
