@@ -13,6 +13,7 @@ import { isSessionValid, supaRest } from '@/lib/sync';
 import { AUTH_CHANGE_EVENT } from '@/lib/auth-gate';
 import { trackEvent } from '@/lib/achievements';
 import { StreakBadge } from './StreakBadge';
+import { DmIcon } from './DmIcon';
 import { IconBookmark, IconCommand, IconSearch, IconSettings, IconMoon, IconSun, IconMonitor } from '@/components/ui/icons';
 import { useI18n } from '@/lib/i18n'; // LanguageSwitcher убран (ТЗ блок 7): сайт только RU; код i18n оставлен на будущее
 
@@ -121,6 +122,7 @@ export function SiteHeader() {
               </kbd>
             </button>
             <StreakBadge />
+            <DmIcon />
             {!logged ? (
               <button
                 type="button"

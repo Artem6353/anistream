@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ProfileHeader, type PublicProfile } from '@/components/profile/ProfileHeader';
 import { FollowButton } from '@/components/social/FollowButton';
+import { WriteDmButton } from '@/components/social/WriteDmButton';
 
 export const metadata: Metadata = { title: 'Профиль пользователя' };
 export const revalidate = 60;
@@ -36,6 +37,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       <ProfileHeader profile={profile} followers={followers} following={following}>
         <div className="pheader__actions">
           <FollowButton targetId={profile.user_id} />
+          <WriteDmButton targetId={profile.user_id} targetName={profile.username ?? 'пользователь'} />
         </div>
       </ProfileHeader>
       <p className="pheader__pubnote">Публичный профиль AniNova. Списки и история владельца приватны.</p>
