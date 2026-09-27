@@ -125,6 +125,9 @@ export function SiteHeader() {
               </kbd>
             </button>
             <StreakBadge />
+            <Link className="icon-btn header__icon" href="/profile/achievements" aria-label="Достижения" title="Достижения">
+              🏆
+            </Link>
             <DmIcon />
             {!logged ? (
               <button

@@ -27,6 +27,9 @@ export default function AchievementsPage() {
 
   return (
     <div className="container ach-page">
+      <p className="breadcrumbs">
+        <a href="/profile/settings">Назад в профиль</a>
+      </p>
       <h1>Достижения</h1>
       <p className="ach-page__count">
         Получено: {Object.keys(unlocked).length} из {ACHIEVEMENTS.length}

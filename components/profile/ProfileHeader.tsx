@@ -81,6 +81,9 @@ export function ProfileHeader({
               <Link className="btn btn--outline btn--md" href="/profile/stats">
                 📊 Статистика
               </Link>
+              <Link className="btn btn--outline btn--md" href="/profile/achievements">
+                🏆 Достижения
+              </Link>
             </span>
           ) : null}
           {profile?.bio ? <p className="pheader__bio">{profile.bio}</p> : null}

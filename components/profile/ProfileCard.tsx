@@ -138,6 +138,9 @@ export function ProfileCard() {
           <a className="btn btn--outline btn--md" href="/profile/stats">
             📊 Моя статистика
           </a>
+          <a className="btn btn--outline btn--md" href="/profile/achievements">
+            🏆 Мои достижения
+          </a>
           {!isSessionValid() ? <span className="settings__note">Нужен вход: данные профиля хранятся в Supabase.</span> : null}
         </div>
       </div>

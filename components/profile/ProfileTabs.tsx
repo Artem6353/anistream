@@ -14,6 +14,7 @@ const TABS = [
   { href: '/profile/history', label: 'История' },
   { href: '/profile/settings', label: 'Настройки' },
   { href: '/profile/stats', label: 'Статистика' },
+  { href: '/profile/achievements', label: 'Достижения' },
 ];
 
 export function ProfileTabs() {
