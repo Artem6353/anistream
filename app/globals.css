@@ -3859,3 +3859,12 @@ html[data-tv='true'] .mobile-nav { display: none; }
 
 /* perf: отложенная отрисовка внеэкранных секций (instant LCP) */
 .page-section, .rail-section { content-visibility: auto; contain-intrinsic-size: auto 320px; }
+
+/* Аудит P3-5: светлая тема — доводка поверхностей, читаемых вне токенов */
+:root[data-theme='light'] kbd { background: var(--surface-2); color: var(--text); border: 1px solid var(--line-strong); }
+:root[data-theme='light'] .card__score { background: rgba(15, 23, 42, 0.78); color: #fff; }
+:root[data-theme='light'] .header__search { background: var(--surface-2); }
+:root[data-theme='light'] .chip { background: var(--surface-2); }
+:root[data-theme='light'] .input { background: #fff; }
+:root[data-theme='light'] .theme-menu, :root[data-theme='light'] .auth-sheet { box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18); }
+:root[data-theme='light'] .hero__desc, :root[data-theme='light'] .hero__meta { color: #dfe6f2; }
