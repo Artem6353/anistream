@@ -1,9 +1,11 @@
 'use client';
 // OG-карточка: next/og (satori) нестабилен в sandbox/low-memory сборках — PNG «Поделиться» рисуется клиентом (canvas), соцсети получают meta из layout.
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLibrary } from '@/lib/library';
 import { readCounters, readUnlocked } from '@/lib/achievements';
+import { isSessionValid, supaWhoami } from '@/lib/sync';
+import { myFollowing } from '@/lib/social-graph';
 import { WEEKDAYS } from '@/lib/labels';
 import { useToast } from '@/components/ui/Toaster';
 
@@ -52,8 +54,15 @@ export default function StatsPage() {
       cells.push({ key, count: perDay.get(key) ?? 0 });
     }
     const maxDay = Math.max(1, ...cells.map((c) => c.count));
+    // ТЗ 23: матрица активности 7×24 и облако жанров
+    const weekHour = Array.from({ length: 7 }, () => Array(24).fill(0) as number[]);
+    for (const h of history) {
+      const d = new Date(h.updatedAt ?? 0);
+      weekHour[(d.getDay() + 6) % 7][d.getHours()]++;
+    }
+    const maxCell = Math.max(1, ...weekHour.flat());
     const unlocked = Object.keys(readUnlocked()).length;
-    return { watchSec, perWeekday, topGenres, avgRating, titles: slugs.size, listsCount: Object.keys(lists).length, cells, maxDay, unlocked };
+    return { watchSec, perWeekday, topGenres, avgRating, titles: slugs.size, listsCount: Object.keys(lists).length, cells, maxDay, unlocked, weekHour, maxCell };
   }, [history, lists]);
 
   const hours = Math.round(s.watchSec / 3600);
@@ -155,9 +164,95 @@ export default function StatsPage() {
         </div>
       </section>
 
+      <section className="stats__block">
+        <h2>Активность: дни × часы</h2>
+        <div className="stats__wh" aria-label="Тепловая карта активности по часам">
+          {WEEKDAYS.map((w, wi) => (
+            <div className="stats__wh-row" key={w}>
+              <span className="stats__wh-label">{w.slice(0, 2)}</span>
+              {s.weekHour[wi].map((v, hi) => (
+                <span key={hi} className="stats__wh-cell" title={`${w} ${hi}:00 — ${v}`} style={{ opacity: v ? 0.2 + (0.8 * v) / s.maxCell : 0.06 }} />
+              ))}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <GenreCloud history={history} />
+      <FriendsTaste history={history} />
+
       <button type="button" className="btn btn--primary btn--md" onClick={share}>
         Поделиться (PNG)
       </button>
     </div>
+  );
+}
+
+/** Кинокарта (ТЗ 23): облако жанров, размер шрифта ∝ частоте в истории. */
+function GenreCloud({ history }: { history: Array<{ slug: string }> }) {
+  const [cloud, setCloud] = useState<Array<[string, number]>>([]);
+  useEffect(() => {
+    const slugs = [...new Set(history.map((h) => h.slug))].slice(0, 60);
+    if (!slugs.length) return;
+    fetch(`/api/titles?slugs=${encodeURIComponent(slugs.join(','))}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const counts = new Map<string, number>();
+        for (const t of j?.items ?? []) for (const g of t.genres ?? []) counts.set(g, (counts.get(g) ?? 0) + 1);
+        setCloud([...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 14));
+      })
+      .catch(() => {});
+  }, [history]);
+  if (!cloud.length) return null;
+  const max = cloud[0][1];
+  return (
+    <section className="stats__block">
+      <h2>Кинокарта жанров</h2>
+      <p className="genre-cloud">
+        {cloud.map(([g, v]) => (
+          <span key={g} style={{ fontSize: `${13 + Math.round((18 * v) / max)}px`, opacity: 0.55 + (0.45 * v) / max }}>
+            {g}
+          </span>
+        ))}
+      </p>
+    </section>
+  );
+}
+
+/** Сравнение с друзьями (ТЗ 23): % совпадения вкусов по подпискам. */
+function FriendsTaste({ history }: { history: Array<{ slug: string }> }) {
+  const [rows, setRows] = useState<Array<{ uid: string; username: string; shared: number; jaccard: number }>>([]);
+  useEffect(() => {
+    if (!isSessionValid()) return;
+    (async () => {
+      const me = await supaWhoami().catch(() => null);
+      if (!me) return;
+      const uids = (await myFollowing().catch(() => [])).filter((u) => u !== me);
+      if (!uids.length) return;
+      const r = await fetch('/api/social/taste', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uids, mySlugs: [...new Set(history.map((h) => h.slug))] }),
+      }).catch(() => null);
+      const j = r?.ok ? await r.json() : null;
+      setRows(j?.rows ?? []);
+    })();
+  }, [history]);
+  if (!rows.length) return null;
+  return (
+    <section className="stats__block">
+      <h2>Совпадение вкусов с подписками</h2>
+      <ul className="feed__list">
+        {rows
+          .sort((a, b) => b.jaccard - a.jaccard)
+          .map((r) => (
+            <li className="feed__item" key={r.uid}>
+              <span className="feed__text">
+                <strong>{r.username}</strong>: {r.jaccard}% совпадения · общих тайтлов: {r.shared}
+              </span>
+            </li>
+          ))}
+      </ul>
+    </section>
   );
 }
