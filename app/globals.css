@@ -3805,6 +3805,8 @@ a.review__author-name:hover { color: var(--accent); text-decoration: underline; 
 .party__video { width: 100%; max-height: 60vh; border-radius: 14px; background: #000; }
 .party__empty { padding: 40px; text-align: center; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 14px; }
 
+.pheader__links { display: flex; gap: 8px; margin: 8px 0 0; flex-wrap: wrap; }
+
 /* ТЗ 23: аналитика */
 .stats__wh { display: flex; flex-direction: column; gap: 3px; overflow-x: auto; padding-bottom: 6px; }
 .stats__wh-row { display: flex; align-items: center; gap: 3px; }

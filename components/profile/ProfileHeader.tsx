@@ -1,6 +1,9 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { ACH_BY_ID } from '@/lib/achievements';
+import { isSessionValid, supaWhoami } from '@/lib/sync';
 
 export interface PublicProfile {
   user_id: string;
@@ -43,6 +46,14 @@ export function ProfileHeader({
     ? { background: BANNER_GRADIENTS[Number(banner.slice(5)) % BANNER_GRADIENTS.length] }
     : { background: BANNER_GRADIENTS[0] };
   const badges = (profile?.pinned_achievements ?? []).slice(0, 3).map((id) => ACH_BY_ID.get(id)).filter(Boolean);
+  // ссылки на статистику/ачивки — только на собственном профиле (данные локальные)
+  const [own, setOwn] = useState(false);
+  useEffect(() => {
+    if (!profile?.user_id || !isSessionValid()) return;
+    supaWhoami()
+      .then((uid) => setOwn(uid === profile.user_id))
+      .catch(() => {});
+  }, [profile?.user_id]);
   return (
     <header className="pheader">
       <div className="pheader__banner" style={bannerStyle}>
@@ -65,6 +76,13 @@ export function ProfileHeader({
               </span>
             ) : null}
           </h1>
+          {own ? (
+            <span className="pheader__links">
+              <Link className="btn btn--outline btn--md" href="/profile/stats">
+                📊 Статистика
+              </Link>
+            </span>
+          ) : null}
           {profile?.bio ? <p className="pheader__bio">{profile.bio}</p> : null}
           {followers !== undefined || following !== undefined ? (
             <p className="pheader__counts">

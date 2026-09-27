@@ -13,6 +13,7 @@ const TABS = [
   { href: '/profile/bookmarks', label: 'Закладки' },
   { href: '/profile/history', label: 'История' },
   { href: '/profile/settings', label: 'Настройки' },
+  { href: '/profile/stats', label: 'Статистика' },
 ];
 
 export function ProfileTabs() {

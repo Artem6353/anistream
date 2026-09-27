@@ -135,6 +135,9 @@ export function ProfileCard() {
           <button className="btn btn--primary btn--md" disabled={!!busy} onClick={() => save({})}>
             {busy === 'save' ? '…' : 'Сохранить профиль'}
           </button>
+          <a className="btn btn--outline btn--md" href="/profile/stats">
+            📊 Моя статистика
+          </a>
           {!isSessionValid() ? <span className="settings__note">Нужен вход: данные профиля хранятся в Supabase.</span> : null}
         </div>
       </div>
