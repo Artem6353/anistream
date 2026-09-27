@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import { library, useLibrary } from '@/lib/library';
 import {
-  signIn,
-  signUp,
   clearToken,
   pushLocal,
   pullRemote,
@@ -12,22 +10,20 @@ import {
   isSessionValid,
   refreshAccessToken,
   SessionExpiredError,
-  signInWithGoogle,
   notifyAuthChange,
 } from '@/lib/sync';
-import { IconGoogle } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/Toaster';
 
-/** Аккаунт и синхронизация списков/истории между устройствами (ТЗ 2.2 + refresh_token). */
+/** Аккаунт и синхронизация списков/истории между устройствами (ТЗ 2.2 + refresh_token).
+    Вход/регистрация — через модалку в шапке (AuthModal). Здесь только действия
+    для уже залогиненного пользователя: push/pull/logout. */
 export function SyncSection() {
   const { lists, history } = useLibrary();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [logged, setLogged] = useState(false);
   const [busy, setBusy] = useState('');
   const toast = useToast();
 
-  // Восстанавливаем состояние входа на клиенте (SSR-safe).
+  // Восстанавливаем состояние входа (SSR-safe) + молча обновляем сессию при наличии refresh_token.
   useEffect(() => {
     if (!syncConfigured()) return;
     if (isSessionValid()) {
@@ -73,13 +69,13 @@ export function SyncSection() {
       <p className="settings__note">
         {logged
           ? 'Вы вошли. Списки и история могут синхронизироваться между устройствами.'
-          : 'Войдите в аккаунт — после этого кнопки «Отправить» и «Скачать» станут активны.'}
+          : 'Войдите через кнопку «Войти» в шапке — после этого кнопки «Отправить» и «Скачать» станут активны.'}
       </p>
       <div className="settings__actions">
         <button
           className="btn btn--primary btn--md"
           disabled={!logged || !!busy}
-          title={logged ? undefined : 'Войдите в аккаунт'}
+          title={logged ? undefined : 'Войдите через кнопку в шапке'}
           onClick={() =>
             act(async () => {
               const n = await pushLocal(lists, history);
@@ -92,7 +88,7 @@ export function SyncSection() {
         <button
           className="btn btn--outline btn--md"
           disabled={!logged || !!busy}
-          title={logged ? undefined : 'Войдите в аккаунт'}
+          title={logged ? undefined : 'Войдите через кнопку в шапке'}
           onClick={() =>
             act(async () => {
               const remote = await pullRemote();
@@ -118,87 +114,6 @@ export function SyncSection() {
           </button>
         )}
       </div>
-      {!logged && (
-        <>
-          <button
-            type="button"
-            className="btn btn--google btn--md"
-            disabled={!!busy}
-            onClick={() => {
-              setBusy('google');
-              try {
-                // signInWithGoogle — синхронный редирект, без fetch. См. lib/sync.ts.
-                signInWithGoogle();
-              } catch (e) {
-                setBusy('');
-                toast(`Google: ${e instanceof Error ? e.message : 'ошибка'}`);
-              }
-            }}
-          >
-            <IconGoogle size={16} />
-            Продолжить с Google
-          </button>
-          <form
-            className="reviews__form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              act(async () => {
-                await signIn(email, password);
-                setLogged(true);
-                notifyAuthChange();
-                toast('Вход выполнен');
-              }, 'in');
-            }}
-          >
-            <input
-              className="input"
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <input
-              className="input"
-              type="password"
-              placeholder="Пароль"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <div className="settings__actions">
-              <button className="btn btn--primary btn--md" type="submit" disabled={!!busy}>
-                Войти
-              </button>
-              <button
-                className="btn btn--outline btn--md"
-                type="button"
-                disabled={!!busy}
-                onClick={() =>
-                  act(async () => {
-                    const j = await signUp(email, password);
-                    if (!j.access_token) {
-                      try {
-                        await signIn(email, password);
-                      } catch {
-                        /* включено подтверждение email — вход после письма */
-                      }
-                    }
-                    setLogged(isSessionValid());
-                    toast(
-                      isSessionValid()
-                        ? 'Аккаунт создан — вы вошли'
-                        : 'Аккаунт создан: подтвердите email и войдите',
-                    );
-                  }, 'up')
-                }
-              >
-                Регистрация
-              </button>
-            </div>
-          </form>
-        </>
-      )}
     </section>
   );
 }
