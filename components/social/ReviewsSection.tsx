@@ -1,4 +1,6 @@
 'use client';
+import { isSessionValid } from '@/lib/sync';
+import { requireAuth, queueAuthAction } from '@/lib/auth-gate';
 
 import { useEffect, useMemo, useState } from 'react';
 import { addReview, loadReviews, reactToReview, fetchCaptcha, SOCIAL_MODE, type ReviewItem, type CaptchaChallenge } from '@/lib/social';
