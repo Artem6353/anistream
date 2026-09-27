@@ -80,17 +80,21 @@ export function titlesByGenre(genre: string, sort: CatalogQuery['sort'] = 'pop')
   return sortTitles(loadTitles().filter((t) => t.genres.includes(genre)), sort);
 }
 
+/** ТЗ Jikan блок 5: Jikan-тайтлы не вытесняют AniList из топов — пенальти 0.95. */
+const effScore = (t: Title) => (t.source === 'jikan' ? t.score * 0.95 : t.score);
+const effPop = (t: Title) => (t.source === 'jikan' ? t.favourites * 0.95 : t.favourites);
+
 export function sortTitles(items: Title[], sort: CatalogQuery['sort'] = 'pop'): Title[] {
   const arr = [...items];
   switch (sort) {
     case 'score':
-      return arr.sort((a, b) => b.score - a.score || b.favourites - a.favourites);
+      return arr.sort((a, b) => effScore(b) - effScore(a) || effPop(b) - effPop(a));
     case 'new':
       return arr.sort((a, b) => b.year - a.year || b.favourites - a.favourites);
     case 'az':
       return arr.sort((a, b) => a.ru.localeCompare(b.ru, 'ru'));
     default:
-      return arr.sort((a, b) => b.favourites - a.favourites);
+      return arr.sort((a, b) => effPop(b) - effPop(a));
   }
 }
 
