@@ -34,22 +34,24 @@ export function PushButton() {
   const [state, setState] = useState<'idle' | 'on'>('idle');
   const toast = useToast();
 
+  // Баг 6: состояние = РЕАЛЬНОЕ состояние браузера (pushManager.getSubscription),
+  // а не флаг/localStorage. Перепроверяется при монтировании, по visibilitychange
+  // и после каждой операции. Подписка привязана к браузеру, не к аккаунту.
+  const syncState = async () => {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      const reg = await swReady(4000);
+      const sub = reg ? await reg.pushManager.getSubscription() : null;
+      setState(sub ? 'on' : 'idle');
+    } catch {
+      /* ignore */
+    }
+  };
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-        const reg = await navigator.serviceWorker.getRegistration();
-        if (!reg) return;
-        const sub = await reg.pushManager.getSubscription();
-        if (!cancelled && sub) setState('on');
-      } catch {
-        /* ignore */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    syncState();
+    document.addEventListener('visibilitychange', syncState);
+    return () => document.removeEventListener('visibilitychange', syncState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -57,6 +59,19 @@ export function PushButton() {
       className="btn btn--outline btn--md"
       onClick={async () => {
         try {
+          // Баг 6: повторный клик по «включено» = ОТПИСКА (раньше кнопка пересоздавала подписку)
+          if (state === 'on') {
+            const reg = await swReady(4000);
+            const existing = reg ? await reg.pushManager.getSubscription() : null;
+            if (existing) {
+              const endpoint = existing.endpoint;
+              await existing.unsubscribe().catch(() => {});
+              await deleteFromServer(endpoint);
+            }
+            setState('idle');
+            toast('Вы отписались от уведомлений');
+            return;
+          }
           if (!('Notification' in window)) {
             toast('Браузер не поддерживает уведомления');
             return;
@@ -91,14 +106,6 @@ export function PushButton() {
             return;
           }
 
-          // Если уже есть подписка — удаляем её и синхронно чистим БД
-          const existing = await reg.pushManager.getSubscription();
-          if (existing) {
-            const oldEndpoint = existing.endpoint;
-            await existing.unsubscribe().catch(() => {});
-            await deleteFromServer(oldEndpoint);
-          }
-
           const sub = await reg.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(publicKey),
@@ -114,7 +121,7 @@ export function PushButton() {
             toast(`Сервер отклонил подписку (${resp.status})`);
             return;
           }
-          setState('on');
+          await syncState();
           toast('Готово: придёт уведомление в день выхода серий');
         } catch (e) {
           console.error('[push] error:', e);
