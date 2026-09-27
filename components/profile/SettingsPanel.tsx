@@ -6,6 +6,7 @@ import { ACCENTS } from '@/lib/labels';
 import { Switch } from '@/components/ui/Switch';
 import { useToast } from '@/components/ui/Toaster';
 import { SyncSection } from './SyncSection';
+import { ProfileCard } from './ProfileCard';
 import { PushButton } from './PushButton';
 
 export function SettingsPanel() {
@@ -80,6 +81,8 @@ export function SettingsPanel() {
         </div>
         <p className="settings__note">Цвет применяется мгновенно и хранится локально.</p>
       </section>
+
+      <ProfileCard />
 
       <SyncSection />
 
