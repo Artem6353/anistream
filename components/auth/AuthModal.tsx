@@ -15,13 +15,33 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
   const toast = useToast();
   const boxRef = useRef<HTMLDivElement>(null);
 
+  // a11y (аудит P2-1): focus-trap + фокус на первый input + возврат фокуса триггеру
   useEffect(() => {
     if (!open) return;
+    const prev = document.activeElement as HTMLElement | null;
+    const timer = setTimeout(() => boxRef.current?.querySelector<HTMLElement>('input, button')?.focus(), 30);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
+      if (e.key === 'Tab') {
+        const nodes = boxRef.current?.querySelectorAll<HTMLElement>('button, input, [href], [tabindex]:not([tabindex="-1"])');
+        if (!nodes?.length) return;
+        const first = nodes[0];
+        const last = nodes[nodes.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', onKey);
+      prev?.focus?.();
+    };
   }, [open, onClose]);
 
   if (!open) return null;
