@@ -30,7 +30,18 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.open(CACHE).then(async (cache) => {
         const hit = await cache.match(req);
-        if (hit) return hit;
+        if (hit) {
+          // audit P3-7: stale-while-revalidate — отдаём кэш сразу, тихо обновляем в фоне
+          (async () => {
+            try {
+              const res = await fetch(req);
+              if (res.ok) await cache.put(req, res.clone());
+            } catch {
+              /* офлайн — остаёмся на кэше */
+            }
+          })();
+          return hit;
+        }
         try {
           const res = await fetch(req);
           if (res.ok) cache.put(req, res.clone());
