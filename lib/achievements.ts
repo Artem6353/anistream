@@ -222,7 +222,7 @@ export function checkAchievements(streakCurrent: number): string[] {
 /* ---------- события-триггеры ---------- */
 export type TrackType = 'watch' | 'bookmarks' | 'lists' | 'review' | 'comment' | 'like' | 'rating' | 'theme' | 'section' | 'speed2' | 'voice' | 'streak';
 
-export function trackEvent(type: TrackType, payload?: { genres?: string[]; movie?: boolean; section?: string; streak?: number }) {
+export function trackEvent(type: TrackType, payload?: { genres?: string[]; movie?: boolean; section?: string; streak?: number; rating?: number }) {
   if (typeof window === 'undefined') return;
   const c = readCounters();
   let streak = payload?.streak ?? 0;
@@ -276,10 +276,14 @@ export function trackEvent(type: TrackType, payload?: { genres?: string[]; movie
       }
       break;
     }
-    case 'rating':
+    case 'rating': {
       c.ratings += 1;
       writeCounters(c);
+      const ex = readJson<{ ratingsSum?: number }>('anistream:ach_extra', {});
+      ex.ratingsSum = (ex.ratingsSum ?? 0) + (payload?.rating ?? 0);
+      try { localStorage.setItem('anistream:ach_extra', JSON.stringify(ex)); } catch {}
       break;
+    }
     case 'bookmarks':
     case 'lists':
       break; // значения берутся из library.state при проверке

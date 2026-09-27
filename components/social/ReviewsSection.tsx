@@ -116,7 +116,7 @@ export function ReviewsSection({ slug }: { slug: string }) {
     }
     setFormError('');
     trackEvent(isComment ? 'comment' : 'review');
-    if (!isComment && rating) trackEvent('rating');
+    if (!isComment && rating) trackEvent('rating', { rating });
     setItems((prev) => [res.item!, ...prev]);
     setText('');
     setReplyTo(null);
