@@ -16,6 +16,9 @@ const K_LISTS = 'anistream:lists';
 
 export const DEFAULT_SETTINGS: Settings = {
   autoplayNext: true,
+  playbackRate: 1,
+  skipIntro: false,
+  marathon: false,
   accent: 'violet',
   customAccent: null,
   theme: 'system',

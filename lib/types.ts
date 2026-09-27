@@ -103,6 +103,12 @@ export interface HistoryEntry {
 export interface Settings {
   displayName?: string;
   autoplayNext: boolean;
+  /** Запомненная скорость воспроизведения (ТЗ 22). */
+  playbackRate?: number;
+  /** Автопропуск OP/ED (ТЗ 22), по умолчанию выключен. */
+  skipIntro?: boolean;
+  /** Марафон: автопереход без обратного отсчёта (ТЗ 22). */
+  marathon?: boolean;
   accent: string;
   /** Кастомный акцент (hex) из пикера настроек (ТЗ блок 5); перекрывает пресет accent. */
   customAccent?: string | null;

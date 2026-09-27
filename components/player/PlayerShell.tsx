@@ -65,7 +65,8 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   const [buffered, setBuffered] = useState(0);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
-  const [rate, setRate] = useState(1);
+  const [rate, setRate] = useState(settings.playbackRate ?? 1);
+  const skipGuard = useRef({ intro: false, outro: false });
   const [uiVisible, setUiVisible] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [nextIn, setNextIn] = useState<number | null>(null);
@@ -229,6 +230,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   useEffect(() => {
     setResumeAt(null);
     switchingSrc.current = false;
+    skipGuard.current = { intro: false, outro: false };
   }, [episode, title.slug]);
   useEffect(() => {
     if (resumeAt !== null && time > 10) setResumeAt(null);
@@ -289,7 +291,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   useEffect(() => {
     if (!duration || !nextEpisode || isEmbed) return;
     const left = duration - time;
-    if (playing && left <= 20 && left > 0) setNextIn(Math.ceil(left));
+    if (playing && left <= 20 && left > 0 && !settings.marathon) setNextIn(Math.ceil(left)); // ТЗ 22: марафон — без отсчёта
     else setNextIn(null);
   }, [time, duration, playing, nextEpisode, isEmbed]);
 
@@ -412,7 +414,23 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                 onClick={() => (playing ? videoRef.current?.pause() : void videoRef.current?.play().catch(() => {}))}
                 onPlay={() => setPlaying(true)}
                 onPause={() => setPlaying(false)}
-                onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+                onTimeUpdate={(e) => {
+                  const v = e.currentTarget;
+                  setTime(v.currentTime);
+                  // ТЗ 22: автопропуск OP/ED (опция skipIntro, дефолт off) по таймингам провайдера/AniSkip
+                  const win = (data as { skip?: { intro?: [number, number]; outro?: [number, number] } } | null)?.skip;
+                  if (settings.skipIntro && win && !isEmbed) {
+                    if (win.intro && v.currentTime >= win.intro[0] && v.currentTime < win.intro[1] - 0.5 && !skipGuard.current.intro) {
+                      skipGuard.current.intro = true;
+                      v.currentTime = win.intro[1];
+                    }
+                    if (win.outro && v.currentTime >= win.outro[0] && v.currentTime < win.outro[1] - 0.5 && !skipGuard.current.outro) {
+                      skipGuard.current.outro = true;
+                      v.currentTime = Math.min(v.duration || win.outro[1], win.outro[1]);
+                    }
+                    if (win.intro && v.currentTime < win.intro[0]) skipGuard.current.intro = false;
+                  }
+                }}
                 onLoadedMetadata={(e) => {
                   const v = e.currentTarget;
                   setDuration(v.duration);
@@ -656,6 +674,9 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                     </>
                   ) : null}
                   <Switch label="Автопереход к следующей серии" checked={settings.autoplayNext} onChange={(v) => library.setSettings({ autoplayNext: v })} />
+                  <Switch label="Марафон: без обратного отсчёта" checked={Boolean(settings.marathon)} onChange={(v) => library.setSettings({ marathon: v })} />
+                  <Switch label="Автопропуск опенинга/эндинга" checked={Boolean(settings.skipIntro)} onChange={(v) => library.setSettings({ skipIntro: v })} />
+                  <p className="player__hint">Скорость воспроизведения запоминается автоматически.</p>
                 </div>
               ) : null}
 
@@ -671,6 +692,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                         onClick={() => {
                           setRate(r);
                           if (videoRef.current) videoRef.current.playbackRate = r;
+                          library.setSettings({ playbackRate: r }); // ТЗ 22: скорость запоминается
                           if (r === 2) trackEvent('speed2');
                           setRateOpen(false);
                         }}
