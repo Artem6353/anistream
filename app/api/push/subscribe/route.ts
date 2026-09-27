@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { log } from '@/lib/logger';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 const SUPA_KEY =
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
     }),
   });
   if (!ins.ok) {
-    console.error('[push/subscribe] insert failed', ins.status, await ins.text());
+    log('error', 'push subscribe insert failed', { status: ins.status, body: await ins.text() });
     return NextResponse.json({ error: 'supabase error' }, { status: 502 });
   }
 

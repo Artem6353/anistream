@@ -9,6 +9,7 @@ import { demoSources, DEMO_SKIP } from './providers/demo';
 import { synthesizeEpisode } from './synthesize';
 import { metrics, metricLatency, metricErrorBump, sendTgAlert } from '@/lib/metrics';
 import { promises as fs } from 'node:fs';
+import { log } from '@/lib/logger';
 import { readFileSync } from 'node:fs';
 
 /** Ручные источники модератора: lib/data/manual-sources.json
@@ -40,6 +41,7 @@ async function logProviderErrors(slug: string, episode: number, errors: Record<s
   try {
     await fs.mkdir('.cache', { recursive: true });
     await fs.appendFile('.cache/provider-errors.jsonl', JSON.stringify({ at: now, slug, episode, errors }) + '\n');
+    log('warn', 'provider errors', { slug, episode, errors });
   } catch {}
 }
 

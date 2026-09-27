@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { rateLimit, supabaseConfigured, verifyCaptcha } from '@/lib/social-server';
+import { log } from '@/lib/logger';
 import { getUserId } from '@/lib/userId';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
@@ -161,6 +162,9 @@ export async function POST(request: Request) {
     headers: { apikey: SUPA_SERVICE, Authorization: `Bearer ${SUPA_SERVICE}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
     body: JSON.stringify(item),
   });
-  if (!r.ok) return NextResponse.json({ error: 'supabase error' }, { status: 502 });
+  if (!r.ok) {
+    log('error', 'reviews insert failed', { status: r.status, body: await r.text() });
+    return NextResponse.json({ error: 'supabase error' }, { status: 502 });
+  }
   return NextResponse.json({ item: (await r.json())[0] ?? item });
 }
