@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/Toaster';
 /** «✉️ Написать сообщение» на чужом профиле (ТЗ 20.3, фикс бага 4):
     находит существующий тред или создаёт новый, редиректит в чат,
     все ошибки — тостами. На своём профиле кнопка не рендерится. */
-export function WriteDmButton({ targetId, targetName }: { targetId: string; targetName: string }) {
+export function WriteDmButton({ targetId, targetName, compact }: { targetId: string; targetName: string; compact?: boolean }) {
   const router = useRouter();
   const toast = useToast();
   const [me, setMe] = useState<string | null | undefined>(undefined); // undefined = ещё не знаем
@@ -62,14 +62,16 @@ export function WriteDmButton({ targetId, targetName }: { targetId: string; targ
   return (
     <button
       type="button"
-      className="btn btn--outline btn--md"
+      className={compact ? 'icon-btn review__dm' : 'btn btn--outline btn--md'}
+      aria-label={`Написать сообщение ${targetName}`}
+      title={`Написать сообщение ${targetName}`}
       disabled={busy}
       onClick={() => {
         if (isSessionValid()) open();
         else queueAuthAction(open);
       }}
     >
-      {busy ? '…' : `✉️ Написать сообщение ${targetName}`}
+      {busy ? '…' : compact ? '✉️' : `✉️ Написать сообщение ${targetName}`}
     </button>
   );
 }

@@ -56,7 +56,7 @@ async function attachAuthors(items: ReviewItem[]) {
   }
   for (const item of items) {
     const p = pmap.get(String(item.user_id ?? ''));
-    if (p) item.author = { username: p.username, avatar_url: p.avatar_url, pinned: p.pinned_achievements, episodes: counts.get(p.user_id) ?? 0 };
+    if (p) item.author = { user_id: p.user_id, username: p.username, avatar_url: p.avatar_url, pinned: p.pinned_achievements, episodes: counts.get(p.user_id) ?? 0 };
   }
 }
 
