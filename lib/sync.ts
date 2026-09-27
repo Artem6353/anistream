@@ -272,20 +272,27 @@ export async function pullRemote(): Promise<{ lists: Record<string, string>; his
 
 /* ---------- Google OAuth + storage/profile REST (ТЗ блоки 15–16, аддитивно) ---------- */
 
-/** Старт Google OAuth: Supabase /auth/v1/authorize → редирект на Google.
-    Возврат настроен на /auth/callback (Redirect URLs в Supabase). */
-export async function signInWithGoogle(): Promise<void> {
+/**
+ * Старт Google OAuth.
+ *
+ * ВАЖНО: не используем fetch() — Supabase отвечает 302 redirect на accounts.google.com,
+ * а Google блокирует CORS для fetch-запросов (No 'Access-Control-Allow-Origin').
+ * Поэтому — прямой переход браузера через window.location.href:
+ *   Supabase /authorize → 302 → Google → логин → возврат на Supabase /callback
+ *   → возврат на /auth/callback сайта (по Redirect URLs в Supabase).
+ *
+ * apikey передаём в query (?apikey=...), потому что при навигации нельзя
+ * проставить заголовки — а Supabase требует apikey для /auth/v1/authorize.
+ */
+export function signInWithGoogle(): void {
   if (!syncConfigured()) throw new Error('sync не настроен');
-  const r = await fetch(
-    `${SUPA_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(
-      typeof location !== 'undefined' ? location.origin + '/auth/callback' : '',
-    )}`,
-    { headers: { apikey: SUPA_KEY } },
-  );
-  if (!r.ok) throw new Error(`authorize: HTTP ${r.status}`);
-  const j = (await r.json()) as { url?: string };
-  if (!j.url) throw new Error('authorize: нет url');
-  location.href = j.url;
+  const redirectTo = typeof location !== 'undefined' ? location.origin + '/auth/callback' : '';
+  const url =
+    `${SUPA_URL}/auth/v1/authorize` +
+    `?provider=google` +
+    `&redirect_to=${encodeURIComponent(redirectTo)}` +
+    `&apikey=${encodeURIComponent(SUPA_KEY)}`;
+  window.location.href = url;
 }
 
 /** REST Supabase с авто-refresh (для profiles/storage и т.п.). */
