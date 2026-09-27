@@ -1,15 +1,16 @@
 {
-  "generatedAt": "2026-09-26T20:19:13.976Z",
-  "finishedTotal": 4962,
-  "withEpisodeDates": 4947,
-  "coveragePct": 99.7,
+  "generatedAt": "2026-09-27T00:41:29.657Z",
+  "finishedTotal": 7509,
+  "withEpisodeDates": 7469,
+  "coveragePct": 99.5,
   "targetPct": 80,
   "targetMet": true,
   "withoutDatesByType": {
-    "tv": 8,
-    "movie": 3,
-    "ova": 2,
-    "special": 2
+    "tv": 19,
+    "movie": 7,
+    "ova": 4,
+    "ona": 2,
+    "special": 8
   },
   "withoutDatesSamples": [
     {
@@ -79,28 +80,28 @@
       "year": 0
     },
     {
+      "slug": "wushen-zhuzai",
+      "type": "ona",
+      "episodes": 272,
+      "year": 0
+    },
+    {
       "slug": "soul-eater-late-show",
       "type": "special",
       "episodes": 51,
       "year": 2008
     },
     {
-      "slug": "dragon-ball-specials",
-      "type": "special",
-      "episodes": 2,
-      "year": 0
-    },
-    {
-      "slug": "rain-town",
-      "type": "movie",
-      "episodes": 1,
-      "year": 0
-    },
-    {
-      "slug": "utsu-musume-sayuri",
+      "slug": "michi",
       "type": "ova",
-      "episodes": 1,
+      "episodes": 4,
       "year": 0
+    },
+    {
+      "slug": "ninja-hattori-kun",
+      "type": "tv",
+      "episodes": 694,
+      "year": 1981
     }
   ]
 }
