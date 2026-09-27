@@ -22,6 +22,9 @@ const NAV = [
   { href: '/top', key: 'top' },
   { href: '/genres', key: 'genres' },
   { href: '/schedule', key: 'schedule' },
+  { href: '/feed', key: 'feed' },
+  { href: '/clubs', key: 'clubs' },
+  { href: '/forum', key: 'forum' },
 ] as const;
 
 export function SiteHeader() {
