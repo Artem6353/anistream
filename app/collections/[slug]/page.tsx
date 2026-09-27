@@ -1,0 +1,35 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { loadTitles } from '@/lib/catalog';
+import { collectionTitles, COLLECTIONS } from '@/lib/collections';
+import { PosterCard } from '@/components/anime/PosterCard';
+
+export const revalidate = 3600;
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const c = COLLECTIONS.find((x) => x.slug === slug);
+  return { title: c ? `Подборка: ${c.title}` : 'Подборка' };
+}
+
+/** Страница подборки (ТЗ 18.5): сетка тайтлов коллекции. */
+export default async function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const res = collectionTitles(slug, loadTitles());
+  if (!res) notFound();
+  return (
+    <div className="container">
+      <nav className="breadcrumbs" aria-label="Хлебные крошки">
+        <Link href="/">Главная</Link> / <span>Подборки</span>
+      </nav>
+      <h1>{res.collection.title}</h1>
+      <p className="collection-desc">{res.collection.desc}</p>
+      <div className="poster-grid">
+        {res.items.map((t) => (
+          <PosterCard key={t.slug} title={t} />
+        ))}
+      </div>
+    </div>
+  );
+}

@@ -7,6 +7,12 @@ import { GenreChips } from '@/components/anime/GenreChips';
 import { homeRails, genreStats, heroSlides } from '@/lib/catalog';
 import { demoWeek } from '@/lib/schedule';
 import { HomeSchedule } from '@/components/schedule/HomeSchedule';
+import { ContinueBanner } from '@/components/home/ContinueBanner';
+import { DiscussedRail } from '@/components/home/DiscussedRail';
+import { TopTabs } from '@/components/home/TopTabs';
+import { COLLECTIONS } from '@/lib/collections';
+import { loadTitles } from '@/lib/catalog';
+import Link from 'next/link';
 import { ForYouRail } from '@/components/anime/ForYouRail';
 import { IconGrid, IconSparkles } from '@/components/ui/icons';
 import { HomeSidebar } from '@/components/home/Sidebar';
@@ -15,12 +21,28 @@ export const revalidate = 3600;
 
 export default async function HomePage() {
   const rails = homeRails();
+  // ТЗ 18.5: «за неделю» — ongoing + свежие finished, ранг favourites + score
+  const weekTop = loadTitles()
+    .filter((t) => t.status === 'ongoing' || (t.status === 'finished' && t.year >= 2025))
+    .sort((a, b) => b.favourites + b.score * 500 - (a.favourites + a.score * 500))
+    .slice(0, 12);
   const genres = genreStats();
 
   return (
     <>
+      {/* ТЗ 18.5: баннер «Продолжить с MM:SS» над Hero */}
+      <div className="container">
+        <ContinueBanner />
+      </div>
+
       {/* Hero — full-bleed, на всю ширину экрана (ТЗ 4.1, задача 1.3) */}
       <Hero slides={heroSlides()} />
+
+      <div className="container quiz-cta-wrap">
+        <Link className="btn btn--primary btn--lg quiz-cta" href="/quiz">
+          🎯 Не знаете, что посмотреть? → Пройти квиз
+        </Link>
+      </div>
 
       {/* Ниже — grid: контент + сайдбар */}
       <div className="container">
@@ -44,9 +66,16 @@ export default async function HomePage() {
               ))}
             </Rail>
 
-            <Rail title="Топ по оценкам" action={{ href: '/catalog?sort=score', label: 'Весь топ' }}>
-              {rails.top.map((t) => (
-                <PosterCard key={t.slug} title={t} />
+            <TopTabs week={weekTop} all={rails.top} />
+
+            <DiscussedRail />
+
+            <Rail title="Подборки" action={{ href: '/collections/novichku', label: 'Все подборки' }}>
+              {COLLECTIONS.map((c) => (
+                <Link className="collection-card" key={c.slug} href={`/collections/${c.slug}`}>
+                  <strong>{c.title}</strong>
+                  <span>{c.desc}</span>
+                </Link>
               ))}
             </Rail>
 

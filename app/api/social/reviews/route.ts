@@ -79,6 +79,27 @@ export async function GET(request: Request) {
     return NextResponse.json({ mode: 'supabase', items });
   }
 
+  // Ветка «Сейчас обсуждают» (ТЗ 18.5): отзывы за 24 ч с ≥1 комментарием
+  if (params.get('discussed')) {
+    const since = Date.now() - 24 * 3600_000;
+    const rr = await fetch(`${SUPA_URL}/rest/v1/reviews?ts=gte.${since}&order=ts.desc&limit=200`, {
+      headers: { apikey: SUPA_ANON, Authorization: `Bearer ${SUPA_ANON}` },
+    });
+    if (!rr.ok) return NextResponse.json({ mode: 'supabase', items: [] }, { status: 502 });
+    const all = (await rr.json()) as ReviewItem[];
+    const roots = all.filter((i) => !i.parent && i.rating !== null);
+    const commentCount = new Map<string, number>();
+    for (const i of all) {
+      if (i.parent) commentCount.set(i.parent, (commentCount.get(i.parent) ?? 0) + 1);
+    }
+    const items = roots
+      .filter((i) => (commentCount.get(i.id) ?? 0) >= 1)
+      .sort((a, b) => (commentCount.get(b.id) ?? 0) - (commentCount.get(a.id) ?? 0))
+      .slice(0, 10)
+      .map((i) => ({ ...i, comments: commentCount.get(i.id) ?? 0 }));
+    return NextResponse.json({ mode: 'supabase', items });
+  }
+
   const r = await fetch(
     `${SUPA_URL}/rest/v1/reviews?slug=eq.${encodeURIComponent(slug)}&order=ts.desc&limit=200`,
     { headers: { apikey: SUPA_ANON, Authorization: `Bearer ${SUPA_ANON}` } },
