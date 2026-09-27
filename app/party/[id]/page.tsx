@@ -18,7 +18,8 @@ export default function PartyPage({ params }: { params: Promise<{ id: string }> 
   const [state, setState] = useState<PartyState | null>(null);
   const [q, setQ] = useState('');
   const [results, setResults] = useState<Array<{ slug: string; ru: string; episodes: number }>>([]);
-  const [sources, setSources] = useState<Array<{ id: string; label: string; url: string }>>([]);
+  const [sources, setSources] = useState<Array<{ id: string; label: string; url: string; demo?: boolean }>>([]);
+  const [embeds, setEmbeds] = useState<Array<{ id: string; label: string }>>([]);
   const [peers, setPeers] = useState(1);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sockRef = useRef<PartySocket | null>(null);
@@ -75,13 +76,17 @@ export default function PartyPage({ params }: { params: Promise<{ id: string }> 
   const pickTitle = async (slug: string, episode: number) => {
     const r = await fetch(`/api/providers/${slug}/${episode}`).catch(() => null);
     const j = r?.ok ? await r.json() : null;
-    const files = (j?.sources ?? [])
-      .filter((s: { kind: string; files?: Array<{ url: string }> }) => s.kind === 'file' && s.files?.length)
-      .flatMap((s: { id: string; label: string; files: Array<{ url: string; quality?: string }> }) =>
-        s.files.map((f) => ({ id: `${s.id}:${f.url}`, label: `${s.label} · ${f.quality ?? 'file'}`, url: f.url })),
-      );
+    const all = (j?.sources ?? []) as Array<{ id: string; label: string; kind: string; providerId?: string; files?: Array<{ url: string; quality?: string }> }>;
+    // Баг 1: годны все file-источники (MP4 и HLS, включая Kodik-direct), demo — в конец списка
+    const files = all
+      .filter((s) => s.kind === 'file' && s.files?.length)
+      .flatMap((s) => s.files!.map((f) => ({ id: `${s.id}:${f.url}`, label: `${s.label} · ${f.quality ?? 'file'}`, url: f.url, demo: s.providerId === 'demo' })))
+      .sort((a, b) => Number(a.demo) - Number(b.demo));
+    // embed (iframe) показываем серыми с подсказкой: синхронизация невозможна
+    const embeds = all.filter((s) => s.kind === 'embed').map((s) => ({ id: s.id, label: s.label }));
     setSources(files);
-    if (!files.length) toast('У этой серии нет нативных источников (только embed) — party недоступна');
+    setEmbeds(embeds);
+    if (!files.length) toast('У этой серии нет нативных источников (MP4/HLS) — доступны только embed, а они в совместном просмотре не синхронизируются');
   };
 
   const setSource = (url: string, label: string) => {
@@ -164,6 +169,15 @@ export default function PartyPage({ params }: { params: Promise<{ id: string }> 
                 <button key={s.id} type="button" className={`btn btn--md ${state.url === s.url ? 'btn--primary' : 'btn--outline'}`} onClick={() => setSource(s.url, s.label)}>
                   {s.label}
                 </button>
+              ))}
+            </div>
+          ) : null}
+          {state && embeds.length ? (
+            <div className="party__sources party__sources--off">
+              {embeds.map((e) => (
+                <span key={e.id} className="btn btn--md btn--outline is-disabled" title="Недоступно в совместном просмотре">
+                  {e.label} · недоступно в совместном просмотре
+                </span>
               ))}
             </div>
           ) : null}
