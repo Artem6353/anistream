@@ -25,7 +25,7 @@ const UA = {
 };
 const SAVE_EVERY = Number(process.env.SAVE_EVERY ?? 8); // батчей между записями
 // --limit N (ТЗ блок B): обработать не более N pending-тайтлов за запуск — для батчей в workflow
-const LIMIT = Number((process.argv.find((a) => a.startsWith('--limit')) ?? '').replace('--limit', '').replace('=', '') || 0);
+const LIMIT = Number((() => { const i = process.argv.indexOf('--limit'); if (i >= 0 && process.argv[i + 1]) return process.argv[i + 1]; const eq = process.argv.find((a) => a.startsWith('--limit=')); return eq ? eq.split('=')[1] : ''; })() || 0);
 const SLEEP_MS = Number(process.env.SLEEP_MS ?? 750); // пауза между запросами (rate-limit AniList)
 const CHUNK = 50;
 

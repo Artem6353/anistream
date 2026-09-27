@@ -13,7 +13,7 @@ const titles = JSON.parse(readFileSync(P, 'utf8'));
 /* 4) метка источника */
 let stamped = 0;
 for (const t of titles) {
-  if (!t.source) { t.source = 'anilist'; stamped++; }
+  if (!t.metaSource) { t.metaSource = 'anilist'; stamped++; }
 }
 
 /* 1) дубликаты по malId */
@@ -22,7 +22,7 @@ for (const t of titles) {
   if (!t.malId) continue;
   const cur = byMal.get(t.malId);
   if (!cur) byMal.set(t.malId, t);
-  else if (cur.source === 'jikan' && t.source !== 'jikan') byMal.set(t.malId, t); // AniList приоритетнее
+  else if (cur.metaSource === 'jikan' && t.metaSource !== 'jikan') byMal.set(t.malId, t); // AniList приоритетнее
 }
 const keepMal = new Set([...byMal.values()]);
 const dupRemoved = titles.filter((t) => t.malId && !keepMal.has(t));

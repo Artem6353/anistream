@@ -127,7 +127,7 @@ async function worker() {
     }
     // ТЗ блок 2: для Jikan-тайтлов fuzzy-поиск по названию отключён — только прямой malId-лукup;
     // «не найден» → оставляем как есть (метаданные Jikan), без чужих карточек.
-    const found = !t.shikimori && t.source !== 'jikan' ? await getJson(`/api/animes?limit=3&search=${encodeURIComponent(t.romaji)}`) : null;
+    const found = !t.shikimori && t.metaSource !== 'jikan' ? await getJson(`/api/animes?limit=3&search=${encodeURIComponent(t.romaji)}`) : null;
     if (Array.isArray(found) && found.length) {
       const target = norm(t.romaji);
       const best =

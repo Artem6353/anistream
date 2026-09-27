@@ -151,7 +151,7 @@ outer: for (let gi = resume.gi; gi < genres.length; gi++) {
           trailer: m.trailer?.youtube_id ?? null,
           description: clean(m.synopsis).slice(0, 400),
           studios: (m.studios ?? []).map((s) => s.name),
-          source: 'jikan',
+          metaSource: 'jikan',
           shikimori: null,
           relations: [],
           characters: [],

@@ -46,8 +46,9 @@ export interface Title {
   airing?: { ep: number; at: number }[];
   /** Скрыт модерацией (DMCA). */
   hidden?: boolean;
-  /** Источник метаданных (ТЗ Jikan, блок 5): anilist (дефолт) | jikan. */
-  source?: 'anilist' | 'jikan';
+  /** Источник метаданных (ТЗ Jikan, блок 5): anilist (дефолт) | jikan.
+      Имя metaSource, т.к. source уже занят первоисточником (MANGA/LIGHT_NOVEL/…). */
+  metaSource?: 'anilist' | 'jikan';
   /** MAL-id для AniSkip (тайминги OP/ED). */
   malId?: number | null;
   /** Второй источник метаданных: Shikimori (.io). */
