@@ -12,7 +12,6 @@ import { DiscussedRail } from '@/components/home/DiscussedRail';
 import { TopTabs } from '@/components/home/TopTabs';
 import { COLLECTIONS } from '@/lib/collections';
 import { loadTitles } from '@/lib/catalog';
-import Link from 'next/link';
 import { ForYouRail } from '@/components/anime/ForYouRail';
 import { IconGrid, IconSparkles } from '@/components/ui/icons';
 import { HomeSidebar } from '@/components/home/Sidebar';
