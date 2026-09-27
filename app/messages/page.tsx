@@ -33,23 +33,31 @@ export default function MessagesPage() {
       }
       const r = await supaRest('GET', `dm_threads?or=(user_a.eq.${me},user_b.eq.${me})&select=id,user_a,user_b,updated_at&order=updated_at.desc`);
       const list = r?.ok ? ((await r.json()) as Thread[]) : [];
-      const enriched = await Promise.all(
-        list.map(async (t) => {
-          const other = t.user_a === me ? t.user_b : t.user_a;
-          const [mr, ur] = await Promise.all([
-            supaRest('GET', `dm_messages?thread_id=eq.${t.id}&select=text,ts,sender_id,read_at&order=ts.desc&limit=50`),
-            supaRest('GET', `profiles?user_id=eq.${other}&select=username`),
-          ]);
-          const msgs = mr?.ok ? ((await mr.json()) as Array<{ text: string; ts: string; sender_id: string; read_at: string | null }>) : [];
-          const uname = ur?.ok ? ((await ur.json()) as Array<{ username: string | null }>)[0]?.username : null;
-          return {
-            ...t,
-            other: uname ?? 'аноним',
-            last: msgs[0] ? { text: msgs[0].text, ts: msgs[0].ts, sender_id: msgs[0].sender_id } : undefined,
-            unread: msgs.filter((m) => m.sender_id !== me && !m.read_at).length,
-          };
-        }),
-      );
+      // Аудит P1-4: два батч-запроса на весь список тредов (было 2 запроса НА ТРЕД)
+      const q = (arr: string[]) => `(${arr.map((x) => encodeURIComponent(`"${x}"`)).join(',')})`;
+      const others = [...new Set(list.map((t) => (t.user_a === me ? t.user_b : t.user_a)))];
+      const [mr, ur] = await Promise.all([
+        supaRest('GET', `dm_messages?thread_id=in.${q(list.map((t) => t.id))}&select=thread_id,text,ts,sender_id,read_at&order=ts.desc&limit=1000`),
+        supaRest('GET', `profiles?user_id=in.${q(others)}&select=user_id,username`),
+      ]);
+      const msgs = mr?.ok ? ((await mr.json()) as Array<{ thread_id: string; text: string; ts: string; sender_id: string; read_at: string | null }>) : [];
+      const unames = ur?.ok ? ((await ur.json()) as Array<{ user_id: string; username: string | null }>) : [];
+      const nameByUid = new Map(unames.map((u) => [u.user_id, u.username]));
+      const byThread = new Map<string, typeof msgs>();
+      for (const m of msgs) {
+        if (!byThread.has(m.thread_id)) byThread.set(m.thread_id, []);
+        byThread.get(m.thread_id)!.push(m); // order=ts.desc → [0] = последнее
+      }
+      const enriched = list.map((t) => {
+        const tm = byThread.get(t.id) ?? [];
+        const other = t.user_a === me ? t.user_b : t.user_a;
+        return {
+          ...t,
+          other: nameByUid.get(other) ?? 'аноним',
+          last: tm[0] ? { text: tm[0].text, ts: tm[0].ts, sender_id: tm[0].sender_id } : undefined,
+          unread: tm.filter((m) => m.sender_id !== me && !m.read_at).length,
+        };
+      });
       setThreads(enriched);
       setState('ok');
     })();
