@@ -126,6 +126,9 @@ export function SiteHeader() {
                 <IconCommand size={11} />K
               </kbd>
             </button>
+            <Link className="icon-btn header__icon" href="/random" aria-label="Случайный тайтл" title="Случайный тайтл">
+              🎲
+            </Link>
             <StreakBadge />
             <Link className="icon-btn header__icon" href="/profile/achievements" aria-label="Достижения" title="Достижения">
               🏆

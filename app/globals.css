@@ -3868,3 +3868,27 @@ html[data-tv='true'] .mobile-nav { display: none; }
 :root[data-theme='light'] .input { background: #fff; }
 :root[data-theme='light'] .theme-menu, :root[data-theme='light'] .auth-sheet { box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18); }
 :root[data-theme='light'] .hero__desc, :root[data-theme='light'] .hero__meta { color: #dfe6f2; }
+
+/* ============================================================
+   Стилевой пас 2026-09-28 (по мотивам animego/anilibria/shikimori):
+   стекло-шапка, «дыхание» карточек, акцент-ринг, glow-кнопки,
+   секция «Новые эпизоды» в стиле релизных лент.
+   ============================================================ */
+.header { backdrop-filter: blur(14px); background: color-mix(in srgb, var(--bg) 78%, transparent); }
+.card { transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease; }
+.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-2); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.card:hover .poster-art { transform: scale(1.05); }
+.poster-art { transition: transform 0.35s ease; }
+.btn--primary:hover { box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 45%, transparent); }
+.rail-head__more { color: var(--muted); font-size: 13px; }
+.rail-head__more:hover { color: var(--accent); }
+.latest-eps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.latest-eps__day { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
+.latest-eps__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.latest-eps__item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); color: var(--text); }
+.latest-eps__item:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+.latest-eps__poster { width: 44px; height: 62px; border-radius: 8px; overflow: hidden; flex: none; }
+.latest-eps__info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.latest-eps__title { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.latest-eps__meta { color: var(--muted); font-size: 12px; }
+.latest-eps__ep { margin-left: auto; flex: none; font-size: 11px; font-weight: 700; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); padding: 3px 8px; border-radius: 999px; }
