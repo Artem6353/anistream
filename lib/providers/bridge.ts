@@ -36,11 +36,32 @@ export async function bridgeHealth(opts: BridgeOptions): Promise<{ ok: boolean; 
   }
 }
 
+/* Аудит P3-4: health-gate с кэшем (ok 60с / down 300с) и таймаутом 1.2с:
+   упавший bridge не съедает 3× PROVIDER_TIMEOUT, а сразу уводит в fallback. */
+const healthCache = new Map<string, { at: number; ok: boolean }>();
+export async function bridgeUp(opts: BridgeOptions): Promise<boolean> {
+  const hit = healthCache.get(opts.baseUrl);
+  const ttl = hit?.ok ? 60_000 : 300_000;
+  if (hit && Date.now() - hit.at < ttl) return hit.ok;
+  try {
+    const res = await fetch(`${opts.baseUrl}/health`, { headers: authHeaders(), signal: AbortSignal.timeout(1200) });
+    const json = res.ok ? ((await res.json()) as { ok?: boolean }) : { ok: false };
+    const ok = res.ok && json.ok !== false;
+    healthCache.set(opts.baseUrl, { at: Date.now(), ok });
+    return ok;
+  } catch {
+    healthCache.set(opts.baseUrl, { at: Date.now(), ok: false });
+    return false;
+  }
+}
+
 export async function bridgeResolve(
   opts: BridgeOptions,
   provider: string,
   ctx: ProviderContext,
 ): Promise<{ sources: EpisodeSource[]; error?: string }> {
+  // health-gate: bridge недоступен → мгновенный fallback вместо таймаута
+  if (!(await bridgeUp(opts))) return { sources: [], error: 'bridge offline (health-gate)' };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs);
   try {
