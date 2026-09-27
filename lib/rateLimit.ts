@@ -21,4 +21,12 @@ export const LIMITS: { prefix: string; limit: number }[] = [
   { prefix: '/api/social/reviews', limit: 30 },
   { prefix: '/api/reco', limit: 30 },
   { prefix: '/api/availability', limit: 60 },
+  // Аудит P1-2: writable и тяжёлые роуты, ранее без лимитов
+  { prefix: '/api/push', limit: 10 },
+  { prefix: '/api/social/captcha', limit: 20 },
+  { prefix: '/api/social/feed', limit: 30 },
+  { prefix: '/api/social/taste', limit: 30 },
+  { prefix: '/api/report', limit: 10 },
+  { prefix: '/api/dmca', limit: 10 },
+  { prefix: '/api/quiz', limit: 20 },
 ];
