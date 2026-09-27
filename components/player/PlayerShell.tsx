@@ -181,7 +181,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
 
   /* ачивки (ТЗ 18.1): событие просмотра серии — один раз за заход на серию */
   useEffect(() => {
-    trackEvent('watch', { genres: title.genres, movie: title.type === 'movie' });
+    trackEvent('watch', { genres: title.genres, movie: title.type === 'movie', slug: title.slug });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title.slug, episode]);
 

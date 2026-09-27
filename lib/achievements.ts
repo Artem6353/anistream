@@ -103,6 +103,7 @@ const kAch = () => scopedKey('anistream:achievements');
 const kCounters = () => scopedKey('anistream:ach_counters');
 const kGenres = () => scopedKey('anistream:ach_genres');
 const kExtra = () => scopedKey('anistream:ach_extra');
+const kWatched = () => scopedKey('anistream:ach_watched');
 
 export interface Counters {
   likes: number;
@@ -227,24 +228,34 @@ export function checkAchievements(streakCurrent: number): string[] {
 /* ---------- события-триггеры ---------- */
 export type TrackType = 'watch' | 'bookmarks' | 'lists' | 'review' | 'comment' | 'like' | 'rating' | 'theme' | 'section' | 'speed2' | 'voice' | 'streak';
 
-export function trackEvent(type: TrackType, payload?: { genres?: string[]; movie?: boolean; section?: string; streak?: number; rating?: number }) {
+export function trackEvent(type: TrackType, payload?: { genres?: string[]; movie?: boolean; section?: string; streak?: number; rating?: number; slug?: string }) {
   if (typeof window === 'undefined') return;
   const c = readCounters();
   let streak = payload?.streak ?? 0;
   switch (type) {
     case 'watch': {
-      if (payload?.genres?.length) {
-        const g = readJson<Record<string, number>>('anistream:ach_genres', {});
+      // Аудит P1-3: инкремент жанров/фильмов только при ПЕРВОМ просмотре тайтла
+      const slug = payload?.slug;
+      const watched = new Set(readJson<string[]>(kWatched(), []));
+      const firstTime = Boolean(slug) && !watched.has(slug!);
+      if (slug && firstTime) {
+        watched.add(slug);
+        try {
+          localStorage.setItem(kWatched(), JSON.stringify([...watched].slice(-5000)));
+        } catch {}
+      }
+      if (firstTime && payload?.genres?.length) {
+        const g = readJson<Record<string, number>>(kGenres(), {});
         for (const key of payload.genres) g[key] = (g[key] ?? 0) + 1;
         try {
           localStorage.setItem(kGenres(), JSON.stringify(g));
         } catch {}
       }
-      if (payload?.movie) {
-        const st = readJson<{ movies?: number }>('anistream:ach_extra', {});
+      if (firstTime && payload?.movie) {
+        const st = readJson<{ movies?: number; ratingsSum?: number }>(kExtra(), {});
         st.movies = (st.movies ?? 0) + 1;
         try {
-          localStorage.setItem('anistream:ach_extra', JSON.stringify(st));
+          localStorage.setItem(kExtra(), JSON.stringify(st));
         } catch {}
       }
       break;
