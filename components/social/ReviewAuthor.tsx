@@ -4,6 +4,7 @@ import { ACH_BY_ID } from '@/lib/achievements';
 import { WriteDmButton } from './WriteDmButton';
 
 export interface ReviewAuthorInfo {
+  user_id?: string | null;
   username?: string | null;
   avatar_url?: string | null;
   pinned?: string[] | null;
