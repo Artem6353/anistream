@@ -7,6 +7,7 @@
    Запуск: npm run enrich   (можно прерывать и продолжать) */
 import { readFileSync, writeFileSync } from 'node:fs';
 
+const ARGS = process.argv.slice(2);
 const P = 'lib/data/titles.json';
 const CONC = Number(process.env.CONCURRENCY ?? 5);
 // --limit N (ТЗ блок B): обработать не более N тайтлов за запуск — для батчей в workflow
@@ -72,8 +73,15 @@ async function getJson(url) {
   return null;
 }
 
-let pending = titles.filter((t) => !t.shikimoriChecked);
+const HEAL = ARGS.includes('--heal');
+// --heal (ТЗ блок 2): у checked-тайтлов добираем кадры (Shikimori отдаёт максимум 2 —
+// дополнение из Jikan /anime/{id}/pictures) и персонажей (<6 → Jikan/AniList).
+let pending = HEAL
+  ? titles.filter((t) => t.shikimoriChecked && ((t.screenshots?.length ?? 0) < 4 || (t.characters?.length ?? 0) < 6) && (t.shikimori?.id || t.malId))
+  : titles.filter((t) => !t.shikimoriChecked);
 if (LIMIT > 0) pending = pending.slice(0, LIMIT);
+let healShots = 0;
+let healChars = 0;
 console.log(`обогащению подлежат: ${pending.length} из ${titles.length} (проверенные пропускаются)`);
 
 let done = 0;
@@ -148,6 +156,35 @@ async function worker() {
       if (shots.length) t.screenshots = shots.slice(0, 12).map((u) => (u.startsWith('http') ? u : u.startsWith('//') ? 'https:' + u : 'https://shikimori.io' + u));
       enriched++;
     }
+    if (HEAL) {
+      if ((t.screenshots?.length ?? 0) < 4 && t.malId) {
+        const pj = await jikanGet(`/anime/${t.malId}/pictures`);
+        const urls = (pj?.data ?? []).map((p) => p.jpg?.large_image_url || p.jpg?.image_url).filter(Boolean);
+        const merged = [...new Set([...(t.screenshots ?? []), ...urls])].slice(0, 12);
+        if (merged.length > (t.screenshots?.length ?? 0)) { t.screenshots = merged; healShots++; }
+        await sleep(400); // rate-limit Jikan 3 req/s
+      }
+      if ((t.characters?.length ?? 0) < 6) {
+        let chars2 = null;
+        if (t.malId) {
+          const cj2 = await jikanGet(`/anime/${t.malId}/characters`);
+          const list2 = (cj2?.data ?? []).slice(0, 6);
+          if (list2.length) chars2 = list2.map((c) => ({ name: c.character?.name ?? '', img: c.character?.images?.jpg?.image_url ?? null, role: c.role ?? 'Character' }));
+          await sleep(400);
+        }
+        if (!chars2 && t.anilistId > 0) chars2 = await anilistCharacters(t.anilistId);
+        if (chars2?.length) { t.characters = chars2; healChars++; }
+      }
+      done++;
+      if (done % 20 === 0) {
+        writeFileSync(P, JSON.stringify(titles));
+        const sec = (Date.now() - started) / 1000;
+        const eta = ((sec / done) * queue.length).toFixed(0);
+        process.stdout.write(`\r[heal] ${done}/${pending.length} · кадров+ ${healShots} · персонажей+ ${healChars} · ETA ${eta} c   `);
+      }
+      await sleep(120);
+      continue;
+    }
     if ((t.characters?.length ?? 0) < 6) {
       // ТЗ блок 2: сначала Jikan (для malId-тайтлов), затем AniList (для anilist-тайтлов)
       let chars = null;
@@ -176,4 +213,4 @@ async function worker() {
 await Promise.all(Array.from({ length: CONC }, worker));
 writeFileSync(P, JSON.stringify(titles));
 console.log('');
-console.log(`готово за ${((Date.now() - started) / 1000).toFixed(0)} c: обработано ${done}, обогащено ${enriched}`);
+console.log(`готово за ${((Date.now() - started) / 1000).toFixed(0)} c: обработано ${done}, обогащено ${enriched}${HEAL ? `, heal: кадров+ ${healShots}, персонажей+ ${healChars}` : ''}`);

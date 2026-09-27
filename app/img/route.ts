@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 
-const ALLOWED = ['s4.anilist.co', 'img2.shikimori.io', 'shikimori.io', 'kodikstorage.com'];
+const ALLOWED = ['s4.anilist.co', 'img2.shikimori.io', 'shikimori.io', 'kodikstorage.com', 'cdn.myanimelist.net'];
 const DIR = path.join(process.cwd(), '.cache', 'img');
 
 /**
