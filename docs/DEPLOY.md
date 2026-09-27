@@ -142,3 +142,34 @@ create table profile_lists (user_id uuid references auth.users, slug text, statu
 - Sentry (опц.): `NEXT_PUBLIC_SENTRY_DSN` — инициализация ленивая, без build-плагинов.
 - Аналитика (опц.): `NEXT_PUBLIC_ANALYTICS_SRC` (Plausible/Umami) + `NEXT_PUBLIC_ANALYTICS_DOMAIN`.
 - TG-алерты: `TG_BOT_TOKEN`/`TG_CHAT_ID` — уже wired в lib/metrics.ts.
+
+---
+
+## Чек-лист миграций Supabase (аудит P2-5, 2026-09-28)
+
+Выполнять по порядку в SQL Editor; все идемпотентны (повтор безопасен):
+
+| # | Файл | Что даёт | Как проверить |
+| --- | --- | --- | --- |
+| 001 | schema.sql | reviews/profiles/push_subs/dmca + RLS | `\dt` |
+| 002 | 002_profile_rls.sql | политики профилей | select policyname from pg_policies |
+| 003 | 003_review_reactions.sql | реакции + 3 триггера пересчёта | select trigger_name from information_schema.triggers where event_object_table='review_reactions' → 3 строки |
+| 004 | 004_profiles_storage.sql | profiles колонки + бакеты avatars/banners | select * from storage.buckets |
+| 005 | 005_profiles_username_backfill.sql | username из email | select count(*) from profiles where username is null |
+| 006 | 006_follows.sql | подписки | `\dt follows` |
+| 007 | 007_clubs.sql | клубы + посты | `\dt clubs` |
+| 008 | 008_dm.sql | ЛС | `\dt dm_threads` |
+| 009 | 009_forum.sql | форум + 5 разделов | select count(*) from forum_categories → 5 |
+| 010 | 010_rls_hardening.sql | P0-безопасность: update отзывов автору, write реакций/подписок → service_role | anon PATCH reviews → 403 |
+
+## Чек-лист env Vercel (аудит P2-6)
+
+| Переменная | Зачем | Без неё не работает |
+| --- | --- | --- |
+| SUPABASE_URL / SUPABASE_ANON_KEY | база/auth | вся соцфункциональность |
+| SUPABASE_SERVICE_KEY | insert отзывов/реакций/подписок, лента, taste | **после миграции 010 — лайки и push** |
+| ADMIN_TOKEN | HMAC-cookie админки | /admin |
+| KODIK_TOKEN | kodik-direct HLS | реальные озвучки и Watch Party с HLS |
+| VAPID_PUBLIC / VAPID_PRIVATE / PUSH_CONTACT | web-push | push-уведомления |
+| TURNSTILE_SECRET + NEXT_PUBLIC_TURNSTILE_SITE_KEY | антибот отзывов | отзывы уходят на math-капчу |
+| TG_BOT_TOKEN / TG_CHAT_ID | алерты + uptime-монитор | уведомления о падении |
