@@ -10,6 +10,7 @@ import { HomeSchedule } from '@/components/schedule/HomeSchedule';
 import { ContinueBanner } from '@/components/home/ContinueBanner';
 import { DiscussedRail } from '@/components/home/DiscussedRail';
 import { BecauseRail } from '@/components/anime/BecauseRail';
+import { LatestEpisodes } from '@/components/home/LatestEpisodes';
 import { EveningRail } from '@/components/anime/EveningRail';
 import { TopTabs } from '@/components/home/TopTabs';
 import { COLLECTIONS } from '@/lib/collections';
@@ -38,6 +39,10 @@ export default async function HomePage() {
 
       {/* Hero — full-bleed, на всю ширину экрана (ТЗ 4.1, задача 1.3) */}
       <Hero slides={heroSlides()} />
+
+      <div className="container">
+        <LatestEpisodes />
+      </div>
 
       <div className="container quiz-cta-wrap">
         <Link className="btn btn--primary btn--lg quiz-cta" href="/quiz">
