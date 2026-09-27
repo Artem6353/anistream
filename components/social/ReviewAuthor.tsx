@@ -18,9 +18,8 @@ export function levelByEpisodes(ep: number): [string, string] {
   return ['🥉', 'Новичок'];
 }
 
-/** Автор отзыва: аватар 32px, имя, 1–2 pinned-бейджа, уровень.
-    Аноним (без профиля) — инициал + «Гость».
-    Аватар показываем всегда, если он есть, — даже без username. */
+/** Автор отзыва: аватар 32px, имя-ссылка, 1–2 pinned-бейджа, уровень.
+    Аноним (без профиля) — инициал + «Гость». */
 export function ReviewAuthor({ author, name }: { author?: ReviewAuthorInfo | null; name: string }) {
   if (!author) {
     return (
@@ -44,7 +43,7 @@ export function ReviewAuthor({ author, name }: { author?: ReviewAuthorInfo | nul
         <span className="review__avatar review__avatar--guest">{initial}</span>
       )}
       {author.username ? (
-        <a className="review__author-name" href={`/profile/${author.username}`}>
+        <a className="review__author-name" href={`/profile/${encodeURIComponent(author.username)}`}>
           {displayName}
         </a>
       ) : (
