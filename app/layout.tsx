@@ -48,6 +48,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ru">
+      <head>
+        {/* perf: ранние коннекты к CDN постеров и Supabase (instant pages) */}
+        <link rel="preconnect" href="https://s4.anilist.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://s4.anilist.co" />
+        <link rel="dns-prefetch" href="https://cdn.myanimelist.net" />
+      </head>
       <body>
         <I18nProvider>
         <ThemeInit />
