@@ -9,7 +9,7 @@ import dynamic from 'next/dynamic';
 // CommandPalette — тяжёлый оверлей: грузим лениво только на клиенте (ТЗ блок 8)
 const CommandPalette = dynamic(() => import('./CommandPalette').then((m) => m.CommandPalette), { ssr: false });
 import { library, useLibrary } from '@/lib/library';
-import { isSessionValid, supaRest } from '@/lib/sync';
+import { isSessionValid, supaRest, supaWhoami } from '@/lib/sync';
 import { AUTH_CHANGE_EVENT } from '@/lib/auth-gate';
 import { trackEvent } from '@/lib/achievements';
 import { StreakBadge } from './StreakBadge';
@@ -35,30 +35,32 @@ export function SiteHeader() {
   const [logged, setLogged] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  // ТЗ блок 14: шапка реагирует на вход/выход откуда угодно (модалка, SyncSection, callback)
+  // Фикс бага 5: при ЛЮБОМ auth-событии (вход/выход/смена аккаунта) перезапрашиваем
+  // профиль с race-guard по порядковому номеру запроса; кэш не переживает logout.
   useEffect(() => {
+    let seq = 0;
     const refresh = () => {
       const ok = isSessionValid();
       setLogged(ok);
-      if (!ok) setAvatarUrl(null);
+      const my = ++seq;
+      if (!ok) {
+        setAvatarUrl(null);
+        return;
+      }
+      supaWhoami()
+        .then((uid) => supaRest('GET', `profiles?user_id=eq.${uid}&select=avatar_url&limit=1`))
+        .then((r: Response | null) => (r?.ok ? (r.json() as Promise<Array<{ avatar_url: string | null }>>) : []))
+        .then((rows: Array<{ avatar_url: string | null }>) => {
+          if (my === seq) setAvatarUrl(rows?.[0]?.avatar_url ?? null);
+        })
+        .catch(() => {
+          if (my === seq) setAvatarUrl(null);
+        });
     };
     refresh();
     window.addEventListener(AUTH_CHANGE_EVENT, refresh);
     return () => window.removeEventListener(AUTH_CHANGE_EVENT, refresh);
   }, []);
-  useEffect(() => {
-    if (!logged) return;
-    let cancelled = false;
-    supaRest('GET', 'profiles?select=avatar_url&limit=1')
-      .then((r) => (r.ok ? r.json() : []))
-      .then((rows) => {
-        if (!cancelled) setAvatarUrl(rows?.[0]?.avatar_url ?? null);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [logged]);
   const { bookmarks, settings } = useLibrary();
   const initials = (settings.displayName ?? 'A').slice(0, 1).toUpperCase();
   const { t } = useI18n();

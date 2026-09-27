@@ -86,12 +86,15 @@ export function saveToken(token: string) {
   }
 }
 
-/** Логаут: удаляет ВСЕ три ключа. */
+/** Логаут: удаляет ВСЕ три ключа + кэши профиля (баг 5: аватар не должен переживать выход). */
 export function clearToken() {
   try {
     localStorage.removeItem(LS_TOKEN);
     localStorage.removeItem(LS_REFRESH);
     localStorage.removeItem(LS_EXPIRES);
+    // кэши профиля, если когда-либо появятся/появились в старых сборках
+    localStorage.removeItem('anistream:profile');
+    localStorage.removeItem('anistream:profile_cache');
   } catch {
     /* ignore */
   }
