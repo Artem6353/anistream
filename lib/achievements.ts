@@ -96,8 +96,13 @@ export const TIER_LABELS: Record<AchievementTier, string> = {
 export const TIER_EMOJI: Record<AchievementTier, string> = { bronze: '🥉', silver: '🥈', gold: '🥇', platinum: '💎', secret: '🌟' };
 
 /* ---------- хранилище ---------- */
-const K_ACH = 'anistream:achievements';
-const K_COUNTERS = 'anistream:ach_counters';
+import { scopedKey } from './library';
+
+// ключи вычисляются динамически: данные привязаны к аккаунту (scope)
+const kAch = () => scopedKey('anistream:achievements');
+const kCounters = () => scopedKey('anistream:ach_counters');
+const kGenres = () => scopedKey('anistream:ach_genres');
+const kExtra = () => scopedKey('anistream:ach_extra');
 
 export interface Counters {
   likes: number;
@@ -119,7 +124,7 @@ function readJson<T>(key: string, fb: T): T {
   }
 }
 export function readUnlocked(): Record<string, { unlockedAt: number }> {
-  const raw = readJson<Record<string, unknown>>(K_ACH, {});
+  const raw = readJson<Record<string, unknown>>(kAch(), {});
   const out: Record<string, { unlockedAt: number }> = {};
   for (const [k, v] of Object.entries(raw)) {
     // обратная совместимость: legacy { id: number }
@@ -129,15 +134,15 @@ export function readUnlocked(): Record<string, { unlockedAt: number }> {
 }
 function writeUnlocked(v: Record<string, { unlockedAt: number }>) {
   try {
-    localStorage.setItem(K_ACH, JSON.stringify(v));
+    localStorage.setItem(kAch(), JSON.stringify(v));
   } catch {}
 }
 export function readCounters(): Counters {
-  return { ...DEFAULT_COUNTERS, ...readJson<Partial<Counters>>(K_COUNTERS, {}) };
+  return { ...DEFAULT_COUNTERS, ...readJson<Partial<Counters>>(kCounters(), {}) };
 }
 function writeCounters(c: Counters) {
   try {
-    localStorage.setItem(K_COUNTERS, JSON.stringify(c));
+    localStorage.setItem(kCounters(), JSON.stringify(c));
   } catch {}
 }
 
@@ -167,9 +172,9 @@ export function buildContext(streakCurrent: number): AchCtx {
   }
   // жанры/фильмы — по каталогу истории (titles приходят из useTitles на страницах;
   // здесь лёгкий путь: жанры считаем из событий trackEvent('watch', {genres}))
-  const g = readJson<Record<string, number>>('anistream:ach_genres', {});
+  const g = readJson<Record<string, number>>(kGenres(), {});
   Object.assign(genreCounts, g);
-  const st = readJson<{ movies?: number }>('anistream:ach_extra', {});
+  const st = readJson<{ movies?: number; ratingsSum?: number }>(kExtra(), {});
   movies = st.movies ?? 0;
   const unlocked = readUnlocked();
   return {
@@ -232,7 +237,7 @@ export function trackEvent(type: TrackType, payload?: { genres?: string[]; movie
         const g = readJson<Record<string, number>>('anistream:ach_genres', {});
         for (const key of payload.genres) g[key] = (g[key] ?? 0) + 1;
         try {
-          localStorage.setItem('anistream:ach_genres', JSON.stringify(g));
+          localStorage.setItem(kGenres(), JSON.stringify(g));
         } catch {}
       }
       if (payload?.movie) {
@@ -279,9 +284,9 @@ export function trackEvent(type: TrackType, payload?: { genres?: string[]; movie
     case 'rating': {
       c.ratings += 1;
       writeCounters(c);
-      const ex = readJson<{ ratingsSum?: number }>('anistream:ach_extra', {});
+      const ex = readJson<{ ratingsSum?: number }>(kExtra(), {});
       ex.ratingsSum = (ex.ratingsSum ?? 0) + (payload?.rating ?? 0);
-      try { localStorage.setItem('anistream:ach_extra', JSON.stringify(ex)); } catch {}
+      try { localStorage.setItem(kExtra(), JSON.stringify(ex)); } catch {}
       break;
     }
     case 'bookmarks':

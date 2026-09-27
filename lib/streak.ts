@@ -8,12 +8,15 @@ export interface StreakState {
   lastVisit: string; // yyyy-mm-dd
 }
 
-const K = 'anistream:streak';
+import { scopedKey } from './library';
+
+// стрик привязан к аккаунту: свой ключ на каждый uid (аноним — базовый ключ)
+const K = () => scopedKey('anistream:streak');
 const dayKey = (d: Date) => d.toISOString().slice(0, 10);
 
 export function readStreak(): StreakState | null {
   try {
-    return JSON.parse(localStorage.getItem(K) ?? 'null') as StreakState | null;
+    return JSON.parse(localStorage.getItem(K()) ?? 'null') as StreakState | null;
   } catch {
     return null;
   }
@@ -33,7 +36,7 @@ export function touchStreak(): StreakState {
     next = { current, best: Math.max(prev.best ?? 0, current), lastVisit: today };
   }
   try {
-    localStorage.setItem(K, JSON.stringify(next));
+    localStorage.setItem(K(), JSON.stringify(next));
   } catch {}
   return next;
 }

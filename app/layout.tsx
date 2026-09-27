@@ -16,6 +16,7 @@ import { ClientMonitoring } from '@/components/system/ClientMonitoring';
 import { AutoSync } from '@/components/system/AutoSync';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { AchievementToast } from '@/components/profile/AchievementToast';
+import { ScopeSync } from '@/components/system/ScopeSync';
 import { I18nProvider } from '@/lib/i18n';
 
 export const metadata: Metadata = {
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AutoSync />
         <AuthGate />
         <AchievementToast />
+        <ScopeSync />
         </Toaster>
         </I18nProvider>
       </body>

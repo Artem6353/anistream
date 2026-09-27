@@ -14,6 +14,27 @@ const K_HISTORY = 'anistream:history';
 const K_SETTINGS = 'anistream:settings';
 const K_LISTS = 'anistream:lists';
 
+/** Per-account scope (фикс «ачивки/статистика не сбрасываются при смене аккаунта»):
+    uid берётся из JWT access-токена (sub) синхронно. Базовые имена ключей не меняются:
+    анонимная/legacy-дата живёт в базовом ключе, данные аккаунта — в ключе с суффиксом. */
+export function scopeUid(): string | null {
+  try {
+    const token = localStorage.getItem('anistream:supa_token');
+    if (!token) return null;
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof json.sub === 'string' ? json.sub : null;
+  } catch {
+    return null;
+  }
+}
+
+export function scopedKey(base: string): string {
+  const uid = typeof localStorage !== 'undefined' ? scopeUid() : null;
+  return uid ? `${base}:${uid.slice(0, 13)}` : base;
+}
+
 export const DEFAULT_SETTINGS: Settings = {
   autoplayNext: true,
   playbackRate: 1,
@@ -59,21 +80,28 @@ const listeners = new Set<() => void>();
 function load() {
   if (loaded || typeof window === 'undefined') return;
   state = {
-    bookmarks: read<string[]>(K_BOOKMARKS, []),
-    history: read<HistoryEntry[]>(K_HISTORY, []),
-    settings: { ...DEFAULT_SETTINGS, ...read<Partial<Settings>>(K_SETTINGS, {}) },
-    lists: read<Record<string, ListStatus>>(K_LISTS, {}),
+    bookmarks: read<string[]>(scopedKey(K_BOOKMARKS), []),
+    history: read<HistoryEntry[]>(scopedKey(K_HISTORY), []),
+    settings: { ...DEFAULT_SETTINGS, ...read<Partial<Settings>>(scopedKey(K_SETTINGS), {}) },
+    lists: read<Record<string, ListStatus>>(scopedKey(K_LISTS), {}),
   };
   loaded = true;
+}
+
+/** Перечитать библиотеку после смены аккаунта/выхода (scope-ключ изменился). */
+export function reloadLibrary() {
+  loaded = false;
+  load();
+  listeners.forEach((l) => l());
 }
 
 function commit(next: Partial<LibraryState>) {
   state = { ...state, ...next };
   if (typeof window !== 'undefined') {
-    if (next.bookmarks) write(K_BOOKMARKS, next.bookmarks);
-    if (next.history) write(K_HISTORY, next.history);
-    if (next.settings) write(K_SETTINGS, next.settings);
-    if (next.lists) write(K_LISTS, next.lists);
+    if (next.bookmarks) write(scopedKey(K_BOOKMARKS), next.bookmarks);
+    if (next.history) write(scopedKey(K_HISTORY), next.history);
+    if (next.settings) write(scopedKey(K_SETTINGS), next.settings);
+    if (next.lists) write(scopedKey(K_LISTS), next.lists);
   }
   listeners.forEach((l) => l());
 }
