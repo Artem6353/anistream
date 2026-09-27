@@ -10,7 +10,9 @@ import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 
 const FILE = 'lib/data/titles.json';
 const stamp = new Date().toISOString().slice(0, 10);
-const isHentai = (t) => (t.genres ?? []).some((g) => /hentai|хентай/i.test(g));
+// ТЗ блок 4: hentai + erotica всегда; ecchi — при INCLUDE_ECCHI=1
+const DROP = ['hentai', 'erotica', 'хентай', ...(process.env.INCLUDE_ECCHI === '1' ? ['ecchi'] : [])];
+const isHentai = (t) => (t.genres ?? []).some((g) => DROP.some((d) => new RegExp(d, 'i').test(g)));
 
 const titles = JSON.parse(readFileSync(FILE, 'utf8'));
 const drop = new Set(titles.filter(isHentai).map((t) => t.anilistId));
