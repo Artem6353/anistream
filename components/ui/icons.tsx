@@ -238,3 +238,10 @@ export const IconMonitor = (p: P) => (
     <path d="M8 20h8M12 16v4" />
   </svg>
 );
+
+/* Google (ТЗ блок 15) */
+export const IconGoogle = (p: P) => (
+  <svg {...base(p)} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <path d="M21.35 11.1H12v2.9h5.35c-.5 2.4-2.6 3.9-5.35 3.9a6 6 0 1 1 0-12c1.5 0 2.9.55 4 1.45l2.2-2.2A9.9 9.9 0 0 0 12 2a10 10 0 1 0 0 20c5.8 0 9.6-4.1 9.6-9.9 0-.35-.05-.7-.25-1Z" />
+  </svg>
+);

@@ -269,3 +269,40 @@ export async function pullRemote(): Promise<{ lists: Record<string, string>; his
     count: listRows.length + histRows.length,
   };
 }
+
+/* ---------- Google OAuth + storage/profile REST (ТЗ блоки 15–16, аддитивно) ---------- */
+
+/** Старт Google OAuth: Supabase /auth/v1/authorize → редирект на Google.
+    Возврат настроен на /auth/callback (Redirect URLs в Supabase). */
+export async function signInWithGoogle(): Promise<void> {
+  if (!syncConfigured()) throw new Error('sync не настроен');
+  const r = await fetch(
+    `${SUPA_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(
+      typeof location !== 'undefined' ? location.origin + '/auth/callback' : '',
+    )}`,
+    { headers: { apikey: SUPA_KEY } },
+  );
+  if (!r.ok) throw new Error(`authorize: HTTP ${r.status}`);
+  const j = (await r.json()) as { url?: string };
+  if (!j.url) throw new Error('authorize: нет url');
+  location.href = j.url;
+}
+
+/** REST Supabase с авто-refresh (для profiles/storage и т.п.). */
+export async function supaRest(method: string, path: string, rows?: unknown): Promise<Response> {
+  return rest(method, path, rows);
+}
+
+/** Загрузка файла в Storage Supabase (аватары/баннеры) под токеном пользователя. */
+export async function storageUpload(bucket: string, objectPath: string, blob: Blob, contentType: string): Promise<string> {
+  const token = await ensureFresh();
+  const r = await fetch(`${SUPA_URL}/storage/v1/object/${bucket}/${objectPath}`, {
+    method: 'POST',
+    headers: { apikey: SUPA_KEY, Authorization: `Bearer ${token}`, 'Content-Type': contentType, 'x-upsert': 'true' },
+    body: blob,
+  });
+  if (!r.ok) throw new Error(`storage: HTTP ${r.status}`);
+  return `${SUPA_URL}/storage/v1/object/public/${bucket}/${objectPath}`;
+}
+
+export { saveTokens as applyAuthTokens };

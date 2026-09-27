@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { library, useLibrary } from '@/lib/library';
+import { isSessionValid } from '@/lib/sync';
+import { requireAuth } from '@/lib/auth-gate';
 import { useToast } from '@/components/ui/Toaster';
 import type { ListStatus } from '@/lib/types';
 import { LIST_STATUS_LABELS } from '@/lib/labels';
@@ -38,7 +40,7 @@ export function ListStatusButton({ slug }: { slug: string }) {
               role="menuitem"
               className={`listbtn__item ${current === st ? 'is-active' : ''}`}
               onClick={() => {
-                library.setListStatus(slug, st);
+                requireAuth(isSessionValid, () => library.setListStatus(slug, st));
                 toast(`Список: ${LIST_STATUS_LABELS[st]}`);
                 setOpen(false);
               }}
@@ -53,7 +55,7 @@ export function ListStatusButton({ slug }: { slug: string }) {
               role="menuitem"
               className="listbtn__item listbtn__item--danger"
               onClick={() => {
-                library.setListStatus(slug, null);
+                requireAuth(isSessionValid, () => library.setListStatus(slug, null));
                 toast('Удалено из списков');
                 setOpen(false);
               }}

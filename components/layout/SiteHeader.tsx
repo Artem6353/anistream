@@ -9,6 +9,8 @@ import dynamic from 'next/dynamic';
 // CommandPalette — тяжёлый оверлей: грузим лениво только на клиенте (ТЗ блок 8)
 const CommandPalette = dynamic(() => import('./CommandPalette').then((m) => m.CommandPalette), { ssr: false });
 import { library, useLibrary } from '@/lib/library';
+import { isSessionValid, supaRest } from '@/lib/sync';
+import { AUTH_CHANGE_EVENT } from '@/lib/auth-gate';
 import { IconBookmark, IconCommand, IconSearch, IconSettings, IconMoon, IconSun, IconMonitor } from '@/components/ui/icons';
 import { useI18n } from '@/lib/i18n'; // LanguageSwitcher убран (ТЗ блок 7): сайт только RU; код i18n оставлен на будущее
 
@@ -24,6 +26,34 @@ export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [themeMenu, setThemeMenu] = useState(false);
+  const [logged, setLogged] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // ТЗ блок 14: шапка реагирует на вход/выход откуда угодно (модалка, SyncSection, callback)
+  useEffect(() => {
+    const refresh = () => {
+      const ok = isSessionValid();
+      setLogged(ok);
+      if (!ok) setAvatarUrl(null);
+    };
+    refresh();
+    window.addEventListener(AUTH_CHANGE_EVENT, refresh);
+    return () => window.removeEventListener(AUTH_CHANGE_EVENT, refresh);
+  }, []);
+  useEffect(() => {
+    if (!logged) return;
+    let cancelled = false;
+    supaRest('GET', 'profiles?select=avatar_url&limit=1')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows) => {
+        if (!cancelled) setAvatarUrl(rows?.[0]?.avatar_url ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [logged]);
+  const initials = (settings.displayName ?? 'A').slice(0, 1).toUpperCase();
   const { bookmarks, settings } = useLibrary();
   const { t } = useI18n();
 
@@ -82,6 +112,19 @@ export function SiteHeader() {
                 <IconCommand size={11} />K
               </kbd>
             </button>
+            {!logged ? (
+              <button
+                type="button"
+                className="btn btn--outline btn--md header__login"
+                onClick={() => window.dispatchEvent(new CustomEvent('anistream:open-auth'))}
+              >
+                Войти
+              </button>
+            ) : (
+              <Link className="header__avatar" href="/profile/settings" aria-label="Профиль" title="Профиль">
+                {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{initials}</span>}
+              </Link>
+            )}
             <div className="theme-switch">
               <button
                 type="button"

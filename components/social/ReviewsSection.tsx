@@ -60,7 +60,24 @@ export function ReviewsSection({ slug }: { slug: string }) {
   const comments = useMemo(() => items.filter((i) => i.parent === null && i.rating === null), [items]);
   const avg = reviews.length ? reviews.reduce((a, r) => a + (r.rating ?? 0), 0) / reviews.length : 0;
 
+  /** Голос с авто-применением счётчиков (выносится для auth-gate). */
+  const vote = async (id: string, kind: 'like' | 'dislike') => {
+    const res = await reactToReview(id, kind);
+    if (res.ok) {
+      setItems((p) =>
+        p.map((x) =>
+          x.id === id ? { ...x, likes: res.likes ?? x.likes, dislikes: res.dislikes ?? x.dislikes, myReaction: res.myReaction ?? null } : x,
+        ),
+      );
+    }
+  };
+
   const submit = async () => {
+    // ТЗ блок 14: без входа — модалка, после входа отзыв отправится автоматически
+    if (!isSessionValid()) {
+      queueAuthAction(() => submit());
+      return;
+    }
     const clean = text.trim().slice(0, 2000);
     if (!clean) return;
     const res = await addReview(
@@ -175,46 +192,14 @@ export function ReviewsSection({ slug }: { slug: string }) {
               <button
                 type="button"
                 className={`review__vote${r.myReaction === 'like' ? ' is-active' : ''}`}
-                onClick={async () => {
-                  const res = await reactToReview(r.id, 'like');
-                  if (res.ok) {
-                    setItems((p) =>
-                      p.map((x) =>
-                        x.id === r.id
-                          ? {
-                              ...x,
-                              likes: res.likes ?? x.likes,
-                              dislikes: res.dislikes ?? x.dislikes,
-                              myReaction: res.myReaction ?? null,
-                            }
-                          : x,
-                      ),
-                    );
-                  }
-                }}
+                onClick={() => requireAuth(isSessionValid, () => vote(r.id, 'like'))}
               >
                 👍 {r.likes}
               </button>
               <button
                 type="button"
                 className={`review__vote${r.myReaction === 'dislike' ? ' is-active' : ''}`}
-                onClick={async () => {
-                  const res = await reactToReview(r.id, 'dislike');
-                  if (res.ok) {
-                    setItems((p) =>
-                      p.map((x) =>
-                        x.id === r.id
-                          ? {
-                              ...x,
-                              likes: res.likes ?? x.likes,
-                              dislikes: res.dislikes ?? x.dislikes,
-                              myReaction: res.myReaction ?? null,
-                            }
-                          : x,
-                      ),
-                    );
-                  }
-                }}
+                onClick={() => requireAuth(isSessionValid, () => vote(r.id, 'dislike'))}
               >
                 👎 {r.dislikes}
               </button>

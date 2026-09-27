@@ -14,6 +14,7 @@ const TvMode = dynamic(() => import('@/components/system/TvMode').then((m) => m.
 import { CookieConsent } from '@/components/system/CookieConsent';
 import { ClientMonitoring } from '@/components/system/ClientMonitoring';
 import { AutoSync } from '@/components/system/AutoSync';
+import { AuthGate } from '@/components/auth/AuthGate';
 import { I18nProvider } from '@/lib/i18n';
 
 export const metadata: Metadata = {
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <CookieConsent />
           <ClientMonitoring />
           <AutoSync />
+        <AuthGate />
         </Toaster>
         </I18nProvider>
       </body>
