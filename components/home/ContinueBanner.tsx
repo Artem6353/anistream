@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLibrary } from '@/lib/library';
 import { formatTime } from '@/lib/format';
 import { useTitles } from '@/lib/useTitles';
@@ -10,7 +10,10 @@ import { useTitles } from '@/lib/useTitles';
     (позиция 30 сек – 90% длительности). «Закрыть» — скрыть до следующей сессии. */
 export function ContinueBanner() {
   const { history } = useLibrary();
-  const [closed, setClosed] = useState(() => sessionStorage.getItem('anistream:continue-banner') === 'off');
+  const [closed, setClosed] = useState(false);
+  useEffect(() => {
+    setClosed(sessionStorage.getItem('anistream:continue-banner') === 'off');
+  }, []);
   const entry = history.find((h) => {
     const p = h.position ?? 0;
     const d = h.duration ?? 0;
