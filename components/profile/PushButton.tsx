@@ -31,7 +31,7 @@ async function deleteFromServer(endpoint: string): Promise<void> {
 }
 
 export function PushButton() {
-  const [state, setState] = useState<'idle' | 'on'>('idle');
+  const [state, setState] = useState<'idle' | 'on' | 'denied'>('idle');
   const toast = useToast();
 
   // Баг 6: состояние = РЕАЛЬНОЕ состояние браузера (pushManager.getSubscription),
@@ -51,6 +51,11 @@ export function PushButton() {
   const syncState = async () => {
     try {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      // аудит P2-4: permission denied — отдельное состояние с объяснением
+      if ('Notification' in window && Notification.permission === 'denied') {
+        setState('denied');
+        return;
+      }
       const reg = await swReady(4000);
       const sub = reg ? await reg.pushManager.getSubscription() : null;
       // «включено» показываем только владельцу подписки: вышел из аккаунта → кнопка снова «Уведомлять»
@@ -160,7 +165,11 @@ export function PushButton() {
         }
       }}
     >
-      {state === 'on' ? 'Пушки включены ✅' : 'Уведомлять о новых сериях'}
+      {state === 'on'
+        ? 'Пушки включены ✅'
+        : state === 'denied'
+          ? 'Уведомления запрещены браузером — разрешите их в настройках сайта'
+          : 'Уведомлять о новых сериях'}
     </button>
   );
 }
