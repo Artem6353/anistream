@@ -1,6 +1,7 @@
 'use client';
 
 import { ACH_BY_ID } from '@/lib/achievements';
+import { WriteDmButton } from './WriteDmButton';
 
 export interface ReviewAuthorInfo {
   username?: string | null;
@@ -49,6 +50,7 @@ export function ReviewAuthor({ author, name }: { author?: ReviewAuthorInfo | nul
       ) : (
         <span className="review__author-name">{displayName}</span>
       )}
+      {author.user_id ? <WriteDmButton compact targetId={author.user_id} targetName={author.username ?? name} /> : null}
       {badges.length ? (
         <span className="review__badges">
           {badges.map((b) => (
