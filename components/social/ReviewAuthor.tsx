@@ -19,9 +19,10 @@ export function levelByEpisodes(ep: number): [string, string] {
 }
 
 /** Автор отзыва: аватар 32px, имя, 1–2 pinned-бейджа, уровень.
-    Аноним (без профиля) — инициал + «Гость». */
+    Аноним (без профиля) — инициал + «Гость».
+    Аватар показываем всегда, если он есть, — даже без username. */
 export function ReviewAuthor({ author, name }: { author?: ReviewAuthorInfo | null; name: string }) {
-  if (!author || !author.username) {
+  if (!author) {
     return (
       <span className="review__author">
         <span className="review__avatar review__avatar--guest">{(name || 'Г').slice(0, 1).toUpperCase()}</span>
@@ -29,16 +30,26 @@ export function ReviewAuthor({ author, name }: { author?: ReviewAuthorInfo | nul
       </span>
     );
   }
+
+  const displayName = author.username || name || 'Гость';
+  const initial = displayName.slice(0, 1).toUpperCase();
   const [emoji, label] = levelByEpisodes(author.episodes ?? 0);
   const badges = (author.pinned ?? []).slice(0, 2).map((id) => ACH_BY_ID.get(id)).filter(Boolean);
+
   return (
     <span className="review__author">
       {author.avatar_url ? (
         <img className="review__avatar" src={author.avatar_url} alt="" width={32} height={32} />
       ) : (
-        <span className="review__avatar review__avatar--guest">{author.username.slice(0, 1).toUpperCase()}</span>
+        <span className="review__avatar review__avatar--guest">{initial}</span>
       )}
-      <span className="review__author-name">{author.username}</span>
+      {author.username ? (
+        <a className="review__author-name" href={`/profile/${author.username}`}>
+          {displayName}
+        </a>
+      ) : (
+        <span className="review__author-name">{displayName}</span>
+      )}
       {badges.length ? (
         <span className="review__badges">
           {badges.map((b) => (
