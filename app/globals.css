@@ -3796,3 +3796,11 @@ a.review__author-name:hover { color: var(--accent); text-decoration: underline; 
 .dm__msg.is-mine { align-self: flex-end; background: color-mix(in srgb, var(--accent) 22%, var(--surface-2)); }
 .dm__composer { display: flex; gap: 8px; }
 .dm-unread { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; }
+
+/* ТЗ 20.4: watch party */
+.party__host { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.party__search { display: flex; gap: 8px; max-width: 480px; }
+.party__sources { display: flex; flex-wrap: wrap; gap: 6px; }
+.party__controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.party__video { width: 100%; max-height: 60vh; border-radius: 14px; background: #000; }
+.party__empty { padding: 40px; text-align: center; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 14px; }
