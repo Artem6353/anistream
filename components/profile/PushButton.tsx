@@ -37,12 +37,25 @@ export function PushButton() {
   // Баг 6: состояние = РЕАЛЬНОЕ состояние браузера (pushManager.getSubscription),
   // а не флаг/localStorage. Перепроверяется при монтировании, по visibilitychange
   // и после каждой операции. Подписка привязана к браузеру, не к аккаунту.
+  const ownerKey = 'anistream:push_owner'; // uid владельца подписки или 'anon' (новый ключ, существующие не трогаем)
+  const currentOwner = () => {
+    try {
+      const token = localStorage.getItem('anistream:supa_token');
+      if (!token) return 'anon';
+      const json = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return typeof json.sub === 'string' ? json.sub : 'anon';
+    } catch {
+      return 'anon';
+    }
+  };
   const syncState = async () => {
     try {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
       const reg = await swReady(4000);
       const sub = reg ? await reg.pushManager.getSubscription() : null;
-      setState(sub ? 'on' : 'idle');
+      // «включено» показываем только владельцу подписки: вышел из аккаунта → кнопка снова «Уведомлять»
+      const mine = sub && (localStorage.getItem(ownerKey) ?? 'anon') === currentOwner();
+      setState(mine ? 'on' : 'idle');
     } catch {
       /* ignore */
     }
@@ -50,7 +63,11 @@ export function PushButton() {
   useEffect(() => {
     syncState();
     document.addEventListener('visibilitychange', syncState);
-    return () => document.removeEventListener('visibilitychange', syncState);
+    window.addEventListener('anistream:auth-change', syncState);
+    return () => {
+      document.removeEventListener('visibilitychange', syncState);
+      window.removeEventListener('anistream:auth-change', syncState);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -68,6 +85,9 @@ export function PushButton() {
               await existing.unsubscribe().catch(() => {});
               await deleteFromServer(endpoint);
             }
+            try {
+              localStorage.removeItem(ownerKey);
+            } catch {}
             setState('idle');
             toast('Вы отписались от уведомлений');
             return;
@@ -106,10 +126,21 @@ export function PushButton() {
             return;
           }
 
+          // чужая/старая подписка браузера (другой аккаунт владел) — снимаем перед новой
+          const stale = await reg.pushManager.getSubscription();
+          if (stale) {
+            const oldEndpoint = stale.endpoint;
+            await stale.unsubscribe().catch(() => {});
+            await deleteFromServer(oldEndpoint);
+          }
+
           const sub = await reg.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(publicKey),
           });
+          try {
+            localStorage.setItem(ownerKey, currentOwner());
+          } catch {}
 
           const resp = await fetch('/api/push/subscribe', {
             method: 'POST',
