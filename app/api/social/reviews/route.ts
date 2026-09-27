@@ -87,10 +87,11 @@ export async function GET(request: Request) {
     });
     if (!rr.ok) return NextResponse.json({ mode: 'supabase', items: [] }, { status: 502 });
     const all = (await rr.json()) as ReviewItem[];
-    const roots = all.filter((i) => !i.parent && i.rating !== null);
+    const roots = all.filter((i) => !i.parent && (i as { rating?: number | null }).rating !== null);
     const commentCount = new Map<string, number>();
     for (const i of all) {
-      if (i.parent) commentCount.set(i.parent, (commentCount.get(i.parent) ?? 0) + 1);
+      const pid = typeof i.parent === 'string' ? i.parent : null;
+      if (pid) commentCount.set(pid, (commentCount.get(pid) ?? 0) + 1);
     }
     const items = roots
       .filter((i) => (commentCount.get(i.id) ?? 0) >= 1)
