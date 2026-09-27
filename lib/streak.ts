@@ -12,7 +12,8 @@ import { scopedKey } from './library';
 
 // стрик привязан к аккаунту: свой ключ на каждый uid (аноним — базовый ключ)
 const K = () => scopedKey('anistream:streak');
-const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+// локальные сутки пользователя (аудит P2-3): UTC-граница ломала streak в MSK после 03:00
+const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 export function readStreak(): StreakState | null {
   try {
@@ -31,7 +32,9 @@ export function touchStreak(): StreakState {
   } else if (prev.lastVisit === today) {
     next = prev;
   } else {
-    const yesterday = dayKey(new Date(Date.now() - 86400_000));
+    const yd = new Date();
+    yd.setDate(yd.getDate() - 1);
+    const yesterday = dayKey(yd);
     const current = prev.lastVisit === yesterday ? prev.current + 1 : 1;
     next = { current, best: Math.max(prev.best ?? 0, current), lastVisit: today };
   }
