@@ -1,4 +1,5 @@
 'use client';
+// OG-карточка: next/og (satori) нестабилен в sandbox/low-memory сборках — PNG «Поделиться» рисуется клиентом (canvas), соцсети получают meta из layout.
 
 import { useMemo } from 'react';
 import { useLibrary } from '@/lib/library';
