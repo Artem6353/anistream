@@ -21,6 +21,8 @@ export default function PartyPage({ params }: { params: Promise<{ id: string }> 
   const [sources, setSources] = useState<Array<{ id: string; label: string; url: string; demo?: boolean }>>([]);
   const [embeds, setEmbeds] = useState<Array<{ id: string; label: string }>>([]);
   const [peers, setPeers] = useState(1);
+  const peersRef = useRef<Map<string, number>>(new Map());
+  const myPeer = useMemo(() => `peer-${Math.random().toString(36).slice(2, 8)}`, []);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sockRef = useRef<PartySocket | null>(null);
   const hostRef = useRef(false);
@@ -54,6 +56,10 @@ export default function PartyPage({ params }: { params: Promise<{ id: string }> 
           return s;
         });
       },
+      onPresence: (p) => {
+        // аудит P3-1: счётчик участников по presence-пингам (окно 12 сек)
+        peersRef.current.set(p.peer, Date.now());
+      },
       onCmd: (c: PartyCmd) => {
         const v = videoRef.current;
         if (!v || hostRef.current) return;
@@ -64,7 +70,16 @@ export default function PartyPage({ params }: { params: Promise<{ id: string }> 
     });
     sockRef.current = sock;
     sock.connect();
-    return () => sock.close();
+    const presence = setInterval(() => {
+      sock.broadcastPresence({ peer: myPeer });
+      const now = Date.now();
+      for (const [k, v] of peersRef.current) if (now - v > 12_000) peersRef.current.delete(k);
+      setPeers(1 + peersRef.current.size);
+    }, 4000);
+    return () => {
+      clearInterval(presence);
+      sock.close();
+    };
   }, [id, router]);
 
   const search = async () => {

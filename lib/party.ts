@@ -17,6 +17,9 @@ export interface PartyCmd {
   cmd: 'play' | 'pause' | 'seek';
   t?: number;
 }
+export interface PartyPresence {
+  peer: string;
+}
 
 export class PartySocket {
   private ws: WebSocket | null = null;
@@ -26,7 +29,12 @@ export class PartySocket {
 
   constructor(
     private topic: string,
-    private handlers: { onState?: (s: PartyState) => void; onCmd?: (c: PartyCmd) => void; onJoin?: () => void },
+    private handlers: {
+      onState?: (s: PartyState) => void;
+      onCmd?: (c: PartyCmd) => void;
+      onJoin?: () => void;
+      onPresence?: (p: PartyPresence) => void;
+    },
   ) {}
 
   connect() {
@@ -47,6 +55,8 @@ export class PartySocket {
         const p = msg.payload as { type?: string; state?: PartyState; cmd?: PartyCmd };
         if (p.type === 'state' && p.state) this.handlers.onState?.(p.state);
         if (p.type === 'cmd' && p.cmd) this.handlers.onCmd?.(p.cmd);
+        if (p.type === 'presence' && (p as unknown as { peer?: PartyPresence }).peer)
+          this.handlers.onPresence?.((p as unknown as { peer: PartyPresence }).peer);
       } catch {}
     };
     this.ws.onclose = () => {
@@ -66,6 +76,9 @@ export class PartySocket {
   }
   broadcastCmd(c: PartyCmd) {
     this.send(this.topic, 'broadcast', { type: 'cmd', cmd: c });
+  }
+  broadcastPresence(peer: PartyPresence) {
+    this.send(this.topic, 'broadcast', { type: 'presence', peer });
   }
   close() {
     this.closed = true;
