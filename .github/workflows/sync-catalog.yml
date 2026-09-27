@@ -12,6 +12,10 @@ on:
         description: "Квота новых тайтлов MAX_NEW (0 = без лимита)"
         type: string
         default: "3000"
+      use_jikan:
+        description: "Добор каталога через Jikan (MyAnimeList): только ручной запуск, cron не гоняет"
+        type: boolean
+        default: false
 permissions:
   contents: write
 jobs:
@@ -32,6 +36,11 @@ jobs:
           DEEP: ${{ inputs.deep }}
           MAX_NEW: ${{ github.event_name == 'workflow_dispatch' && inputs.max_new || '200' }}
         run: node scripts/expand-catalog.mjs 12 --report
+      - name: fetch jikan (MyAnimeList extra)
+        if: ${{ inputs.use_jikan == true }}
+        run: node scripts/fetch-jikan.mjs --limit 3000
+        timeout-minutes: 60
+        continue-on-error: true
       - name: remove hentai (18+ policy, safety net)
         run: node scripts/remove-hentai.mjs
       - name: enrich with Shikimori (batched)
