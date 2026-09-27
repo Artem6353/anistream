@@ -31,7 +31,7 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
     const action = takeAuthAction();
     onClose();
     toast('Вход выполнен');
-    if (action) setTimeout(action, 50); // действие выполняется автоматически после входа
+    if (action) setTimeout(action, 50);
   };
 
   return (
@@ -56,10 +56,14 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
           disabled={!!busy}
           onClick={() => {
             setBusy('google');
-            signInWithGoogle().catch((e) => {
+            try {
+              // signInWithGoogle — синхронный redirect через window.location.href.
+              // Никакого fetch/await — браузер сразу уходит на Google.
+              signInWithGoogle();
+            } catch (e) {
               setBusy('');
-              toast(`Google: ${e.message}`);
-            });
+              toast(`Google: ${e instanceof Error ? e.message : 'ошибка'}`);
+            }
           }}
         >
           <IconGoogle size={17} />
@@ -85,8 +89,23 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
               });
           }}
         >
-          <input className="input" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <input className="input" type="password" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+          <input
+            className="input"
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            className="input"
+            type="password"
+            placeholder="Пароль"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+          />
           <button className="btn btn--primary btn--lg" type="submit" disabled={!!busy}>
             {busy === 'in' ? '…' : 'Войти'}
           </button>

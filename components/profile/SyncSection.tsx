@@ -28,7 +28,6 @@ export function SyncSection() {
   const toast = useToast();
 
   // Восстанавливаем состояние входа на клиенте (SSR-safe).
-  // Если access_token истёк, но есть refresh_token — молча обновляем сессию.
   useEffect(() => {
     if (!syncConfigured()) return;
     if (isSessionValid()) {
@@ -121,72 +120,83 @@ export function SyncSection() {
       </div>
       {!logged && (
         <>
-        <button
-          type="button"
-          className="btn btn--google btn--md"
-          disabled={!!busy}
-          onClick={() => {
-            setBusy('google');
-            signInWithGoogle().catch((e) => {
-              setBusy('');
-              toast(`Google: ${e.message}`);
-            });
-          }}
-        >
-          <IconGoogle size={16} />
-          Продолжить с Google
-        </button>
-        <form
-          className="reviews__form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            act(async () => {
-              await signIn(email, password);
-              setLogged(true);
-              notifyAuthChange();
-              toast('Вход выполнен');
-            }, 'in');
-          }}
-        >
-          <input className="input" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <input
-            className="input"
-            type="password"
-            placeholder="Пароль"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <div className="settings__actions">
-            <button className="btn btn--primary btn--md" type="submit" disabled={!!busy}>
-              Войти
-            </button>
-            <button
-              className="btn btn--outline btn--md"
-              type="button"
-              disabled={!!busy}
-              onClick={() =>
-                act(async () => {
-                  const j = await signUp(email, password);
-                  // Аудит блок 4: после регистрации пользователь залогинен сразу.
-                  // Если Supabase-проект с отключённым Confirm email — signUp сам вернёт
-                  // токены; иначе пробуем signIn сразу (без подтверждения он успешен).
-                  if (!j.access_token) {
-                    try {
-                      await signIn(email, password);
-                    } catch {
-                      /* включено подтверждение email — вход после письма */
-                    }
-                  }
-                  setLogged(isSessionValid());
-                  toast(isSessionValid() ? 'Аккаунт создан — вы вошли' : 'Аккаунт создан: подтвердите email и войдите');
-                }, 'up')
+          <button
+            type="button"
+            className="btn btn--google btn--md"
+            disabled={!!busy}
+            onClick={() => {
+              setBusy('google');
+              try {
+                // signInWithGoogle — синхронный редирект, без fetch. См. lib/sync.ts.
+                signInWithGoogle();
+              } catch (e) {
+                setBusy('');
+                toast(`Google: ${e instanceof Error ? e.message : 'ошибка'}`);
               }
-            >
-              Регистрация
-            </button>
-          </div>
-        </form>
+            }}
+          >
+            <IconGoogle size={16} />
+            Продолжить с Google
+          </button>
+          <form
+            className="reviews__form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              act(async () => {
+                await signIn(email, password);
+                setLogged(true);
+                notifyAuthChange();
+                toast('Вход выполнен');
+              }, 'in');
+            }}
+          >
+            <input
+              className="input"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <input
+              className="input"
+              type="password"
+              placeholder="Пароль"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <div className="settings__actions">
+              <button className="btn btn--primary btn--md" type="submit" disabled={!!busy}>
+                Войти
+              </button>
+              <button
+                className="btn btn--outline btn--md"
+                type="button"
+                disabled={!!busy}
+                onClick={() =>
+                  act(async () => {
+                    const j = await signUp(email, password);
+                    if (!j.access_token) {
+                      try {
+                        await signIn(email, password);
+                      } catch {
+                        /* включено подтверждение email — вход после письма */
+                      }
+                    }
+                    setLogged(isSessionValid());
+                    toast(
+                      isSessionValid()
+                        ? 'Аккаунт создан — вы вошли'
+                        : 'Аккаунт создан: подтвердите email и войдите',
+                    );
+                  }, 'up')
+                }
+              >
+                Регистрация
+              </button>
+            </div>
+          </form>
         </>
       )}
     </section>
