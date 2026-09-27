@@ -53,8 +53,8 @@ export function SiteHeader() {
       cancelled = true;
     };
   }, [logged]);
-  const initials = (settings.displayName ?? 'A').slice(0, 1).toUpperCase();
   const { bookmarks, settings } = useLibrary();
+  const initials = (settings.displayName ?? 'A').slice(0, 1).toUpperCase();
   const { t } = useI18n();
 
   useEffect(() => {
