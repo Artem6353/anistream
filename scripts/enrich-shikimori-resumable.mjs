@@ -10,7 +10,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const P = 'lib/data/titles.json';
 const CONC = Number(process.env.CONCURRENCY ?? 5);
 // --limit N (ТЗ блок B): обработать не более N тайтлов за запуск — для батчей в workflow
-const LIMIT = Number((process.argv.find((a) => a.startsWith('--limit')) ?? '').replace('--limit', '').replace('=', '') || 0);
+const LIMIT = Number((() => { const i = process.argv.indexOf('--limit'); if (i >= 0 && process.argv[i + 1]) return process.argv[i + 1]; const eq = process.argv.find((a) => a.startsWith('--limit=')); return eq ? eq.split('=')[1] : ''; })() || 0);
 const titles = JSON.parse(readFileSync(P, 'utf8'));
 
 const clean = (s) =>
@@ -81,6 +81,22 @@ let enriched = 0;
 const started = Date.now();
 const queue = [...pending];
 
+/** Jikan (api.jikan.moe) — персонажи, если Shikimori не нашёл тайтл (ТЗ блок 2). */
+async function jikanGet(path) {
+  for (let a = 0; a < 3; a++) {
+    try {
+      const r = await fetch((process.env.JIKAN_BASE || 'https://api.jikan.moe/v4') + path, {
+        headers: { Accept: 'application/json', 'User-Agent': 'AniNova-catalog-sync/1.0' },
+        signal: AbortSignal.timeout(20000),
+      });
+      if (r.status === 429) { await sleep(5000 * (a + 1)); continue; }
+      if (!r.ok) return null;
+      return await r.json();
+    } catch { await sleep(1500 * (a + 1)); }
+  }
+  return null;
+}
+
 async function worker() {
   while (queue.length) {
     const t = queue.shift();
@@ -89,7 +105,29 @@ async function worker() {
       done++;
       continue;
     }
-    const found = await getJson(`/api/animes?limit=3&search=${encodeURIComponent(t.romaji)}`);
+    // ТЗ блок 2: у Jikan-тайтлов (malId без anilist-происхождения) id Shikimori == id MAL —
+    // пробуем прямую карточку /api/animes/{malId} вместо поиска по названию.
+    if (!t.shikimori && t.malId) {
+      const direct = await getJson(`/api/animes/${t.malId}`);
+      if (direct?.id) {
+        const desc = clean(direct.description)?.slice(0, 900);
+        t.shikimori = {
+          id: direct.id,
+          ru: direct.russian || null,
+          description: desc || null,
+          score: Number(direct.score || 0) || 0,
+        };
+        if (direct.russian) t.ru = direct.russian;
+        if (desc) t.description = desc;
+        const shots = (direct.screenshots ?? []).map((sc) => sc?.original).filter(Boolean);
+        if (shots.length) t.screenshots = shots.slice(0, 12).map((u) => (u.startsWith('http') ? u : u.startsWith('//') ? 'https:' + u : 'https://shikimori.io' + u));
+        enriched++;
+        await sleep(120);
+      }
+    }
+    // ТЗ блок 2: для Jikan-тайтлов fuzzy-поиск по названию отключён — только прямой malId-лукup;
+    // «не найден» → оставляем как есть (метаданные Jikan), без чужих карточек.
+    const found = !t.shikimori && t.source !== 'jikan' ? await getJson(`/api/animes?limit=3&search=${encodeURIComponent(t.romaji)}`) : null;
     if (Array.isArray(found) && found.length) {
       const target = norm(t.romaji);
       const best =
@@ -111,7 +149,15 @@ async function worker() {
       enriched++;
     }
     if ((t.characters?.length ?? 0) < 6) {
-      const chars = await anilistCharacters(t.anilistId);
+      // ТЗ блок 2: сначала Jikan (для malId-тайтлов), затем AniList (для anilist-тайтлов)
+      let chars = null;
+      if (t.malId) {
+        const cj = await jikanGet(`/anime/${t.malId}/characters`);
+        const list = (cj?.data ?? []).slice(0, 6);
+        if (list.length) chars = list.map((c) => ({ name: c.character?.name ?? '', img: c.character?.images?.jpg?.image_url ?? null, role: c.role ?? 'Character' }));
+        await sleep(400); // rate-limit Jikan 3 req/s
+      }
+      if (!chars && t.anilistId > 0) chars = await anilistCharacters(t.anilistId);
       if (chars?.length) t.characters = chars;
       await sleep(300); // бережно к rate-limit AniList
     }
