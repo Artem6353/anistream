@@ -46,7 +46,7 @@ body {
   color: var(--text);
   font-family: var(--font);
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   padding-bottom: env(safe-area-inset-bottom);
@@ -3562,7 +3562,7 @@ html[data-tv='true'] .card:focus-within .card__media {
   .input, select.input, textarea.input, .chips .chip { font-size: 16px; }
   .poster-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .filters {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 70;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 95;
     max-height: 80vh; overflow-y: auto;
     background: var(--bg-elev); border-top: 1px solid var(--line-strong);
     border-radius: 16px 16px 0 0; box-shadow: var(--shadow-2);
@@ -3816,3 +3816,43 @@ a.review__author-name:hover { color: var(--accent); text-decoration: underline; 
 .genre-cloud span { text-transform: capitalize; }
 
 .review__dm { font-size: 14px; min-width: 32px; min-height: 32px; }
+
+/* ============================================================
+   Дизайн-пас 2026-09-28: читаемость и «воздух» (переопределяет
+   раннюю «плотность главной»), перекрытия, адаптив планшет/ТВ.
+   ============================================================ */
+.page-section { padding: 24px 0; }
+.rail-section { padding: 20px 0; }
+.rail { gap: 14px; }
+.rail--grid { gap: 14px; }
+.section-title { font-size: 22px; }
+h1 { font-size: 28px; margin: 16px 0 12px; }
+.card__body { padding: 12px 14px 14px; }
+.card__title { font-size: 15px; line-height: 1.45; }
+.review { padding: 16px; border-radius: 14px; }
+.history__item { padding: 12px; }
+[id] { scroll-margin-top: calc(var(--header-h) + 14px); }
+
+/* тосты не наезжают на мобильную навигацию */
+@media (max-width: 860px) {
+  .ach-toasts { bottom: calc(76px + env(safe-area-inset-bottom)); right: 10px; left: 10px; }
+  .ach-toast { max-width: none; width: 100%; }
+}
+
+/* шапка не толпится на смартфоне: дубли профилей живёт в mobile-nav */
+@media (max-width: 700px) {
+  .header__icon[href='/profile/bookmarks'],
+  .header__icon[href='/profile/settings'] { display: none; }
+  .streak-badge { padding: 4px 8px; }
+}
+
+/* планшет: крупнее карточки в сетках */
+@media (min-width: 701px) and (max-width: 1080px) {
+  .poster-grid, .rail--grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+}
+
+/* ТВ: крупный масштаб интерфейса */
+html[data-tv='true'] { font-size: 18px; }
+html[data-tv='true'] .container { width: min(1600px, 94%); }
+html[data-tv='true'] .card { width: 240px; }
+html[data-tv='true'] .mobile-nav { display: none; }
