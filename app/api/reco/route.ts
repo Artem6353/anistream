@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { collaborativeScores, hybridReco, topByGenre, topByGenres } from '@/lib/reco';
 
-export const revalidate = 300;
+export const revalidate = 3600; // аудит P1-5: коллаб-часть тяжёлая — часовой кэш
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 const SERVICE = process.env.SUPABASE_SERVICE_KEY ?? '';
@@ -16,13 +16,13 @@ export async function GET(request: Request) {
   const limit = Math.min(24, Number(params.get('limit') ?? 12) || 12);
 
   if (genre) {
-    return NextResponse.json({ items: topByGenre(genre, slugs, limit) }, { headers: { 'Cache-Control': 'public, s-maxage=300' } });
+    return NextResponse.json({ items: topByGenre(genre, slugs, limit) }, { headers: { 'Cache-Control': 'public, s-maxage=3600' } });
   }
 
   let collab = new Map<string, number>();
   if (SERVICE && slugs.length) {
     try {
-      const r = await fetch(`${SUPA_URL}/rest/v1/profile_history?select=user_id,slug&limit=10000`, {
+      const r = await fetch(`${SUPA_URL}/rest/v1/profile_history?select=user_id,slug&limit=2000`, {
         headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}` },
         next: { revalidate: 3600 },
       });
