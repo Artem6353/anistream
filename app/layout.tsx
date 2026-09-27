@@ -15,6 +15,7 @@ import { CookieConsent } from '@/components/system/CookieConsent';
 import { ClientMonitoring } from '@/components/system/ClientMonitoring';
 import { AutoSync } from '@/components/system/AutoSync';
 import { AuthGate } from '@/components/auth/AuthGate';
+import { AchievementToast } from '@/components/profile/AchievementToast';
 import { I18nProvider } from '@/lib/i18n';
 
 export const metadata: Metadata = {
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ClientMonitoring />
           <AutoSync />
         <AuthGate />
+        <AchievementToast />
         </Toaster>
         </I18nProvider>
       </body>

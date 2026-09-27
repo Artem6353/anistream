@@ -1,58 +1,88 @@
 'use client';
 
-/** Реестр 32 ачивок (ТЗ блок 18.1). Уровни: bronze/silver/gold/platinum/secret.
-    Хранение разблокировок: anistream:achievements = { [id]: unlockedAt } (см. блок 18). */
+/** Ачивки (ТЗ блок 18.1): 32 достижения с уровнями, прогрессом и тостом.
+    Хранение: anistream:achievements = { [id]: { unlockedAt } } (ключ НЕ переименовывать;
+    legacy-формат { id: number } читается обратно совместимо).
+    Счётчики событий: anistream:ach_counters (новый ключ, существующие не трогаем). */
+import { library } from './library';
+import type { Title } from './types';
+
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'secret';
+
+export interface AchCtx {
+  episodes: number;
+  watchSec: number;
+  listsCount: number;
+  bookmarks: number;
+  reviews: number;
+  comments: number;
+  likes: number;
+  ratings: number;
+  genresWatched: number;
+  genreCounts: Record<string, number>;
+  movies: number;
+  daysStreak: number;
+  sections: number;
+  themeChanges: number;
+  speed2Count: number;
+  voices: number;
+  maxEpisodesPerDay: number;
+  maxSecPerDay: number;
+  nightOwl: boolean;
+  unlockedCount: number; // обычных (не секретных)
+}
 
 export interface AchievementMeta {
   id: string;
   tier: AchievementTier;
   title: string;
   desc: string;
-  /** Условие человека читаемым языком (для страницы деталей). */
   how: string;
-  /** Целевое значение прогресса (для прогресс-баров). */
   goal: number;
+  progress: (c: AchCtx) => number;
+  done: (c: AchCtx) => boolean;
 }
+
+const A = (id: string, tier: AchievementTier, title: string, desc: string, how: string, goal: number, progress: (c: AchCtx) => number, done: (c: AchCtx) => boolean): AchievementMeta => ({ id, tier, title, desc, how, goal, progress, done });
 
 export const ACHIEVEMENTS: AchievementMeta[] = [
   // 🥉 Бронза (10)
-  { id: 'first-step', tier: 'bronze', title: 'Первый шаг', desc: 'Посмотреть первую серию', how: 'Откройте любую серию и досмотрите хотя бы минуту', goal: 1 },
-  { id: 'ten', tier: 'bronze', title: 'Десятка', desc: '10 серий просмотрено', how: 'Суммарно 10 серий в истории', goal: 10 },
-  { id: 'hello', tier: 'bronze', title: 'Знакомство', desc: 'Первый тайтл в списке', how: 'Добавьте тайтл в «Мой список»', goal: 1 },
-  { id: 'orator', tier: 'bronze', title: 'Оратор', desc: 'Первый отзыв', how: 'Напишите отзыв на странице тайтла', goal: 1 },
-  { id: 'first-like', tier: 'bronze', title: 'Первый лайк', desc: 'Поставить первый лайк', how: 'Оцените чужой отзыв лайком', goal: 1 },
-  { id: 'collector', tier: 'bronze', title: 'Коллекционер', desc: '10 тайтлов в списке', how: '10 тайтлов в «Моём списке»', goal: 10 },
-  { id: 'explorer', tier: 'bronze', title: 'Исследователь', desc: '5 жанров в истории', how: 'Посмотрите тайтлы пяти разных жанров', goal: 5 },
-  { id: 'stylist', tier: 'bronze', title: 'Стилист', desc: 'Сменить акцент или тему', how: 'Поменяйте цвет акцента или тему оформления', goal: 1 },
-  { id: 'bullseye', tier: 'bronze', title: 'В точку', desc: 'Оценка совпала со средней', how: 'Ваша оценка тайтла совпала со средней оценкой каталога', goal: 1 },
-  { id: 'hour-one', tier: 'bronze', title: 'Первый час', desc: 'Час просмотров', how: 'Суммарная длительность просмотренного — 1 час', goal: 60 },
+  A('first_episode', 'bronze', 'Первый шаг', 'Посмотреть 1 серию', 'Откройте любую серию и посмотрите хотя бы минуту', 1, (c) => c.episodes, (c) => c.episodes >= 1),
+  A('ten_episodes', 'bronze', 'Десятка', '10 серий просмотрено', '10 серий в истории', 10, (c) => c.episodes, (c) => c.episodes >= 10),
+  A('five_lists', 'bronze', 'Знакомство', '5 тайтлов в списках', 'Добавьте 5 тайтлов в списки статусов', 5, (c) => c.listsCount, (c) => c.listsCount >= 5),
+  A('first_review', 'bronze', 'Оратор', 'Первый отзыв', 'Напишите отзыв', 1, (c) => c.reviews, (c) => c.reviews >= 1),
+  A('first_like', 'bronze', 'Первый лайк', 'Лайк чужому отзыву', 'Поставьте лайк отзыву', 1, (c) => c.likes, (c) => c.likes >= 1),
+  A('ten_bookmarks', 'bronze', 'Коллекционер', '10 закладок', '10 тайтлов в закладках', 10, (c) => c.bookmarks, (c) => c.bookmarks >= 10),
+  A('all_sections', 'bronze', 'Исследователь', '5 разделов сайта', 'Главная, каталог, топ, расписание, профиль', 5, (c) => c.sections, (c) => c.sections >= 5),
+  A('first_theme', 'bronze', 'Стилист', 'Сменить тему', 'Поменяйте тему оформления', 1, (c) => c.themeChanges, (c) => c.themeChanges >= 1),
+  A('ten_ratings', 'bronze', 'В точку', '10 оценок тайтлам', 'Поставьте 10 оценок в отзывах', 10, (c) => c.ratings, (c) => c.ratings >= 10),
+  A('first_hour', 'bronze', 'Первый час', '1 час просмотра', 'Суммарно час просмотренного', 3600, (c) => c.watchSec, (c) => c.watchSec >= 3600),
   // 🥈 Серебро (10)
-  { id: 'hundred', tier: 'silver', title: 'Сотка', desc: '100 серий просмотрено', how: 'Суммарно 100 серий в истории', goal: 100 },
-  { id: 'marathoner', tier: 'silver', title: 'Марафонец', desc: '10 серий за один день', how: '10 серий с датой просмотра в один день', goal: 10 },
-  { id: 'hours-100', tier: 'silver', title: 'Сто часов', desc: '100 часов просмотров', how: 'Суммарная длительность — 100 часов', goal: 6000 },
-  { id: 'collector-plus', tier: 'silver', title: 'Коллекционер+', desc: '50 тайтлов в списке', how: '50 тайтлов в «Моём списке»', goal: 50 },
-  { id: 'critic', tier: 'silver', title: 'Критик', desc: '10 отзывов', how: 'Напишите 10 отзывов', goal: 10 },
-  { id: 'commentator', tier: 'silver', title: 'Комментатор', desc: '10 комментариев', how: 'Ответьте в ветках отзывов 10 раз', goal: 10 },
-  { id: 'romantic', tier: 'silver', title: 'Романтик', desc: '5 романтик-тайтлов', how: 'Посмотрите 5 тайтлов жанра romance', goal: 5 },
-  { id: 'action-master', tier: 'silver', title: 'Экшен-мастер', desc: '5 экшен-тайтлов', how: 'Посмотрите 5 тайтлов жанра action', goal: 5 },
-  { id: 'omnivore', tier: 'silver', title: 'Всеядный', desc: '10 жанров в истории', how: 'Тайтлы 10 разных жанров в истории', goal: 10 },
-  { id: 'night-owl', tier: 'silver', title: 'Ночной житель', desc: '10 серий после полуночи', how: '10 серий, начатых между 00:00 и 05:00', goal: 10 },
+  A('hundred_episodes', 'silver', 'Сотка', '100 серий', '100 серий в истории', 100, (c) => c.episodes, (c) => c.episodes >= 100),
+  A('marathoner', 'silver', 'Марафонец', '10 серий за день', '10 серий с датой просмотра в один день', 10, (c) => c.maxEpisodesPerDay, (c) => c.maxEpisodesPerDay >= 10),
+  A('hundred_hours', 'silver', 'Сто часов', '100 часов просмотра', 'Суммарно 100 часов', 360000, (c) => c.watchSec, (c) => c.watchSec >= 360000),
+  A('fifty_lists', 'silver', 'Коллекционер+', '50 тайтлов в списках', '50 тайтлов в списках статусов', 50, (c) => c.listsCount, (c) => c.listsCount >= 50),
+  A('ten_reviews', 'silver', 'Критик', '10 отзывов', 'Напишите 10 отзывов', 10, (c) => c.reviews, (c) => c.reviews >= 10),
+  A('fifty_comments', 'silver', 'Комментатор', '50 комментариев', '50 ответов в ветках', 50, (c) => c.comments, (c) => c.comments >= 50),
+  A('romantic', 'silver', 'Романтик', '20 романтик-тайтлов', '20 тайтлов жанра романтика в истории', 20, (c) => c.genreCounts['romance'] ?? 0, (c) => (c.genreCounts['romance'] ?? 0) >= 20),
+  A('action_master', 'silver', 'Экшен-мастер', '20 экшен-тайтлов', '20 тайтлов жанра экшен в истории', 20, (c) => c.genreCounts['action'] ?? 0, (c) => (c.genreCounts['action'] ?? 0) >= 20),
+  A('all_genres', 'silver', 'Всеядный', '10 жанров', 'Тайтлы 10 разных жанров в истории', 10, (c) => c.genresWatched, (c) => c.genresWatched >= 10),
+  A('night_owl', 'silver', 'Ночной житель', 'Серия в 3–6 утра', 'Посмотрите серию между 03:00 и 06:00', 1, (c) => (c.nightOwl ? 1 : 0), (c) => c.nightOwl),
   // 🥇 Золото (5)
-  { id: 'five-hundred', tier: 'gold', title: 'Полтысячи', desc: '500 серий просмотрено', how: 'Суммарно 500 серий', goal: 500 },
-  { id: 'cinephile', tier: 'gold', title: 'Киноман', desc: '20 фильмов', how: 'Посмотрите 20 полных метров (type movie)', goal: 20 },
-  { id: 'regular-30', tier: 'gold', title: 'Постоянный', desc: '30 дней подряд', how: 'Заходите на сайт 30 дней без перерыва', goal: 30 },
-  { id: 'librarian', tier: 'gold', title: 'Библиотекарь', desc: '200 тайтлов в списке', how: '200 тайтлов в «Моём списке»', goal: 200 },
-  { id: 'reviewer-50', tier: 'gold', title: 'Рецензент', desc: '50 отзывов', how: 'Напишите 50 отзывов', goal: 50 },
+  A('five_hundred_episodes', 'gold', 'Полтысячи', '500 серий', '500 серий в истории', 500, (c) => c.episodes, (c) => c.episodes >= 500),
+  A('movie_buff', 'gold', 'Киноман', '50 фильмов', '50 полных метров в истории', 50, (c) => c.movies, (c) => c.movies >= 50),
+  A('thirty_day_streak', 'gold', 'Постоянный', '30 дней подряд', 'Заходите 30 дней без перерыва', 30, (c) => c.daysStreak, (c) => c.daysStreak >= 30),
+  A('librarian', 'gold', 'Библиотекарь', '200 тайтлов в списках', '200 тайтлов в списках статусов', 200, (c) => c.listsCount, (c) => c.listsCount >= 200),
+  A('fifty_reviews', 'gold', 'Рецензент', '50 отзывов', 'Напишите 50 отзывов', 50, (c) => c.reviews, (c) => c.reviews >= 50),
   // 💎 Платина (3)
-  { id: 'legend-1000', tier: 'platinum', title: 'Легенда', desc: '1000 серий', how: 'Суммарно 1000 серий', goal: 1000 },
-  { id: 'hours-1000', tier: 'platinum', title: 'Тысяча часов', desc: '1000 часов просмотров', how: 'Суммарная длительность — 1000 часов', goal: 60000 },
-  { id: 'devoted-100', tier: 'platinum', title: 'Преданный', desc: '100 дней подряд', how: '100 дней подряд на сайте', goal: 100 },
-  // 🌟 Секретные (4)
-  { id: 'night-marathon', tier: 'secret', title: 'Ночной марафон', desc: '24 часа просмотра за сутки', how: 'Секрет: суммарно 24 часа просмотра в одни сутки', goal: 1440 },
-  { id: 'speed-x2', tier: 'secret', title: 'Скорость', desc: 'x2 пятьдесят раз', how: 'Секрет: включите скорость x2 50 раз', goal: 50 },
-  { id: 'voices-many', tier: 'secret', title: 'Озвучек много', desc: '10 озвучек в одной серии', how: 'Секрет: откройте серию с 10 озвучками', goal: 10 },
-  { id: 'legendary-all', tier: 'secret', title: 'Легендарный', desc: 'Все 28 обычных ачивок', how: 'Секрет: соберите все обычные ачивки', goal: 28 },
+  A('thousand_episodes', 'platinum', 'Легенда', '1000 серий', '1000 серий в истории', 1000, (c) => c.episodes, (c) => c.episodes >= 1000),
+  A('thousand_hours', 'platinum', 'Тысяча часов', '1000 часов просмотра', 'Суммарно 1000 часов', 3600000, (c) => c.watchSec, (c) => c.watchSec >= 3600000),
+  A('hundred_day_streak', 'platinum', 'Преданный', '100 дней подряд', '100 дней без перерыва', 100, (c) => c.daysStreak, (c) => c.daysStreak >= 100),
+  // 🌟 Секретные (4) — видны только после получения
+  A('night_marathon', 'secret', 'Ночной марафон', '24 часа за сутки', 'Секрет: 24 часа просмотра в одни сутки', 86400, (c) => c.maxSecPerDay, (c) => c.maxSecPerDay >= 86400),
+  A('speed_demon', 'secret', 'Скорость', 'x2 пятьдесят раз', 'Секрет: включите скорость x2 50 раз', 50, (c) => c.speed2Count, (c) => c.speed2Count >= 50),
+  A('voice_collector', 'secret', 'Озвучек много', '10 разных озвучек', 'Секрет: смените озвучку в плеере 10 раз', 10, (c) => c.voices, (c) => c.voices >= 10),
+  A('legendary', 'secret', 'Легендарный', 'Все 28 обычных', 'Секрет: соберите все обычные ачивки', 28, (c) => c.unlockedCount, (c) => c.unlockedCount >= 28),
 ];
 
 export const ACH_BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));
@@ -63,19 +93,205 @@ export const TIER_LABELS: Record<AchievementTier, string> = {
   platinum: '💎 Платина',
   secret: '🌟 Секретные',
 };
+export const TIER_EMOJI: Record<AchievementTier, string> = { bronze: '🥉', silver: '🥈', gold: '🥇', platinum: '💎', secret: '🌟' };
 
-/** Чтение разблокировок: anistream:achievements = { id: unlockedAt } (ключ не переименовывать). */
-export function readUnlocked(): Record<string, number> {
+/* ---------- хранилище ---------- */
+const K_ACH = 'anistream:achievements';
+const K_COUNTERS = 'anistream:ach_counters';
+
+export interface Counters {
+  likes: number;
+  reviews: number;
+  comments: number;
+  ratings: number;
+  themeChanges: number;
+  speed2: number;
+  voices: number;
+  sections: string[];
+}
+const DEFAULT_COUNTERS: Counters = { likes: 0, reviews: 0, comments: 0, ratings: 0, themeChanges: 0, speed2: 0, voices: 0, sections: [] };
+
+function readJson<T>(key: string, fb: T): T {
   try {
-    return JSON.parse(localStorage.getItem('anistream:achievements') ?? '{}') as Record<string, number>;
+    return JSON.parse(localStorage.getItem(key) ?? 'null') ?? fb;
   } catch {
-    return {};
+    return fb;
   }
 }
-export function writeUnlocked(v: Record<string, number>) {
+export function readUnlocked(): Record<string, { unlockedAt: number }> {
+  const raw = readJson<Record<string, unknown>>(K_ACH, {});
+  const out: Record<string, { unlockedAt: number }> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    // обратная совместимость: legacy { id: number }
+    out[k] = typeof v === 'number' ? { unlockedAt: v } : (v as { unlockedAt: number });
+  }
+  return out;
+}
+function writeUnlocked(v: Record<string, { unlockedAt: number }>) {
   try {
-    localStorage.setItem('anistream:achievements', JSON.stringify(v));
+    localStorage.setItem(K_ACH, JSON.stringify(v));
+  } catch {}
+}
+export function readCounters(): Counters {
+  return { ...DEFAULT_COUNTERS, ...readJson<Partial<Counters>>(K_COUNTERS, {}) };
+}
+function writeCounters(c: Counters) {
+  try {
+    localStorage.setItem(K_COUNTERS, JSON.stringify(c));
+  } catch {}
+}
+
+/* ---------- контекст проверки ---------- */
+export function buildContext(streakCurrent: number): AchCtx {
+  const { history, bookmarks, lists } = library.state;
+  const counters = readCounters();
+  const bySlug = new Map<string, Title>();
+  let watchSec = 0;
+  const perDayEp = new Map<string, number>();
+  const perDaySec = new Map<string, number>();
+  const genreCounts: Record<string, number> = {};
+  const seenSlug = new Set<string>();
+  let movies = 0;
+  let nightOwl = false;
+  for (const h of history) {
+    watchSec += Math.max(0, Math.min(h.position || 0, h.duration || h.position || 0));
+    const day = new Date(h.updatedAt ?? 0);
+    const dk = day.toISOString().slice(0, 10);
+    perDayEp.set(dk, (perDayEp.get(dk) ?? 0) + 1);
+    perDaySec.set(dk, (perDaySec.get(dk) ?? 0) + (h.position || 0));
+    const hour = day.getHours();
+    if (hour >= 3 && hour < 6) nightOwl = true;
+    if (seenSlug.has(h.slug)) continue;
+    seenSlug.add(h.slug);
+    bySlug.set(h.slug, bySlug.get(h.slug) ?? (null as unknown as Title));
+  }
+  // жанры/фильмы — по каталогу истории (titles приходят из useTitles на страницах;
+  // здесь лёгкий путь: жанры считаем из событий trackEvent('watch', {genres}))
+  const g = readJson<Record<string, number>>('anistream:ach_genres', {});
+  Object.assign(genreCounts, g);
+  const st = readJson<{ movies?: number }>('anistream:ach_extra', {});
+  movies = st.movies ?? 0;
+  const unlocked = readUnlocked();
+  return {
+    episodes: history.length,
+    watchSec,
+    listsCount: Object.keys(lists).length,
+    bookmarks: bookmarks.length,
+    reviews: counters.reviews,
+    comments: counters.comments,
+    likes: counters.likes,
+    ratings: counters.ratings,
+    genresWatched: Object.keys(genreCounts).length,
+    genreCounts,
+    movies,
+    daysStreak: streakCurrent,
+    sections: counters.sections.length,
+    themeChanges: counters.themeChanges,
+    speed2Count: counters.speed2,
+    voices: counters.voices,
+    maxEpisodesPerDay: Math.max(0, ...perDayEp.values()),
+    maxSecPerDay: Math.max(0, ...perDaySec.values()),
+    nightOwl,
+    unlockedCount: ACHIEVEMENTS.filter((a) => a.tier !== 'secret' && unlocked[a.id]).length,
+  };
+}
+
+export const ACH_EVENT = 'anistream:achievement';
+
+/** Проверить все ачивки; новые разблокировать и разослать тост-события. */
+export function checkAchievements(streakCurrent: number): string[] {
+  if (typeof window === 'undefined') return [];
+  const ctx = buildContext(streakCurrent);
+  const unlocked = readUnlocked();
+  const fresh: string[] = [];
+  for (const a of ACHIEVEMENTS) {
+    if (unlocked[a.id]) continue;
+    if (a.id === 'legendary' && ctx.unlockedCount < 28) continue;
+    if (a.done(ctx)) {
+      unlocked[a.id] = { unlockedAt: Date.now() };
+      fresh.push(a.id);
+    }
+  }
+  if (fresh.length) {
+    writeUnlocked(unlocked);
+    for (const id of fresh) window.dispatchEvent(new CustomEvent(ACH_EVENT, { detail: { id } }));
+  }
+  return fresh;
+}
+
+/* ---------- события-триггеры ---------- */
+export type TrackType = 'watch' | 'bookmarks' | 'lists' | 'review' | 'comment' | 'like' | 'rating' | 'theme' | 'section' | 'speed2' | 'voice' | 'streak';
+
+export function trackEvent(type: TrackType, payload?: { genres?: string[]; movie?: boolean; section?: string; streak?: number }) {
+  if (typeof window === 'undefined') return;
+  const c = readCounters();
+  let streak = payload?.streak ?? 0;
+  switch (type) {
+    case 'watch': {
+      if (payload?.genres?.length) {
+        const g = readJson<Record<string, number>>('anistream:ach_genres', {});
+        for (const key of payload.genres) g[key] = (g[key] ?? 0) + 1;
+        try {
+          localStorage.setItem('anistream:ach_genres', JSON.stringify(g));
+        } catch {}
+      }
+      if (payload?.movie) {
+        const st = readJson<{ movies?: number }>('anistream:ach_extra', {});
+        st.movies = (st.movies ?? 0) + 1;
+        try {
+          localStorage.setItem('anistream:ach_extra', JSON.stringify(st));
+        } catch {}
+      }
+      break;
+    }
+    case 'like':
+      c.likes += 1;
+      writeCounters(c);
+      break;
+    case 'review':
+      c.reviews += 1;
+      writeCounters(c);
+      break;
+    case 'comment':
+      c.comments += 1;
+      writeCounters(c);
+      break;
+    case 'theme':
+      c.themeChanges += 1;
+      writeCounters(c);
+      break;
+    case 'speed2':
+      c.speed2 += 1;
+      writeCounters(c);
+      break;
+    case 'voice':
+      c.voices += 1;
+      writeCounters(c);
+      break;
+    case 'section': {
+      const sec = payload?.section;
+      if (sec && !c.sections.includes(sec)) {
+        c.sections = [...c.sections, sec];
+        writeCounters(c);
+      }
+      break;
+    }
+    case 'rating':
+      c.ratings += 1;
+      writeCounters(c);
+      break;
+    case 'bookmarks':
+    case 'lists':
+      break; // значения берутся из library.state при проверке
+  }
+  if (type === 'streak') streak = payload?.streak ?? streak;
+  checkAchievements(type === 'streak' ? streak : readStreakSafe());
+}
+
+function readStreakSafe(): number {
+  try {
+    return (JSON.parse(localStorage.getItem('anistream:streak') ?? 'null') as { current?: number } | null)?.current ?? 0;
   } catch {
-    /* приватный режим */
+    return 0;
   }
 }

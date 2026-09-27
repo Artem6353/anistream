@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import type { Title } from '@/lib/types';
 import type { EpisodeSource, ProviderMeta } from '@/lib/providers/types';
 import { library, useLibrary } from '@/lib/library';
+import { trackEvent } from '@/lib/achievements';
 import { formatTime } from '@/lib/format';
 import { Switch } from '@/components/ui/Switch';
 import {
@@ -120,6 +121,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   const keepTime = useRef(0);
   const switchingSrc = useRef(false);
   const chooseSource = (id: string) => {
+    trackEvent('voice');
     keepTime.current = videoRef.current?.currentTime ?? 0;
     switchingSrc.current = true; // на loadedmetadata не показывать баннер — позицию вернёт restore
     setSelectedId(id);
@@ -175,6 +177,12 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
     hideTimer.current = setTimeout(() => setUiVisible(false), 3000);
   }, []);
   useEffect(() => poke(), [poke, playing]);
+
+  /* ачивки (ТЗ 18.1): событие просмотра серии — один раз за заход на серию */
+  useEffect(() => {
+    trackEvent('watch', { genres: title.genres, movie: title.type === 'movie' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title.slug, episode]);
 
   /* автоскролл бара серий к активной */
   useEffect(() => {
@@ -663,6 +671,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                         onClick={() => {
                           setRate(r);
                           if (videoRef.current) videoRef.current.playbackRate = r;
+                          if (r === 2) trackEvent('speed2');
                           setRateOpen(false);
                         }}
                       >

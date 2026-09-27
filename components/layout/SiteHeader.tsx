@@ -11,6 +11,8 @@ const CommandPalette = dynamic(() => import('./CommandPalette').then((m) => m.Co
 import { library, useLibrary } from '@/lib/library';
 import { isSessionValid, supaRest } from '@/lib/sync';
 import { AUTH_CHANGE_EVENT } from '@/lib/auth-gate';
+import { trackEvent } from '@/lib/achievements';
+import { StreakBadge } from './StreakBadge';
 import { IconBookmark, IconCommand, IconSearch, IconSettings, IconMoon, IconSun, IconMonitor } from '@/components/ui/icons';
 import { useI18n } from '@/lib/i18n'; // LanguageSwitcher убран (ТЗ блок 7): сайт только RU; код i18n оставлен на будущее
 
@@ -56,6 +58,12 @@ export function SiteHeader() {
   const { bookmarks, settings } = useLibrary();
   const initials = (settings.displayName ?? 'A').slice(0, 1).toUpperCase();
   const { t } = useI18n();
+
+  // ачивка «Исследователь»: посещение 5 разделов (ТЗ 18.1)
+  useEffect(() => {
+    const sec = pathname === '/' ? 'home' : pathname?.startsWith('/catalog') ? 'catalog' : pathname?.startsWith('/top') ? 'top' : pathname?.startsWith('/schedule') ? 'schedule' : pathname?.startsWith('/profile') ? 'profile' : null;
+    if (sec) trackEvent('section', { section: sec });
+  }, [pathname]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -112,6 +120,7 @@ export function SiteHeader() {
                 <IconCommand size={11} />K
               </kbd>
             </button>
+            <StreakBadge />
             {!logged ? (
               <button
                 type="button"

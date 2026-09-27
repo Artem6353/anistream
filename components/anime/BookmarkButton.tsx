@@ -1,4 +1,5 @@
 'use client';
+import { trackEvent } from '@/lib/achievements';
 
 import { library, useLibrary } from '@/lib/library';
 import { useToast } from '@/components/ui/Toaster';
@@ -18,6 +19,7 @@ export function BookmarkButton({ slug, className }: { slug: string; className?: 
         e.preventDefault();
         e.stopPropagation();
         const added = library.toggleBookmark(slug);
+    trackEvent('bookmarks');
         toast(added ? 'Добавлено в закладки' : 'Убрано из закладок');
       }}
     >

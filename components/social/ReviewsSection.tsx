@@ -1,6 +1,7 @@
 'use client';
 import { isSessionValid } from '@/lib/sync';
 import { requireAuth, queueAuthAction } from '@/lib/auth-gate';
+import { trackEvent } from '@/lib/achievements';
 
 import { useEffect, useMemo, useState } from 'react';
 import { addReview, loadReviews, reactToReview, fetchCaptcha, SOCIAL_MODE, type ReviewItem, type CaptchaChallenge } from '@/lib/social';
@@ -88,6 +89,7 @@ export function ReviewsSection({ slug }: { slug: string }) {
     if (isSessionValid()) {
       uid = await supaWhoami().catch(() => null);
     }
+    const isComment = Boolean(replyTo);
     const res = await addReview(
       {
         slug,
@@ -113,6 +115,8 @@ export function ReviewsSection({ slug }: { slug: string }) {
       return;
     }
     setFormError('');
+    trackEvent(isComment ? 'comment' : 'review');
+    if (!isComment && rating) trackEvent('rating');
     setItems((prev) => [res.item!, ...prev]);
     setText('');
     setReplyTo(null);
@@ -201,7 +205,13 @@ export function ReviewsSection({ slug }: { slug: string }) {
               <button
                 type="button"
                 className={`review__vote${r.myReaction === 'like' ? ' is-active' : ''}`}
-                onClick={() => requireAuth(isSessionValid, () => vote(r.id, 'like'))}
+                onClick={() =>
+                  requireAuth(isSessionValid, async () => {
+                    const before = items.find((x) => x.id === r.id)?.myReaction ?? null;
+                    await vote(r.id, 'like');
+                    if (before !== 'like') trackEvent('like');
+                  })
+                }
               >
                 👍 {r.likes}
               </button>

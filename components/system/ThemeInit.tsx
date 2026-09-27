@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { trackEvent } from '@/lib/achievements';
 import { useLibrary } from '@/lib/library';
 import { ACCENTS } from '@/lib/labels';
 
@@ -24,7 +25,10 @@ const PRE_HYDRATE = `
 /** Применяет акцент, кастомный цвет и reduce-motion из локальных настроек к <html>. */
 export function ThemeInit() {
   const { settings } = useLibrary();
+  const firstTheme = useRef(true);
   useEffect(() => {
+    if (firstTheme.current) firstTheme.current = false;
+    else trackEvent('theme');
     const root = document.documentElement;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const applyTheme = () => {
