@@ -42,7 +42,7 @@ async function attachAuthors(items: ReviewItem[]) {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
     }),
     SERVICE
-      ? fetch(`${SUPA_URL}/rest/v1/profile_history?user_id=in.${inList}&select=user_id&limit=10000`, {
+      ? fetch(`${SUPA_URL}/rest/v1/profile_history?user_id=in.${inList}&select=user_id&limit=2000`, {
           headers: { apikey: key, Authorization: `Bearer ${key}` },
         })
       : Promise.resolve(null),

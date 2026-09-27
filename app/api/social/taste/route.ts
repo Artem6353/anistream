@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const inList = `(${uids.slice(0, 100).map((id) => encodeURIComponent(`"${id}"`)).join(',')})`;
   const H = { apikey: SERVICE, Authorization: `Bearer ${SERVICE}` };
   const [histRes, profRes] = await Promise.all([
-    fetch(`${SUPA_URL}/rest/v1/profile_history?user_id=in.${inList}&select=user_id,slug`, { headers: H }),
+    fetch(`${SUPA_URL}/rest/v1/profile_history?user_id=in.${inList}&select=user_id,slug&limit=2000`, { headers: H }),
     fetch(`${SUPA_URL}/rest/v1/profiles?user_id=in.${inList}&select=user_id,username`, { headers: H }),
   ]);
   const hist = histRes.ok ? ((await histRes.json()) as Array<{ user_id: string; slug: string }>) : [];
