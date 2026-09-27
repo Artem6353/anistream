@@ -9,6 +9,8 @@ import { demoWeek } from '@/lib/schedule';
 import { HomeSchedule } from '@/components/schedule/HomeSchedule';
 import { ContinueBanner } from '@/components/home/ContinueBanner';
 import { DiscussedRail } from '@/components/home/DiscussedRail';
+import { BecauseRail } from '@/components/anime/BecauseRail';
+import { EveningRail } from '@/components/anime/EveningRail';
 import { TopTabs } from '@/components/home/TopTabs';
 import { COLLECTIONS } from '@/lib/collections';
 import { loadTitles } from '@/lib/catalog';
@@ -52,6 +54,10 @@ export default async function HomePage() {
             </div>
 
             <ForYouRail />
+
+            <BecauseRail />
+
+            <EveningRail />
 
             <Rail title="Сейчас популярно" action={{ href: '/catalog?sort=pop', label: 'Весь каталог' }}>
               {rails.popular.map((t) => (
