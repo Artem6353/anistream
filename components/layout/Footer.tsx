@@ -18,7 +18,8 @@ export function Footer() {
           <p>Каталог метаданных аниме: живое расписание, плеер и локальный профиль без регистрации.</p>
         </div>
         <nav className="footer__col" aria-label={t('docs')}>
-          <h3>{t('docs')}</h3>
+          {/* ТЗ5 3.3: h3→h4 — SuperSEO требует присутствия H4 (заголовок колонки футера) */}
+          <h4>{t('docs')}</h4>
           <div className="footer__docs">
             <Link href="/privacy">Конфиденциальность</Link>
             <Link href="/terms">Соглашение</Link>
@@ -27,7 +28,8 @@ export function Footer() {
           </div>
         </nav>
         <nav className="footer__col" aria-label={t('about')}>
-          <h3>{t('about')}</h3>
+          {/* ТЗ5 3.3: h3→h4 */}
+          <h4>{t('about')}</h4>
           <Link href="/catalog">Каталог</Link>
           <Link href="/schedule">Расписание</Link>
           <Link href="/genres">Жанры</Link>
@@ -37,8 +39,10 @@ export function Footer() {
         </nav>
       </div>
       <div className="container footer__bottom">
-        <span>© {new Date().getFullYear()} AniNova. Учебный каталог метаданных и плеер.</span>
-        <span className="footer__sources">Видео принадлежит правообладателям.</span>
+        {/* ТЗ5 3.3: нижние строки — h5/h6 (стили сбрасываются до вида обычного текста):
+            SuperSEO требует присутствия всех уровней заголовков H4–H6 на странице. */}
+        <h5>© {new Date().getFullYear()} AniNova. Учебный каталог метаданных и плеер.</h5>
+        <h6 className="footer__sources">Видео принадлежит правообладателям.</h6>
       </div>
     </footer>
   );

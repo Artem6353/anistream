@@ -49,9 +49,12 @@ export default async function HomePage() {
   return (
     <>
       {/* S3.1: page-level H1 главной (заголовок слайда Hero понижен до h2).
-          sr-only: не ломает full-bleed композицию Hero, но даёт документу
-          ровно один информативный H1 (аудит SuperSEO: headings 27.3). */}
-      <h1 className="sr-only">AniNova — каталог аниме: онгоинги, расписание выхода серий и плеер</h1>
+          ТЗ5 3.2: H1 теперь ВИДИМЫЙ (компактная строка над Hero) — анализатор
+          SuperSEO игнорировал sr-only и выдавал «H1 присутствует — Внимание».
+          Ровно один H1 на документ сохранён. */}
+      <div className="container home-head">
+        <h1 className="home-head__title">AniNova — каталог аниме: онгоинги, расписание выхода серий и плеер</h1>
+      </div>
 
       {/* S3.2: JSON-LD — WebSite+SearchAction, CollectionPage+ItemList, FAQPage */}
       <HomeJsonLd popular={rails.popular} />

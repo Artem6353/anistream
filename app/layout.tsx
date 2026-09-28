@@ -41,6 +41,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  /* ТЗ5 3.8: width/initialScale заданы явно (SuperSEO «Мета-тег viewport — Внимание»):
+     гарантируем ровно один корректный meta viewport независимо от дефолтов Next. */
+  width: 'device-width',
+  initialScale: 1,
   themeColor: [
     { media: '(prefers-color-scheme: dark)', color: '#0b0d11' },
     { media: '(prefers-color-scheme: light)', color: '#f6f7fb' },

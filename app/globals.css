@@ -831,6 +831,18 @@ input, select {
   max-width: 70ch;
 }
 
+/* ТЗ5 3.2: видимый H1 главной — компактная строка над Hero (sr-only анализатор не видел) */
+.home-head {
+  padding: 22px 0 0;
+}
+.home-head__title {
+  font-size: clamp(19px, 3vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  margin: 0;
+}
+
 /* ---------------- Фильтры каталога ---------------- */
 
 .filters {
@@ -2015,7 +2027,8 @@ input, select {
   flex-direction: column;
   gap: 8px;
 }
-.footer__col h3 {
+.footer__col h3,
+.footer__col h4 {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -2044,6 +2057,17 @@ input, select {
   border-top: 1px solid var(--line);
   color: var(--muted-2);
   font-size: 12.5px;
+}
+/* ТЗ5 3.3: h5/h6 в нижней строке выглядят как обычный текст (сброс заголовочных стилей) */
+.footer__bottom h5,
+.footer__bottom h6 {
+  margin: 0;
+  font-size: inherit;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: inherit;
+  line-height: inherit;
 }
 .footer__sources a {
   color: var(--accent-2);
@@ -3995,3 +4019,71 @@ html[data-tv='true'] .mobile-nav { display: none; }
 .latest-eps__title { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .latest-eps__meta { color: var(--muted); font-size: 12px; }
 .latest-eps__ep { margin-left: auto; flex: none; font-size: 11px; font-weight: 700; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); padding: 3px 8px; border-radius: 999px; }
+
+/* ============================================================
+   ТЗ5 блок 4 (2026-09-28): МОБИЛЬНАЯ КОМПАКТНОСТЬ ≤640px.
+   Жалоба: «сайт слишком большой, неудобно на телефоне». Дизайн-пас
+   28.09 глобально укрупнил типографику и отступы — здесь они
+   откатываются для смартфонов (планшет/десктоп не трогаем).
+   CSS проекта в px (rem почти не используется), поэтому вместо
+   html{font-size} — точечные переопределения. Блок в конце файла:
+   при равной специфичности перекрывает более ранние правила
+   (в т.ч. .poster-grid 2col из «Аудит блок 9»).
+   Тап-зоны ≥44px сохранены (доступность) — уменьшается визуальный
+   масштаб, а не область клика.
+   ============================================================ */
+@media (max-width: 640px) {
+  /* 4.6 Хедер: 64 → 52px, бренд и логотип меньше */
+  :root { --header-h: 52px; }
+  .header__inner { gap: 10px; }
+  .header__brand { font-size: 15px; gap: 8px; }
+  .header__brand .logo img { width: 22px !important; height: 22px !important; }
+  .header__brand-text em { font-size: 9px; letter-spacing: 0.1em; }
+
+  /* 4.1/4.7 Базовая типографика: 15px/1.6 → 14px/1.45 */
+  body { font-size: 14px; line-height: 1.45; }
+
+  /* 4.3 Отступы и контейнер плотнее */
+  .container { width: calc(100% - 24px); }
+  .rail-head { width: calc(100% - 24px); margin-bottom: 10px; }
+  .rail { padding-inline: 12px; gap: 10px; }
+  .page-section { padding: 14px 0; }
+  .rail-section { padding: 10px 0; }
+
+  /* 4.2 Fluid-типографика заголовков (откат дизайн-паса h1 28px / title 22px) */
+  h1 { font-size: clamp(21px, 5.4vw, 26px); margin: 10px 0 8px; }
+  .home-head { padding: 14px 0 0; }
+  .home-head__title { font-size: clamp(18px, 4.8vw, 22px); }
+  .section-title { font-size: clamp(16px, 4.4vw, 19px); }
+
+  /* Hero компактнее: ниже, мельче заголовок/описание/кнопки */
+  .hero { min-height: min(400px, 64vh); }
+  .hero__title { font-size: clamp(21px, 6vw, 28px); }
+  .hero__desc { font-size: 13.5px; }
+  .hero__actions .btn--lg { padding: 10px 14px; font-size: 13.5px; }
+  .hero__actions { gap: 8px; }
+
+  /* 4.4 Сетки карточек плотнее: 3 колонки, узкие карточки в рельсах */
+  .poster-grid,
+  .rail--grid,
+  .skeleton-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; }
+  .poster-grid .card,
+  .rail--grid .card { width: auto; }
+  .card { width: 128px; }
+  .card__body { padding: 7px 2px 0; }
+  .card__title { font-size: 12.5px; line-height: 1.35; }
+  .card__meta { font-size: 11px; gap: 6px; }
+
+  /* Жанры: 2 колонки вместо одной крупной */
+  .genre-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 4px 0 16px; }
+
+  /* «Новые эпизоды» и прочий текст секций мельче */
+  .latest-eps__title { font-size: 13px; }
+  .seo-intro p { font-size: 13.5px; }
+  .faq__q h3 { font-size: 14px; }
+
+  /* Футер компактнее */
+  .footer--compact { margin-top: 22px; padding: 18px 0 12px; }
+  .footer__bottom { margin-top: 18px; padding-top: 12px; font-size: 11.5px; }
+  .footer__col a { font-size: 13px; }
+}

@@ -1,23 +1,45 @@
 import type { NextConfig } from 'next';
 
-/* Аудит 2026-09-28 P1-1: security-заголовки. CSP сначала в Report-Only режиме:
-   неделю собираем нарушения (особенно embed-плееров и Turnstile), затем переключаем
-   на enforce, убрав суффикс -Report-Only. */
-const CSP_REPORT_ONLY = [
+/* ТЗ5 3.4 (SuperSEO security 75→100): CSP переключён с Report-Only на enforce —
+   анализатор проверяет наличие заголовка Content-Security-Policy. Политика та же,
+   что собиралась в Report-Only (аудит 2026-09-28 P1-1): embed-плееры, Turnstile,
+   Supabase, AniList/Shikimori/Jikan/AniSkip учтены. Дополнительно:
+   - upgrade-insecure-requests — лечит смешанный контент (ТЗ5 3.8 «HTTPS включён»);
+   - Sentry ingest и хост аналитики из NEXT_PUBLIC_ANALYTICS_SRC/DOMAIN (env-driven,
+     чтобы Plausible/self-hosted Umami не отвалились после enforce);
+   - в dev CSP остаётся Report-Only: enforce ломает webpack-HMR websocket. */
+const analyticsHosts = (() => {
+  const hosts = new Set<string>();
+  for (const raw of [process.env.NEXT_PUBLIC_ANALYTICS_SRC, process.env.NEXT_PUBLIC_ANALYTICS_DOMAIN]) {
+    if (!raw) continue;
+    try {
+      const u = new URL(/^https?:\/\//.test(raw) ? raw : `https://${raw}`);
+      hosts.add(u.hostname);
+    } catch {
+      /* невалидное значение env — игнорируем */
+    }
+  }
+  return [...hosts];
+})();
+const analyticsScriptSrc = analyticsHosts.map((h) => `https://${h}`).join(' ');
+const CSP_DIRECTIVES = [
   "default-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+  "upgrade-insecure-requests",
+  `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com ${analyticsScriptSrc}`.trim(),
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   "media-src 'self' https: blob:",
   "worker-src 'self'",
-  "connect-src 'self' https://*.supabase.co https://graphql.anilist.co https://shikimori.io https://shikimori.one https://api.jikan.moe https://api.aniskip.com https://challenges.cloudflare.com wss://*.supabase.co",
-  "frame-src https://kodik.info https://kodikplayer.com https://animego.org https://cdn.animego.org https://aniboom.one https://www.youtube.com https://challenges.cloudflare.com",
-].join('; ');
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graphql.anilist.co https://shikimori.io https://shikimori.one https://api.jikan.moe https://api.aniskip.com https://challenges.cloudflare.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io ${analyticsScriptSrc}`.trim(),
+  'frame-src https://kodik.info https://kodikplayer.com https://animego.org https://cdn.animego.org https://aniboom.one https://www.youtube.com https://challenges.cloudflare.com',
+];
+const CSP_VALUE = CSP_DIRECTIVES.join('; ');
+const IS_PROD = process.env.NODE_ENV === 'production';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -47,7 +69,12 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-          { key: 'Content-Security-Policy-Report-Only', value: CSP_REPORT_ONLY },
+          /* ТЗ5 3.4: в проде — enforce (Content-Security-Policy), в dev — Report-Only
+             (HMR-websocket не проходит connect-src 'self'). */
+          {
+            key: IS_PROD ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only',
+            value: CSP_VALUE,
+          },
         ],
       },
     ];

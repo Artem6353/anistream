@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { LIMITS, rateLimit } from '@/lib/rateLimit';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const rule = LIMITS.find((r) => path.startsWith(r.prefix));
   if (rule) {

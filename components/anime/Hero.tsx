@@ -109,7 +109,9 @@ export function Hero({ slides }: { slides: Title[] }) {
             </Link>
             <Link className="btn btn--ghost btn--lg" href={`/anime/${active.slug}`}>
               <IconSparkles size={16} />
-              Подробнее
+              {/* ТЗ5 3.5: «Подробнее» — неинформативный анкор (SuperSEO links 80);
+                  описательный текст: куда ведёт ссылка. */}
+              Описание и эпизоды
             </Link>
           </div>
           {/* S3.1/W3C: точки-слайды — не tabs (нет tabpanel), а группа кнопок-переключателей */}
