@@ -35,6 +35,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     alternates: { canonical: `/anime/${t.slug}` },
     openGraph: {
       type: 'video.tv_show',
+      url: `/anime/${t.slug}`,
+      locale: 'ru_RU',
+      siteName: 'AniNova',
       title: t.ru,
       description: t.description,
       images: t.banner ? [t.banner] : undefined,

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { Hero } from '@/components/anime/Hero';
 import { Rail } from '@/components/anime/Rail';
 import { PosterCard } from '@/components/anime/PosterCard';
@@ -19,8 +20,19 @@ import { ForYouRail } from '@/components/anime/ForYouRail';
 import { IconGrid, IconSparkles } from '@/components/ui/icons';
 import { HomeSidebar } from '@/components/home/Sidebar';
 import { SeoIntro } from '@/components/home/SeoIntro';
+import { HomeJsonLd } from '@/components/home/HomeJsonLd';
 
 export const revalidate = 3600;
+
+/* S3.2: canonical + og:url главной (metadataBase из layout резолвит относительные
+   пути в абсолютные). Title/description наследуются из layout. */
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+  /* Next мержит metadata поверхностно: page-level openGraph полностью заменяет
+     layout-объект, поэтому type/locale/siteName дублируем здесь явно.
+     og:title/og:description Next подставляет сам из резолвленного title/description. */
+  openGraph: { type: 'website', url: '/', locale: 'ru_RU', siteName: 'AniNova' },
+};
 
 export default async function HomePage() {
   const rails = homeRails();
@@ -36,6 +48,14 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* S3.1: page-level H1 главной (заголовок слайда Hero понижен до h2).
+          sr-only: не ломает full-bleed композицию Hero, но даёт документу
+          ровно один информативный H1 (аудит SuperSEO: headings 27.3). */}
+      <h1 className="sr-only">AniNova — каталог аниме: онгоинги, расписание выхода серий и плеер</h1>
+
+      {/* S3.2: JSON-LD — WebSite+SearchAction, CollectionPage+ItemList, FAQPage */}
+      <HomeJsonLd popular={rails.popular} />
+
       {/* ТЗ 18.5: баннер «Продолжить с MM:SS» над Hero */}
       <div className="container">
         <ContinueBanner />

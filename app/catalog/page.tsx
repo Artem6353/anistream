@@ -11,8 +11,11 @@ import { IconGrid, IconList } from '@/components/ui/icons';
 
 export const revalidate = 1800;
 export const metadata: Metadata = {
-  title: 'Каталог аниме онлайн — все тайтлы, фильтры и жанры — AniNova',
+  /* S3.2: убран ручной суффикс «— AniNova» — его добавляет title.template из layout
+     (на проде было «… — AniNova · AniNova»). */
+  title: 'Каталог аниме онлайн — все тайтлы, фильтры и жанры',
   alternates: { canonical: '/catalog' },
+  openGraph: { type: 'website', url: '/catalog', locale: 'ru_RU', siteName: 'AniNova', images: '/opengraph-image' },
   description: 'Полный каталог аниме: фильтры по годам, жанрам, типу, статусу и длине; виды «сетка» и «список».',
 };
 

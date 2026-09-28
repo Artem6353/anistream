@@ -6,6 +6,9 @@ import { SearchForm } from '@/components/layout/SearchForm';
 export const metadata: Metadata = {
   title: 'Поиск',
   description: 'Поиск по каталогу AniNova: русские и ромадзи-названия, жанры, годы.',
+  /* S3.2: все /search?q=… канонизируются на чистый /search — поисковые страницы
+     не должны плодить индексируемые дубли. */
+  alternates: { canonical: '/search' },
 };
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {

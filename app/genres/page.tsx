@@ -4,7 +4,12 @@ import { genreStats } from '@/lib/catalog';
 import { GENRE_LABELS } from '@/lib/labels';
 import { hashStr, plural } from '@/lib/format';
 
-export const metadata: Metadata = { title: 'Жанры' };
+export const metadata: Metadata = {
+  title: 'Жанры аниме — все категории каталога',
+  description: 'Аниме по жанрам: экшен, романтика, комедия, фантастика, драма и другие категории — со счётчиками тайтлов в каждой.',
+  alternates: { canonical: '/genres' },
+  openGraph: { type: 'website', url: '/genres', locale: 'ru_RU', siteName: 'AniNova', images: '/opengraph-image' },
+};
 
 export default function GenresPage() {
   const stats = genreStats();

@@ -20,7 +20,7 @@ type Fmt = 'avif' | 'webp' | 'jpeg' | 'orig';
  * Image-proxy v2 (W7 + S1.1): постеры/баннеры/кадры идут через /img?url=…
  * Контракт ?url= сохранён (старые вызовы работают), добавлены:
  *   w  — целевая ширина в физ. px (ресайз, без увеличения маленьких);
- *   q  — качество 30–90 (дефолты: avif 62, webp/jpeg 75);
+ *   q  — качество 30–90 (дефолты: avif 62, webp/jpeg 70 — S3.2 по инсайту PSI «image delivery»);
  *   fmt=auto|avif|webp|jpeg|orig — формат (auto = négociation по Accept).
  * Байты РЕАЛЬНО транскодятся sharp'ом; Content-Type всегда соответствует содержимому
  * (фикс бага «jpeg-байты в .webp-файле с чужим MIME»).
@@ -88,11 +88,11 @@ export async function GET(request: Request) {
           outBuf = await p.avif({ quality: Math.min(q || 62, 68), effort: 4 }).toBuffer();
           outType = 'image/avif';
         } else if (fmt === 'webp') {
-          outBuf = await p.webp({ quality: q || 75 }).toBuffer();
+          outBuf = await p.webp({ quality: q || 70 }).toBuffer();
           outType = 'image/webp';
         } else {
           if (meta.hasAlpha) p = p.flatten({ background: '#0b0d11' });
-          outBuf = await p.jpeg({ quality: q || 75, mozjpeg: true }).toBuffer();
+          outBuf = await p.jpeg({ quality: q || 70, mozjpeg: true }).toBuffer();
           outType = 'image/jpeg';
         }
         // Транскод оказался не в пользу (мелкий/уже сжатый оригинал) — отдаём оригинал.

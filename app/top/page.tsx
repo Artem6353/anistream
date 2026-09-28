@@ -6,8 +6,10 @@ import { PosterArt } from '@/components/anime/PosterArt';
 
 export const revalidate = 3600;
 export const metadata: Metadata = {
-  title: 'ТОП-250',
-  description: 'Топ-250 аниме по оценке AniList: сериалы и полнометражки с описаниями.',
+  title: 'ТОП-250 аниме по оценкам зрителей',
+  description: 'Топ-250 аниме по оценке AniList: лучшие сериалы и полнометражки с русскими описаниями, жанрами и рейтингом.',
+  alternates: { canonical: '/top' },
+  openGraph: { type: 'website', url: '/top', locale: 'ru_RU', siteName: 'AniNova', images: '/opengraph-image' },
 };
 
 export default function TopPage() {

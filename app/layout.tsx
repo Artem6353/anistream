@@ -27,10 +27,13 @@ export const metadata: Metadata = {
   },
   description:
     'Каталог аниме с русскими описаниями: подборки, жанры, живое расписание выхода серий, локальная история просмотров и плеер с автопереходом.',
-  keywords: ['аниме', 'каталог аниме', 'онгоинги', 'расписание аниме', 'смотреть аниме'],
+  /* S3.2: keywords удалён (устарел, Google/Yandex игнорируют — аудит SuperSEO);
+     добавлены og:url (дефолт главной) и og:locale. */
   alternates: { languages: { ru: '/', en: '/?lang=en' } },
   openGraph: {
     type: 'website',
+    url: '/',
+    locale: 'ru_RU',
     siteName: 'AniNova',
     title: 'AniNova — каталог аниме',
     description: 'Подборки, жанры, расписание и плеер. Метаданные AniList, локальный профиль без регистрации.',
@@ -48,12 +51,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ru">
-      <head>
-        {/* perf: ранние коннекты к CDN постеров и Supabase (instant pages) */}
-        <link rel="preconnect" href="https://s4.anilist.co" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://s4.anilist.co" />
-        <link rel="dns-prefetch" href="https://cdn.myanimelist.net" />
-      </head>
+      {/* S3.2: preconnect/dns-prefetch к s4.anilist.co и cdn.myanimelist.net убраны —
+          с волны S1 все изображения идут через собственный прокси /img (server-side),
+          браузер на эти origin больше не ходит (PSI: «Unused preconnect»). */}
       <body>
         <I18nProvider>
         <ThemeInit />

@@ -5,8 +5,11 @@ import { ScheduleClient } from '@/components/schedule/ScheduleClient';
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: 'Расписание',
-  description: 'Недельное расписание выхода серий: живые данные AniList с автообновлением.',
+  title: 'Расписание выхода серий аниме',
+  description:
+    'Недельное расписание выхода серий аниме: даты и время эфира онгоингов по Москве, живые данные AniList с автообновлением.',
+  alternates: { canonical: '/schedule' },
+  openGraph: { type: 'website', url: '/schedule', locale: 'ru_RU', siteName: 'AniNova', images: '/opengraph-image' },
 };
 
 export default function SchedulePage() {
