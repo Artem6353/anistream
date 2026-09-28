@@ -65,7 +65,7 @@ export function Hero({ slides }: { slides: Title[] }) {
                 alt=""
                 fill
                 sizes="100vw"
-                quality={72}
+                quality={64}
                 priority={i === 0}
                 {...(i === 0 ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const, fetchPriority: 'low' as const })}
                 onError={() => setFailed((f) => ({ ...f, [s.slug]: true }))}
@@ -99,7 +99,8 @@ export function Hero({ slides }: { slides: Title[] }) {
               .filter(Boolean)
               .join(' · ')}
           </p>
-          <h1 className="hero__title">{active.ru}</h1>
+          {/* S3.1: h1→h2 — единственный H1 страницы теперь page-level (sr-only в app/page.tsx) */}
+          <h2 className="hero__title">{active.ru}</h2>
           <p className="hero__desc">{active.description}</p>
           <div className="hero__actions">
             <Link className="btn btn--primary btn--lg" href={`/anime/${active.slug}/${active.episodes > 1 ? 1 : ''}`.replace(/\/$/, '')}>
@@ -111,12 +112,13 @@ export function Hero({ slides }: { slides: Title[] }) {
               Подробнее
             </Link>
           </div>
-          <div className="hero__dots" role="tablist" aria-label="Слайды">
+          {/* S3.1/W3C: точки-слайды — не tabs (нет tabpanel), а группа кнопок-переключателей */}
+          <div className="hero__dots" role="group" aria-label="Слайды">
             {slides.map((s, i) => (
               <button
                 key={s.slug}
-                role="tab"
-                aria-selected={i === index}
+                type="button"
+                aria-current={i === index}
                 aria-label={`Слайд ${i + 1}: ${s.ru}`}
                 className={`hero__dot ${i === index ? 'is-active' : ''}`}
                 onClick={() => go(i)}

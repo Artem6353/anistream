@@ -747,16 +747,17 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
       {/* боковая панель: серии + озвучки (ТЗ 2.1/2.2) */}
       <aside className="player-side" aria-label="Серии и источники">
         <div className="profile-tabs" role="tablist">
-          <button role="tab" aria-selected={sideTab === 'sources'} className={sideTab === 'sources' ? 'is-active' : ''} onClick={() => setSideTab('sources')}>
+          {/* S3.1/W3C: панели ниже получают role=tabpanel, соответствующий активному табу */}
+          <button type="button" id="pside-tab-sources" role="tab" aria-selected={sideTab === 'sources'} aria-controls="pside-panel" className={sideTab === 'sources' ? 'is-active' : ''} onClick={() => setSideTab('sources')}>
             Озвучки · {sources.length}
           </button>
-          <button role="tab" aria-selected={sideTab === 'episodes'} className={sideTab === 'episodes' ? 'is-active' : ''} onClick={() => setSideTab('episodes')}>
+          <button type="button" id="pside-tab-episodes" role="tab" aria-selected={sideTab === 'episodes'} aria-controls="pside-panel" className={sideTab === 'episodes' ? 'is-active' : ''} onClick={() => setSideTab('episodes')}>
             Серии · {title.episodes}
           </button>
         </div>
 
         {sideTab === 'sources' ? (
-          <div className="sources-panel">
+          <div className="sources-panel" id="pside-panel" role="tabpanel" aria-labelledby="pside-tab-sources">
             {data.status === 'loading' ? <p className="settings__note">Загружаем озвучки…</p> : null}
             {grouped.map((g) => (
               <section key={g.pid} className="sources-group">
@@ -787,7 +788,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
             {data.status === 'ready' && !sources.length ? <p className="settings__note">Источники не найдены. Попробуйте другую серию или включите bridge.</p> : null}
           </div>
         ) : (
-          <div className="episodes-panel">
+          <div className="episodes-panel" id="pside-panel" role="tabpanel" aria-labelledby="pside-tab-episodes">
             {chunks > 1 ? (
               <div className="chips" style={{ padding: '2px 2px 6px' }}>
                 {Array.from({ length: chunks }, (_, i) => (

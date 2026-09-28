@@ -21,11 +21,13 @@ export function TopTabs({ week, all }: { week: string[]; all: string[] }) {
     <section className="page-section" aria-label="Топ" ref={state === 'ready' ? undefined : sentinel}>
       <div className="rail-head">
         <h2 className="section-title">Топ по оценкам</h2>
-        <div className="tabs" role="tablist">
+        <div className="tabs" role="tablist" aria-label="Период топа">
           <button
             type="button"
+            id="toptabs-tab-week"
             role="tab"
             aria-selected={tab === 'week'}
+            aria-controls="toptabs-panel"
             className={`tab ${tab === 'week' ? 'is-active' : ''}`}
             onClick={() => setTab('week')}
             disabled={state !== 'ready'}
@@ -34,8 +36,10 @@ export function TopTabs({ week, all }: { week: string[]; all: string[] }) {
           </button>
           <button
             type="button"
+            id="toptabs-tab-all"
             role="tab"
             aria-selected={tab === 'all'}
+            aria-controls="toptabs-panel"
             className={`tab ${tab === 'all' ? 'is-active' : ''}`}
             onClick={() => setTab('all')}
             disabled={state !== 'ready'}
@@ -44,19 +48,26 @@ export function TopTabs({ week, all }: { week: string[]; all: string[] }) {
           </button>
         </div>
       </div>
-      {state === 'ready' ? (
-        <div className="rail rail--grid">
-          {list.map((t) => (
-            <PosterCard key={t!.slug} title={t!} />
-          ))}
-        </div>
-      ) : (
-        <div className="skeleton-grid" aria-hidden>
-          {Array.from({ length: 10 }, (_, i) => (
-            <div key={i} className="skeleton" />
-          ))}
-        </div>
-      )}
+      {/* S3.1/W3C: role=tab требует соответствующий role=tabpanel — обёртка контента */}
+      <div
+        id="toptabs-panel"
+        role="tabpanel"
+        aria-labelledby={tab === 'week' ? 'toptabs-tab-week' : 'toptabs-tab-all'}
+      >
+        {state === 'ready' ? (
+          <div className="rail rail--grid">
+            {list.map((t) => (
+              <PosterCard key={t!.slug} title={t!} />
+            ))}
+          </div>
+        ) : (
+          <div className="skeleton-grid" aria-hidden>
+            {Array.from({ length: 10 }, (_, i) => (
+              <div key={i} className="skeleton" />
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

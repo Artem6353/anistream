@@ -73,6 +73,20 @@ p {
   margin: 0;
 }
 
+/* S3.1: визуально скрытый текст — для page-level H1 главной, якорных текстов
+   иконочных ссылок и постеров (доступность + парсеры анкор-текста). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 button {
   font: inherit;
   color: inherit;
@@ -2151,6 +2165,13 @@ input, select {
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
+}
+/* S3.1: h3 внутри summary наследует вид подписи вопроса (без браузерного bold/размеров) */
+.faq__q h3 {
+  display: inline;
+  font: inherit;
+  letter-spacing: inherit;
+  margin: 0;
 }
 .faq__q::-webkit-details-marker {
   display: none;

@@ -128,10 +128,13 @@ export function SiteHeader() {
             </button>
             <Link className="icon-btn header__icon" href="/random" aria-label="Случайный тайтл" title="Случайный тайтл">
               🎲
+              {/* S3.3: якорный текст для парсеров (аудит: неинформативный анкор «🎲») */}
+              <span className="sr-only">Случайный тайтл</span>
             </Link>
             <StreakBadge />
             <Link className="icon-btn header__icon" href="/profile/achievements" aria-label="Достижения" title="Достижения">
               🏆
+              <span className="sr-only">Достижения</span>
             </Link>
             <DmIcon />
             {!logged ? (
@@ -145,6 +148,7 @@ export function SiteHeader() {
             ) : (
               <Link className="header__avatar" href="/profile/settings" aria-label="Профиль" title="Профиль">
                 {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{initials}</span>}
+                <span className="sr-only">Профиль и настройки</span>
               </Link>
             )}
             <div className="theme-switch">
@@ -185,10 +189,12 @@ export function SiteHeader() {
               ) : null}
             </div>
             <Link className="icon-btn header__icon" href="/profile/bookmarks" aria-label={`Закладки (${bookmarks.length})`} title="Закладки">
+              <span className="sr-only">Закладки</span>
               <IconBookmark size={17} />
               {bookmarks.length > 0 ? <span className="header__count">{bookmarks.length}</span> : null}
             </Link>
             <Link className="icon-btn header__icon" href="/profile/settings" aria-label="Настройки" title="Настройки">
+              <span className="sr-only">Настройки плеера и интерфейса</span>
               <IconSettings size={17} />
             </Link>
           </div>

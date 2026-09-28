@@ -145,10 +145,11 @@ export function ReviewsSection({ slug }: { slug: string }) {
       </div>
 
       <div className="profile-tabs" role="tablist">
-        <button role="tab" aria-selected={tab === 'reviews'} className={tab === 'reviews' ? 'is-active' : ''} onClick={() => setTab('reviews')}>
+        {/* S3.1/W3C: у role=tab появился соответствующий role=tabpanel (список ниже) */}
+        <button type="button" id="reviews-tab-reviews" role="tab" aria-selected={tab === 'reviews'} aria-controls="reviews-panel" className={tab === 'reviews' ? 'is-active' : ''} onClick={() => setTab('reviews')}>
           Отзывы · {reviews.length}
         </button>
-        <button role="tab" aria-selected={tab === 'comments'} className={tab === 'comments' ? 'is-active' : ''} onClick={() => setTab('comments')}>
+        <button type="button" id="reviews-tab-comments" role="tab" aria-selected={tab === 'comments'} aria-controls="reviews-panel" className={tab === 'comments' ? 'is-active' : ''} onClick={() => setTab('comments')}>
           Комментарии · {comments.length}
         </button>
       </div>
@@ -188,6 +189,7 @@ export function ReviewsSection({ slug }: { slug: string }) {
         </button>
       </div>
 
+      <div id="reviews-panel" role="tabpanel" aria-labelledby={tab === 'reviews' ? 'reviews-tab-reviews' : 'reviews-tab-comments'}>
       <ul className="reviews__list">
         {(tab === 'reviews' ? reviews : comments).map((r) => (
           <li key={r.id} className="review">
@@ -245,6 +247,7 @@ export function ReviewsSection({ slug }: { slug: string }) {
         ))}
         {(tab === 'reviews' ? reviews : comments).length === 0 ? <li className="reviews__empty">Пока пусто — будьте первым!</li> : null}
       </ul>
+      </div>
     </section>
   );
 }

@@ -66,7 +66,10 @@ export function SeoIntro() {
       <div className="faq">
         {FAQ_ITEMS.map((item) => (
           <details className="faq__item" key={item.q}>
-            <summary className="faq__q">{item.q}</summary>
+            {/* S3.1: вопрос — h3 внутри summary (валидно по HTML-спеке, даёт уникальные H3 секции) */}
+            <summary className="faq__q">
+              <h3>{item.q}</h3>
+            </summary>
             <p className="faq__a">{item.a}</p>
           </details>
         ))}

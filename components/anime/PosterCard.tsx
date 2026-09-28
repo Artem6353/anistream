@@ -44,6 +44,9 @@ export function PosterCard({
   return (
     <article className="card">
       <Link className="card__media" href={href} aria-label={title.ru}>
+        {/* S3.3: якорный текст ссылки-постера для краулеров/парсеров (аудит: неинформативные
+            и дублирующиеся анкоры «Анонс 2027 12 серий»); для SR имя даёт aria-label. */}
+        <span className="sr-only">{title.ru}</span>
         <PosterArt src={title.poster} seed={title.slug} initials={title.romaji} alt={`Постер: ${title.ru}`} />
         {showBadge && badge ? (
           <span
@@ -71,9 +74,11 @@ export function PosterCard({
         ) : null}
       </Link>
       <div className="card__body">
-        <h3 className="card__title">
+        {/* S3.1: h3→p — карточки дублировались в H3 нескольких рельсов (аудит: «H3 без
+            дубликатов»); заголовочная иерархия страницы — h1 (page) → h2 (секции). */}
+        <p className="card__title">
           <Link href={href}>{title.ru}</Link>
-        </h3>
+        </p>
         <p className="card__meta">
           <span className="card__type">{TYPE_LABELS[title.type]}</span>
           <span className="card__genre">{genreLabel(title.genres[0] ?? '')}</span>

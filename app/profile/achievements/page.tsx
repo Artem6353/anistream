@@ -36,12 +36,13 @@ export default function AchievementsPage() {
       </p>
       <div className="tabs" role="tablist">
         {FILTERS.map((f) => (
-          <button key={f.id} type="button" role="tab" aria-selected={filter === f.id} className={`tab ${filter === f.id ? 'is-active' : ''}`} onClick={() => setFilter(f.id)}>
+          <button key={f.id} id={`ach-tab-${f.id}`} type="button" role="tab" aria-selected={filter === f.id} aria-controls="ach-panel" className={`tab ${filter === f.id ? 'is-active' : ''}`} onClick={() => setFilter(f.id)}>
             {f.label}
           </button>
         ))}
       </div>
-      <div className="ach-grid">
+      {/* S3.1/W3C: tabpanel для сетки достижений */}
+      <div className="ach-grid" id="ach-panel" role="tabpanel" aria-labelledby={`ach-tab-${filter}`}>
         {list.map((a) => {
           const got = unlocked[a.id];
           const secretHidden = a.tier === 'secret' && !got;
