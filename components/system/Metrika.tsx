@@ -36,18 +36,30 @@ export function Metrika() {
   if (!ID) return null;
 
   return (
-    <Script
-      id="metrika-tag"
-      strategy="lazyOnload"
-      onReady={() => {
-        ready.current = true;
-        while (queue.current.length) {
-          window.ym?.(Number(ID), 'reachGoal', queue.current.shift()!);
-        }
-      }}
-    >
-      {`(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();k=e.createElement(t);a=e.getElementsByTagName(t)[0];k.async=1;k.src=r;a.parentNode.insertBefore(k,a)})(window,document,'script','https://mc.yandex.ru/metrika/tag.js','ym');
-ym(${ID},'init',{ssr:true,webvisor:true,clickmap:true,defer:true});`}
-    </Script>
+    <>
+      <Script
+        id="metrika-tag"
+        strategy="lazyOnload"
+        onReady={() => {
+          ready.current = true;
+          while (queue.current.length) {
+            window.ym?.(Number(ID), 'reachGoal', queue.current.shift()!);
+          }
+        }}
+      >
+        {`(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();k=e.createElement(t);a=e.getElementsByTagName(t)[0];k.async=1;k.src=r;a.parentNode.insertBefore(k,a)})(window,document,'script','https://mc.yandex.ru/metrika/tag.js','ym');
+ym(${ID},'init',{ssr:true,webvisor:true,clickmap:true,ecommerce:'dataLayer',accurateTrackBounce:true,trackLinks:true});`}
+      </Script>
+      {/* noscript-фолбэк из официального сниппета: пиксель-watch для клиентов без JS */}
+      <noscript>
+        <div>
+          <img
+            src={`https://mc.yandex.ru/watch/${ID}`}
+            style={{ position: 'absolute', left: '-9999px' }}
+            alt=""
+          />
+        </div>
+      </noscript>
+    </>
   );
 }
