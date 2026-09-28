@@ -34,12 +34,35 @@ const num = (v: string | undefined, fallback: number) => {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 };
 
+/** S3.0 (аудит 28.09): resolution продакшен-URL сайта.
+ *  Инцидент: NEXT_PUBLIC_SITE_URL на Vercel указывает anistream.vercel.app — домен
+ *  после переименования проекта отошёл третьему лицу (отдаёт чужой сайт), а
+ *  sitemap.xml/robots.txt/canonical продолжали ссылаться на него.
+ *  Приоритет: кастомный домен из env (явный) → фактический прод-домен Vercel
+ *  (VERCEL_PROJECT_PRODUCTION_URL) → localhost. Значения *.vercel.app в env
+ *  считаются устаревшими, если известен фактический прод-домен Vercel. */
+function resolveSiteUrl(env: NodeJS.ProcessEnv): string {
+  const vercelProd = env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : '';
+  const fromEnv = env.NEXT_PUBLIC_SITE_URL ?? '';
+  if (fromEnv) {
+    try {
+      const host = new URL(fromEnv).hostname;
+      if (!host.endsWith('.vercel.app') || !vercelProd) return fromEnv;
+    } catch {
+      /* невалидный URL — падаем дальше */
+    }
+  }
+  return vercelProd || fromEnv || 'http://localhost:3000';
+}
+
 export function getProvidersConfig(): ProvidersConfig {
   const env = process.env;
   return {
     site: {
       name: env.NEXT_PUBLIC_SITE_NAME ?? 'AniNova',
-      url: env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
+      url: resolveSiteUrl(env),
     },
     demo: {
       /* DEMO_PROVIDER_ENABLED (новый формат) или DEMO_ENABLED (старый) */

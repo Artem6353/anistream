@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
+import { getProvidersConfig } from '@/lib/config/providers.config';
 export const metadata: Metadata = { title: 'DMCA — жалоба на контент', robots: { index: false } };
 
 function contactEmail(): string {
-  const url = process.env.NEXT_PUBLIC_SITE_URL ?? '';
+  const url = getProvidersConfig().site.url; // S3.0: единый источник (устойчив к протухшему env)
   const domain = url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
   const ok = domain.includes('.') && !domain.startsWith('localhost') && !domain.startsWith('127.');
   return `dmca@${ok ? domain : 'example.com'}`;
