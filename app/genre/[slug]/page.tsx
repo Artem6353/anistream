@@ -15,7 +15,13 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   if (!GENRE_LABELS[slug]) notFound();
-  return { title: `Аниме жанра ${GENRE_LABELS[slug]} — список тайтлов — AniNova`, alternates: { canonical: `/genre/${slug}` } };
+  /* S3.2: суффикс «— AniNova» добавляет title.template — убран дубль */
+  return {
+    title: `Аниме жанра ${GENRE_LABELS[slug]} — список тайтлов`,
+    description: `Все аниме жанра ${GENRE_LABELS[slug]}: онгоинги и завершённые тайтлы с рейтингом, описанием и расписанием выхода серий.`,
+    alternates: { canonical: `/genre/${slug}` },
+    openGraph: { type: 'website', url: `/genre/${slug}`, locale: 'ru_RU', siteName: 'AniNova', images: '/opengraph-image' },
+  };
 }
 
 export default async function GenrePage({ params, searchParams }: Props) {

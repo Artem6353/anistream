@@ -10,7 +10,12 @@ export const revalidate = 3600;
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const c = COLLECTIONS.find((x) => x.slug === slug);
-  return { title: c ? `Подборка: ${c.title}` : 'Подборка' };
+  /* S3.2: canonical + description подборки */
+  return {
+    title: c ? `Подборка: ${c.title}` : 'Подборка',
+    description: c ? `${c.title} — ${c.desc}` : undefined,
+    alternates: { canonical: `/collections/${slug}` },
+  };
 }
 
 /** Страница подборки (ТЗ 18.5): сетка тайтлов коллекции. */

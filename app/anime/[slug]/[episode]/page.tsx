@@ -20,7 +20,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, episode } = await params;
   const t = getTitle(slug);
   if (!t) notFound();
-  return { title: `${t.ru} — серия ${episode}` };
+  /* S3.2: canonical + description страницы серии */
+  return {
+    title: `${t.ru} — серия ${episode}`,
+    description: `Смотреть ${t.ru} серия ${episode} онлайн: озвучки и субтитры, автопереход к следующей серии, сохранение прогресса.`,
+    alternates: { canonical: `/anime/${slug}/${episode}` },
+  };
 }
 
 export default async function PlayerPage({ params }: Props) {

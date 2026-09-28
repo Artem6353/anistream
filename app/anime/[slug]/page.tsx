@@ -30,7 +30,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const t = getTitle(slug);
   if (!t) notFound();
   return {
-    title: `${t.ru} (${t.year || '—'}) смотреть онлайн — AniNova`,
+    /* S3.2: суффикс «— AniNova» убран — его добавляет title.template (было «… — AniNova · AniNova») */
+    title: `${t.ru} (${t.year || '—'}) смотреть онлайн`,
     description: (t.description || t.shikimori?.description || `Смотреть ${t.ru} онлайн: серии, озвучки, график выхода.`).slice(0, 150),
     alternates: { canonical: `/anime/${t.slug}` },
     openGraph: {
