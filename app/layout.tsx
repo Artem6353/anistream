@@ -31,6 +31,10 @@ export const metadata: Metadata = {
   /* S3.2: keywords удалён (устарел, Google/Yandex игнорируют — аудит SuperSEO);
      добавлены og:url (дефолт главной) и og:locale. */
   alternates: { languages: { ru: '/', en: '/?lang=en' } },
+  /* S6: верификация Google Search Console (URL-prefix property, 28.09.2026). */
+  verification: {
+    google: 'FbxT2iDTb-eCOQJXhFdnEyZqMjqKHzIqiX2cebRVDfU',
+  },
   openGraph: {
     type: 'website',
     url: '/',
