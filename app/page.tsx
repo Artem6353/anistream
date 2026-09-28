@@ -18,6 +18,7 @@ import { loadTitles } from '@/lib/catalog';
 import { ForYouRail } from '@/components/anime/ForYouRail';
 import { IconGrid, IconSparkles } from '@/components/ui/icons';
 import { HomeSidebar } from '@/components/home/Sidebar';
+import { SeoIntro } from '@/components/home/SeoIntro';
 
 export const revalidate = 3600;
 
@@ -154,6 +155,9 @@ export default async function HomePage() {
                 </div>
               </div>
             </section>
+
+            {/* S2.3: текстовый SEO-блок + FAQ (контент под FAQPage-разметку волны S3) */}
+            <SeoIntro />
           </div>
           <HomeSidebar />
         </div>
