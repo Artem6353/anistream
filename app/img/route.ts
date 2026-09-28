@@ -6,7 +6,7 @@ import sharp from 'sharp';
 
 const ALLOWED = ['s4.anilist.co', 'img2.shikimori.io', 'shikimori.io', 'kodikstorage.com', 'cdn.myanimelist.net'];
 /* S1.1 (аудит 28.09): на serverless кэш вариантов живёт в /tmp (единственная writable-директория
-   Vercel), на self-hosted — как раньше в .cache/img. Кэшbest-effort: край Vercel всё равно держит
+   Vercel), на self-hosted — как раньше в .cache/img. Кэш — best-effort: край Vercel всё равно держит
    immutable-ответ, транскод выполняется ~1 раз на вариант на регион. */
 const DIR = process.env.VERCEL ? '/tmp/aninova-img' : path.join(process.cwd(), '.cache', 'img');
 const MIN_W = 16;

@@ -11,7 +11,6 @@ import { ContinueBanner } from '@/components/home/ContinueBanner';
 import { DiscussedRail } from '@/components/home/DiscussedRail';
 import { BecauseRail } from '@/components/anime/BecauseRail';
 import { LatestEpisodes } from '@/components/home/LatestEpisodes';
-import { EveningRail } from '@/components/anime/EveningRail';
 import { TopTabs } from '@/components/home/TopTabs';
 import { COLLECTIONS } from '@/lib/collections';
 import { loadTitles } from '@/lib/catalog';
@@ -27,7 +26,7 @@ export default async function HomePage() {
   const weekTop = loadTitles()
     .filter((t) => t.status === 'ongoing' || (t.status === 'finished' && t.year >= 2025))
     .sort((a, b) => b.favourites + b.score * 500 - (a.favourites + a.score * 500))
-    .slice(0, 12);
+    .slice(0, 10); // S2.1: 12→10
   const genres = genreStats();
 
   return (
@@ -62,7 +61,8 @@ export default async function HomePage() {
 
             <BecauseRail />
 
-            <EveningRail />
+            {/* S2.1: EveningRail убран с главной — выдача пересекалась с ForYou/Because
+                (план аудита: оставить 2 персональные ленты из 3). */}
 
             <Rail title="Сейчас популярно" action={{ href: '/catalog?sort=pop', label: 'Весь каталог' }}>
               {rails.popular.map((t) => (

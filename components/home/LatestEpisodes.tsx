@@ -26,13 +26,20 @@ export function LatestEpisodes() {
     if (d === (today + 1) % 7) return 'Завтра';
     return '';
   };
+  // S2.1: весь блок — не более 8 строк (было до 4 групп × 8 = 32): Вчера 3 + Сегодня 3 +
+  // Завтра 2; остальное — на /schedule (ссылка «Всё расписание» в шапке блока).
+  const GROUP_CAPS: [string, number][] = [
+    ['Вчера', 3],
+    ['Сегодня', 3],
+    ['Завтра', 2],
+  ];
   const groups = new Map<string, typeof rows>();
   for (const r of rows) {
-    const l = label(r.at) || 'На этой неделе';
+    const l = label(r.at);
+    if (!l) continue;
     if (!groups.has(l)) groups.set(l, []);
     groups.get(l)!.push(r);
   }
-  const order = ['Вчера', 'Сегодня', 'Завтра', 'На этой неделе'];
   return (
     <section className="page-section" aria-label="Новые эпизоды">
       <div className="rail-head">
@@ -42,13 +49,11 @@ export function LatestEpisodes() {
         </Link>
       </div>
       <div className="latest-eps">
-        {order
-          .filter((g) => groups.has(g))
-          .map((g) => (
-            <div className="latest-eps__group" key={g}>
-              <h3 className="latest-eps__day">{g}</h3>
-              <ul className="latest-eps__list">
-                {groups.get(g)!.slice(0, 8).map((r) => (
+        {GROUP_CAPS.filter(([g]) => groups.has(g)).map(([g, cap]) => (
+          <div className="latest-eps__group" key={g}>
+            <h3 className="latest-eps__day">{g}</h3>
+            <ul className="latest-eps__list">
+              {groups.get(g)!.slice(0, cap).map((r) => (
                   <li key={`${r.slug}-${r.ep}`}>
                     <Link className="latest-eps__item" href={`/anime/${r.slug}/${r.ep}`}>
                       <span className="latest-eps__poster">
@@ -63,10 +68,10 @@ export function LatestEpisodes() {
                       <span className="latest-eps__ep">EP {r.ep}</span>
                     </Link>
                   </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </section>
   );

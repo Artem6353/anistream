@@ -47,16 +47,21 @@ export function allTitles(): Title[] {
   return loadTitles();
 }
 
-/** Домашние подборки. */
+/** Домашние подборки. S2.1 (аудит 28.09): рельсы главной урезаны 14→10, онгоинги —
+    со 178+ (рендерились ВСЕ) до 10: вес SSR-HTML главной 1081→≤600 КБ, DOM/flight легче. */
+export const HOME_RAIL_SIZE = 10;
 export function homeRails() {
-  const popular = [...loadTitles()].sort((a, b) => b.favourites - a.favourites).slice(0, 14);
-  const top = [...loadTitles()].sort((a, b) => b.score - a.score).slice(0, 14);
+  const popular = [...loadTitles()].sort((a, b) => b.favourites - a.favourites).slice(0, HOME_RAIL_SIZE);
+  const top = [...loadTitles()].sort((a, b) => b.score - a.score).slice(0, HOME_RAIL_SIZE);
   const fresh = [...loadTitles()]
     .filter((t) => t.year >= new Date().getFullYear() - 3)
     .sort((a, b) => b.year - a.year || b.favourites - a.favourites)
-    .slice(0, 14);
-  const ongoing = loadTitles().filter((t) => t.status === 'ongoing').sort((a, b) => b.favourites - a.favourites);
-  const movies = loadTitles().filter((t) => t.type === 'movie').sort((a, b) => b.score - a.score).slice(0, 14);
+    .slice(0, HOME_RAIL_SIZE);
+  const ongoing = loadTitles()
+    .filter((t) => t.status === 'ongoing')
+    .sort((a, b) => b.favourites - a.favourites)
+    .slice(0, HOME_RAIL_SIZE);
+  const movies = loadTitles().filter((t) => t.type === 'movie').sort((a, b) => b.score - a.score).slice(0, HOME_RAIL_SIZE);
   return { popular, top, fresh, ongoing, movies };
 }
 
