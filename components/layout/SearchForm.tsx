@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDebouncedValue } from '@/lib/hooks';
 import { IconSearch } from '@/components/ui/icons';
@@ -15,6 +15,16 @@ export function SearchForm({ initial }: { initial: string }) {
     const url = debounced ? `/search?q=${encodeURIComponent(debounced)}` : '/search';
     router.replace(url, { scroll: false });
   }, [debounced, router]);
+
+  /* S5: цель Метрики «search» — первый непустой запрос сессии ввода
+     (событие aninova:goal ловит components/system/Metrika.tsx). */
+  const prevDebounced = useRef(debounced);
+  useEffect(() => {
+    if (debounced.trim() && !prevDebounced.current.trim()) {
+      window.dispatchEvent(new CustomEvent('aninova:goal', { detail: 'search' }));
+    }
+    prevDebounced.current = debounced;
+  }, [debounced]);
 
   return (
     <form className="search-form" role="search" onSubmit={(e) => e.preventDefault()}>

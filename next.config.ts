@@ -22,6 +22,9 @@ const analyticsHosts = (() => {
   return [...hosts];
 })();
 const analyticsScriptSrc = analyticsHosts.map((h) => `https://${h}`).join(' ');
+/* S5: Метрика включает mc.yandex.ru в CSP только при установленном счётчике —
+   иначе директивы остаются минимальными. */
+const metrikaSrc = process.env.NEXT_PUBLIC_METRIKA_ID ? 'https://mc.yandex.ru' : '';
 const CSP_DIRECTIVES = [
   "default-src 'self'",
   "object-src 'none'",
@@ -29,14 +32,14 @@ const CSP_DIRECTIVES = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   "upgrade-insecure-requests",
-  `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com ${analyticsScriptSrc}`.trim(),
+  `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com ${analyticsScriptSrc} ${metrikaSrc}`.trim(),
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   "media-src 'self' https: blob:",
   "worker-src 'self'",
-  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graphql.anilist.co https://shikimori.io https://shikimori.one https://api.jikan.moe https://api.aniskip.com https://challenges.cloudflare.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io ${analyticsScriptSrc}`.trim(),
-  'frame-src https://kodik.info https://kodikplayer.com https://animego.org https://cdn.animego.org https://aniboom.one https://www.youtube.com https://challenges.cloudflare.com',
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graphql.anilist.co https://shikimori.io https://shikimori.one https://api.jikan.moe https://api.aniskip.com https://challenges.cloudflare.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io ${analyticsScriptSrc} ${metrikaSrc}`.trim(),
+  `frame-src https://kodik.info https://kodikplayer.com https://animego.org https://cdn.animego.org https://aniboom.one https://www.youtube.com https://challenges.cloudflare.com ${metrikaSrc}`.trim(),
 ];
 const CSP_VALUE = CSP_DIRECTIVES.join('; ');
 const IS_PROD = process.env.NODE_ENV === 'production';

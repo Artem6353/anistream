@@ -13,6 +13,7 @@ import dynamic from 'next/dynamic';
 const TvMode = dynamic(() => import('@/components/system/TvMode').then((m) => m.TvMode));
 import { CookieConsent } from '@/components/system/CookieConsent';
 import { ClientMonitoring } from '@/components/system/ClientMonitoring';
+import { Metrika } from '@/components/system/Metrika';
 import { AutoSync } from '@/components/system/AutoSync';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { AchievementToast } from '@/components/profile/AchievementToast';
@@ -70,6 +71,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <MobileNav />
           <CookieConsent />
           <ClientMonitoring />
+          {/* S5: Яндекс.Метрика (lazyOnload; включается только при NEXT_PUBLIC_METRIKA_ID) */}
+          <Metrika />
           <AutoSync />
         <AuthGate />
         <AchievementToast />
