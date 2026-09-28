@@ -43,12 +43,12 @@ export async function GET(request: Request) {
   const q = clampInt(sp.get('q'), 30, 90, 0);
   const fmtParam = (sp.get('fmt') ?? 'auto').toLowerCase();
   const accept = request.headers.get('accept') ?? '';
-  /* auto → WebP (не AVIF): замеры 28.09 показали, что avif-энкод баннера ~3.4 с против ~90 мс
-     у webp при тех же ~66% экономии — на serverless это таймауты/холодные старты.
-     AVIF остаётся по явному fmt=avif.
-     S3.2: fallback для Accept без явных image/*-типов (*/*, пустой, краулеры) — тоже webp
-     (WebP в браузерах Baseline с 2020); раньше отдавался orig без ресайза (баннер 349 КБ).
-     Явный jpeg-only Accept (без */* и webp) → jpeg; прочий экзотический Accept → orig. */
+  // auto → WebP (не AVIF): замеры 28.09 показали, что avif-энкод баннера ~3.4 с против ~90 мс
+  // у webp при тех же ~66% экономии — на serverless это таймауты/холодные старты.
+  // AVIF остаётся по явному fmt=avif.
+  // S3.2: fallback для wildcard/пустого Accept (краулеры, curl) — тоже webp
+  // (WebP в браузерах Baseline с 2020); раньше отдавался orig без ресайза (баннер 349 КБ).
+  // Явный jpeg-only Accept (без wildcard и webp) → jpeg; прочий экзотический Accept → orig.
   const fmt: Fmt =
     fmtParam === 'avif' || fmtParam === 'webp' || fmtParam === 'jpeg' || fmtParam === 'orig'
       ? fmtParam
