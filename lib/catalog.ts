@@ -1,4 +1,4 @@
-import type { CatalogQuery, CatalogResult, Title } from './types';
+import type { CardTitle, CatalogQuery, CatalogResult, Title } from './types';
 import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { genreLabel, LENGTH_BUCKETS } from './labels';
@@ -70,6 +70,23 @@ export function heroSlides(): Title[] {
     .filter((t) => t.banner)
     .sort((a, b) => b.favourites - a.favourites)
     .slice(0, 5);
+}
+
+/** S2.2: урезать Title до полей карточки перед передачей в PosterCard — иначе полный
+    объект (описание/персонажи/airing, ~2.7 КБ) сериализуется в RSC-payload на каждую карточку. */
+export function toCardTitle(t: Title): CardTitle {
+  return {
+    slug: t.slug,
+    ru: t.ru,
+    romaji: t.romaji,
+    type: t.type,
+    year: t.year,
+    status: t.status,
+    episodes: t.episodes,
+    score: t.score,
+    genres: t.genres.slice(0, 3),
+    poster: t.poster,
+  };
 }
 
 export function genreStats(): { slug: string; count: number }[] {

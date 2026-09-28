@@ -15,6 +15,7 @@ export async function GET(request: Request) {
       romaji: t!.romaji,
       type: t!.type,
       year: t!.year,
+      status: t!.status, // S2.2: нужен ленивым рельсам для плашки «Онгоинг/Анонс/Новинка»
       episodes: t!.episodes,
       score: t!.score,
       poster: t!.poster,

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
-import type { Title } from '@/lib/types';
+import type { CardTitle } from '@/lib/types';
 import { TYPE_LABELS, genreLabel } from '@/lib/labels';
 import { episodesWord } from '@/lib/format';
 import { PosterArt } from './PosterArt';
@@ -10,14 +10,15 @@ import { IconPlay, IconStar } from '@/components/ui/icons';
 /** Плашка статуса на карточке (аудит, блок 1): только три случая, «Завершён» НЕ рендерится.
     ongoing → «Онгоинг» (зелёный), upcoming → «Анонс» (синий),
     finished && year >= 2025 → «Новинка» (фиолетовый); остальное — без плашки. */
-function statusBadge(t: Title): { label: string; color: string } | null {
+function statusBadge(t: CardTitle): { label: string; color: string } | null {
   if (t.status === 'ongoing') return { label: 'Онгоинг', color: '#10b981' };
   if (t.status === 'upcoming') return { label: 'Анонс', color: '#3b82f6' };
   if (t.status === 'finished' && t.year >= 2025) return { label: 'Новинка', color: '#8b5cf6' };
   return null;
 }
 
-/** Карточка тайтла: постер, рейтинг, быстрые действия. */
+/** Карточка тайтла: постер, рейтинг, быстрые действия.
+    S2.2: принимает CardTitle-проекцию (полный Title тоже совместим) — лёгкий RSC-payload. */
 export function PosterCard({
   title,
   progress,
@@ -26,7 +27,7 @@ export function PosterCard({
   resumeNote,
   showBadge = true,
 }: {
-  title: Title;
+  title: CardTitle;
   progress?: number;
   /** Последняя просмотренная серия — для подписи «Продолжить с серии N» (рейл «Продолжить просмотр»). */
   resumeEpisode?: number;

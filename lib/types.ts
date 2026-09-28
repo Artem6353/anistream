@@ -55,6 +55,14 @@ export interface Title {
   shikimori?: { id: number; ru: string | null; description: string | null; score: number } | null;
 }
 
+/** S2.2 (аудит 28.09): проекция тайтла для карточек PosterCard. Полный Title (~2.7 КБ JSON:
+    описание, персонажи, связи, airing) уезжал в RSC-payload и клиентские пропсы — главная
+    весила 1081 КБ. Карточке нужны только эти поля; /api/titles отдаёт совместимую форму. */
+export type CardTitle = Pick<
+  Title,
+  'slug' | 'ru' | 'romaji' | 'type' | 'year' | 'status' | 'episodes' | 'score' | 'genres' | 'poster'
+>;
+
 export type SortKey = 'pop' | 'score' | 'new' | 'az';
 
 export interface CatalogQuery {

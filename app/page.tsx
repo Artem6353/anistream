@@ -4,7 +4,7 @@ import { Rail } from '@/components/anime/Rail';
 import { PosterCard } from '@/components/anime/PosterCard';
 import { ContinueWatchingRail } from '@/components/anime/ContinueWatchingRail';
 import { GenreChips } from '@/components/anime/GenreChips';
-import { homeRails, genreStats, heroSlides } from '@/lib/catalog';
+import { homeRails, genreStats, heroSlides, toCardTitle } from '@/lib/catalog';
 import { demoWeek } from '@/lib/schedule';
 import { HomeSchedule } from '@/components/schedule/HomeSchedule';
 import { ContinueBanner } from '@/components/home/ContinueBanner';
@@ -12,6 +12,7 @@ import { DiscussedRail } from '@/components/home/DiscussedRail';
 import { BecauseRail } from '@/components/anime/BecauseRail';
 import { LatestEpisodes } from '@/components/home/LatestEpisodes';
 import { TopTabs } from '@/components/home/TopTabs';
+import { LazyRail } from '@/components/home/LazyRail';
 import { COLLECTIONS } from '@/lib/collections';
 import { loadTitles } from '@/lib/catalog';
 import { ForYouRail } from '@/components/anime/ForYouRail';
@@ -22,11 +23,14 @@ export const revalidate = 3600;
 
 export default async function HomePage() {
   const rails = homeRails();
-  // ТЗ 18.5: «за неделю» — ongoing + свежие finished, ранг favourites + score
-  const weekTop = loadTitles()
+  // ТЗ 18.5: «за неделю» — ongoing + свежие finished, ранг favourites + score.
+  // S2.2: в TopTabs уходят только слаги — тайтлы догрузит /api/titles при скролле.
+  const weekTopSlugs = loadTitles()
     .filter((t) => t.status === 'ongoing' || (t.status === 'finished' && t.year >= 2025))
     .sort((a, b) => b.favourites + b.score * 500 - (a.favourites + a.score * 500))
-    .slice(0, 10); // S2.1: 12→10
+    .slice(0, 10) // S2.1: 12→10
+    .map((t) => t.slug);
+  const allTopSlugs = rails.top.map((t) => t.slug);
   const genres = genreStats();
 
   return (
@@ -66,17 +70,17 @@ export default async function HomePage() {
 
             <Rail title="Сейчас популярно" action={{ href: '/catalog?sort=pop', label: 'Весь каталог' }}>
               {rails.popular.map((t) => (
-                <PosterCard key={t.slug} title={t} />
+                <PosterCard key={t.slug} title={toCardTitle(t)} />
               ))}
             </Rail>
 
             <Rail title="Новинки последних лет" action={{ href: '/catalog?sort=new', label: 'Все новинки' }}>
               {rails.fresh.map((t) => (
-                <PosterCard key={t.slug} title={t} />
+                <PosterCard key={t.slug} title={toCardTitle(t)} />
               ))}
             </Rail>
 
-            <TopTabs week={weekTop} all={rails.top} />
+            <TopTabs week={weekTopSlugs} all={allTopSlugs} />
 
             <DiscussedRail />
 
@@ -89,19 +93,22 @@ export default async function HomePage() {
               ))}
             </Rail>
 
+            {/* S2.2: рельсы ниже сгиба — ленивые (слаги в SSR, карточки — /api/titles по скроллу) */}
             {rails.ongoing.length ? (
-              <Rail title="Онгоинги: выходят сейчас" action={{ href: '/catalog?status=ongoing', label: 'Все онгоинги' }}>
-                {rails.ongoing.map((t) => (
-                  <PosterCard key={t.slug} title={t} />
-                ))}
-              </Rail>
+              <LazyRail
+                title="Онгоинги: выходят сейчас"
+                action={{ href: '/catalog?status=ongoing', label: 'Все онгоинги' }}
+                slugs={rails.ongoing.map((t) => t.slug)}
+                skeleton={rails.ongoing.length}
+              />
             ) : null}
 
-            <Rail title="Полнометражки" action={{ href: '/catalog?type=movie', label: 'Все фильмы' }}>
-              {rails.movies.map((t) => (
-                <PosterCard key={t.slug} title={t} />
-              ))}
-            </Rail>
+            <LazyRail
+              title="Полнометражки"
+              action={{ href: '/catalog?type=movie', label: 'Все фильмы' }}
+              slugs={rails.movies.map((t) => t.slug)}
+              skeleton={rails.movies.length}
+            />
 
             <section className="page-section" aria-label="Расписание и обновления">
               <div className="container">

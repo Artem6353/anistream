@@ -1965,6 +1965,17 @@ input, select {
   aspect-ratio: 2 / 3;
   flex: 0 0 auto;
 }
+/* S2.2: skeleton ленивой сетки «Топ по оценкам» — повторяет геометрию .rail--grid,
+   чтобы догрузка карточек не давала CLS. */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 4px 0 18px;
+}
+.skeleton-grid > div {
+  aspect-ratio: 2 / 3;
+}
 
 /* ---------------- Футер ---------------- */
 
