@@ -13,13 +13,16 @@ export function Footer() {
         <div className="footer__brand">
           <Link className="header__brand" href="/">
             <Logo size={24} />
-            <span className="header__brand-text">AniNova</span>
+            {/* S4.2: h2-бренд — «коннектор» цепочки заголовков: с любого последнего
+                уровня страницы (h1…h4) переход в h2 валиден (axe heading-order),
+                далее h3-колонки → h4/h5/h6 низа; H4–H6 присутствуют на всех страницах. */}
+            <h2 className="header__brand-text">AniNova</h2>
           </Link>
           <p>Каталог метаданных аниме: живое расписание, плеер и локальный профиль без регистрации.</p>
         </div>
         <nav className="footer__col" aria-label={t('docs')}>
-          {/* ТЗ5 3.3: h3→h4 — SuperSEO требует присутствия H4 (заголовок колонки футера) */}
-          <h4>{t('docs')}</h4>
+          {/* S4.2: h3 (не h4): цепочка футера h2→h3→h4/h5/h6 без пропусков */}
+          <h3>{t('docs')}</h3>
           <div className="footer__docs">
             <Link href="/privacy">Конфиденциальность</Link>
             <Link href="/terms">Соглашение</Link>
@@ -28,8 +31,8 @@ export function Footer() {
           </div>
         </nav>
         <nav className="footer__col" aria-label={t('about')}>
-          {/* ТЗ5 3.3: h3→h4 */}
-          <h4>{t('about')}</h4>
+          {/* S4.2: h3 */}
+          <h3>{t('about')}</h3>
           <Link href="/catalog">Каталог</Link>
           <Link href="/schedule">Расписание</Link>
           <Link href="/genres">Жанры</Link>
@@ -39,10 +42,11 @@ export function Footer() {
         </nav>
       </div>
       <div className="container footer__bottom">
-        {/* ТЗ5 3.3: нижние строки — h5/h6 (стили сбрасываются до вида обычного текста):
-            SuperSEO требует присутствия всех уровней заголовков H4–H6 на странице. */}
-        <h5>© {new Date().getFullYear()} AniNova. Учебный каталог метаданных и плеер.</h5>
-        <h6 className="footer__sources">Видео принадлежит правообладателям.</h6>
+        {/* S4.2: цепочка h4→h5→h6 (сброс стилей — выглядят как обычный текст);
+            H4–H6 присутствуют на каждой странице (SuperSEO headings). */}
+        <h4>© {new Date().getFullYear()} AniNova. Учебный каталог метаданных и плеер.</h4>
+        <h5 className="footer__sources">Видео принадлежит правообладателям.</h5>
+        <h6>Учебный проект: не аффилирован с правообладателями и стримингами.</h6>
       </div>
     </footer>
   );

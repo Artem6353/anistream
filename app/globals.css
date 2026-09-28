@@ -17,6 +17,11 @@
   --muted-2: #8b96ab;
   /* S4: текстовый вариант --warn по темам (жёлтый #fbbf24 на светлом фоне ≈1.9:1). */
   --warn-text: #fbbf24;
+  /* S4.2: текстовые варианты акцентов по темам (PSI/Lighthouse эмулирует светлую тему:
+     #8b5cf6 ≈3.9:1 и #f472b6 ≈2.5:1 на #f6f7fb — ниже AA 4.5:1).
+     dark: #a78bfa ≈7.0:1 на --bg, ≈5.6:1 на --surface; light: #6d28d9 ≈7:1 на белом. */
+  --accent-text: #a78bfa;
+  --accent-2-text: #f472b6;
   /* S4: светлота детерминированных цветов жанровых чипов по темам
      (dark L≥72%, light L≤42% — вместо фикс. 65%). */
   --dot-l: 72%;
@@ -187,7 +192,7 @@ input, select {
   backdrop-filter: blur(8px);
 }
 .btn--outline:hover {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .btn--ghost {
@@ -224,7 +229,7 @@ input, select {
   background: rgba(255, 255, 255, 0.08);
 }
 .icon-btn.is-active {
-  color: var(--accent-2);
+  color: var(--accent-2-text);
   border-color: color-mix(in srgb, var(--accent) 60%, transparent);
 }
 .icon-btn.is-disabled {
@@ -330,7 +335,7 @@ input, select {
 }
 .input:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 .input::placeholder {
@@ -584,6 +589,21 @@ input, select {
   margin-top: 14px;
 }
 .hero__dot {
+  /* S4.2: axe target-size — тап-зона 24×24 при визуальной полоске 8×4 (::before). */
+  position: relative;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.hero__dot::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: 8px;
   height: 4px;
   border-radius: 4px;
@@ -592,6 +612,9 @@ input, select {
   transition: opacity 0.2s, width 0.25s, background 0.2s;
 }
 .hero__dot.is-active {
+  /* визуальная полоска активной точки — шире и градиентная */
+}
+.hero__dot.is-active::before {
   width: 24px;
   background: var(--grad);
   opacity: 1;
@@ -658,7 +681,7 @@ input, select {
   color: var(--muted);
 }
 .rail-more:hover {
-  color: var(--accent-2);
+  color: var(--accent-2-text);
 }
 .rail-arrows {
   display: flex;
@@ -783,7 +806,7 @@ input, select {
   min-height: 2.7em;
 }
 .card__title a:hover {
-  color: var(--accent-2);
+  color: var(--accent-2-text);
 }
 .card__meta {
   display: flex;
@@ -800,7 +823,7 @@ input, select {
   margin-top: 4px;
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--accent-2);
+  color: var(--accent-2-text);
 }
 .card__bookmark {
   position: absolute;
@@ -815,7 +838,7 @@ input, select {
   opacity: 1;
 }
 .bookmark-btn.is-active {
-  color: var(--accent-2);
+  color: var(--accent-2-text);
 }
 
 .poster-grid {
@@ -1075,7 +1098,7 @@ input, select {
 }
 .expandable__toggle {
   margin-top: 6px;
-  color: var(--accent-2);
+  color: var(--accent-2-text);
   font-size: 13.5px;
   font-weight: 600;
 }
@@ -1113,7 +1136,7 @@ input, select {
   transform: translateY(-2px);
 }
 .episode.is-current {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 .episode__num {
@@ -1206,7 +1229,7 @@ input, select {
 .schedule__time {
   font-weight: 700;
   font-size: 12.5px;
-  color: var(--accent-2);
+  color: var(--accent-2-text);
   font-variant-numeric: tabular-nums;
 }
 .schedule__poster {
@@ -1422,7 +1445,7 @@ input, select {
   color: #fff;
 }
 .player .icon-btn:hover {
-  color: var(--accent);
+  color: var(--accent-text);
   background: rgba(255, 255, 255, 0.16);
   transform: scale(1.08);
 }
@@ -1448,7 +1471,7 @@ input, select {
   width: 0;
   opacity: 0;
   margin-left: 0;
-  accent-color: var(--accent);
+  accent-color: var(--accent-text);
   transition: width 0.2s ease, opacity 0.2s ease, margin-left 0.2s ease;
 }
 .player__volwrap:hover .player__volume,
@@ -1694,7 +1717,7 @@ input, select {
   gap: 5px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--accent-2);
+  color: var(--accent-2-text);
 }
 
 .settings {
@@ -1914,7 +1937,7 @@ input, select {
 }
 .palette__foot a {
   margin-left: auto;
-  color: var(--accent-2);
+  color: var(--accent-2-text);
   font-weight: 600;
 }
 
@@ -2071,7 +2094,9 @@ input, select {
   color: var(--muted-2);
   font-size: 12.5px;
 }
-/* ТЗ5 3.3: h5/h6 в нижней строке выглядят как обычный текст (сброс заголовочных стилей) */
+/* ТЗ5 3.3 / S4.2: h4/h5/h6 в нижней строке выглядят как обычный текст;
+   цепочка заголовков футера: h2 (бренд) → h3 (колонки) → h4/h5/h6 (низ). */
+.footer__bottom h4,
 .footer__bottom h5,
 .footer__bottom h6 {
   margin: 0;
@@ -2083,7 +2108,7 @@ input, select {
   line-height: inherit;
 }
 .footer__sources a {
-  color: var(--accent-2);
+  color: var(--accent-2-text);
 }
 
 /* ---------------- Мобильная навигация ---------------- */
@@ -2113,7 +2138,7 @@ input, select {
   border-radius: 10px;
 }
 .mobile-nav__item.is-active {
-  color: var(--accent-2);
+  color: var(--accent-2-text);
 }
 
 /* ---------------- Информ-блок «Как устроен» ---------------- */
@@ -2217,7 +2242,7 @@ input, select {
   content: '+';
   font-size: 17px;
   line-height: 1;
-  color: var(--accent);
+  color: var(--accent-text);
   flex: none;
 }
 .faq__item[open] .faq__q::after {
@@ -2337,7 +2362,7 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
   font-size: 13px;
 }
 .crumbs a:hover {
-  color: var(--accent-2);
+  color: var(--accent-2-text);
 }
 
 .player-nav {
@@ -2503,7 +2528,7 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
 .detail__shiki-link {
   font-size: 12px;
   font-weight: 600;
-  color: var(--accent-2);
+  color: var(--accent-2-text);
   margin-left: 6px;
 }
 
@@ -2515,7 +2540,7 @@ html[data-tv='true'] :focus {
 }
 html[data-tv='true'] .card:focus-within .card__media {
   transform: translateY(-4px) scale(1.02);
-  border-color: var(--accent-2);
+  border-color: var(--accent-2-text);
 }
 
 /* ---------------- Ряд озвучек/источников (EpisodeSources) ---------------- */
@@ -2638,7 +2663,7 @@ html[data-tv='true'] .card:focus-within .card__media {
   margin-top: 14px;
 }
 .catalog-searchrow .input { flex: 1; }
-.is-active-link { color: var(--accent-2); }
+.is-active-link { color: var(--accent-2-text); }
 .catalog-side {
   position: sticky;
   top: calc(var(--header-h) + 12px);
@@ -2668,7 +2693,7 @@ html[data-tv='true'] .card:focus-within .card__media {
   cursor: pointer;
   user-select: none;
 }
-.check input { accent-color: var(--accent); }
+.check input { accent-color: var(--accent-text); }
 .check em { font-style: normal; color: var(--muted-2); font-size: 11px; }
 .check:hover { color: var(--text); }
 
@@ -2687,7 +2712,7 @@ html[data-tv='true'] .card:focus-within .card__media {
 .row:hover { border-color: var(--line-strong); transform: translateY(-1px); }
 .row__poster { width: 92px; aspect-ratio: 2/3; border-radius: 10px; overflow: hidden; display: block; }
 .row__title { font-size: 15.5px; }
-.row__title a:hover { color: var(--accent-2); }
+.row__title a:hover { color: var(--accent-2-text); }
 .row__orig { color: var(--muted-2); font-size: 12.5px; margin-top: 2px; }
 .row__meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; font-size: 12.5px; color: var(--muted); }
 .row__meta > * + *::before { content: '·'; margin-right: 10px; color: var(--muted-2); }
@@ -2808,7 +2833,7 @@ html[data-tv='true'] .card:focus-within .card__media {
   text-align: left;
 }
 .listbtn__item:hover { background: rgba(255,255,255,0.06); color: var(--text); }
-.listbtn__item.is-active { color: var(--accent-2); }
+.listbtn__item.is-active { color: var(--accent-2-text); }
 .listbtn__item--danger { color: var(--danger); }
 .listbtn__spacer { width: 14px; }
 .mylist { display: flex; flex-direction: column; gap: 26px; }
@@ -2915,7 +2940,7 @@ html[data-tv='true'] .card:focus-within .card__media {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--accent-2);
+  color: var(--accent-2-text);
   padding-top: 6px;
 }
 .sources-group__kind { font-size: 11px; color: var(--muted-2); padding: 2px 0 2px 2px; }
@@ -2958,8 +2983,8 @@ html[data-tv='true'] .card:focus-within .card__media {
 .player-side__foot { padding-top: 4px; }
 /* ТЗ 4.1 (3.8): «К описанию» со стрелкой ↓, hover — accent */
 .player-side__foot .btn--outline:hover {
-  color: var(--accent-2);
-  border-color: var(--accent);
+  color: var(--accent-2-text);
+  border-color: var(--accent-text);
 }
 
 /* ================= Порядок просмотра, персонажи, галерея, график ================= */
@@ -2988,7 +3013,7 @@ html[data-tv='true'] .card:focus-within .card__media {
 }
 .watchorder__num { font-weight: 800; color: var(--muted-2); text-align: center; }
 .watchorder__body a { font-weight: 600; font-size: 13.5px; }
-.watchorder__body a:hover { color: var(--accent-2); }
+.watchorder__body a:hover { color: var(--accent-2-text); }
 .watchorder__meta { display: block; color: var(--muted-2); font-size: 11.5px; }
 .chars { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px; margin-top: 10px; }
 .char { display: flex; flex-direction: column; gap: 6px; align-items: center; text-align: center; }
@@ -3062,8 +3087,8 @@ html[data-tv='true'] .card:focus-within .card__media {
 .review__vote { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; }
 .review__vote:hover { color: var(--text); border-color: var(--line-strong); }
 .review__vote.is-active {
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent-text);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .reviews__empty { color: var(--muted-2); font-size: 13px; padding: 8px 2px; }
@@ -3073,7 +3098,7 @@ html[data-tv='true'] .card:focus-within .card__media {
 .admin-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .admin-list li { display: flex; gap: 12px; align-items: baseline; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
 .admin-list a { font-weight: 600; font-size: 13px; }
-.admin-list a:hover { color: var(--accent-2); }
+.admin-list a:hover { color: var(--accent-2-text); }
 
 @media (max-width: 980px) {
   .player-layout { grid-template-columns: 1fr; }
@@ -3087,7 +3112,7 @@ html[data-tv='true'] .card:focus-within .card__media {
 .detail__alt-desc { margin-top: 12px; border: 1px dashed var(--line); border-radius: 10px; padding: 10px 14px; }
 .detail__alt-desc summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); list-style: none; }
 .detail__alt-desc summary::-webkit-details-marker { display: none; }
-.detail__alt-desc summary::before { content: '▸ '; color: var(--accent-2); }
+.detail__alt-desc summary::before { content: '▸ '; color: var(--accent-2-text); }
 .detail__alt-desc[open] summary::before { content: '▾ '; }
 .detail__alt-desc[open] summary { margin-bottom: 8px; color: var(--text); }
 /* ТЗ 4.1 (4.6): поле «Перейти к серии» в блоке серий */
@@ -3116,6 +3141,8 @@ html[data-tv='true'] .card:focus-within .card__media {
   box-shadow: var(--shadow-2);
 }
 .cookie-banner p { font-size: 13px; color: var(--muted); }
+/* S4.2: ghost-кнопка «Подробнее» на баннере — контраст в обеих темах. */
+.cookie-banner .btn--ghost { color: var(--text); }
 .agegate {
   position: fixed;
   inset: 0;
@@ -3279,14 +3306,14 @@ html[data-tv='true'] .card:focus-within .card__media {
   color: var(--muted);
 }
 .sidebar-block__empty a {
-  color: var(--accent-2);
+  color: var(--accent-2-text);
 }
 .sidebar-block__more {
   display: inline-block;
   margin-top: 10px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--accent-2);
+  color: var(--accent-2-text);
 }
 
 .sidebar-top {
@@ -3306,7 +3333,7 @@ html[data-tv='true'] .card:focus-within .card__media {
   text-decoration: none;
 }
 .sidebar-top__row:hover .sidebar-top__name {
-  color: var(--accent-2);
+  color: var(--accent-2-text);
 }
 .sidebar-top__rank {
   font-size: 13px;
@@ -3358,7 +3385,7 @@ html[data-tv='true'] .card:focus-within .card__media {
   font-size: 12px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--accent-2);
+  color: var(--accent-2-text);
   padding-top: 1px;
 }
 .sidebar-airing__body {
@@ -3402,7 +3429,7 @@ html[data-tv='true'] .card:focus-within .card__media {
   border-color: var(--line-strong);
 }
 .sidebar-mood svg {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .sidebar-mood__label {
   font-size: 12px;
@@ -3734,6 +3761,9 @@ html[data-tv='true'] .card:focus-within .card__media {
   --muted-2: #5c6572;
   /* S4: amber-800: ≈6.4:1 на белом, ≈6.0:1 на --surface-2. */
   --warn-text: #92400e;
+  /* S4.2: violet-700 / pink-700 — ≥6:1 на светлых поверхностях. */
+  --accent-text: #6d28d9;
+  --accent-2-text: #be185d;
   --dot-l: 42%;
   --shadow-1: 0 2px 10px rgba(15, 23, 42, 0.08);
   --shadow-2: 0 12px 40px rgba(15, 23, 42, 0.16);
@@ -3777,7 +3807,7 @@ body, .card, .panel, .header, .footer, .settings__card, .history__item, .mobile-
   cursor: pointer; text-align: left;
 }
 .theme-menu__item:hover { background: var(--surface-2); }
-.theme-menu__item.is-active { background: var(--surface-2); color: var(--accent); font-weight: 600; }
+.theme-menu__item.is-active { background: var(--surface-2); color: var(--accent-text); font-weight: 600; }
 
 /* ============================================================
    ТЗ блоки 14–15: модалка входа (desktop center / mobile bottom-sheet),
@@ -3829,7 +3859,7 @@ body, .card, .panel, .header, .footer, .settings__card, .history__item, .mobile-
 
 /* Фикс кликабельности ника (ТЗ 2026-09-28): стили только для <a>, span-гость не затрагивается */
 a.review__author-name { color: inherit; text-decoration: none; cursor: pointer; transition: color 0.15s ease; }
-a.review__author-name:hover { color: var(--accent); text-decoration: underline; }
+a.review__author-name:hover { color: var(--accent-text); text-decoration: underline; }
 
 /* ============================================================
    ТЗ 18.1/18.4: тосты ачивок с конфетти + streak-бейдж
@@ -3847,7 +3877,7 @@ a.review__author-name:hover { color: var(--accent); text-decoration: underline; 
 .ach-toast__confetti i:nth-child(3n) { background: var(--success); animation-delay: 0.3s; }
 @keyframes confetti { from { transform: translateY(0) rotate(0); opacity: 1; } to { transform: translateY(70px) rotate(540deg); opacity: 0; } }
 .streak-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: 13px; cursor: help; }
-.streak-badge.is-hot { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.streak-badge.is-hot { color: var(--accent-text); border-color: color-mix(in srgb, var(--accent) 50%, transparent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 
 /* ТЗ 18.2: статистика */
 .stats h1 { margin: 18px 0; }
@@ -3888,7 +3918,7 @@ a.review__author-name:hover { color: var(--accent); text-decoration: underline; 
 .discussed__quote { color: var(--muted); }
 .discussed__meta { color: var(--muted-2); font-size: 12px; }
 .collection-card { display: flex; flex-direction: column; gap: 6px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; color: var(--text); min-height: 110px; }
-.collection-card:hover { border-color: var(--accent); }
+.collection-card:hover { border-color: var(--accent-text); }
 .collection-card span { color: var(--muted); font-size: 12px; }
 .collection-desc { color: var(--muted); margin: 6px 0 16px; }
 .breadcrumbs { color: var(--muted-2); font-size: 13px; margin: 12px 0 0; }
@@ -3898,7 +3928,7 @@ a.review__author-name:hover { color: var(--accent); text-decoration: underline; 
 .quiz h1, .quiz h2 { margin: 14px 0; }
 .quiz__progress { color: var(--muted); }
 .quiz__opts { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
-.quiz__opts .btn.is-active { border-color: var(--accent); color: var(--accent); }
+.quiz__opts .btn.is-active { border-color: var(--accent-text); color: var(--accent-text); }
 .quiz__actions { display: flex; gap: 10px; margin: 16px 0; }
 .ach-page__count { color: var(--muted); }
 .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin: 16px 0; }
@@ -3921,7 +3951,7 @@ a.review__author-name:hover { color: var(--accent); text-decoration: underline; 
 .feed__avatar--guest { display: inline-flex; align-items: center; justify-content: center; background: var(--surface-2); color: var(--muted); font-weight: 700; }
 .feed__text { font-size: 14px; color: var(--muted); }
 .feed__text strong { color: var(--text); }
-.feed__text a { color: var(--accent); }
+.feed__text a { color: var(--accent-text); }
 .feed__text small { color: var(--muted-2); }
 
 /* ТЗ 20.2: клубы */
@@ -4025,9 +4055,9 @@ html[data-tv='true'] .mobile-nav { display: none; }
 .poster-art { transition: transform 0.35s ease; }
 .btn--primary:hover { box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 45%, transparent); }
 .rail-head__more { color: var(--muted); font-size: 13px; }
-.rail-head__more:hover { color: var(--accent); }
+.rail-head__more:hover { color: var(--accent-text); }
 .latest-eps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
-.latest-eps__day { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
+.latest-eps__day { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-text); }
 .latest-eps__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .latest-eps__item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); color: var(--text); }
 .latest-eps__item:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
@@ -4035,7 +4065,7 @@ html[data-tv='true'] .mobile-nav { display: none; }
 .latest-eps__info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .latest-eps__title { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .latest-eps__meta { color: var(--muted); font-size: 12px; }
-.latest-eps__ep { margin-left: auto; flex: none; font-size: 11px; font-weight: 700; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); padding: 3px 8px; border-radius: 999px; }
+.latest-eps__ep { margin-left: auto; flex: none; font-size: 11px; font-weight: 700; color: var(--accent-text); background: color-mix(in srgb, var(--accent) 14%, transparent); padding: 3px 8px; border-radius: 999px; }
 
 /* ============================================================
    ТЗ5 блок 4 (2026-09-28): МОБИЛЬНАЯ КОМПАКТНОСТЬ ≤640px.
