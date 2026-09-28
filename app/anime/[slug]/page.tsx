@@ -23,6 +23,7 @@ import { PosterCard } from '@/components/anime/PosterCard';
 import { PosterArt } from '@/components/anime/PosterArt';
 import { WatchButton } from '@/components/anime/WatchButton';
 import { artUri } from '@/lib/art';
+import { imgProxyUrl } from '@/lib/img';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -83,12 +84,12 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
     <div className="detail">
       <div className="detail__backdrop" aria-hidden>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={title.banner ?? artUri(title.slug, title.romaji, true)} alt="" />
+        <img src={(title.banner ? imgProxyUrl(title.banner, 1600, 72) : null) ?? artUri(title.slug, title.romaji, true)} alt="" />
       </div>
       <div className="container">
         <div className="detail__inner">
           <div className="detail__poster">
-            <PosterArt eager src={title.poster} seed={title.slug} initials={title.romaji} alt={`Постер: ${title.ru}`} />
+            <PosterArt eager src={title.poster} seed={title.slug} initials={title.romaji} alt={`Постер: ${title.ru}`} width={240} />
           </div>
           <div className="detail__info">
             <MetaBadges title={title} />
@@ -187,7 +188,7 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
                   <div key={c.name} className="char">
                     {c.img ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`/img?url=${encodeURIComponent(c.img)}`} alt={c.name} loading="lazy" />
+                      <img src={imgProxyUrl(c.img, 176) ?? undefined} alt={c.name} loading="lazy" />
                     ) : (
                       <span className="char__noimg" />
                     )}

@@ -9,7 +9,7 @@ export function PosterRow({ title }: { title: Title }) {
   return (
     <article className="row">
       <Link className="row__poster" href={`/anime/${title.slug}`} aria-label={title.ru}>
-        <PosterArt src={title.poster} seed={title.slug} initials={title.romaji} alt={`Постер: ${title.ru}`} />
+        <PosterArt src={title.poster} seed={title.slug} initials={title.romaji} alt={`Постер: ${title.ru}`} width={92} />
       </Link>
       <div className="row__body">
         <h3 className="row__title">

@@ -123,7 +123,7 @@ function EntryRow({ entry, big, compact }: { entry: ScheduleEntry; big?: boolean
         <IconCalendar size={13} /> {formatClock(entry.at)}
       </span>
       <span className="schedule__poster">
-        <PosterArt src={entry.poster} seed={String(entry.anilistId)} initials={entry.romaji} alt="" />
+        <PosterArt src={entry.poster} seed={String(entry.anilistId)} initials={entry.romaji} alt="" width={56} />
       </span>
       <span className="schedule__info">
         <span className="schedule__title">{entry.ru ?? entry.romaji}</span>

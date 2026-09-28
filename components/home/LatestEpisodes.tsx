@@ -52,7 +52,7 @@ export function LatestEpisodes() {
                   <li key={`${r.slug}-${r.ep}`}>
                     <Link className="latest-eps__item" href={`/anime/${r.slug}/${r.ep}`}>
                       <span className="latest-eps__poster">
-                        <PosterArt src={r.poster} seed={r.slug} initials={r.romaji} alt="" />
+                        <PosterArt src={r.poster} seed={r.slug} initials={r.romaji} alt="" width={44} />
                       </span>
                       <span className="latest-eps__info">
                         <span className="latest-eps__title">{r.ru}</span>

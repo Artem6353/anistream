@@ -1,16 +1,22 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import type { Title } from '@/lib/types';
 import { artUri } from '@/lib/art';
+import { imgLoader, isProxiable } from '@/lib/img';
 import { TYPE_LABELS } from '@/lib/labels';
 import { IconChevronLeft, IconChevronRight, IconPlay, IconSparkles } from '@/components/ui/icons';
 
-/** Герой-карусель: автопрокрутка, клавиатура, уважение к reduce-motion. */
+/** Герой-карусель: автопрокрутка, клавиатура, уважение к reduce-motion.
+    S1.2/S1.3 (аудит 28.09): баннеры идут через next/image fill + loader → /img
+    (avif/webp, ресайз под 100vw — srcset от deviceSizes), первый слайд priority →
+    Next сам инжектит <link rel=preload> LCP-изображения при SSR. */
 export function Hero({ slides }: { slides: Title[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [failed, setFailed] = useState<Record<string, true>>({});
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const go = useCallback((i: number) => setIndex(((i % slides.length) + slides.length) % slides.length), [slides.length]);
@@ -42,25 +48,44 @@ export function Hero({ slides }: { slides: Title[] }) {
         if (e.key === 'ArrowRight') go(index + 1);
       }}
     >
-      {slides.map((s, i) => (
-        <div
-          key={s.slug}
-          className={`hero__slide ${i === index ? 'is-active' : ''}`}
-          aria-hidden={i !== index}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className={`hero__bg ${s.banner ? '' : 'hero__bg--blurred'}`}
-            src={s.banner ?? s.poster ?? artUri(s.slug, s.romaji, true)}
-            alt=""
-            loading={i === 0 ? 'eager' : 'lazy'}
-            fetchPriority={i === 0 ? 'high' : 'low'}
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = artUri(s.slug, s.romaji, true);
-            }}
-          />
-        </div>
-      ))}
+      {slides.map((s, i) => {
+        const bg = s.banner ?? s.poster ?? null;
+        const cls = `hero__bg ${s.banner ? '' : 'hero__bg--blurred'}`;
+        return (
+          <div
+            key={s.slug}
+            className={`hero__slide ${i === index ? 'is-active' : ''}`}
+            aria-hidden={i !== index}
+          >
+            {!failed[s.slug] && isProxiable(bg) ? (
+              <Image
+                className={cls}
+                loader={imgLoader}
+                src={bg}
+                alt=""
+                fill
+                sizes="100vw"
+                quality={72}
+                priority={i === 0}
+                {...(i === 0 ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const, fetchPriority: 'low' as const })}
+                onError={() => setFailed((f) => ({ ...f, [s.slug]: true }))}
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                className={failed[s.slug] || !bg ? 'hero__bg hero__bg--blurred' : cls}
+                src={failed[s.slug] || !bg ? artUri(s.slug, s.romaji, true) : bg!}
+                alt=""
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchPriority={i === 0 ? 'high' : 'low'}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = artUri(s.slug, s.romaji, true);
+                }}
+              />
+            )}
+          </div>
+        );
+      })}
       <div className="hero__scrim" aria-hidden />
       <div className="hero__content container">
         <div className="hero__inner">

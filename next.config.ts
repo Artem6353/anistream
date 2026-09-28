@@ -21,6 +21,9 @@ const CSP_REPORT_ONLY = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  /* S1.1 (аудит 28.09): sharp используется image-прокси /img для транскода (avif/webp)
+     и ресайза — нативный пакет, не бандлится webpack'ом, трекается nft в функцию Vercel. */
+  serverExternalPackages: ['sharp'],
   outputFileTracingIncludes: {
     '/**': ['./lib/data/titles.json'],
   },
@@ -28,6 +31,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 's4.anilist.co' },
       { protocol: 'https', hostname: 'shikimori.one' },
+      { protocol: 'https', hostname: 'img2.shikimori.io' },
+      { protocol: 'https', hostname: 'shikimori.io' },
+      { protocol: 'https', hostname: 'kodikstorage.com' },
+      { protocol: 'https', hostname: 'cdn.myanimelist.net' },
     ],
   },
   async headers() {

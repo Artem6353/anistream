@@ -36,7 +36,7 @@ export function DiscussedRail() {
           return (
             <Link className="discussed__card" key={i.id} href={`/anime/${i.slug}#reviews`}>
               <span className="discussed__poster">
-                <PosterArt src={t?.poster} seed={i.slug} initials={t?.romaji ?? i.slug} alt="" />
+                <PosterArt src={t?.poster} seed={i.slug} initials={t?.romaji ?? i.slug} alt="" width={56} />
               </span>
               <span className="discussed__body">
                 <strong>{t?.ru ?? i.slug}</strong>

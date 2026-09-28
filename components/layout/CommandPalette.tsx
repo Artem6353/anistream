@@ -133,7 +133,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
               >
                 {item.poster && item.seed ? (
                   <span className="palette__poster">
-                    <PosterArt src={item.poster} seed={item.seed} initials={item.label} alt="" />
+                    <PosterArt src={item.poster} seed={item.seed} initials={item.label} alt="" width={34} />
                   </span>
                 ) : (
                   <span className="palette__icon">

@@ -61,7 +61,7 @@ export function HomeSchedule({ fallback }: { fallback: ScheduleEntry[] }) {
                         <li key={`${e.anilistId}-${e.episode}-${e.at}`}>
                           <Link className="acc__entry" href={e.slug ? `/anime/${e.slug}` : `/schedule`}>
                             <span className="acc__poster">
-                              <PosterArt src={e.poster} seed={String(e.anilistId)} initials={e.romaji} alt="" />
+                              <PosterArt src={e.poster} seed={String(e.anilistId)} initials={e.romaji} alt="" width={34} />
                             </span>
                             <span className="acc__info">
                               <span className="acc__title">{e.ru ?? e.romaji}</span>
@@ -93,7 +93,7 @@ export function HomeSchedule({ fallback }: { fallback: ScheduleEntry[] }) {
               <li key={`u-${e.anilistId}-${e.episode}`}>
                 <Link className="updates__entry" href={e.slug ? `/anime/${e.slug}` : `/schedule`}>
                   <span className="updates__poster">
-                    <PosterArt src={e.poster} seed={String(e.anilistId)} initials={e.romaji} alt="" />
+                    <PosterArt src={e.poster} seed={String(e.anilistId)} initials={e.romaji} alt="" width={40} />
                   </span>
                   <span className="updates__info">
                     <span className="updates__title">{e.ru ?? e.romaji}</span>

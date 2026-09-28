@@ -26,7 +26,7 @@ export default function TopPage() {
             <li key={t.slug} className="toplist__item">
               <span className={`toplist__num ${i < 3 ? `toplist__num--${i + 1}` : ''}`}>{i + 1}</span>
               <Link className="toplist__poster" href={`/anime/${t.slug}`}>
-                <PosterArt src={t.poster} seed={t.slug} initials={t.romaji} alt="" />
+                <PosterArt src={t.poster} seed={t.slug} initials={t.romaji} alt="" width={74} />
               </Link>
               <div className="toplist__body">
                 <h3>

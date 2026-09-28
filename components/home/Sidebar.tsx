@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { topTitles, genreStats } from '@/lib/catalog';
 import { getWeekSchedule, groupByDay, todayIndex } from '@/lib/schedule';
 import { GENRE_LABELS } from '@/lib/labels';
+import { imgProxyUrl } from '@/lib/img';
 import { IconClock, IconHeart, IconMask, IconPlanet, IconStar, IconSword } from '@/components/ui/icons';
 import { RecentReviews } from './RecentReviews';
 
@@ -32,7 +33,7 @@ export async function HomeSidebar() {
               <Link className="sidebar-top__row" href={`/anime/${t.slug}`}>
                 <span className="sidebar-top__rank">{i + 1}</span>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="sidebar-top__poster" src={t.poster} alt="" loading="lazy" width={34} height={46} />
+                <img className="sidebar-top__poster" src={imgProxyUrl(t.poster, 96) ?? undefined} alt="" loading="lazy" width={34} height={46} />
                 <span className="sidebar-top__name">{t.ru || t.romaji}</span>
                 <span className="sidebar-top__score">
                   <IconStar size={11} />

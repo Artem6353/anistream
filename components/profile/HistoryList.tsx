@@ -57,7 +57,7 @@ export function HistoryList() {
           <li className="history__item" key={h.slug}>
             <Link className="history__link" href={`/anime/${h.slug}/${h.episode}`}>
               <span className="history__poster">
-                <PosterArt src={t.poster} seed={t.slug} initials={t.romaji} alt="" />
+                <PosterArt src={t.poster} seed={t.slug} initials={t.romaji} alt="" width={52} />
               </span>
               <span className="history__info">
                 <span className="history__title">{t.ru}</span>
