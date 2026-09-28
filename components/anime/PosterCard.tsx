@@ -42,7 +42,9 @@ export function PosterCard({
   const href = resumeHref ?? `/anime/${title.slug}`;
   const badge = statusBadge(title);
   return (
-    <article className="card">
+    /* S3.1: article→div — после h3→p карточка без заголовка давала W3C-warning
+       «Article lacks heading» ×20 на главной; card-семантика классом .card сохранена. */
+    <div className="card">
       <Link className="card__media" href={href} aria-label={title.ru}>
         {/* S3.3: якорный текст ссылки-постера для краулеров/парсеров (аудит: неинформативные
             и дублирующиеся анкоры «Анонс 2027 12 серий»); для SR имя даёт aria-label. */}
@@ -90,6 +92,6 @@ export function PosterCard({
         ) : null}
       </div>
       <BookmarkButton slug={title.slug} className="card__bookmark" />
-    </article>
+    </div>
   );
 }
