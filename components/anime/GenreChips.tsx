@@ -11,7 +11,7 @@ export function GenreChips({ counts }: { counts: { slug: string; count: number }
           key={g.slug}
           className="chip"
           href={`/genre/${g.slug}`}
-          style={{ ['--dot' as string]: `hsl(${hashStr(g.slug) % 360} 80% 65%)` }}
+          style={{ ['--dot-h' as string]: String(hashStr(g.slug) % 360) }}
         >
           <span className="chip__dot" aria-hidden />
           {GENRE_LABELS[g.slug] ?? g.slug}

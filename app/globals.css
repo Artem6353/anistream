@@ -12,7 +12,14 @@
   --line-strong: rgba(255, 255, 255, 0.16);
   --text: #eef2f8;
   --muted: #98a3b8;
-  --muted-2: #6b7689;
+  /* S4 (аудит 28.09, A11y 93→100): #6b7689 давал ≈4.15:1 на --bg — ниже WCAG AA 4.5:1;
+     #8b96ab ≈ 6.3:1 на --bg и ≈5.5:1 на --surface. */
+  --muted-2: #8b96ab;
+  /* S4: текстовый вариант --warn по темам (жёлтый #fbbf24 на светлом фоне ≈1.9:1). */
+  --warn-text: #fbbf24;
+  /* S4: светлота детерминированных цветов жанровых чипов по темам
+     (dark L≥72%, light L≤42% — вместо фикс. 65%). */
+  --dot-l: 72%;
   --accent: #8b5cf6;
   --accent-2: #f472b6;
   --success: #34d399;
@@ -245,7 +252,7 @@ input, select {
 }
 .badge--score {
   background: rgba(0, 0, 0, 0.55);
-  color: var(--warn);
+  color: var(--warn-text);
   border-color: transparent;
 }
 .badge--success {
@@ -254,7 +261,7 @@ input, select {
   color: var(--success);
 }
 .badge--warn {
-  color: var(--warn);
+  color: var(--warn-text);
 }
 
 .chips {
@@ -284,6 +291,12 @@ input, select {
   font-style: normal;
   font-size: 11px;
   color: var(--muted-2);
+}
+/* S4: детерминированный цвет жанра собирается из hue (--dot-h задаётся инлайн
+   в GenreChips/genres) и темозависимой светлоты --dot-l (dark 72% / light 42%). */
+.chip,
+.genre-card {
+  --dot: hsl(var(--dot-h, 260) 80% var(--dot-l, 65%));
 }
 .chip__dot {
   width: 7px;
@@ -710,7 +723,7 @@ input, select {
   border-radius: 8px;
   background: rgba(8, 10, 14, 0.72);
   backdrop-filter: blur(6px);
-  color: var(--warn);
+  color: var(--warn-text);
   font-size: 12px;
   font-weight: 700;
 }
@@ -1121,7 +1134,7 @@ input, select {
   position: absolute;
   top: 5px;
   right: 6px;
-  color: var(--warn);
+  color: var(--warn-text);
 }
 
 /* ---------------- Расписание ---------------- */
@@ -2569,7 +2582,7 @@ html[data-tv='true'] .card:focus-within .card__media {
   border-color: color-mix(in srgb, var(--success) 40%, transparent);
 }
 .player-flag--warn {
-  color: var(--warn);
+  color: var(--warn-text);
   border-color: color-mix(in srgb, var(--warn) 40%, transparent);
 }
 
@@ -2598,7 +2611,7 @@ html[data-tv='true'] .card:focus-within .card__media {
   margin-bottom: 10px;
   border: 1px dashed color-mix(in srgb, var(--warn) 55%, transparent);
   border-radius: 12px;
-  color: var(--warn);
+  color: var(--warn-text);
   font-size: 13px;
   background: color-mix(in srgb, var(--warn) 8%, transparent);
 }
@@ -2678,7 +2691,7 @@ html[data-tv='true'] .card:focus-within .card__media {
 .row__orig { color: var(--muted-2); font-size: 12.5px; margin-top: 2px; }
 .row__meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; font-size: 12.5px; color: var(--muted); }
 .row__meta > * + *::before { content: '·'; margin-right: 10px; color: var(--muted-2); }
-.row__score { color: var(--warn); font-weight: 700; }
+.row__score { color: var(--warn-text); font-weight: 700; }
 .row__desc { margin-top: 8px; color: var(--muted); font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .row__bookmark { position: absolute; top: 10px; right: 10px; opacity: 0; }
 .row:hover .row__bookmark, .row__bookmark.is-active { opacity: 1; }
@@ -2925,7 +2938,7 @@ html[data-tv='true'] .card:focus-within .card__media {
   background: var(--grad);
   color: #fff;
 }
-.source-row__guess { font-size: 10px; color: var(--warn); }
+.source-row__guess { font-size: 10px; color: var(--warn-text); }
 .source-row.is-active .source-row__guess { color: #ffe; }
 .episodes-panel { max-height: 420px; }
 .episode-row {
@@ -3026,13 +3039,13 @@ html[data-tv='true'] .card:focus-within .card__media {
 }
 .epguide__table th { color: var(--muted-2); font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; }
 .epguide__status.is-done { color: var(--success); }
-.epguide__status.is-wait { color: var(--warn); }
+.epguide__status.is-wait { color: var(--warn-text); }
 
 /* ================= Отзывы и комментарии ================= */
 
 .reviews { margin-top: 8px; }
 .reviews__head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.reviews__avg { color: var(--warn); font-weight: 700; font-size: 13px; display: inline-flex; gap: 5px; align-items: center; }
+.reviews__avg { color: var(--warn-text); font-weight: 700; font-size: 13px; display: inline-flex; gap: 5px; align-items: center; }
 .reviews__mode { font-size: 11px; color: var(--muted-2); border: 1px dashed var(--line-strong); padding: 3px 8px; border-radius: 999px; }
 .reviews__form { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
 .reviews__rating { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
@@ -3042,7 +3055,7 @@ html[data-tv='true'] .card:focus-within .card__media {
 .review { border: 1px solid var(--line); border-radius: 12px; background: var(--bg-elev); padding: 12px; }
 .review--child { margin: 8px 0 0 26px; background: var(--surface); }
 .review__head { display: flex; align-items: center; gap: 10px; }
-.review__rating { color: var(--warn); font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+.review__rating { color: var(--warn-text); font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
 .review__ts { color: var(--muted-2); font-size: 11.5px; }
 .review__text { margin-top: 6px; font-size: 13.5px; color: var(--text); white-space: pre-wrap; }
 .review__actions { display: flex; gap: 8px; margin-top: 8px; }
@@ -3323,7 +3336,7 @@ html[data-tv='true'] .card:focus-within .card__media {
   gap: 3px;
   font-size: 11.5px;
   font-weight: 700;
-  color: var(--warn);
+  color: var(--warn-text);
 }
 
 .sidebar-airing {
@@ -3424,7 +3437,7 @@ html[data-tv='true'] .card:focus-within .card__media {
 .sidebar-review__rating {
   font-size: 11.5px;
   font-weight: 700;
-  color: var(--warn);
+  color: var(--warn-text);
 }
 .sidebar-review__text {
   margin: 2px 0 4px;
@@ -3717,7 +3730,11 @@ html[data-tv='true'] .card:focus-within .card__media {
   --line-strong: rgba(15, 23, 42, 0.2);
   --text: #10141c;
   --muted: #5b6472;
-  --muted-2: #8a93a3;
+  /* S4: #8a93a3 давал ≈2.9:1 на --bg; #5c6572 ≈ 5.6:1 на --bg и ≈5.2:1 на --surface. */
+  --muted-2: #5c6572;
+  /* S4: amber-800: ≈6.4:1 на белом, ≈6.0:1 на --surface-2. */
+  --warn-text: #92400e;
+  --dot-l: 42%;
   --shadow-1: 0 2px 10px rgba(15, 23, 42, 0.08);
   --shadow-2: 0 12px 40px rgba(15, 23, 42, 0.16);
 }

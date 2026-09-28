@@ -25,7 +25,7 @@ export default function GenresPage() {
             key={g.slug}
             className="genre-card"
             href={`/genre/${g.slug}`}
-            style={{ ['--dot' as string]: `hsl(${hashStr(g.slug) % 360} 80% 65%)` }}
+            style={{ ['--dot-h' as string]: String(hashStr(g.slug) % 360) }}
           >
             <h3>{GENRE_LABELS[g.slug] ?? g.slug}</h3>
             <p>
