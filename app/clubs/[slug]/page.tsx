@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { use } from 'react';
 import { isSessionValid, supaRest, supaWhoami } from '@/lib/sync';
 import { timeAgo } from '@/lib/format';
+import Link from 'next/link';
 import { useToast } from '@/components/ui/Toaster';
 
 interface Post {
@@ -93,7 +94,15 @@ export default function ClubPage({ params }: { params: Promise<{ slug: string }>
           {posts.map((p) => (
             <li className="feed__item" key={p.id}>
               <span className="feed__text">
-                <strong>{names[p.author_id] ?? 'аноним'}</strong>: {p.text}
+                {/* баг 29.09: ник → профиль автора */}
+                {names[p.author_id] && names[p.author_id] !== 'аноним' ? (
+                  <Link href={`/profile/${encodeURIComponent(names[p.author_id])}`}>
+                    <strong>{names[p.author_id]}</strong>
+                  </Link>
+                ) : (
+                  <strong>{names[p.author_id] ?? 'аноним'}</strong>
+                )}
+                : {p.text}
                 <small> · {timeAgo(Date.parse(p.ts))}</small>
               </span>
             </li>

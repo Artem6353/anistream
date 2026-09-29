@@ -11,6 +11,7 @@ interface DiscussedItem {
   name: string;
   text: string;
   comments: number;
+  author?: { user_id?: string | null; username?: string | null } | null;
 }
 
 /** «Сейчас обсуждают» (ТЗ 18.5): топ-10 отзывов за 24 ч с ≥1 комментарием. */
@@ -33,19 +34,31 @@ export function DiscussedRail() {
       <div className="discussed">
         {items.map((i) => {
           const t = bySlug.get(i.slug);
+          /* баг 29.09: ник кликабелен → профиль автора; карточка стала div,
+             ссылка на обсуждение — .discussed__main с ::after-оверлеем,
+             чтобы не вкладывать <a> в <a>. */
           return (
-            <Link className="discussed__card" key={i.id} href={`/anime/${i.slug}#reviews`}>
-              <span className="discussed__poster">
-                <PosterArt src={t?.poster} seed={i.slug} initials={t?.romaji ?? i.slug} alt="" width={56} />
-              </span>
-              <span className="discussed__body">
-                <strong>{t?.ru ?? i.slug}</strong>
-                <span className="discussed__quote">«{i.text.slice(0, 60)}…»</span>
-                <span className="discussed__meta">
-                  {i.name} · {i.comments} {i.comments === 1 ? 'комментарий' : 'комментариев'}
+            <div className="discussed__card" key={i.id}>
+              <Link className="discussed__main" href={`/anime/${i.slug}#reviews`}>
+                <span className="discussed__poster">
+                  <PosterArt src={t?.poster} seed={i.slug} initials={t?.romaji ?? i.slug} alt="" width={56} />
                 </span>
+                <span className="discussed__body">
+                  <strong>{t?.ru ?? i.slug}</strong>
+                  <span className="discussed__quote">«{i.text.slice(0, 60)}…»</span>
+                </span>
+              </Link>
+              <span className="discussed__meta">
+                {i.author?.username ? (
+                  <Link className="discussed__author" href={`/profile/${encodeURIComponent(i.author.username)}`}>
+                    {i.name}
+                  </Link>
+                ) : (
+                  i.name
+                )}{' '}
+                · {i.comments} {i.comments === 1 ? 'комментарий' : 'комментариев'}
               </span>
-            </Link>
+            </div>
           );
         })}
       </div>

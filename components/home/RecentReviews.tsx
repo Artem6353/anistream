@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { timeAgo } from '@/lib/format';
 
-type ReviewItem = { id: string; slug: string; name: string; rating: number | null; text: string; ts: number };
+type ReviewItem = { id: string; slug: string; name: string; rating: number | null; text: string; ts: number; author?: { user_id?: string | null; username?: string | null } | null };
 
 /** Блок 4 сайдбара: последние отзывы сообщества (ветка ?limit=N эндпоинта reviews). */
 export function RecentReviews() {
@@ -58,7 +58,14 @@ export function RecentReviews() {
       {items.map((i) => (
         <li key={i.id} className="sidebar-review">
           <div className="sidebar-review__head">
-            <span className="sidebar-review__name">{i.name}</span>
+            {/* баг 29.09: ник → профиль автора (если аккаунт есть) */}
+            {i.author?.username ? (
+              <Link className="sidebar-review__name sidebar-review__name--link" href={`/profile/${encodeURIComponent(i.author.username)}`}>
+                {i.name}
+              </Link>
+            ) : (
+              <span className="sidebar-review__name">{i.name}</span>
+            )}
             {typeof i.rating === 'number' ? <span className="sidebar-review__rating">★ {i.rating}</span> : null}
           </div>
           <p className="sidebar-review__text">{i.text}</p>

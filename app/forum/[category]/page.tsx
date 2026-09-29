@@ -84,7 +84,13 @@ export default function CategoryPage({ params }: { params: Promise<{ category: s
               <Link href={`/forum/${category}/${t.id}`}>
                 <strong>{t.title}</strong>
               </Link>{' '}
-              · {names[t.author_id] ?? 'аноним'} · {t.posts ?? 0} ответов <small>· {timeAgo(Date.parse(t.created_at))}</small>
+              ·{' '}
+              {names[t.author_id] && names[t.author_id] !== 'аноним' ? (
+                <Link href={`/profile/${encodeURIComponent(names[t.author_id])}`}>{names[t.author_id]}</Link>
+              ) : (
+                (names[t.author_id] ?? 'аноним')
+              )}{' '}
+              · {t.posts ?? 0} ответов <small>· {timeAgo(Date.parse(t.created_at))}</small>
             </span>
           </li>
         ))}
