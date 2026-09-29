@@ -32,6 +32,15 @@ const CSP_DIRECTIVES = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   "upgrade-insecure-requests",
+  /* Аудит 30.09 (P1-8), документированное решение: 'unsafe-inline' в script-src
+     СОХРАНЁН сознательно — App Router инжектит inline flight-скрипты
+     (self.__next_f.push) в каждую страницу; nonce-based CSP требует per-request
+     nonce и делает ВСЕ страницы динамическими, убивая ISR/статику (revalidate
+     3600/1800, защита от ISR-storm в LIMITS.md). Hash-based CSP для flight-
+     скриптов невозможен (контент уникален на запрос). Компенсирующие меры:
+     JSON-LD экранируется (\u003c), OAuth — PKCE (токенов в URL нет),
+     object-src 'none', frame-ancestors 'none', XFO DENY. Полный nonce-вариант
+     станет возможен при переезде на PPR/dynamic-рендеринг — см. ROADMAP. */
   `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com ${analyticsScriptSrc} ${metrikaSrc}`.trim(),
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
