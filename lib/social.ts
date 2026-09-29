@@ -21,6 +21,8 @@ export interface ReviewItem {
   myReaction?: 'like' | 'dislike' | null;
   /** supabase uid автора (ТЗ блок 17) — для аватара/бейджей/уровня. */
   uid?: string | null;
+  /** владелец отзыва: auth uid или device-uid анонима (фича 29.09, /reviewer/[uid]). */
+  user_id?: string | null;
   author?: { user_id?: string | null; username?: string | null; avatar_url?: string | null; pinned?: string[] | null; episodes?: number } | null;
 }
 

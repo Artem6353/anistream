@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { rateLimit, supabaseConfigured, verifyCaptcha } from '@/lib/social-server';
 import { log } from '@/lib/logger';
-import { getUserId } from '@/lib/userId';
+import { getUserId, getOrCreateUserId } from '@/lib/userId';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 const SUPA_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
@@ -153,7 +153,13 @@ export async function POST(request: Request) {
     likes: 0,
     dislikes: 0,
     parent: body.parent ?? null,
-    user_id: typeof body.uid === 'string' && body.uid ? body.uid : null,
+    /* Фича 29.09: у каждого отзыва есть владелец — auth uid залогиненного
+      (body.uid) или device-uid из cookie ani_uid у анонима (getOrCreateUserId):
+      без этого публичные профили локальных авторов невозможны (/reviewer/[uid]). */
+    user_id:
+      typeof body.uid === 'string' && body.uid
+        ? body.uid
+        : await getOrCreateUserId().catch(() => null),
   };
   const r = await fetch(`${SUPA_URL}/rest/v1/reviews`, {
     method: 'POST',

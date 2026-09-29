@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { timeAgo } from '@/lib/format';
 
-type ReviewItem = { id: string; slug: string; name: string; rating: number | null; text: string; ts: number; author?: { user_id?: string | null; username?: string | null } | null };
+type ReviewItem = { id: string; slug: string; name: string; rating: number | null; text: string; ts: number; author?: { user_id?: string | null; username?: string | null } | null; user_id?: string | null };
 
 /** Блок 4 сайдбара: последние отзывы сообщества (ветка ?limit=N эндпоинта reviews). */
 export function RecentReviews() {
@@ -61,6 +61,10 @@ export function RecentReviews() {
             {/* баг 29.09: ник → профиль автора (если аккаунт есть) */}
             {i.author?.username ? (
               <Link className="sidebar-review__name sidebar-review__name--link" href={`/profile/${encodeURIComponent(i.author.username)}`}>
+                {i.name}
+              </Link>
+            ) : i.user_id ? (
+              <Link className="sidebar-review__name sidebar-review__name--link" href={`/reviewer/${encodeURIComponent(i.user_id)}`}>
                 {i.name}
               </Link>
             ) : (

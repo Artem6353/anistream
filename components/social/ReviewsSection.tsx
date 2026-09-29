@@ -194,7 +194,7 @@ export function ReviewsSection({ slug }: { slug: string }) {
         {(tab === 'reviews' ? reviews : comments).map((r) => (
           <li key={r.id} className="review">
             <div className="review__head">
-              <ReviewAuthor author={r.author ?? null} name={r.name} />
+              <ReviewAuthor author={r.author ?? null} name={r.name} uid={r.user_id ?? null} />
               {r.rating !== null ? (
                 <span className="review__rating">
                   <IconStar size={11} /> {r.rating}
@@ -236,7 +236,7 @@ export function ReviewsSection({ slug }: { slug: string }) {
                   .map((c) => (
                     <div key={c.id} className="review review--child">
                       <div className="review__head">
-                        <ReviewAuthor author={c.author ?? null} name={c.name} />
+                        <ReviewAuthor author={c.author ?? null} name={c.name} uid={c.user_id ?? null} />
                         <span className="review__ts">{timeAgo(c.ts)}</span>
                       </div>
                       <p className="review__text">{c.text}</p>

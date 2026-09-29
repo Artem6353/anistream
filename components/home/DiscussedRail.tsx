@@ -12,6 +12,7 @@ interface DiscussedItem {
   text: string;
   comments: number;
   author?: { user_id?: string | null; username?: string | null } | null;
+  user_id?: string | null;
 }
 
 /** «Сейчас обсуждают» (ТЗ 18.5): топ-10 отзывов за 24 ч с ≥1 комментарием. */
@@ -51,6 +52,10 @@ export function DiscussedRail() {
               <span className="discussed__meta">
                 {i.author?.username ? (
                   <Link className="discussed__author" href={`/profile/${encodeURIComponent(i.author.username)}`}>
+                    {i.name}
+                  </Link>
+                ) : i.user_id ? (
+                  <Link className="discussed__author" href={`/reviewer/${encodeURIComponent(i.user_id)}`}>
                     {i.name}
                   </Link>
                 ) : (

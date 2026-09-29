@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { ACH_BY_ID } from '@/lib/achievements';
 import { WriteDmButton } from './WriteDmButton';
 
@@ -21,13 +22,21 @@ export function levelByEpisodes(ep: number): [string, string] {
 }
 
 /** Автор отзыва: аватар 32px, имя-ссылка, 1–2 pinned-бейджа, уровень.
-    Аноним (без профиля) — инициал + «Гость». */
-export function ReviewAuthor({ author, name }: { author?: ReviewAuthorInfo | null; name: string }) {
+    Аноним (без профиля) — инициал + «Гость».
+    Фича 29.09: uid — device/auth id владельца отзыва; если аккаунта с username
+    нет, имя ведёт на публичный профиль активности /reviewer/[uid]. */
+export function ReviewAuthor({ author, name, uid }: { author?: ReviewAuthorInfo | null; name: string; uid?: string | null }) {
   if (!author) {
     return (
       <span className="review__author">
         <span className="review__avatar review__avatar--guest">{(name || 'Г').slice(0, 1).toUpperCase()}</span>
-        <span className="review__author-name">{name || 'Гость'}</span>
+        {uid ? (
+          <Link className="review__author-name" href={`/reviewer/${encodeURIComponent(uid)}`}>
+            {name || 'Гость'}
+          </Link>
+        ) : (
+          <span className="review__author-name">{name || 'Гость'}</span>
+        )}
       </span>
     );
   }
@@ -48,6 +57,10 @@ export function ReviewAuthor({ author, name }: { author?: ReviewAuthorInfo | nul
         <a className="review__author-name" href={`/profile/${encodeURIComponent(author.username)}`}>
           {displayName}
         </a>
+      ) : author.user_id || uid ? (
+        <Link className="review__author-name" href={`/reviewer/${encodeURIComponent(author.user_id ?? uid ?? '')}`}>
+          {displayName}
+        </Link>
       ) : (
         <span className="review__author-name">{displayName}</span>
       )}
