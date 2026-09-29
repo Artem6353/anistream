@@ -28,6 +28,8 @@ export function SyncSection() {
   useEffect(() => {
     if (!syncConfigured()) return;
     if (isSessionValid()) {
+      /* Hydration-safe восстановление входа из localStorage (после гидратации). */
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLogged(true);
       return;
     }

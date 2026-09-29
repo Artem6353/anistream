@@ -18,10 +18,15 @@ export function useLazyTitles(slugs: string[]) {
   useEffect(() => {
     if (!node || !key || started.current) return;
     if (typeof IntersectionObserver === 'undefined') {
-      // Страховка (старые WebView/SSR-гидрация без IO): грузим сразу.
-      started.current = true;
-      setState('loading');
-      load();
+      /* Страховка (старые WebView/SSR-гидрация без IO): грузим сразу.
+         Аудит 30.09 (react-hooks/set-state-in-effect): старт уводим в микрозадачу —
+         setState не вызывается синхронно в теле эффекта (каскадного рендера нет). */
+      queueMicrotask(() => {
+        if (started.current) return;
+        started.current = true;
+        setState('loading');
+        load();
+      });
       return;
     }
     const io = new IntersectionObserver(

@@ -17,6 +17,8 @@ export function WriteDmButton({ targetId, targetName, compact }: { targetId: str
 
   useEffect(() => {
     if (!isSessionValid()) {
+      /* Hydration-safe чтение сессии из localStorage. */
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMe(null);
       return;
     }

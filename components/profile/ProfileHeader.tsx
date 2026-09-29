@@ -57,10 +57,12 @@ export function ProfileHeader({
   return (
     <header className="pheader">
       <div className="pheader__banner" style={bannerStyle}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- пользовательский баннер из Storage (произвольный host) */}
         {banner && !banner.startsWith('grad:') ? <img src={banner} alt="" /> : null}
       </div>
       <div className="pheader__body">
         <span className="pheader__avatar" aria-label={`Аватар: ${name}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- аватар из Storage */}
           {profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : <span>{initial}</span>}
         </span>
         <div className="pheader__info">

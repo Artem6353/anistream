@@ -4,11 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Title } from '@/lib/types';
-import type { EpisodeSource, ProviderMeta } from '@/lib/providers/types';
+import type { EpisodeSource } from '@/lib/providers/types';
 import { library, useLibrary } from '@/lib/library';
 import { trackEvent } from '@/lib/achievements';
 import { formatTime } from '@/lib/format';
 import { Switch } from '@/components/ui/Switch';
+import { ReportForm } from './ReportForm';
+import { SourcesPanel, type SourceGroup } from './SourcesPanel';
+import { EpisodesPanel, EPISODES_CHUNK } from './EpisodesPanel';
+import { usePlayerGestures } from './usePlayerGestures';
 import {
   IconArrowDown,
   IconBack10,
@@ -34,11 +38,18 @@ const PROVIDER_NAMES: Record<string, string> = {
 };
 
 interface DataState {
+  key?: string; // `${slug}:${episode}` — для вывода статуса без sync-setState в эффекте
   status: 'loading' | 'ready' | 'error';
   sources?: EpisodeSource[];
   availability?: Record<number, string>;
+  skip?: { intro?: [number, number]; outro?: [number, number] };
   message?: string;
 }
+
+/* Аудит 30.09 (react-hooks/exhaustive-deps): стабильные пустые массивы —
+   `?? []` в useMemo-deps создавал новую ссылку на каждый рендер. */
+const EMPTY_SOURCES: EpisodeSource[] = [];
+const EMPTY_FILES: NonNullable<EpisodeSource['files']> = [];
 
 /**
  * Плеер v3 (ТЗ спринт 2):
@@ -69,19 +80,28 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   const skipGuard = useRef({ intro: false, outro: false });
   const [uiVisible, setUiVisible] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [nextIn, setNextIn] = useState<number | null>(null);
-  const [reportOpen, setReportOpen] = useState(false);
-  const [reportText, setReportText] = useState('');
-  const [reportSent, setReportSent] = useState(false);
+  /* Аудит 30.09 (react-hooks/set-state-in-effect): nextIn/resume больше не эффекты-
+     «тикалки», а ВЫВОДИМЫЕ значения + ключеванный dismiss (см. ниже). */
+  const [nextDismissKey, setNextDismissKey] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false); // текст/«отправлено» — внутри ReportForm
   /* Баннер «Продолжить с MM:SS» (итерация 3.6, задача 2): только file-источники,
    * без автоперемотки — пользователь сам решает, продолжить или начать сначала. */
-  const [resumeAt, setResumeAt] = useState<number | null>(null);
+  const [resume, setResume] = useState<{ key: string; pos: number } | null>(null);
+  const [resumeHiddenKey, setResumeHiddenKey] = useState<string | null>(null);
   /* ТЗ 4.1, блок 3: dropdown скорости у панели контролов + tooltip таймлайна. */
   const [rateOpen, setRateOpen] = useState(false);
   const [seekHover, setSeekHover] = useState<{ pct: number; t: number } | null>(null);
   const dragging = useRef(false);
+  /* Аудит 30.09 (react-hooks/refs): класс is-drag рендерится от state-зеркала,
+     ref остаётся для логики перемещения (без рендера на каждый move). */
+  const [isDrag, setIsDrag] = useState(false);
 
-  const sources = data.sources ?? [];
+  const dataKey = `${title.slug}:${episode}`;
+  /* Аудит 30.09 (react-hooks/set-state-in-effect): при смене серии статус
+     выводится из несоответствия ключа (loading), а не ставится синхронно в эффекте. */
+  const dataStatus: DataState['status'] = data.key === dataKey ? data.status : 'loading';
+  const sources = data.key === dataKey ? (data.sources ?? EMPTY_SOURCES) : EMPTY_SOURCES;
+  const availability = data.key === dataKey ? data.availability : undefined;
   const selected: EpisodeSource | undefined = useMemo(
     () =>
       sources.find((s) => s.id === selectedId) ??
@@ -94,30 +114,31 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
     [sources, selectedId, settings.defaultProvider],
   );
   const isEmbed = selected?.kind === 'embed';
-  const files = selected?.files ?? [];
+  const files = selected?.files ?? EMPTY_FILES;
   const file = useMemo(() => files.find((f) => f.quality === quality) ?? files[0], [files, quality]);
   const nextEpisode = episode < title.episodes ? episode + 1 : null;
 
   /* источники + доступность серий */
   useEffect(() => {
     let cancelled = false;
-    setData((d) => ({ ...d, status: 'loading' }));
     Promise.all([
       fetch(`/api/providers/${title.slug}/${episode}`).then((r) => (r.ok ? r.json() : null)),
       fetch(`/api/availability/${title.slug}`).then((r) => (r.ok ? r.json() : null)),
     ])
       .then(([prov, avail]) => {
         if (cancelled) return;
-        setData({ status: 'ready', sources: prov?.sources ?? [], availability: avail?.episodes });
+        /* Аудит 30.09: prov.skip СОХРАНЯЕТСЯ (раньше терялся — автопропуск OP/ED
+           читал (data as {skip}).skip, которого в state никогда не было). */
+        setData({ key: dataKey, status: 'ready', sources: prov?.sources ?? [], availability: avail?.episodes, skip: prov?.skip });
         const saved = typeof window !== 'undefined' ? localStorage.getItem(`anistream:lastsrc:${title.slug}`) : null;
         if (saved && (prov?.sources ?? []).some((s: EpisodeSource) => s.id === saved)) setSelectedId(saved);
         else setSelectedId(null);
       })
-      .catch((e) => !cancelled && setData({ status: 'error', message: String(e) }));
+      .catch((e) => !cancelled && setData({ key: dataKey, status: 'error', message: String(e) }));
     return () => {
       cancelled = true;
     };
-  }, [episode, title.slug]);
+  }, [episode, title.slug, dataKey]);
 
   const keepTime = useRef(0);
   const switchingSrc = useRef(false);
@@ -186,14 +207,16 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
     }, 3000);
   }, []);
   useEffect(() => {
-    poke();
+    /* Аудит 30.09: poke() вызывает setUiVisible(true) — в эффекте уводим на таймер,
+       чтобы не было синхронного setState (из обработчиков событий poke зовётся напрямую). */
+    const t = setTimeout(poke, 0);
+    return () => clearTimeout(t);
   }, [poke, playing]);
 
   /* ачивки (ТЗ 18.1): событие просмотра серии — один раз за заход на серию */
   useEffect(() => {
     trackEvent('watch', { genres: title.genres, movie: title.type === 'movie', slug: title.slug });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title.slug, episode]);
+  }, [title.slug, episode, title.genres, title.type]);
 
   /* автоскролл бара серий к активной */
   useEffect(() => {
@@ -238,74 +261,32 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
    * сброс при смене серии/тайтла; автоскрытие, если пользователь сам
    * смотрит дальше 10-й секунды. */
   useEffect(() => {
-    setResumeAt(null);
     switchingSrc.current = false;
     skipGuard.current = { intro: false, outro: false };
   }, [episode, title.slug]);
+  /* ТЗ 4.1 (3.6): автоскрытие баннера «Продолжить» через 10 секунд (таймер —
+     асинхронный setState, не «в теле эффекта»). */
   useEffect(() => {
-    if (resumeAt !== null && time > 10) setResumeAt(null);
-  }, [resumeAt, time]);
-  /* ТЗ 4.1 (3.6): автоскрытие баннера «Продолжить» через 10 секунд. */
-  useEffect(() => {
-    if (resumeAt === null) return;
-    const t = setTimeout(() => setResumeAt(null), 10000);
+    if (!resume || resume.key !== dataKey) return;
+    const t = setTimeout(() => setResumeHiddenKey(dataKey), 10000);
     return () => clearTimeout(t);
-  }, [resumeAt]);
+  }, [resume, dataKey]);
 
-  /* ТЗ 4.1 (3.5): мобильные жесты — двойной тап слева/справа = ±10 с,
-   * горизонтальный свайп = перемотка. Только нативный video. */
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v || isEmbed) return;
-    let sx = 0;
-    let sy = 0;
-    let st = 0;
-    let lastTapT = 0;
-    const onStart = (e: TouchEvent) => {
-      const t = e.touches[0];
-      sx = t.clientX;
-      sy = t.clientY;
-      st = Date.now();
-    };
-    const onEnd = (e: TouchEvent) => {
-      const t = e.changedTouches[0];
-      const dx = t.clientX - sx;
-      const dy = t.clientY - sy;
-      const dt = Date.now() - st;
-      if (dt < 600 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && Number.isFinite(v.duration)) {
-        e.preventDefault();
-        const secs = Math.max(-120, Math.min(120, Math.round(dx / 10)));
-        v.currentTime = Math.max(0, Math.min(v.duration, v.currentTime + secs));
-        return;
-      }
-      if (dt < 300 && Math.abs(dx) < 20 && Math.abs(dy) < 20) {
-        const now = Date.now();
-        if (now - lastTapT < 300) {
-          const rect = v.getBoundingClientRect();
-          v.currentTime = Math.max(0, v.currentTime + (t.clientX < rect.left + rect.width / 2 ? -10 : 10));
-          lastTapT = 0;
-        } else {
-          lastTapT = now;
-        }
-      }
-    };
-    v.addEventListener('touchstart', onStart, { passive: true });
-    v.addEventListener('touchend', onEnd, { passive: false });
-    return () => {
-      v.removeEventListener('touchstart', onStart);
-      v.removeEventListener('touchend', onEnd);
-    };
-  }, [isEmbed]);
+  /* ТЗ 4.1 (3.5): мобильные жесты — вынесены в usePlayerGestures (аудит 30.09). */
+  usePlayerGestures(videoRef, isEmbed);
 
-  /* оверлей следующей серии */
-  useEffect(() => {
-    if (!duration || !nextEpisode || isEmbed) return;
-    const left = duration - time;
-    if (playing && left <= 20 && left > 0 && !settings.marathon) setNextIn(Math.ceil(left)); // ТЗ 22: марафон — без отсчёта
-    else setNextIn(null);
-    /* Аудит 30.09 (P2-23): settings.marathon добавлен в deps — переключение
-       марафона применяется сразу, а не на следующем тике time. */
-  }, [time, duration, playing, nextEpisode, isEmbed, settings.marathon]);
+  /* оверлей следующей серии — Аудит 30.09: значение ВЫВОДИТСЯ при рендере
+     (time и так обновляется каждый кадр), эффект-«тикалка» больше не нужен;
+     «Отмена» запоминает ключ серии, чтобы не показывать оверлей снова. */
+  const leftSec = duration - time;
+  const nextInAuto =
+    !isEmbed && duration > 0 && nextEpisode !== null && playing && leftSec <= 20 && leftSec > 0 && !settings.marathon
+      ? Math.ceil(leftSec) // ТЗ 22: марафон — без отсчёта
+      : null;
+  const nextIn = nextInAuto !== null && nextDismissKey !== dataKey ? nextInAuto : null;
+  /* Баннер «Продолжить»: показываем, пока ключ совпадает, не скрыт пользователем/
+     таймаутом и пользователь не ушёл дальше 10-й секунды. */
+  const resumeAt = resume && resume.key === dataKey && resumeHiddenKey !== dataKey && time <= 10 ? resume.pos : null;
 
   const goNext = useCallback(() => {
     if (nextEpisode) router.push(`/anime/${title.slug}/${nextEpisode}`);
@@ -357,7 +338,6 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goNext, poke]);
 
   const progressPct = duration ? (time / duration) * 100 : 0;
@@ -374,17 +354,17 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
     v.currentTime = seekRatio(clientX, el) * duration;
   };
 
-  const grouped = PROVIDER_ORDER.map((pid) => ({
+  const grouped: SourceGroup[] = PROVIDER_ORDER.map((pid) => ({
     pid,
     name: PROVIDER_NAMES[pid] ?? pid,
     voices: sources.filter((s) => s.providerId === pid && s.voice !== 'subtitles'),
     subs: sources.filter((s) => s.providerId === pid && s.voice === 'subtitles'),
   })).filter((g) => g.voices.length || g.subs.length);
 
-  const CHUNK = 60;
+  /* Чанк серий общий с боковой панелью (EpisodesPanel получает его пропсами). */
   const [chunk, setChunk] = useState(0);
-  const chunks = Math.max(1, Math.ceil(title.episodes / CHUNK));
-  const episodes = Array.from({ length: title.episodes }, (_, i) => i + 1).slice(chunk * CHUNK, (chunk + 1) * CHUNK);
+  const chunks = Math.max(1, Math.ceil(title.episodes / EPISODES_CHUNK));
+  const episodes = Array.from({ length: title.episodes }, (_, i) => i + 1).slice(chunk * EPISODES_CHUNK, (chunk + 1) * EPISODES_CHUNK);
 
   return (
     <div className="player-layout">
@@ -400,10 +380,10 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
             </span>
           </div>
           <div className="player-bar__meta">
-            {data.status === 'ready' && sources.length ? (
+            {dataStatus === 'ready' && sources.length ? (
               <span className="player-flag player-flag--ok">{selected?.providerName ?? ''}</span>
             ) : null}
-            {data.status === 'loading' ? <span className="player-flag">загрузка источников…</span> : null}
+            {dataStatus === 'loading' ? <span className="player-flag">загрузка источников…</span> : null}
           </div>
         </div>
 
@@ -430,7 +410,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                   const v = e.currentTarget;
                   setTime(v.currentTime);
                   // ТЗ 22: автопропуск OP/ED (опция skipIntro, дефолт off) по таймингам провайдера/AniSkip
-                  const win = (data as { skip?: { intro?: [number, number]; outro?: [number, number] } } | null)?.skip;
+                  const win = data.key === dataKey ? data.skip : undefined;
                   if (settings.skipIntro && win && !isEmbed) {
                     if (win.intro && v.currentTime >= win.intro[0] && v.currentTime < win.intro[1] - 0.5 && !skipGuard.current.intro) {
                       skipGuard.current.intro = true;
@@ -454,7 +434,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                   if (switchingSrc.current) return;
                   const prev = library.state.history.find((hh) => hh.slug === title.slug && hh.episode === episode);
                   if (prev && prev.position >= 5 && Number.isFinite(v.duration) && prev.position <= v.duration - 30 && v.currentTime < 5) {
-                    setResumeAt(prev.position);
+                    setResume({ key: dataKey, pos: prev.position });
                   }
                 }}
                 onProgress={(e) => {
@@ -485,7 +465,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                       onClick={() => {
                         const v = videoRef.current;
                         if (v) v.currentTime = resumeAt;
-                        setResumeAt(null);
+                        setResumeHiddenKey(dataKey);
                       }}
                     >
                       Продолжить
@@ -496,7 +476,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                       onClick={() => {
                         const v = videoRef.current;
                         if (v) v.currentTime = 0;
-                        setResumeAt(null);
+                        setResumeHiddenKey(dataKey);
                       }}
                     >
                       Начать сначала
@@ -504,8 +484,8 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                   </span>
                 </div>
               ) : null}
-              {data.status === 'loading' ? <div className="player__status">Собираем источники…</div> : null}
-              {data.status === 'error' ? <div className="player__status player__status--error">Источники недоступны: {data.message}</div> : null}
+              {dataStatus === 'loading' ? <div className="player__status">Собираем источники…</div> : null}
+              {dataStatus === 'error' ? <div className="player__status player__status--error">Источники недоступны: {data.message}</div> : null}
               {nextIn !== null && nextEpisode ? (
                 <div className="player__next" role="dialog" aria-label="Следующая серия">
                   <p className="player__next-title">Следующая серия через {nextIn} с</p>
@@ -513,7 +493,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                     <button className="btn btn--primary btn--md" onClick={goNext}>
                       <IconPlay size={15} /> Серия {nextEpisode}
                     </button>
-                    <button className="btn btn--ghost btn--md" onClick={() => setNextIn(null)}>
+                    <button className="btn btn--ghost btn--md" onClick={() => setNextDismissKey(dataKey)}>
                       Отмена
                     </button>
                   </div>
@@ -531,7 +511,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                 </div>
                 <div className="player__bottom">
                   <div
-                    className={`player__seek ${dragging.current ? 'is-drag' : ''}`}
+                    className={`player__seek ${isDrag ? 'is-drag' : ''}`}
                     role="slider"
                     aria-label="Позиция воспроизведения"
                     aria-valuemin={0}
@@ -540,6 +520,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                     onPointerDown={(e) => {
                       const el = e.currentTarget as HTMLElement;
                       dragging.current = true;
+                      setIsDrag(true);
                       el.setPointerCapture(e.pointerId);
                       seekTo(e.clientX, el);
                     }}
@@ -551,9 +532,11 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                     }}
                     onPointerUp={() => {
                       dragging.current = false;
+                      setIsDrag(false);
                     }}
                     onPointerLeave={() => {
                       dragging.current = false;
+                      setIsDrag(false);
                       setSeekHover(null);
                     }}
                   >
@@ -646,29 +629,12 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                 </div>
               </div>
               {reportOpen ? (
-                <div className="player__menu" role="dialog" aria-label="Жалоба на источник">
-                  <p className="player__menu-title">Жалоба: серия {episode}, {selected?.label ?? 'источник'}</p>
-                  <textarea className="input reviews__text" rows={3} placeholder="Опишите проблему (нет звука, рассинхрон, битая серия…)" value={reportText} onChange={(e) => setReportText(e.target.value)} />
-                  <div className="player__rates">
-                    <button
-                      className="btn btn--primary btn--sm"
-                      onClick={async () => {
-                        await fetch('/api/report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: title.slug, episode, source: selected?.label ?? '', problem: reportText }) });
-                        setReportSent(true);
-                        setReportText('');
-                        setTimeout(() => {
-                          setReportOpen(false);
-                          setReportSent(false);
-                        }, 1200);
-                      }}
-                    >
-                      {reportSent ? 'Отправлено ✓' : 'Отправить'}
-                    </button>
-                    <button className="btn btn--ghost btn--sm" onClick={() => setReportOpen(false)}>
-                      Закрыть
-                    </button>
-                  </div>
-                </div>
+                <ReportForm
+                  slug={title.slug}
+                  episode={episode}
+                  sourceLabel={selected?.label ?? 'источник'}
+                  onClose={() => setReportOpen(false)}
+                />
               ) : null}
 
               {menuOpen ? (
@@ -731,7 +697,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
           ) : null}
           <div className="epbar" ref={epBarRef} role="listbox" aria-label="Серии">
           {episodes.map((ep) => {
-            const kind = data.availability?.[ep];
+            const kind = availability?.[ep];
             return (
               <Link
                 key={ep}
@@ -769,58 +735,24 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
         </div>
 
         {sideTab === 'sources' ? (
-          <div className="sources-panel" id="pside-panel" role="tabpanel" aria-labelledby="pside-tab-sources">
-            {data.status === 'loading' ? <p className="settings__note">Загружаем озвучки…</p> : null}
-            {grouped.map((g) => (
-              <section key={g.pid} className="sources-group">
-                <h4 className="sources-group__head">{g.name}</h4>
-                {g.voices.length ? (
-                  <>
-                    <p className="sources-group__kind">Многоголосый / дубляж</p>
-                    {g.voices.map((s) => (
-                      <button key={s.id} type="button" className={`source-row ${selected?.id === s.id ? 'is-active' : ''}`} onClick={() => chooseSource(s.id)}>
-                        <span className="source-row__label">{s.label}</span>
-                        {s.guessed ? <span className="source-row__guess">подбор</span> : null}
-                      </button>
-                    ))}
-                  </>
-                ) : null}
-                {g.subs.length ? (
-                  <>
-                    <p className="sources-group__kind">Субтитры</p>
-                    {g.subs.map((s) => (
-                      <button key={s.id} type="button" className={`source-row ${selected?.id === s.id ? 'is-active' : ''}`} onClick={() => chooseSource(s.id)}>
-                        <span className="source-row__label">{s.label}</span>
-                      </button>
-                    ))}
-                  </>
-                ) : null}
-              </section>
-            ))}
-            {data.status === 'ready' && !sources.length ? <p className="settings__note">Источники не найдены. Попробуйте другую серию или включите bridge.</p> : null}
-          </div>
+          <SourcesPanel
+            status={dataStatus}
+            grouped={grouped}
+            selectedId={selected?.id}
+            sourcesCount={sources.length}
+            onChoose={chooseSource}
+          />
         ) : (
-          <div className="episodes-panel" id="pside-panel" role="tabpanel" aria-labelledby="pside-tab-episodes">
-            {chunks > 1 ? (
-              <div className="chips" style={{ padding: '2px 2px 6px' }}>
-                {Array.from({ length: chunks }, (_, i) => (
-                  <button key={i} type="button" className={`chip ${chunk === i ? 'is-active' : ''}`} onClick={() => setChunk(i)}>
-                    {i * CHUNK + 1}–{Math.min(title.episodes, (i + 1) * CHUNK)}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            {episodes.map((ep) => {
-              const kind = data.availability?.[ep];
-              return (
-                <Link key={ep} className={`episode-row ${ep === episode ? 'is-active' : ''}`} href={`/anime/${title.slug}/${ep}`}>
-                  <span className="episode-row__num">{ep}</span>
-                  <span className="episode-row__label">Серия {ep}</span>
-                  <span className={`epbar__dot epbar__dot--${kind ?? 'demo'}`} title={kind} />
-                </Link>
-              );
-            })}
-          </div>
+          <EpisodesPanel
+            slug={title.slug}
+            totalEpisodes={title.episodes}
+            episodes={episodes}
+            currentEpisode={episode}
+            availability={availability}
+            chunk={chunk}
+            chunks={chunks}
+            onChunkChange={setChunk}
+          />
         )}
         <div className="player-side__foot">
           <Link className="btn btn--outline btn--sm" href={`/anime/${title.slug}`}>

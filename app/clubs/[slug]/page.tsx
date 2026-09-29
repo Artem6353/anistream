@@ -53,6 +53,8 @@ export default function ClubPage({ params }: { params: Promise<{ slug: string }>
   };
 
   useEffect(() => {
+    /* load() — async, setState после await; правило флагует вызов консервативно. */
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);

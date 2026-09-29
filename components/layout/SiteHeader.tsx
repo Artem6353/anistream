@@ -151,6 +151,9 @@ export function SiteHeader() {
               </button>
             ) : (
               <Link className="header__avatar" href="/profile/settings" aria-label="Профиль" title="Профиль">
+                {/* Аватар из Supabase Storage — произвольный host вне remotePatterns
+                    next/image; маленький (28px), lazy не критичен. Осознанный <img>. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{initials}</span>}
                 <span className="sr-only">Профиль и настройки</span>
               </Link>
@@ -206,7 +209,9 @@ export function SiteHeader() {
           </div>
         </div>
       </header>
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      {/* Аудит 30.09: условный монтаж — состояние палитры свежее при каждом открытии
+          (сброс через mount, а не эффектом) + чанк грузится при первом открытии. */}
+      {paletteOpen ? <CommandPalette open onClose={() => setPaletteOpen(false)} /> : null}
     </>
   );
 }

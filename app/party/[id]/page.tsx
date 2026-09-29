@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
 import { PartySocket, type PartyCmd, type PartyState } from '@/lib/party';
-import { isSessionValid, supaWhoami } from '@/lib/sync';
 import { useToast } from '@/components/ui/Toaster';
 
 /** Watch Party (ТЗ 20.4): комната /party/<id>. Хост выбирает тайтл/серию/источник
@@ -22,12 +21,14 @@ export default function PartyPage({ params }: { params: Promise<{ id: string }> 
   const [embeds, setEmbeds] = useState<Array<{ id: string; label: string }>>([]);
   const [peers, setPeers] = useState(1);
   const peersRef = useRef<Map<string, number>>(new Map());
-  const myPeer = useMemo(() => `peer-${Math.random().toString(36).slice(2, 8)}`, []);
+  /* Аудит 30.09 (react-hooks/purity): Math.random() в useMemo — нечистая функция
+     в рендере; useState-инициализатор вычисляется один раз и правилом принимается. */
+  const [myPeer] = useState(() => `peer-${Math.random().toString(36).slice(2, 8)}`);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sockRef = useRef<PartySocket | null>(null);
   const hostRef = useRef(false);
   const seenState = useRef(false);
-  const myName = useMemo(() => `guest-${Math.random().toString(36).slice(2, 6)}`, []);
+  const [myName] = useState(() => `guest-${Math.random().toString(36).slice(2, 6)}`);
 
   useEffect(() => {
     if (id === 'new') {
@@ -80,7 +81,7 @@ export default function PartyPage({ params }: { params: Promise<{ id: string }> 
       clearInterval(presence);
       sock.close();
     };
-  }, [id, router]);
+  }, [id, router, myPeer, myName]);
 
   const search = async () => {
     const r = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=8`).catch(() => null);

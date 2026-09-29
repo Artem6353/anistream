@@ -31,27 +31,27 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const router = useRouter();
   const debounced = useDebouncedValue(q, 150);
 
+  /* Аудит 30.09 (react-hooks/set-state-in-effect): сброс q/cursor убран —
+     SiteHeader монтирует палитру условно, свежее состояние даёт сам mount
+     (заодно чанк палитры грузится лениво при ПЕРВОМ открытии, как и задумано
+     в «ТЗ блок 8»). Остаётся только фокус (таймер — асинхронный). */
   useEffect(() => {
-    if (open) {
-      setQ('');
-      setCursor(0);
-      setTimeout(() => inputRef.current?.focus(), 30);
-    }
+    if (!open) return;
+    const t = setTimeout(() => inputRef.current?.focus(), 30);
+    return () => clearTimeout(t);
   }, [open]);
 
-  const [remote, setRemote] = useState<Item[]>([]);
+  const [remoteState, setRemoteState] = useState<{ key: string; items: Item[] } | null>(null);
   useEffect(() => {
-    if (!debounced) {
-      setRemote([]);
-      return;
-    }
+    if (!debounced) return;
     let cancelled = false;
     fetch(`/api/search?q=${encodeURIComponent(debounced)}&limit=7`)
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (cancelled) return;
-        setRemote(
-          (j?.items ?? []).map((t: { slug: string; ru: string; year: number; score: number; poster: string }) => ({
+        setRemoteState({
+          key: debounced,
+          items: (j?.items ?? []).map((t: { slug: string; ru: string; year: number; score: number; poster: string }) => ({
             id: t.slug,
             label: t.ru,
             hint: `${t.year} · ${t.score.toFixed(1)}`,
@@ -60,20 +60,25 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             seed: t.slug,
             group: 'Тайтлы',
           })),
-        );
+        });
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, [debounced]);
+  /* Результаты — только для ТЕКУЩего запроса: старые не мигают, sync-setState не нужен.
+     useMemo — стабильная ссылка для deps списка items. */
+  const remote = useMemo<Item[]>(() => (remoteState?.key === debounced ? remoteState.items : []), [remoteState, debounced]);
 
   const items = useMemo<Item[]>(() => {
     const actions = debounced ? ACTIONS.filter((a) => a.label.toLowerCase().includes(debounced.toLowerCase())) : ACTIONS.slice(0, 3);
     return [...remote, ...actions];
   }, [remote, debounced]);
 
-  useEffect(() => setCursor(0), [items.length]);
+  /* Аудит 30.09: вместо эффекта-сброса — кламп при рендере (список сузился —
+     курсор автоматически в пределах; при новом открытии компонент перемонтируется). */
+  const cursorIdx = items.length ? Math.min(cursor, items.length - 1) : 0;
 
   if (!open) return null;
 
@@ -110,7 +115,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 e.preventDefault();
                 setCursor((c) => Math.max(0, c - 1));
               }
-              if (e.key === 'Enter' && items[cursor]) go(items[cursor]);
+              if (e.key === 'Enter' && items[cursorIdx]) go(items[cursorIdx]);
             }}
           />
           <kbd className="palette__esc">Esc</kbd>
@@ -126,8 +131,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
               <button
                 key={item.id}
                 role="option"
-                aria-selected={i === cursor}
-                className={`palette__item ${i === cursor ? 'is-active' : ''}`}
+                aria-selected={i === cursorIdx}
+                className={`palette__item ${i === cursorIdx ? 'is-active' : ''}`}
                 onMouseEnter={() => setCursor(i)}
                 onClick={() => go(item)}
               >

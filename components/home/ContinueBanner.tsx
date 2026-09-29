@@ -12,6 +12,9 @@ export function ContinueBanner() {
   const { history } = useLibrary();
   const [closed, setClosed] = useState(false);
   useEffect(() => {
+    /* Hydration-safe чтение sessionStorage (SSR рендерит баннер, клиент гасит
+       после гидратации, если «закрыть» был нажат в этой сессии). */
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setClosed(sessionStorage.getItem('anistream:continue-banner') === 'off');
   }, []);
   const entry = history.find((h) => {

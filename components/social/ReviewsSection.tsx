@@ -52,14 +52,22 @@ export function ReviewsSection({ slug }: { slug: string }) {
     };
   }, [slug]);
 
-  useEffect(() => {
+  /* Аудит 30.09 (react-hooks/set-state-in-effect): синхронный setName на смену
+     displayName заменён на рекомендованный React-паттерн «adjust state during render»
+     (сравнение с предыдущим значением в теле компонента) — без каскадного рендера. */
+  const [prevDisplayName, setPrevDisplayName] = useState(settings.displayName ?? '');
+  if ((settings.displayName ?? '') !== prevDisplayName) {
+    setPrevDisplayName(settings.displayName ?? '');
     setName(settings.displayName ?? '');
+  }
+
+  useEffect(() => {
     let cancelled = false;
     loadReviews(slug).then((r) => !cancelled && setItems(r));
     return () => {
       cancelled = true;
     };
-  }, [slug, settings.displayName]);
+  }, [slug]);
 
   const reviews = useMemo(() => items.filter((i) => i.rating !== null && !i.parent), [items]);
   const comments = useMemo(() => items.filter((i) => i.parent === null && i.rating === null), [items]);

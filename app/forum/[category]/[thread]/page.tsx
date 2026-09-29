@@ -44,6 +44,8 @@ export default function ThreadPage({ params }: { params: Promise<{ category: str
   };
 
   useEffect(() => {
+    /* load() — async, setState после await; правило флагует вызов консервативно. */
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thread]);

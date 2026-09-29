@@ -74,6 +74,7 @@ export default function FeedPage() {
         <ul className="feed__list">
           {items.map((it, i) => (
             <li className="feed__item" key={`${it.ts}-${i}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- аватары Supabase Storage: произвольный host, 32px */}
               {it.avatar ? <img className="feed__avatar" src={it.avatar} alt="" /> : <span className="feed__avatar feed__avatar--guest">{it.user.slice(0, 1).toUpperCase()}</span>}
               <span className="feed__text">
                 <strong>{it.user}</strong>{' '}

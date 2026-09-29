@@ -6,6 +6,9 @@ import { useEffect, useState } from 'react';
 export function CookieConsent() {
   const [show, setShow] = useState(false);
   useEffect(() => {
+    /* Hydration-safe чтение localStorage — баннер показывается только после
+       гидратации (SSR всегда null). Паттерн осознанный. */
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!localStorage.getItem('anistream:cookies')) setShow(true);
   }, []);
   if (!show) return null;

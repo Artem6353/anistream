@@ -7,6 +7,8 @@ import { PosterArt } from '@/components/anime/PosterArt';
 /** «Новые эпизоды» (паттерн AniLibria/AnimeGO): ленты Вчера/Сегодня/Завтра с номерами
     серий и временем МСК — из airing-данных онгоингов. RSC, без клиентского JS. */
 export function LatestEpisodes() {
+  /* RSC: Date.now() фиксируется на ISR-ревалидацию — штатный паттерн. */
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const from = now - 48 * 3600_000;
   const to = now + 48 * 3600_000;

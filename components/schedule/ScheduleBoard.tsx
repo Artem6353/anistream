@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useNow } from '@/lib/hooks';
 import Link from 'next/link';
 import type { ScheduleEntry } from '@/lib/types';
 import { WEEKDAYS, WEEKDAYS_SHORT } from '@/lib/labels';
@@ -15,6 +16,8 @@ import { IconCalendar } from '@/components/ui/icons';
  * пустые дни — одной строкой.
  */
 export function ScheduleBoard({ entries, live }: { entries: ScheduleEntry[]; live: boolean }) {
+  /* Аудит 30.09 (react-hooks/purity): Date.now() в рендере → useNow. */
+  const nowTs = useNow(60_000);
   const today = todayIndex();
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const byDay = (d: number) =>
@@ -34,7 +37,7 @@ export function ScheduleBoard({ entries, live }: { entries: ScheduleEntry[]; liv
       <section className="schedule__today" aria-label={`Сегодня: ${WEEKDAYS[today]}`}>
         <header className="schedule__today-head">
           <h2>
-            Сегодня · {WEEKDAYS[today].toLowerCase()}, {formatDate(Date.now())}
+            Сегодня · {WEEKDAYS[today].toLowerCase()}, {formatDate(nowTs)}
           </h2>
           <span className="schedule__today-count">
             {todayEntries.length} {plural(todayEntries.length, ['выход', 'выхода', 'выходов'])}

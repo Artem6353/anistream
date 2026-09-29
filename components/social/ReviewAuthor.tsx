@@ -49,6 +49,7 @@ export function ReviewAuthor({ author, name, uid }: { author?: ReviewAuthorInfo 
   return (
     <span className="review__author">
       {author.avatar_url ? (
+        // eslint-disable-next-line @next/next/no-img-element -- аватар из Storage, 32px
         <img className="review__avatar" src={author.avatar_url} alt="" width={32} height={32} />
       ) : (
         <span className="review__avatar review__avatar--guest">{initial}</span>

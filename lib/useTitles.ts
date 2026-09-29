@@ -3,21 +3,21 @@
 import { useEffect, useState } from 'react';
 import type { Title } from './types';
 
-/** Клиентская подгрузка тайтлов по слагам через /api/titles (без тяжёлого бандла датасета). */
+/** Клиентская подгрузка тайтлов по слагам через /api/titles (без тяжёлого бандла датасета).
+ *  Аудит 30.09 (react-hooks/set-state-in-effect): состояние хранится вместе с ключом
+ *  запроса — при смене slugs старые данные не показываются, синхронный setState
+ *  в эффекте не нужен (значение выводится при рендере). */
 export function useTitles(slugs: string[]) {
-  const [items, setItems] = useState<Title[]>([]);
+  const [loaded, setLoaded] = useState<{ key: string; items: Title[] } | null>(null);
   const key = slugs.join(',');
 
   useEffect(() => {
-    if (!key) {
-      setItems([]);
-      return;
-    }
+    if (!key) return;
     let cancelled = false;
     fetch(`/api/titles?slugs=${encodeURIComponent(key)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
-        if (!cancelled) setItems(j?.items ?? []);
+        if (!cancelled) setLoaded({ key, items: (j?.items ?? []) as Title[] });
       })
       .catch(() => {});
     return () => {
@@ -25,5 +25,6 @@ export function useTitles(slugs: string[]) {
     };
   }, [key]);
 
+  const items = loaded?.key === key ? loaded.items : [];
   return { items, bySlug: new Map(items.map((t) => [t.slug, t])) };
 }

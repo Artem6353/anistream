@@ -11,6 +11,9 @@ const MSK = 'Europe/Moscow';
  * (AniList/Shikimori не отдают названия серий завершённых тайтлов).
  */
 export function EpisodeGuide({ title }: { title: Title }) {
+  /* Серверный компонент (RSC): Date.now() фиксируется на момент ISR-ревалидации —
+     это штатный паттерн, «нечистота» здесь осознанная (обновление раз в revalidate). */
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const airingRows = (title.airing ?? []).slice().sort((a, b) => a.ep - b.ep);
   const isUp = title.status === 'upcoming';

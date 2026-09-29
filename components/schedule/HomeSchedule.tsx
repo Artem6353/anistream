@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useNow } from '@/lib/hooks';
 import Link from 'next/link';
 import type { ScheduleEntry } from '@/lib/types';
 import { WEEKDAYS } from '@/lib/labels';
@@ -11,6 +12,9 @@ import { IconChevronRight } from '@/components/ui/icons';
 
 /** Двухколоночный блок главной: аккордеон расписания + лента обновлений (AnimeGO-style). */
 export function HomeSchedule({ fallback }: { fallback: ScheduleEntry[] }) {
+  /* Аудит 30.09 (react-hooks/purity): Date.now() в рендере заменён на useNow —
+     тикающее «сейчас» без нечистого вызова (обновление раз в минуту). */
+  const nowTs = useNow(60_000);
   const [entries, setEntries] = useState(fallback);
   const [live, setLive] = useState(false);
   const [openDay, setOpenDay] = useState(todayIndex());
@@ -50,7 +54,7 @@ export function HomeSchedule({ fallback }: { fallback: ScheduleEntry[] }) {
               <div key={d} className={`acc__item ${d === today ? 'is-today' : ''}`}>
                 <button type="button" className="acc__head" onClick={() => setOpenDay(open ? -1 : d)} aria-expanded={open}>
                   <span>{WEEKDAYS[d]}</span>
-                  <span className="acc__date">{d === today ? 'Сегодня' : formatDate(list[0]?.at ?? Date.now() + d * 86400000)}</span>
+                  <span className="acc__date">{d === today ? 'Сегодня' : formatDate(list[0]?.at ?? nowTs + d * 86400000)}</span>
                 </button>
                 {open ? (
                   <ul className="acc__list">

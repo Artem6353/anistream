@@ -6,6 +6,9 @@ import { useEffect, useState } from 'react';
 export function AgeGate({ adult }: { adult: boolean }) {
   const [blocked, setBlocked] = useState(false);
   useEffect(() => {
+    /* Hydration-safe: localStorage доступен только в браузере — SSR рендерит null,
+       гейт показывается ПОСЛЕ гидратации (иначе mismatch). Паттерн осознанный. */
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (adult && !localStorage.getItem('anistream:age_ok')) setBlocked(true);
   }, [adult]);
   if (!blocked) return null;

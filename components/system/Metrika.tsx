@@ -53,6 +53,8 @@ ym(${ID},'init',{ssr:true,webvisor:true,clickmap:true,ecommerce:'dataLayer',accu
       {/* noscript-фолбэк из официального сниппета: пиксель-watch для клиентов без JS */}
       <noscript>
         <div>
+          {/* eslint-disable-next-line @next/next/no-img-element -- пиксель Метрики из
+              официального сниппета обязан быть literal <img> внутри <noscript> */}
           <img
             src={`https://mc.yandex.ru/watch/${ID}`}
             style={{ position: 'absolute', left: '-9999px' }}

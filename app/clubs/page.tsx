@@ -36,6 +36,9 @@ export default function ClubsPage() {
   };
 
   useEffect(() => {
+    /* load() — async: все setState внутри происходят ПОСЛЕ await (не синхронно
+       в эффекте); правило флагует вызов консервативно. */
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
     if (isSessionValid()) supaWhoami().then(setMyUid).catch(() => {});
   }, []);
