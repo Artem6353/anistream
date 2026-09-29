@@ -3,6 +3,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { AUTH_CHANGE_EVENT } from '@/lib/auth-gate';
+import { isSessionValid } from '@/lib/sync';
 
 export const metadata: Metadata = {
   title: 'Профиль',
@@ -14,14 +17,22 @@ const TABS = [
   { href: '/profile/history', label: 'История' },
   { href: '/profile/settings', label: 'Настройки' },
   { href: '/profile/stats', label: 'Статистика' },
-  { href: '/profile/achievements', label: 'Достижения' },
+  /* Достижения — геймификация зарегистрированных (копится только при входе). */
+  { href: '/profile/achievements', label: 'Достижения', auth: true },
 ];
 
 export function ProfileTabs() {
   const pathname = usePathname();
+  const [logged, setLogged] = useState(false);
+  useEffect(() => {
+    const refresh = () => setLogged(isSessionValid());
+    refresh();
+    window.addEventListener(AUTH_CHANGE_EVENT, refresh);
+    return () => window.removeEventListener(AUTH_CHANGE_EVENT, refresh);
+  }, []);
   return (
     <nav className="profile-tabs" aria-label="Разделы профиля">
-      {TABS.map((t) => (
+      {TABS.filter((t) => !('auth' in t && t.auth) || logged).map((t) => (
         <Link key={t.href} href={t.href} className={pathname === t.href ? 'is-active' : ''}>
           {t.label}
         </Link>
