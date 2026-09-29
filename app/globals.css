@@ -1721,12 +1721,21 @@ input, select {
 }
 
 .settings {
+  /* Редизайн 29.09: колонка из строк-сеток — карточки в строке одной высоты,
+     зазоры одинаковые, ничего не «плавает». */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 16px 0 8px;
+}
+.settings__row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 .settings__card {
+  height: 100%;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--bg-elev);
@@ -3912,11 +3921,16 @@ a.review__author-name:hover { color: var(--accent-text); text-decoration: underl
 .tab.is-active { background: var(--accent); color: #fff; }
 .rail--grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
 .discussed { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-.discussed__card { display: flex; gap: 10px; padding: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; color: var(--text); }
+.discussed__card { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; color: var(--text); }
+.discussed__main { display: flex; gap: 10px; align-items: center; color: var(--text); }
+.discussed__main::after { content: ''; position: absolute; inset: 0; border-radius: 14px; }
+.discussed__main:hover strong { color: var(--accent-2-text); }
 .discussed__poster { width: 56px; height: 78px; border-radius: 8px; overflow: hidden; flex: none; }
-.discussed__body { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.discussed__body { display: flex; flex-direction: column; gap: 4px; font-size: 13px; min-width: 0; }
 .discussed__quote { color: var(--muted); }
-.discussed__meta { color: var(--muted-2); font-size: 12px; }
+.discussed__meta { position: relative; z-index: 2; color: var(--muted-2); font-size: 12px; padding-left: 66px; }
+.discussed__author { color: var(--accent-2-text); font-weight: 600; }
+.discussed__author:hover { text-decoration: underline; }
 .collection-card { display: flex; flex-direction: column; gap: 6px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; color: var(--text); min-height: 110px; }
 .collection-card:hover { border-color: var(--accent-text); }
 .collection-card span { color: var(--muted); font-size: 12px; }

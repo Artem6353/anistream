@@ -16,6 +16,9 @@ export function SettingsPanel() {
 
   return (
     <div className="settings">
+      {/* Редизайн 29.09: три ровные строки-сетки одинаковой высоты внутри строки:
+          [имя / плеер / акцент] · [публичный профиль / аккаунт] · [уведомления / данные] */}
+      <div className="settings__row">
       <section className="settings__card">
         <h2>Профиль</h2>
         <label className="field">
@@ -81,11 +84,15 @@ export function SettingsPanel() {
         </div>
         <p className="settings__note">Цвет применяется мгновенно и хранится локально.</p>
       </section>
+      </div>
 
+      <div className="settings__row">
       <ProfileCard />
 
       <SyncSection />
+      </div>
 
+      <div className="settings__row">
       <section className="settings__card">
         <h2>Уведомления</h2>
         <p className="settings__note">Пуш в день выхода новых серий просмотренных/отложенных тайтлов.</p>
@@ -118,6 +125,7 @@ export function SettingsPanel() {
           </button>
         </div>
       </section>
+      </div>
     </div>
   );
 }
