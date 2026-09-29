@@ -3,6 +3,15 @@
 Дата: 23.09.2026 · Объект: репозиторий `anistream` (Next.js 16 App Router, TypeScript strict)
 Метод: статический аудит кода и данных, прогон build/typecheck/smoke (30 маршрутов), анализ runtime-метрик.
 
+> **Актуализация 30.09.2026 (после полного аудита и фиксов):** каталог — **7 962 тайтла**
+> (ongoing 178 / finished 7 509 / upcoming 275; tv 4 265, movie 1 230, ona 953, ova 858,
+> special 656; годы 1963–2027; shikimori-обогащение 7 671). Unit-тесты — **49/49** (8 файлов,
+> +регрессии на rate-limit/clientIp/NaN-страницу/captcha-fail-closed/KV-кэш). Добавлен ESLint
+> (flat-config Next 16, **0 errors**, react-hooks v6 на полной строгости). Все находки аудита
+> 30.09 (P0-privacy социалки, подделка uid отзывов, хардкод-секрет капчи, брутфорс admin-login,
+> мёртвый KV-кэш, backup-workflow, docker/bridge-деплой, RLS-baseline, SEO-баги) — исправлены,
+> см. git log коммиты 30.09. Числа ниже в таблице — НА МОМЕНТ 23.09 (исторические).
+
 ---
 
 ## 1. Паспорт проекта

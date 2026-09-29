@@ -13,7 +13,14 @@ export default defineConfig({
   fullyParallel: false, // один прод-сервер на 1 ГБ RAM — последовательно
   workers: 1,
   reporter: [['list']],
-  use: { baseURL: base, trace: 'retain-on-failure' },
+  use: {
+    baseURL: base,
+    trace: 'retain-on-failure',
+    /* Ограниченные песочницы (gVisor/containers без user-ns): chromium может
+       требовать доп. флаги — задаются env PW_LAUNCH_ARGS="--no-sandbox --single-process".
+       В обычном CI (ubuntu-latest, --with-deps) переменная не задаётся. */
+    launchOptions: { args: (process.env.PW_LAUNCH_ARGS ?? '').split(/\s+/).filter(Boolean) },
+  },
   webServer: {
     command: `npm run start -- -p ${port}`,
     port,

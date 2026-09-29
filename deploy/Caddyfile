@@ -1,4 +1,7 @@
 # Caddy на VPS: bridge за bearer-токеном (A0.1a)
+# Аудит 30.09: BRIDGE_TOKEN ОБЯЗАТЕЛЕН — при пустом значении матчер совпадёт с
+# любым заголовком "Bearer " (пустой токен). Сами bridge'и теперь тоже проверяют
+# токен (BRIDGE_TOKEN в их env) — это второй контур защиты.
 bridge.example.com {
   @authed {
     header Authorization "Bearer {$BRIDGE_TOKEN}"

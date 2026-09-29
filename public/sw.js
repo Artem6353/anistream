@@ -9,7 +9,10 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE)
-      .then((cache) => cache.addAll(SHELL))
+      /* Аудит 30.09 (perf): addAll — all-or-nothing, 404 любого URL ломал установку
+         SW целиком. Теперь each-элемент независимо (allSettled): оболочка кэшируется
+         даже если одна из страниц временно недоступна. */
+      .then((cache) => Promise.allSettled(SHELL.map((u) => cache.add(u))))
       .then(() => self.skipWaiting()),
   );
 });

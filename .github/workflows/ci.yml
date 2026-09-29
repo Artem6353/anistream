@@ -18,6 +18,13 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # Аудит 30.09 (LIMITS.md «Git-хранилище»): titles.json коммитится кронами —
+      # контролируем рост pack-файла; порог миграции на внешнее хранилище — 300 МБ.
+      - name: repo size watch
+        run: |
+          git count-objects -vH | grep size-pack
+          SIZE_KB=$(git count-objects -v | awk '/size-pack/ {print $3}')
+          if [ "$SIZE_KB" -gt 307200 ]; then echo "::warning::pack >300MB — пора выносить titles.json из git (см. LIMITS.md)"; fi
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
