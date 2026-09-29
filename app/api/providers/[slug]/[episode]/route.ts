@@ -33,7 +33,12 @@ export async function GET(request: Request, { params }: Props) {
   const { slug, episode: episodeRaw } = await params;
   const title = getTitle(slug);
   if (!title) return NextResponse.json({ error: 'title not found' }, { status: 404 });
-  const episode = Math.max(1, Math.min(title.episodes, Number(episodeRaw) || 1));
+  /* Аудит 30.09 (P2-24): 'abc'/9999 молча отдавали серию 1 — невалидный ввод теперь 400. */
+  const epNum = Number(episodeRaw);
+  if (!Number.isInteger(epNum) || epNum < 1 || epNum > Math.max(1, title.episodes)) {
+    return NextResponse.json({ error: 'bad episode' }, { status: 400 });
+  }
+  const episode = epNum;
   const preferFiles = new URL(request.url).searchParams.get('files') === '1';
 
   try {

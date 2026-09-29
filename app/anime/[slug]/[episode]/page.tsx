@@ -16,11 +16,21 @@ interface Props {
   params: Promise<{ slug: string; episode: string }>;
 }
 
+/* Аудит 30.09 (P2-18): валидация номера серии — /anime/x/999 и /anime/x/abc раньше
+   рендерили клампнутый контент с canonical на СЫРОЙ url (бесконечные soft-дубли).
+   Теперь вне диапазона 1..episodes — честный 404, canonical всегда совпадает с контентом. */
+function validEpisode(t: { episodes: number }, raw: string): number | null {
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1 || n > Math.max(1, t.episodes)) return null;
+  return n;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug, episode } = await params;
+  const { slug, episode: episodeRaw } = await params;
   const t = getTitle(slug);
   if (!t) notFound();
-  /* S3.2: canonical + description страницы серии */
+  const episode = validEpisode(t, episodeRaw);
+  if (episode === null) notFound();
   return {
     title: `${t.ru} — серия ${episode}`,
     description: `Смотреть ${t.ru} серия ${episode} онлайн: озвучки и субтитры, автопереход к следующей серии, сохранение прогресса.`,
@@ -32,7 +42,8 @@ export default async function PlayerPage({ params }: Props) {
   const { slug, episode: episodeRaw } = await params;
   const title = getTitle(slug);
   if (!title) notFound();
-  const episode = Math.max(1, Math.min(title.episodes, Number(episodeRaw) || 1));
+  const episode = validEpisode(title, episodeRaw);
+  if (episode === null) notFound();
   const similar = similarTitles(title, 10);
 
   return (

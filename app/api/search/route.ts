@@ -7,7 +7,9 @@ export const revalidate = 0;
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const q = url.searchParams.get('q') ?? '';
-  const limit = Math.min(20, Number(url.searchParams.get('limit') ?? 8));
+  /* Аудит 30.09 (P2-17): limit=abc → NaN → пустой ответ; sanitize + нижняя граница. */
+  const rawLimit = Number.parseInt(url.searchParams.get('limit') ?? '8', 10);
+  const limit = Number.isFinite(rawLimit) ? Math.min(20, Math.max(1, rawLimit)) : 8;
   const items = searchTitles(q, limit).map((t) => ({
     slug: t.slug,
     ru: t.ru,

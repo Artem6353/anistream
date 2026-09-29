@@ -38,7 +38,11 @@ export default async function CatalogPage({ searchParams }: Props) {
     length: (asString(sp.length) as CatalogQuery['length']) ?? '',
     view: asString(sp.view) === 'list' ? 'list' : 'grid',
     sort: (asString(sp.sort) as SortKey) ?? 'pop',
-    page: Number(asString(sp.page) ?? 1),
+    /* Аудит 30.09 (P2-17): Number('abc')=NaN проваливался в slice → пустая выдача. */
+    page: (() => {
+      const n = Number.parseInt(asString(sp.page) ?? '1', 10);
+      return Number.isFinite(n) && n > 0 ? n : 1;
+    })(),
   };
   const result = filterCatalog(query);
   const years = yearsAvailable();

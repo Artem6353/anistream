@@ -37,6 +37,12 @@ export async function POST(request: Request) {
   if (a.year === 'new') pool = pool.filter((t) => t.year >= 2023);
   if (a.year === 'old') pool = pool.filter((t) => t.year > 0 && t.year < 2010);
   if (!pool.length) pool = loadTitles().filter((t) => t.score >= 8).slice(0, 40);
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  /* Аудит 30.09 (P2-22): sort(() => Math.random() - 0.5) — смещённая перестановка;
+     Fisher–Yates даёт равномерную выборку. */
+  const shuffled = [...pool];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
   return NextResponse.json({ items: shuffled.slice(0, 5) });
 }
