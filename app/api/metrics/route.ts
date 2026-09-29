@@ -6,5 +6,7 @@ import { metricsSnapshot } from '@/lib/metrics';
 export async function GET() {
   const store = await cookies();
   if (!verifyAdminCookie(store.get(adminCookieName())?.value)) return NextResponse.json({ error: 'нет доступа' }, { status: 403 });
-  return NextResponse.json(metricsSnapshot());
+  /* Аудит 30.09: метрики in-memory — у каждого serverless-инстанса свои;
+     поле scope честно показывает область видимости цифр. */
+  return NextResponse.json({ ...metricsSnapshot(), scope: 'instance (in-memory)' });
 }

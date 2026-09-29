@@ -98,6 +98,9 @@ export default async function AdminPage() {
       </section>
 
       <MetricsPanel />
+      {/* Аудит 30.09: TicketsPanel импортировался, но НЕ рендерился — тикеты DMCA/жалобы
+          были невидимы в админке. Возвращён на место. */}
+      <TicketsPanel />
       <ManualEditor />
 
       <section className="panel" style={{ marginTop: 16 }}>

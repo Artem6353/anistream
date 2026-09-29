@@ -73,10 +73,7 @@ export async function GET(request: Request) {
 
   let up: Response;
   try {
-    up = await fetch(parsed, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (AniNova image proxy)', Accept: 'image/*,*/*;q=0.8' },
-      signal: AbortSignal.timeout(9000),
-    });
+    up = await fetchAllowed(parsed);
   } catch {
     return NextResponse.json({ error: 'upstream timeout' }, { status: 504 });
   }
@@ -130,6 +127,27 @@ function respond(body: Buffer, contentType: string, vary: boolean): Response {
   if (vary) headers['Vary'] = 'Accept'; // fmt=auto: край должен различать Accept-варианты
   // Uint8Array-обёртка: Buffer<ArrayBufferLike> из @types/node 22 не матчится с BodyInit напрямую
   return new Response(new Uint8Array(body), { headers });
+}
+
+/* Аудит 30.09 (P1, img-proxy): редиректы раньше следовались автоматически —
+   при внешнем редиректе с разрешённого CDN запрос ушёл бы на произвольный хост
+   (SSRF-расширение allowlist). Теперь редиректы MANUAL: каждый Location снова
+   проверяется по протоколу и allowlist, максимум 3 хопа. */
+async function fetchAllowed(start: URL): Promise<Response> {
+  const headers = { 'User-Agent': 'Mozilla/5.0 (AniNova image proxy)', Accept: 'image/*,*/*;q=0.8' };
+  let url = start;
+  for (let hop = 0; hop < 3; hop++) {
+    const r = await fetch(url, { headers, redirect: 'manual', signal: AbortSignal.timeout(9000) });
+    if (r.status < 300 || r.status >= 400) return r;
+    const loc = r.headers.get('location');
+    if (!loc) return r;
+    const next = new URL(loc, url);
+    if ((next.protocol !== 'https:' && next.protocol !== 'http:') || !ALLOWED.includes(next.hostname)) {
+      return new Response('redirect host not allowed', { status: 403 });
+    }
+    url = next;
+  }
+  return new Response('too many redirects', { status: 508 });
 }
 
 function mimeForExt(ext: string): string {
