@@ -22,8 +22,12 @@ create policy reviews_read on public.reviews for select using (true);
 drop policy if exists reviews_insert on public.reviews;
 -- insert только через service_role (edge function submit-review с Turnstile):
 create policy reviews_insert on public.reviews for insert to service_role with check (true);
+-- Аудит 30.09 (P1-7): baseline приведён к post-010 состоянию — новый стенд,
+-- накативший только schema.sql, больше не получает «править любой отзыв может кто угодно».
 drop policy if exists reviews_update on public.reviews;
-create policy reviews_update on public.reviews for update using (true);
+create policy reviews_update on public.reviews for update
+  using (user_id is not null and user_id = auth.uid()::text)
+  with check (user_id is not null and user_id = auth.uid()::text);
 
 -- профили и синхронизация списков (ТЗ 2.2):
 create table if not exists public.profile_lists (
@@ -56,8 +60,9 @@ create table if not exists public.push_subs (
   created_at timestamptz default now()
 );
 alter table public.push_subs enable row level security;
+-- Аудит 30.09 (P1-7): подписки создаёт только сервер (service_role) — конец спаму прямым REST.
 drop policy if exists push_insert on public.push_subs;
-create policy push_insert on public.push_subs for insert with check (true);
+create policy push_insert on public.push_subs for insert to service_role with check (true);
 
 create table if not exists public.dmca_requests (
   id text primary key,
@@ -71,7 +76,9 @@ create table if not exists public.source_reports (
 );
 alter table public.dmca_requests enable row level security;
 alter table public.source_reports enable row level security;
+-- Аудит 30.09 (P1-7): открытые anon-insert позволяли спамить таблицы напрямую
+-- (минуя rate-limit приложения) — только service_role.
 drop policy if exists dmca_insert on public.dmca_requests;
-create policy dmca_insert on public.dmca_requests for insert with check (true);
+create policy dmca_insert on public.dmca_requests for insert to service_role with check (true);
 drop policy if exists reports_insert on public.source_reports;
-create policy reports_insert on public.source_reports for insert with check (true);
+create policy reports_insert on public.source_reports for insert to service_role with check (true);
