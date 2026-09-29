@@ -79,9 +79,16 @@ export async function addReview(
   const full: ReviewItem = { ...item, id: crypto.randomUUID?.() ?? String(Date.now()), ts: Date.now(), likes: 0, dislikes: 0 };
   if (SOCIAL_MODE === 'supabase') {
     try {
+      /* Аудит 30.09 (P0-2): сервер берёт uid ТОЛЬКО из проверенного токена —
+         шлём Authorization вместо доверия к body.uid. */
+      const { getToken } = await import('./sync');
+      const token = getToken();
       const r = await fetch('/api/social/reviews', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ ...full, captcha, turnstile }),
       });
       if (r.ok) return { item: ((await r.json()).item ?? full) as ReviewItem };

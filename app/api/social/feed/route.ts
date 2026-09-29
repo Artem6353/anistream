@@ -1,16 +1,31 @@
 import { NextResponse } from 'next/server';
+import { verifiedUid, followingOf } from '@/lib/social-server';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 const SERVICE = process.env.SUPABASE_SERVICE_KEY ?? '';
 
-/** Лента активности подписок (ТЗ 20.1): просмотры (profile_history) + отзывы.
-    Чтение чужой истории — service_key и только для явного списка uid'ов,
-    которого клиент получает из своих подписок (follows). */
+/**
+ * Аудит 30.09 (P0-1): раньше роут принимал ЛЮБой список uid'ов из тела и читал
+ * чужую историю просмотров service-ключом — фактически публичный дамп приватных
+ * данных. Теперь:
+ *   1) требуется Authorization: Bearer <access_token> валидной сессии Supabase;
+ *   2) сервер САМ читает подписки (follows) автора и выдаёт данные только тех
+ *      uid'ов, на которые он реально подписан (пересечение с запрошенным списком).
+ * Без сессии или без подписок — пустой ответ (прежнее поведение для анонимов).
+ */
+
 export async function POST(request: Request) {
   if (!SUPA_URL || !SERVICE) return NextResponse.json({ items: [] }, { status: 409 });
+  const me = await verifiedUid(request);
+  if (!me) return NextResponse.json({ items: [], error: 'нужен вход' }, { status: 401 });
+
   const { uids } = (await request.json().catch(() => ({}))) as { uids?: string[] };
-  if (!uids?.length) return NextResponse.json({ items: [] });
-  const inList = `(${uids.slice(0, 200).map((id) => encodeURIComponent(`"${id}"`)).join(',')})`;
+  if (!Array.isArray(uids) || !uids.length) return NextResponse.json({ items: [] });
+  const following = await followingOf(me);
+  const allowed = uids.filter((id) => typeof id === 'string' && following.has(id) && id !== me).slice(0, 200);
+  if (!allowed.length) return NextResponse.json({ items: [] });
+
+  const inList = `(${allowed.map((id) => encodeURIComponent(`"${id}"`)).join(',')})`;
   const H = { apikey: SERVICE, Authorization: `Bearer ${SERVICE}` };
   const [histRes, revRes, profRes] = await Promise.all([
     fetch(`${SUPA_URL}/rest/v1/profile_history?user_id=in.${inList}&select=user_id,slug,episode,updated_at&order=updated_at.desc&limit=200`, { headers: H }),
@@ -37,7 +52,7 @@ export async function POST(request: Request) {
       user: pmap.get(r.user_id)?.username ?? r.name,
       avatar: pmap.get(r.user_id)?.avatar_url ?? null,
       slug: r.slug,
-      text: r.text.slice(0, 120),
+      text: String(r.text ?? '').slice(0, 120),
     })),
   ]
     .sort((a, b) => b.ts - a.ts)

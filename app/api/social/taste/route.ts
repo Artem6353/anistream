@@ -1,16 +1,26 @@
 import { NextResponse } from 'next/server';
 import { loadTitles } from '@/lib/catalog';
+import { verifiedUid, followingOf } from '@/lib/social-server';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 const SERVICE = process.env.SUPABASE_SERVICE_KEY ?? '';
 
 /** Сравнение вкусов (ТЗ блок 23): для списка uid возвращает жанровые векторы и
-    множество тайтлов из profile_history (service key, только явный список). */
+    множество тайтлов из profile_history (service key).
+    Аудит 30.09 (P0-1): как и /api/social/feed — только авторизованный пользователь
+    и только uid'ы из ЕГО подписок (profile_history приватна, RLS «только свои»). */
 export async function POST(request: Request) {
   if (!SUPA_URL || !SERVICE) return NextResponse.json({ rows: [] }, { status: 409 });
+  const me = await verifiedUid(request);
+  if (!me) return NextResponse.json({ rows: [], error: 'нужен вход' }, { status: 401 });
+
   const { uids, mySlugs } = (await request.json().catch(() => ({}))) as { uids?: string[]; mySlugs?: string[] };
-  if (!uids?.length) return NextResponse.json({ rows: [] });
-  const inList = `(${uids.slice(0, 100).map((id) => encodeURIComponent(`"${id}"`)).join(',')})`;
+  if (!Array.isArray(uids) || !uids.length) return NextResponse.json({ rows: [] });
+  const following = await followingOf(me);
+  const allowed = uids.filter((id) => typeof id === 'string' && following.has(id)).slice(0, 100);
+  if (!allowed.length) return NextResponse.json({ rows: [] });
+
+  const inList = `(${allowed.map((id) => encodeURIComponent(`"${id}"`)).join(',')})`;
   const H = { apikey: SERVICE, Authorization: `Bearer ${SERVICE}` };
   const [histRes, profRes] = await Promise.all([
     fetch(`${SUPA_URL}/rest/v1/profile_history?user_id=in.${inList}&select=user_id,slug&limit=2000`, { headers: H }),
@@ -27,7 +37,7 @@ export async function POST(request: Request) {
     u.slugs.add(h.slug);
     for (const g of genresBySlug.get(h.slug) ?? []) u.genres.set(g, (u.genres.get(g) ?? 0) + 1);
   }
-  const mine = new Set(mySlugs ?? []);
+  const mine = new Set(Array.isArray(mySlugs) ? mySlugs.filter((s) => typeof s === 'string') : []);
   const rows = [...byUser.entries()].map(([uid, v]) => {
     let inter = 0;
     for (const s of v.slugs) if (mine.has(s)) inter++;

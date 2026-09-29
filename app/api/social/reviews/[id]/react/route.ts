@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getOrCreateUserId } from '@/lib/userId';
+import { clientIp } from '@/lib/ip';
 import { rateLimit, supabaseConfigured } from '@/lib/social-server';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
@@ -31,7 +32,7 @@ export async function POST(
     return NextResponse.json({ error: 'review id required' }, { status: 400 });
   }
 
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'local';
+  const ip = clientIp(request);
   if (!rateLimit(`react:${ip}`, 30, 60_000)) {
     return NextResponse.json({ error: 'слишком часто' }, { status: 429 });
   }

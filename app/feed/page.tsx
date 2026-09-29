@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { isSessionValid, supaWhoami } from '@/lib/sync';
+import { getToken, isSessionValid, supaWhoami } from '@/lib/sync';
 import { myFollowing } from '@/lib/social-graph';
 import { timeAgo } from '@/lib/format';
 
@@ -38,7 +38,17 @@ export default function FeedPage() {
         setItems([]);
         return;
       }
-      const r = await fetch('/api/social/feed', { method: 'POST', body: JSON.stringify({ uids }), headers: { 'Content-Type': 'application/json' } }).catch(() => null);
+      /* Аудит 30.09 (P0-1): сервер проверяет подписки по JWT из Authorization —
+         токен берём ПОСЛЕ myFollowing() (supaRest внутри уже обновил его при необходимости). */
+      const token = getToken();
+      const r = await fetch('/api/social/feed', {
+        method: 'POST',
+        body: JSON.stringify({ uids }),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      }).catch(() => null);
       const j = r?.ok ? await r.json() : null;
       setItems(j?.items ?? []);
       setState('ok');

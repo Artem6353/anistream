@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { rateLimit, supabaseConfigured, verifyCaptcha } from '@/lib/social-server';
+import { rateLimit, supabaseConfigured, verifyCaptcha, verifiedUid } from '@/lib/social-server';
+import { clientIp } from '@/lib/ip';
+import { getTitle } from '@/lib/catalog';
 import { log } from '@/lib/logger';
 import { getUserId, getOrCreateUserId } from '@/lib/userId';
 
@@ -41,16 +43,20 @@ async function attachAuthors(items: ReviewItem[]) {
   const [profRes, histRes] = await Promise.all([
     fetch(`${SUPA_URL}/rest/v1/profiles?user_id=in.${inList}&select=user_id,username,avatar_url,pinned_achievements`, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
+      /* Аудит 30.09 (P2-26): тяжёлые запросы (limit=2000) не дёргаются на каждый GET —
+         data-cache Next на 5 минут. */
+      next: { revalidate: 300 },
     }),
     SERVICE
       ? fetch(`${SUPA_URL}/rest/v1/profile_history?user_id=in.${inList}&select=user_id&limit=2000`, {
           headers: { apikey: key, Authorization: `Bearer ${key}` },
+          next: { revalidate: 300 },
         })
       : Promise.resolve(null),
   ]);
   const profiles = profRes.ok ? ((await profRes.json()) as Array<{ user_id: string; username: string | null; avatar_url: string | null; pinned_achievements: string[] | null }>) : [];
   const pmap = new Map(profiles.map((p) => [p.user_id, p]));
-  let counts = new Map<string, number>();
+  const counts = new Map<string, number>();
   if (histRes && histRes.ok) {
     const rows = (await histRes.json()) as Array<{ user_id: string }>;
     for (const row of rows) counts.set(row.user_id, (counts.get(row.user_id) ?? 0) + 1);
@@ -117,7 +123,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   if (!supabaseConfigured()) return NextResponse.json({ error: 'общий режим выключен: используйте локальные отзывы' }, { status: 409 });
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'local';
+  /* Аудит 30.09 (P1-6): IP — последний элемент XFF (дописывается доверенным прокси),
+     первый элемент подделывался клиентом и обнулял бакет. */
+  const ip = clientIp(request);
   if (!rateLimit(ip)) return NextResponse.json({ error: 'слишком часто, подождите минуту' }, { status: 429 });
   const body = (await request.json().catch(() => ({}))) as {
     slug?: string;
@@ -127,7 +135,6 @@ export async function POST(request: Request) {
     parent?: string | null;
     captcha?: { token?: string; answer?: number };
     turnstile?: string;
-    uid?: string | null;
   };
   const turnstileSecret = process.env.TURNSTILE_SECRET;
   if (turnstileSecret) {
@@ -142,24 +149,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'капча неверна или устарела' }, { status: 400 });
   }
   const text = String(body.text ?? '').trim().slice(0, 2000);
-  if (!body.slug || !text) return NextResponse.json({ error: 'пустой текст' }, { status: 400 });
+  /* Аудит 30.09: slug — только существующий тайтл каталога (защита от мусорных строк). */
+  const slug = typeof body.slug === 'string' ? body.slug.slice(0, 120) : '';
+  if (!slug || !text || !getTitle(slug)) return NextResponse.json({ error: 'пустой текст или неизвестный тайтл' }, { status: 400 });
+  /* Аудит 30.09: rating — число 1..10 или null (раньше в БД улетало что угодно). */
+  const rating = typeof body.rating === 'number' && Number.isFinite(body.rating) ? Math.min(10, Math.max(1, body.rating)) : null;
   const item = {
     id: crypto.randomUUID(),
-    slug: body.slug,
+    slug,
     name: String(body.name ?? 'Гость').slice(0, 40),
-    rating: body.rating ?? null,
+    rating,
     text,
     ts: Date.now(),
     likes: 0,
     dislikes: 0,
-    parent: body.parent ?? null,
-    /* Фича 29.09: у каждого отзыва есть владелец — auth uid залогиненного
-      (body.uid) или device-uid из cookie ani_uid у анонима (getOrCreateUserId):
-      без этого публичные профили локальных авторов невозможны (/reviewer/[uid]). */
-    user_id:
-      typeof body.uid === 'string' && body.uid
-        ? body.uid
-        : await getOrCreateUserId().catch(() => null),
+    parent: typeof body.parent === 'string' ? body.parent.slice(0, 64) : null,
+    /* Фича 29.09 + фикс P0-2 (аудит 30.09): владелец отзыва — uid из ПРОВЕРЕННОГО
+       Supabase-токена (Authorization), а не из тела запроса (body.uid принимался
+       на доверие → подделка авторства). Аноним — device-uid из httpOnly-cookie. */
+    user_id: (await verifiedUid(request)) ?? (await getOrCreateUserId().catch(() => null)),
   };
   const r = await fetch(`${SUPA_URL}/rest/v1/reviews`, {
     method: 'POST',
