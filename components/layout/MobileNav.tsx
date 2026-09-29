@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { IconCalendar, IconGrid, IconHome, IconSearch, IconUser } from '@/components/ui/icons';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
 const CommandPalette = dynamic(() => import('./CommandPalette').then((m) => m.CommandPalette), { ssr: false });
 import { useI18n } from '@/lib/i18n';
+import { AUTH_CHANGE_EVENT } from '@/lib/auth-gate';
+import { isSessionValid } from '@/lib/sync';
 
 const ITEMS = [
   { href: '/', key: 'home', icon: IconHome },
@@ -22,10 +24,18 @@ export function MobileNav() {
   const pathname = usePathname();
   const [palette, setPalette] = useState(false);
   const { t } = useI18n();
+  /* баг 29.09: вкладка «Профиль» в нижней навигации — только для зарегистрированных. */
+  const [logged, setLogged] = useState(false);
+  useEffect(() => {
+    const refresh = () => setLogged(isSessionValid());
+    refresh();
+    window.addEventListener(AUTH_CHANGE_EVENT, refresh);
+    return () => window.removeEventListener(AUTH_CHANGE_EVENT, refresh);
+  }, []);
   return (
     <>
       <nav className="mobile-nav" aria-label="Мобильная навигация">
-        {ITEMS.map((item) => {
+        {ITEMS.filter((item) => logged || item.href !== '/profile/bookmarks').map((item) => {
           const active = item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href);
           if (item.href === '/search') {
             return (

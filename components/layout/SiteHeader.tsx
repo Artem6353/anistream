@@ -132,10 +132,12 @@ export function SiteHeader() {
               <span className="sr-only">Случайный тайтл</span>
             </Link>
             <StreakBadge />
-            <Link className="icon-btn header__icon" href="/profile/achievements" aria-label="Достижения" title="Достижения">
-              🏆
-              <span className="sr-only">Достижения</span>
-            </Link>
+            {logged && (
+              <Link className="icon-btn header__icon" href="/profile/achievements" aria-label="Достижения" title="Достижения">
+                🏆
+                <span className="sr-only">Достижения</span>
+              </Link>
+            )}
             <DmIcon />
             {!logged ? (
               <button
@@ -188,15 +190,19 @@ export function SiteHeader() {
                 </div>
               ) : null}
             </div>
-            <Link className="icon-btn header__icon" href="/profile/bookmarks" aria-label={`Закладки (${bookmarks.length})`} title="Закладки">
-              <span className="sr-only">Закладки</span>
-              <IconBookmark size={17} />
-              {bookmarks.length > 0 ? <span className="header__count">{bookmarks.length}</span> : null}
-            </Link>
-            <Link className="icon-btn header__icon" href="/profile/settings" aria-label="Настройки" title="Настройки">
-              <span className="sr-only">Настройки плеера и интерфейса</span>
-              <IconSettings size={17} />
-            </Link>
+            {logged && (
+              <Link className="icon-btn header__icon" href="/profile/bookmarks" aria-label={`Закладки (${bookmarks.length})`} title="Закладки">
+                <span className="sr-only">Закладки</span>
+                <IconBookmark size={17} />
+                {bookmarks.length > 0 ? <span className="header__count">{bookmarks.length}</span> : null}
+              </Link>
+            )}
+            {logged && (
+              <Link className="icon-btn header__icon" href="/profile/settings" aria-label="Настройки" title="Настройки">
+                <span className="sr-only">Настройки плеера и интерфейса</span>
+                <IconSettings size={17} />
+              </Link>
+            )}
           </div>
         </div>
       </header>

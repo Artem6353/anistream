@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { library, useLibrary } from '@/lib/library';
+import { resetAnonSession, unsubscribePush } from '@/lib/session-reset';
 import {
   clearToken,
   pushLocal,
@@ -105,6 +106,10 @@ export function SyncSection() {
             className="btn btn--ghost btn--md"
             onClick={() => {
               clearToken();
+              /* баг 29.09: сброс анонимного скоупа (стрик/ачивки/статистика/бейджи)
+                 и push-подписки — после выхода состояние «чистого» посетителя. */
+              resetAnonSession();
+              void unsubscribePush();
               setLogged(false);
               notifyAuthChange();
               toast('Вы вышли');

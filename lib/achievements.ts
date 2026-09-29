@@ -96,7 +96,7 @@ export const TIER_LABELS: Record<AchievementTier, string> = {
 export const TIER_EMOJI: Record<AchievementTier, string> = { bronze: '🥉', silver: '🥈', gold: '🥇', platinum: '💎', secret: '🌟' };
 
 /* ---------- хранилище ---------- */
-import { scopedKey } from './library';
+import { scopedKey, scopeUid } from './library';
 
 // ключи вычисляются динамически: данные привязаны к аккаунту (scope)
 const kAch = () => scopedKey('anistream:achievements');
@@ -230,6 +230,9 @@ export type TrackType = 'watch' | 'bookmarks' | 'lists' | 'review' | 'comment' |
 
 export function trackEvent(type: TrackType, payload?: { genres?: string[]; movie?: boolean; section?: string; streak?: number; rating?: number; slug?: string }) {
   if (typeof window === 'undefined') return;
+  /* баг 29.09: геймификация (ачивки/счётчики) — только для зарегистрированных;
+     у разлогиненного посетителя счётчики не копятся и не «всплывают» после выхода. */
+  if (!scopeUid()) return;
   const c = readCounters();
   let streak = payload?.streak ?? 0;
   switch (type) {
