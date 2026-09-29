@@ -33,9 +33,14 @@ async function liveSchedule(): Promise<ScheduleEntry[]> {
   if (!res.ok) throw new Error(`anilist ${res.status}`);
   const json = await res.json();
   const rows = json?.data?.Page?.airingSchedules ?? [];
-  return rows
-    .filter((r: any) => r.media)
-    .map((r: any) => {
+  type AiringRow = {
+    airingAt: number;
+    episode: number;
+    media: { id: number; title: { romaji: string }; coverImage: { large: string } };
+  };
+  return (rows as AiringRow[])
+    .filter((r) => r.media)
+    .map((r) => {
       const known = loadTitles().find((t) => t.anilistId === r.media.id);
       return {
         at: r.airingAt * 1000,

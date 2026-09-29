@@ -71,9 +71,10 @@ export async function bridgeResolve(
       body: JSON.stringify({ provider, context: ctx }),
       signal: controller.signal,
     });
-    const json = (await res.json()) as Record<string, any>;
-    if (!res.ok) return { sources: [], error: json?.error ?? `bridge ${res.status}` };
-    return { sources: normalizeSources(json, provider), error: json?.error };
+    const json = (await res.json()) as Record<string, unknown>;
+    const errText = typeof json?.error === 'string' ? json.error : undefined;
+    if (!res.ok) return { sources: [], error: errText ?? `bridge ${res.status}` };
+    return { sources: normalizeSources(json, provider), error: errText };
   } catch (e) {
     return { sources: [], error: e instanceof Error ? (e.name === 'AbortError' ? 'bridge timeout' : e.message) : 'bridge error' };
   } finally {
@@ -82,11 +83,18 @@ export async function bridgeResolve(
 }
 
 /** Нормализация ответов bridge к единому EpisodeSource. */
-function normalizeSources(json: Record<string, any>, provider: string): EpisodeSource[] {
-  const raw: any[] = Array.isArray(json?.sources) ? json.sources : Array.isArray(json?.results) ? json.results : [];
+type RawSource = Record<string, unknown> & { link?: unknown; kind?: unknown; type?: unknown };
+
+function normalizeSources(json: Record<string, unknown>, provider: string): EpisodeSource[] {
+  /* Аудит 30.09 (стиль-5): any[] заменён на RawSource — исторические формы ответов
+     bridge (sources[]/results[], embedUrl/embed_url/url/link) tetap же защищённо. */
+  const raw: RawSource[] = (Array.isArray(json?.sources) ? json.sources : Array.isArray(json?.results) ? json.results : []) as RawSource[];
   const out: EpisodeSource[] = [];
-  for (const r of raw) {
-    const embedUrl: string | undefined = r?.embedUrl ?? r?.embed_url ?? r?.url ?? (typeof r?.link === 'string' && r.link.includes('/seria/') ? r.link : undefined);
+  for (const r0 of raw) {
+    const r = r0 as RawSource & { embedUrl?: unknown; embed_url?: unknown; url?: unknown; translationId?: unknown; translation_id?: unknown; voice?: unknown; label?: unknown; translation?: unknown };
+    const embedUrl: string | undefined =
+      [r?.embedUrl, r?.embed_url, r?.url].find((v): v is string => typeof v === 'string') ??
+      (typeof r?.link === 'string' && r.link.includes('/seria/') ? r.link : undefined);
     if (!embedUrl) continue;
     const translationId = String(r?.translationId ?? r?.translation_id ?? r?.voice ?? out.length);
     const label = String(r?.label ?? r?.translation ?? r?.voice ?? `Источник ${out.length + 1}`);
@@ -99,7 +107,7 @@ function normalizeSources(json: Record<string, any>, provider: string): EpisodeS
       embedUrl: embedUrl.startsWith('//') ? `https:${embedUrl}` : embedUrl,
       translationId,
       voice: r?.kind === 'subtitles' ? 'subtitles' : r?.kind === 'voice' ? 'voice' : 'unknown',
-      contentType: r?.type,
+      contentType: typeof r?.type === 'string' ? r.type : undefined,
     });
   }
   return out;

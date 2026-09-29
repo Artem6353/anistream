@@ -206,7 +206,6 @@ async function raceProviders(
   ctx: ProviderContext,
   errors: Record<string, string>,
 ): Promise<{ id: string; sources: EpisodeSource[]; skip?: EpisodeSources['skip'] } | null> {
-  const cfg = getProvidersConfig();
   interface Slot {
     id: string;
     settled: boolean;

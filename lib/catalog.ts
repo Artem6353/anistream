@@ -52,7 +52,12 @@ function byIdMap(): Map<number, Title> {
   if (!idMapCache || idMapCache.mtime !== mt) idMapCache = { mtime: mt, m: new Map(loadTitles().map((t) => [t.anilistId, t])) };
   return idMapCache.m;
 }
-export const titleById = { get: (id: number) => byIdMap().get(id) } as unknown as Map<number, Title>;
+/* Аудит 30.09 (стиль-5): больше не фейковый Map через as unknown as —
+   честный lookup-объект (get/has) с mtime-инвалидацией; watchOrder принимает TitleLookup. */
+export const titleById: { get(id: number): Title | undefined; has(id: number): boolean } = {
+  get: (id: number) => byIdMap().get(id),
+  has: (id: number) => byIdMap().has(id),
+};
 
 export const getTitle = (slug: string) => bySlugMap().get(slug);
 

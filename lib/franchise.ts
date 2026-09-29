@@ -15,7 +15,13 @@ export const REL_LABELS: Record<string, string> = {
 const SEASON_ORDER: Record<string, number> = { winter: 1, spring: 2, summer: 3, fall: 4 };
 
 /** Франшиза тайтла: BFS по связям (undirected) + хронологический порядок просмотра. */
-export function watchOrder(title: Title, byId: Map<number, Title>): Title[] {
+/** Минимальный контракт «id → Title» (Map или каталожный lookup) —
+    аудит 30.09 (стиль-5): раньше требовался полный Map, хотя используется только get. */
+export interface TitleLookup {
+  get(id: number): Title | undefined;
+}
+
+export function watchOrder(title: Title, byId: TitleLookup): Title[] {
   const start = byId.get(title.anilistId) ?? title;
   const seen = new Set<number>([start.anilistId]);
   const queue: Title[] = [start];

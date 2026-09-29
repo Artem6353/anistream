@@ -21,14 +21,6 @@ const toSeconds = (s: string): number =>
 
 const abs = (u: string) => (u.startsWith('//') ? `https:${u}` : u);
 
-let publicTokenCache: { at: number; token: string } | null = null;
-async function getPublicTokenCached(fetcher: typeof fetch): Promise<string> {
-  if (publicTokenCache && Date.now() - publicTokenCache.at < 3_600_000) return publicTokenCache.token;
-  const token = String(await getPublicToken({ fetcher }));
-  publicTokenCache = { at: Date.now(), token };
-  return token;
-}
-
 /**
  * Kodik через kodikwrapper: поиск по shikimori_id (из обогащённого датасета),
  * прямые HLS-ссылки через VideoLinks.getLinks, тайминги OP/ED из skipButtons.
@@ -71,7 +63,12 @@ export async function resolveKodikDirect(ctx: ProviderContext): Promise<ResolveO
     }
   }
 
-  const materials = (response?.results ?? []) as Record<string, any>[];
+  type KodikMaterial = {
+    link?: string;
+    translation?: { title?: string; id?: number | string };
+    seasons?: Record<string, { episodes?: Record<string, { link?: string }> }>;
+  };
+  const materials = (response?.results ?? []) as KodikMaterial[];
   if (!materials.length) return { sources: [], error: 'Kodik: материал не найден' };
 
   let link = '';
@@ -87,7 +84,7 @@ export async function resolveKodikDirect(ctx: ProviderContext): Promise<ResolveO
     }
     if (link) break;
   }
-  if (!link) link = materials[0].link;
+  if (!link) link = materials[0]?.link ?? '';
   if (!link) return { sources: [], error: 'Kodik: нет ссылки плеера' };
 
   const parsed = await VideoLinks.parseLink({ link, extended: true }).catch(() => null);

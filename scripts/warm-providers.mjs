@@ -1,6 +1,6 @@
 /* Warmer: «у тайтла есть источники?» — по кэшу через /api/availability (быстро, без резолвов).
    Запуск: npm run warm   (нужен запущенный сервер; BASE=… при другом порте) */
-import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 
 const BASE = process.env.BASE ?? 'http://localhost:3000';
 const LIMIT = Number(process.env.LIMIT ?? 0);

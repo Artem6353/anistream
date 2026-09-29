@@ -14,7 +14,6 @@ import { EpisodeGuide } from '@/components/anime/EpisodeGuide';
 import { GalleryLightbox } from '@/components/anime/GalleryLightbox';
 import { ReviewsSection } from '@/components/social/ReviewsSection';
 import { AgeGate } from '@/components/system/AgeGate';
-import { ErrorBoundary } from '@/components/system/ErrorBoundary';
 import { SOURCE_LABELS } from '@/lib/labels';
 import { EpisodeList } from '@/components/anime/EpisodeList';
 import { BookmarkButton } from '@/components/anime/BookmarkButton';

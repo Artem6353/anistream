@@ -33,14 +33,11 @@ const eslintConfig = [
       /* Данные каталога и ответы bridge — внешние JSON: точечные any осознанны
          (см. lib/providers/bridge.ts, lib/schedule.ts) — предупреждение, не ошибка. */
       '@typescript-eslint/no-explicit-any': 'warn',
-      /* Новые advisory-правила react-hooks v6 (React Compiler era): в существующей
-         кодовой базе 29 срабатываний (Date.now/Math.random в рендере относительных
-         дат, setState-инициализация в эффектах). Это не баги «здесь и сейчас»,
-         а рекомендации по производительности — понижаем до warn, чтобы CI-гейт
-         (0 errors) оставался осмысленным; разбирать точечно в рамках техдолга. */
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/purity': 'warn',
-      'react-hooks/refs': 'warn',
+      /* Аудит 30.09: все срабатывания react-hooks v6 (set-state-in-effect ×22,
+         purity ×6, refs ×1) разобраны — структурные фиксы (выводимые состояния,
+         keyed-state, useNow) либо документированные точечные suppressions для
+         осознанных паттернов (hydration-safe localStorage-гейты, RSC Date.now,
+         async load-on-mount). Правила работают на ПОЛНОЙ строгости (error). */
     },
   },
 ];

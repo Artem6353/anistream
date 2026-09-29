@@ -22,7 +22,6 @@ for (const f of ['.env', '.env.local']) {
 }
 
 const has = (k) => Boolean(process.env[k]);
-const hasAny = (keys) => keys.some(has);
 const missing = (keys) => keys.filter((k) => !has(k));
 
 const groups = [

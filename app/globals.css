@@ -3597,20 +3597,20 @@ html[data-tv='true'] .card:focus-within .card__media {
   height: 40px;
   border-radius: 5px;
 }
+/* Аудит 30.09 (стиль-6): настоящие дубли (два блока подряд для тех же селекторов)
+   объединены; «слоистые» переопределения .page-section/.rail/.section-title —
+   НЕ дубли: базовая плотность ТЗ 4.0 сознательно перекрыта дизайн-пасом
+   2026-09-28 (см. комментарии секций), их слияние сломало бы каскад. */
 .schedule__entry--compact .schedule__info {
   grid-column: 2;
   grid-row: 1;
+  min-width: 0;
 }
 .schedule__entry--compact .schedule__time {
   grid-column: 3;
   grid-row: 1;
   justify-self: end;
   white-space: nowrap;
-}
-.schedule__entry--compact .schedule__info {
-  min-width: 0;
-}
-.schedule__entry--compact .schedule__time {
   font-size: 10.5px;
 }
 .schedule__entry--compact .schedule__title {

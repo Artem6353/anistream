@@ -25,7 +25,6 @@ export default async function TitleOpenGraphImage({ params }: { params: Promise<
   return new ImageResponse(
     (
       <div style={{ width: '100%', height: '100%', display: 'flex', position: 'relative', background: '#0b0d11' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={bg} alt="" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.45 }} />
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(11,13,17,0.30)' }} />
         <div
@@ -39,8 +38,7 @@ export default async function TitleOpenGraphImage({ params }: { params: Promise<
           }}
         />
         <div style={{ display: 'flex', gap: 36, alignItems: 'center', padding: 64, position: 'relative', width: '100%' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+            <img
             src={title.poster}
             alt=""
             style={{ width: 260, height: 390, objectFit: 'cover', borderRadius: 20, border: '2px solid rgba(255,255,255,0.25)' }}

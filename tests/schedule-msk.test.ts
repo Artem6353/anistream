@@ -5,7 +5,7 @@ import { mskDayIndex } from '../lib/schedule-core';
 describe('schedule msk regression (аудит блок 2)', () => {
   it('demoWeek: нет NaN-дат (one-piece regression), mskDayIndex не бросает', () => {
     for (const e of demoWeek()) {
-      try { mskDayIndex(e.at); } catch (err) {
+      try { mskDayIndex(e.at); } catch {
         throw new Error(`bad at for ${e.slug}: ${e.at}`);
       }
     }
