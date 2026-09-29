@@ -47,8 +47,12 @@ export function Metrika() {
           }
         }}
       >
-        {`(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();k=e.createElement(t);a=e.getElementsByTagName(t)[0];k.async=1;k.src=r;a.parentNode.insertBefore(k,a)})(window,document,'script','https://mc.yandex.ru/metrika/tag.js','ym');
-ym(${ID},'init',{ssr:true,webvisor:true,clickmap:true,ecommerce:'dataLayer',accurateTrackBounce:true,trackLinks:true});`}
+        {/* Актуальная форма официального сниппета (скрин 30.09): tag.js?id=…,
+            защита от повторной установки (document.scripts-гард) и referrer/url
+            в init. ID по-прежнему берётся из NEXT_PUBLIC_METRIKA_ID — вручную
+            сниппет вставлять НЕ нужно (двойная инициализация = двойной учёт). */}
+        {`(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=${ID}', 'ym');
+ym(${ID},'init',{ssr:true,webvisor:true,clickmap:true,ecommerce:'dataLayer',referrer: document.referrer, url: location.href,accurateTrackBounce:true,trackLinks:true});`}
       </Script>
       {/* noscript-фолбэк из официального сниппета: пиксель-watch для клиентов без JS */}
       <noscript>
