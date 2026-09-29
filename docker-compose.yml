@@ -6,13 +6,30 @@ services:
     environment:
       KODIK_BRIDGE_URL: http://kodik-bridge:8765
       MULTIPLAYER_BRIDGE_URL: http://multi-bridge:8766
-    depends_on: [kodik-bridge, multi-bridge]
+    depends_on:
+      kodik-bridge: { condition: service_healthy }
+      multi-bridge: { condition: service_healthy }
     restart: unless-stopped
+  # Аудит 30.09 (P1-9): bridge в контейнере слушают 0.0.0.0 (BRIDGE_HOST в
+  # Dockerfile.bridge) — иначе web не достучится; наружу порты НЕ публикуются,
+  # доступ только из внутренней сети + BRIDGE_TOKEN (проверяет сам bridge).
   kodik-bridge:
     build: { context: ., dockerfile: Dockerfile.bridge, args: { BRIDGE: kodik_bridge.py } }
     env_file: [.env.local]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os,urllib.request; r=urllib.request.Request('http://127.0.0.1:8765/health'); t=os.environ.get('BRIDGE_TOKEN'); (r.add_header('Authorization','Bearer '+t) if t else None); urllib.request.urlopen(r, timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped
   multi-bridge:
     build: { context: ., dockerfile: Dockerfile.bridge, args: { BRIDGE: multi_player_bridge.py } }
     env_file: [.env.local]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os,urllib.request; r=urllib.request.Request('http://127.0.0.1:8766/health'); t=os.environ.get('BRIDGE_TOKEN'); (r.add_header('Authorization','Bearer '+t) if t else None); urllib.request.urlopen(r, timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped

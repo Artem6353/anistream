@@ -1,7 +1,14 @@
-name: backup-weekly
+name: Backup catalog (weekly)
+# Аудит 30.09 (P1-11): прежний сценарий был нерабочим — `git rm -rf .` удалял
+# исходники ДО копирования, а путь `../$GITHUB_WORKSPACE/...` разворачивался в
+# несуществующий (cp глушился `|| true`) → в ветку backups пушилась пустота.
+# Теперь: снапшот копируется в $RUNNER_TEMP до orphan-checkout, ошибки фатальны,
+# добавлена проверка непустоты бэкапа.
 on:
   schedule: [{ cron: '0 3 * * 0' }]
   workflow_dispatch: {}
+permissions:
+  contents: write
 jobs:
   backup:
     runs-on: ubuntu-latest
@@ -10,13 +17,20 @@ jobs:
         with: { fetch-depth: 1 }
       - name: Snapshot data to backups branch
         run: |
+          set -euo pipefail
+          DAY=$(date +%F)
+          SNAP="$RUNNER_TEMP/backup-$DAY"
+          mkdir -p "$SNAP"
+          # 1) копируем данные ДО любых git-операций; titles.json обязателен
+          cp lib/data/titles.json "$SNAP/titles-$DAY.json"
+          cp lib/data/manual-sources.json "$SNAP/manual-$DAY.json" 2>/dev/null || true
+          test -s "$SNAP/titles-$DAY.json"
+          # 2) изолированная orphan-ветка
           git config user.name "backup-bot"
           git config user.email "backup-bot@users.noreply.github.com"
           git checkout --orphan backups-tmp
-          git rm -rf . > /dev/null
-          mkdir -p data
-          cp ../$GITHUB_WORKSPACE/lib/data/titles.json data/titles-$(date +%F).json 2>/dev/null || true
-          cp ../$GITHUB_WORKSPACE/lib/data/manual-sources.json data/manual-$(date +%F).json 2>/dev/null || true
+          git rm -rf . > /dev/null || true
+          cp "$SNAP"/*.json .
           git add -A
-          git commit -m "backup $(date +%F)" || echo "nothing to commit"
+          git commit -m "backup $DAY"
           git push -f origin backups-tmp:backups

@@ -1,5 +1,11 @@
 name: CI
+# Аудит 30.09 (стиль-2): CI запускался только на pull_request — прямые пуши в main
+# (основной сценарий работы с репо) не проверялись вовсе. Добавлен push-триггер
+# (docs-only изменения пропускаем) и шаг ESLint (линтер в проект добавлен).
 on:
+  push:
+    branches: [main, dev]
+    paths-ignore: ['docs/**', '*.md']
   pull_request:
     branches: [main, dev]
 jobs:
@@ -12,6 +18,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build

@@ -16,6 +16,7 @@ kodik_bridge.py v2 — локальный Python-bridge Kodik (порт 8765).
 Запуск:     python bridges/kodik_bridge.py        (порт: KODIK_BRIDGE_PORT, по умолчанию 8765)
 Совместимость: Python 3.11+ (встроен compat-загрузчик модуля parser_kodik).
 """
+import hmac
 import json
 import os
 import time
@@ -28,6 +29,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import requests
 
 PORT = int(os.environ.get("KODIK_BRIDGE_PORT", "8765"))
+# Аудит 30.09 (P1-9): в docker-compose bridge недостижим из web-контейнера,
+# потому что жёстко слушал 127.0.0.1. HOST задаётся env (в контейнере —
+# BRIDGE_HOST=0.0.0.0, см. Dockerfile.bridge); при выходе за loopback
+# ОБЯЗАТЕЛЬНО задавайте BRIDGE_TOKEN — проверка ниже.
+HOST = os.environ.get("BRIDGE_HOST", "127.0.0.1")
+BRIDGE_TOKEN = os.environ.get("BRIDGE_TOKEN") or None
 API = os.environ.get("KODIK_API_BASE_URL", "https://kodik-api.com")
 TOKEN_OVERRIDE = os.environ.get("KODIK_TOKEN") or None
 
@@ -253,6 +260,19 @@ class Handler(BaseHTTPRequestHandler):
         with _HANDLER_SEM:
             super().handle()
 
+    def _authed(self):
+        """Аудит 30.09 (P1-9): если задан BRIDGE_TOKEN — bridge проверяет его САМ
+        (раньше аутентификация предполагалась только в Caddy, а в docker-сети
+        контейнер открыт без защиты). Сравнение константное."""
+        if not BRIDGE_TOKEN:
+            return True
+        got = self.headers.get("Authorization", "")
+        want = f"Bearer {BRIDGE_TOKEN}"
+        return hmac.compare_digest(got.encode(), want.encode())
+
+    def _deny(self):
+        self._send({"error": "unauthorized"}, 401)
+
     def _send(self, obj, code=200):
         data = json.dumps(obj, ensure_ascii=False).encode()
         try:
@@ -265,6 +285,8 @@ class Handler(BaseHTTPRequestHandler):
             pass  # клиент закрыл соединение по таймауту — не ошибка bridge
 
     def do_GET(self):
+        if not self._authed():
+            return self._deny()
         if self.path.startswith("/health"):
             k = kodik()
             self._send({"ok": bool(k["token"]), "reason": k["error"] or "kodik ready"})
@@ -272,6 +294,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send({"error": "not found"}, 404)
 
     def do_POST(self):
+        if not self._authed():
+            return self._deny()
         if not self.path.startswith("/resolve"):
             return self._send({"error": "not found"}, 404)
         length = int(self.headers.get("Content-Length", 0))
@@ -308,5 +332,5 @@ class QuietServer(ThreadingHTTPServer):
 
 if __name__ == "__main__":
     kodik()  # прогрев пула токенов до начала приёма запросов
-    print(f"kodik_bridge v2 listening on 127.0.0.1:{PORT}")
-    QuietServer(("127.0.0.1", PORT), Handler).serve_forever()
+    print(f"kodik_bridge v2 listening on {HOST}:{PORT}")
+    QuietServer((HOST, PORT), Handler).serve_forever()

@@ -1,0 +1,18 @@
+# Build-контекст Docker: не копировать в образ (аудит 30.09, P1-10).
+# Без этого файла `COPY . .` утаскивал в builder-слой .git, кэши и .env.local с секретами.
+.git
+.github
+.next
+.cache
+node_modules
+.env
+.env.*
+!.env.example
+data/*.json
+backups
+test-results
+playwright-report
+screenshots
+*.tsbuildinfo
+.DS_Store
+docs

@@ -1,4 +1,7 @@
 # Python-bridge (kodik | multi): ARG BRIDGE=kodik_bridge.py|multi_player_bridge.py
+# Аудит 30.09 (P1-9): в контейнере bridge слушает 0.0.0.0 (иначе недостижим из
+# web-контейнера compose-сети). Защита — BRIDGE_TOKEN (проверяется самим bridge,
+# deploy/Caddyfile — дополнительный внешний контур); порты наружу не публикуются.
 FROM python:3.12-slim
 WORKDIR /bridge
 RUN pip install --no-cache-dir requests beautifulsoup4 lxml \
@@ -6,4 +9,5 @@ RUN pip install --no-cache-dir requests beautifulsoup4 lxml \
 COPY bridges/ ./bridges/
 ARG BRIDGE=kodik_bridge.py
 ENV BRIDGE=${BRIDGE}
+ENV BRIDGE_HOST=0.0.0.0
 CMD ["sh", "-c", "python bridges/${BRIDGE}"]

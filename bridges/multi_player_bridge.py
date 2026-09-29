@@ -15,6 +15,7 @@ multi_player_bridge.py v2 — локальный bridge CVH (AnimeGo) + AniBoom 
 Установка:  pip install https://github.com/YaNesyTortiK/AnimeParsers/archive/refs/heads/main.zip
 Запуск:     python bridges/multi_player_bridge.py   (порт: MULTIPLAYER_BRIDGE_PORT, по умолчанию 8766)
 """
+import hmac
 import json
 import os
 import time
@@ -25,6 +26,12 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 PORT = int(os.environ.get("MULTIPLAYER_BRIDGE_PORT", "8766"))
+# Аудит 30.09 (P1-9): в docker-compose bridge недостижим из web-контейнера,
+# потому что жёстко слушал 127.0.0.1. HOST задаётся env (в контейнере —
+# BRIDGE_HOST=0.0.0.0, см. Dockerfile.bridge); при выходе за loopback
+# ОБЯЗАТЕЛЬНО задавайте BRIDGE_TOKEN — проверка ниже.
+HOST = os.environ.get("BRIDGE_HOST", "127.0.0.1")
+BRIDGE_TOKEN = os.environ.get("BRIDGE_TOKEN") or None
 
 _animego = None  # {parser, error}
 _load_lock = threading.Lock()
@@ -245,6 +252,19 @@ class Handler(BaseHTTPRequestHandler):
         with _HANDLER_SEM:
             super().handle()
 
+    def _authed(self):
+        """Аудит 30.09 (P1-9): если задан BRIDGE_TOKEN — bridge проверяет его САМ
+        (раньше аутентификация предполагалась только в Caddy, а в docker-сети
+        контейнер открыт без защиты). Сравнение константное."""
+        if not BRIDGE_TOKEN:
+            return True
+        got = self.headers.get("Authorization", "")
+        want = f"Bearer {BRIDGE_TOKEN}"
+        return hmac.compare_digest(got.encode(), want.encode())
+
+    def _deny(self):
+        self._send({"error": "unauthorized"}, 401)
+
     def _send(self, obj, code=200):
         data = json.dumps(obj, ensure_ascii=False).encode()
         try:
@@ -257,6 +277,8 @@ class Handler(BaseHTTPRequestHandler):
             pass  # клиент закрыл соединение по таймауту — это не ошибка bridge
 
     def do_GET(self):
+        if not self._authed():
+            return self._deny()
         if self.path.startswith("/health"):
             a = _load_animego()
             self._send({"ok": bool(a["parser"]), "reason": a["error"] or "animego ready"})
@@ -264,6 +286,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send({"error": "not found"}, 404)
 
     def do_POST(self):
+        if not self._authed():
+            return self._deny()
         if not self.path.startswith("/resolve"):
             return self._send({"error": "not found"}, 404)
         length = int(self.headers.get("Content-Length", 0))
@@ -300,5 +324,5 @@ class QuietServer(ThreadingHTTPServer):
 
 if __name__ == "__main__":
     _load_animego()  # прогрев парсера до начала приёма запросов
-    print(f"multi_player_bridge v2 listening on 127.0.0.1:{PORT}")
-    QuietServer(("127.0.0.1", PORT), Handler).serve_forever()
+    print(f"multi_player_bridge v2 listening on {HOST}:{PORT}")
+    QuietServer((HOST, PORT), Handler).serve_forever()
