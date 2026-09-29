@@ -30,7 +30,10 @@ export const metadata: Metadata = {
     'Каталог аниме с русскими описаниями: подборки, жанры, живое расписание выхода серий, локальная история просмотров и плеер с автопереходом.',
   /* S3.2: keywords удалён (устарел, Google/Yandex игнорируют — аудит SuperSEO);
      добавлены og:url (дефолт главной) и og:locale. */
-  alternates: { languages: { ru: '/', en: '/?lang=en' } },
+  /* Аудит 30.09 (SEO-1): hreflang en удалён — переключатель языка убран
+     (сайт только RU), параметр ?lang=en сервером не обрабатывался:
+     англо-альтернатива с русским контентом — ложный сигнал для Google. */
+  alternates: { canonical: '/' },
   /* S6: верификация Google Search Console (URL-prefix property, 28.09.2026). */
   verification: {
     google: 'FbxT2iDTb-eCOQJXhFdnEyZqMjqKHzIqiX2cebRVDfU',
@@ -40,6 +43,12 @@ export const metadata: Metadata = {
     url: '/',
     locale: 'ru_RU',
     siteName: 'AniNova',
+    title: 'AniNova — каталог аниме',
+    description: 'Подборки, жанры, расписание и плеер. Метаданные AniList, локальный профиль без регистрации.',
+  },
+  /* Аудит 30.09 (SEO): twitter-card не было — карточки в X/Twitter рендерились без large-image. */
+  twitter: {
+    card: 'summary_large_image',
     title: 'AniNova — каталог аниме',
     description: 'Подборки, жанры, расписание и плеер. Метаданные AniList, локальный профиль без регистрации.',
   },

@@ -23,16 +23,30 @@ import { PosterCard } from '@/components/anime/PosterCard';
 import { PosterArt } from '@/components/anime/PosterArt';
 import { WatchButton } from '@/components/anime/WatchButton';
 import { artUri } from '@/lib/art';
+import { getProvidersConfig } from '@/lib/config/providers.config';
 import { imgProxyUrl } from '@/lib/img';
+
+/** Обрезка описания по границе слова/предложения (SEO-6, аудит 30.09). */
+function clampSentence(text: string, max = 155): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[,;:—-]+$/, '') + '…';
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const t = getTitle(slug);
   if (!t) notFound();
   return {
-    /* S3.2: суффикс «— AniNova» убран — его добавляет title.template (было «… — AniNova · AniNova») */
+    /* S3.2: суффикс «— AniNova» убран — его добавляет title.template (было «… — AniNova · AniNova»).
+       Аудит 30.09 (SEO-6): description режется по границе слова (раньше рубил
+       посреди слова на 150-м символе); og:image не дублируем сырым внешним баннером —
+       единый источник — генератор app/anime/[slug]/opengraph-image.tsx (свой origin,
+       всегда валидный, с фолбэком). */
     title: `${t.ru} (${t.year || '—'}) смотреть онлайн`,
-    description: (t.description || t.shikimori?.description || `Смотреть ${t.ru} онлайн: серии, озвучки, график выхода.`).slice(0, 150),
+    description: clampSentence(t.description || t.shikimori?.description || `Смотреть ${t.ru} онлайн: серии, озвучки, график выхода.`, 155),
     alternates: { canonical: `/anime/${t.slug}` },
     openGraph: {
       type: 'video.tv_show',
@@ -40,9 +54,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       locale: 'ru_RU',
       siteName: 'AniNova',
       title: t.ru,
-      description: t.description,
-      images: t.banner ? [t.banner] : undefined,
+      description: clampSentence(t.description || '', 155) || undefined,
     },
+    twitter: { card: 'summary_large_image' },
   };
 }
 
@@ -71,19 +85,26 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
       ? { numberOfSeasons: 1, numberOfEpisodes: title.episodes, containsSeason: { '@type': 'TVSeason', numberOfEpisodes: title.episodes, seasonNumber: 1 } }
       : {}),
   };
+  /* Аудит 30.09 (SEO-3): item — относительный 'catalog' (невалидно для
+     BreadcrumbList, ошибка в Rich Results) + пропущен уровень «Главная». */
+  const siteUrl = getProvidersConfig().site.url.replace(/\/$/, '');
   const breadcrumbs = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Каталог', item: 'catalog' },
-      { '@type': 'ListItem', position: 2, name: title.ru },
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Каталог', item: `${siteUrl}/catalog` },
+      { '@type': 'ListItem', position: 3, name: title.ru, item: `${siteUrl}/anime/${title.slug}` },
     ],
   };
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
+      {/* Аудит 30.09 (P1-8): экранируем '<' — иначе '</script>' в описании тайтла
+          (внешние API/ручные правки) разрывает блок и позволяет инъекцию скрипта.
+          HomeJsonLd так делал и раньше — теперь единообразно. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, '\\u003c') }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs).replace(/</g, '\\u003c') }} />
     <AgeGate adult={Boolean(title.isAdult)} />
     <div className="detail">
       <div className="detail__backdrop" aria-hidden>

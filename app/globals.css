@@ -2102,11 +2102,9 @@ input, select {
   color: var(--muted-2);
   font-size: 12.5px;
 }
-/* ТЗ5 3.3 / S4.2: h4/h5/h6 в нижней строке выглядят как обычный текст;
-   цепочка заголовков футера: h2 (бренд) → h3 (колонки) → h4/h5/h6 (низ). */
-.footer__bottom h4,
-.footer__bottom h5,
-.footer__bottom h6 {
+/* Аудит 30.09 (SEO-7): нижняя строка футера — абзацы (были h4/h5/h6 «для
+   анализатора» — семантический мусор). Стили сброшены как прежде. */
+.footer__bottom p {
   margin: 0;
   font-size: inherit;
   font-weight: 400;

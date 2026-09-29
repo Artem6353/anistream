@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { ACHIEVEMENTS, TIER_LABELS, buildContext, readUnlocked, type AchievementMeta, type AchievementTier } from '@/lib/achievements';
 import { readStreak } from '@/lib/streak';
@@ -28,7 +29,7 @@ export default function AchievementsPage() {
   return (
     <div className="container ach-page">
       <p className="breadcrumbs">
-        <a href="/profile/settings">Назад в профиль</a>
+        <Link href="/profile/settings">Назад в профиль</Link>
       </p>
       <h1>Достижения</h1>
       <p className="ach-page__count">
