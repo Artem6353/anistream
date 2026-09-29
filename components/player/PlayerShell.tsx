@@ -171,13 +171,23 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
     };
   }, [file, isEmbed]);
 
+  /* Аудит 30.09 (P2-23): таймер скрытия проверяет playing через ref — раньше
+     контролы гасли через 3 с и НА ПАУЗЕ (poke не знал состояния). */
+  const playingRef = useRef(false);
+  useEffect(() => {
+    playingRef.current = playing;
+  }, [playing]);
   const poke = useCallback(() => {
     setUiVisible(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
     /* ТЗ 4.1 (3.4): контролы скрываются через 3 секунды бездействия при воспроизведении. */
-    hideTimer.current = setTimeout(() => setUiVisible(false), 3000);
+    hideTimer.current = setTimeout(() => {
+      if (playingRef.current) setUiVisible(false);
+    }, 3000);
   }, []);
-  useEffect(() => poke(), [poke, playing]);
+  useEffect(() => {
+    poke();
+  }, [poke, playing]);
 
   /* ачивки (ТЗ 18.1): событие просмотра серии — один раз за заход на серию */
   useEffect(() => {
@@ -293,7 +303,9 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
     const left = duration - time;
     if (playing && left <= 20 && left > 0 && !settings.marathon) setNextIn(Math.ceil(left)); // ТЗ 22: марафон — без отсчёта
     else setNextIn(null);
-  }, [time, duration, playing, nextEpisode, isEmbed]);
+    /* Аудит 30.09 (P2-23): settings.marathon добавлен в deps — переключение
+       марафона применяется сразу, а не на следующем тике time. */
+  }, [time, duration, playing, nextEpisode, isEmbed, settings.marathon]);
 
   const goNext = useCallback(() => {
     if (nextEpisode) router.push(`/anime/${title.slug}/${nextEpisode}`);
