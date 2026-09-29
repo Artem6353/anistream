@@ -78,9 +78,6 @@ export function ProfileHeader({
           </h1>
           {own ? (
             <span className="pheader__links">
-              <Link className="btn btn--outline btn--md" href="/profile/stats">
-                📊 Статистика
-              </Link>
               <Link className="btn btn--outline btn--md" href="/profile/achievements">
                 🏆 Достижения
               </Link>

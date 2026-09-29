@@ -16,7 +16,6 @@ const TABS = [
   { href: '/profile/bookmarks', label: 'Закладки' },
   { href: '/profile/history', label: 'История' },
   { href: '/profile/settings', label: 'Настройки' },
-  { href: '/profile/stats', label: 'Статистика' },
   /* Достижения — геймификация зарегистрированных (копится только при входе). */
   { href: '/profile/achievements', label: 'Достижения', auth: true },
 ];

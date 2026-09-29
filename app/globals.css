@@ -1732,10 +1732,9 @@ input, select {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 16px;
-  align-items: stretch;
+  align-items: start;
 }
 .settings__card {
-  height: 100%;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--bg-elev);
