@@ -1,7 +1,7 @@
 # AniStream 2.0
 
 Каталог и плеер аниме на **Next.js 16.3.5 (App Router, RSC/ISR) + TypeScript (strict)**:
-**5002 тайтла** (AniList + Shikimori-обогащение), многослойный реестр источников видео,
+**7962 тайтла** (AniList + Shikimori-обогащение), многослойный реестр источников видео,
 плеер v3 с озвучками и графиком серий, социалка, админка модерации. Пересборка проекта
 `сайт_для_аниме` (AniStream) с упором на надёжность, скорость и дизайн. Анализ исходного
 проекта — в [`docs/ANALYSIS.md`](docs/ANALYSIS.md), статус handoff-ТЗ — в [`docs/REPORT.md`](docs/REPORT.md).
@@ -21,6 +21,7 @@ npm run hydrate    # 4) hydrator: episode-specific embed в self-growing кэш
 npm run smoke      # HTTP-проверка маршрутов (SMOKE_URL=…, если порт другой)
 npm run build && npm run start   # прод-сборка и прод-сервер
 npm run typecheck  # tsc --noEmit
+npm run lint       # eslint (next/core-web-vitals + typescript)
 ```
 
 > Если `npm run warm`/`hydrate` сообщают «Сервер не отвечает» — поднимите `npm run dev`

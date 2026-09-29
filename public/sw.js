@@ -1,5 +1,8 @@
 /* AniStream service worker: офлайн-оболочка и кэш постеров/расписания. */
-const CACHE = 'anistream-v1';
+/* Аудит 30.09: v2 — после удаления мёртвой ветки кэширования s4.anilist.co
+   (браузер туда больше не ходит: все картинки через /img) и для принудительного
+   обновления офлайн-оболочки у старых клиентов. */
+const CACHE = 'anistream-v2';
 const SHELL = ['/', '/catalog', '/genres', '/schedule', '/manifest.webmanifest', '/icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -24,35 +27,6 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-
-  /* постеры и баннеры AniList — cache-first на год */
-  if (url.hostname === 's4.anilist.co') {
-    event.respondWith(
-      caches.open(CACHE).then(async (cache) => {
-        const hit = await cache.match(req);
-        if (hit) {
-          // audit P3-7: stale-while-revalidate — отдаём кэш сразу, тихо обновляем в фоне
-          (async () => {
-            try {
-              const res = await fetch(req);
-              if (res.ok) await cache.put(req, res.clone());
-            } catch {
-              /* офлайн — остаёмся на кэше */
-            }
-          })();
-          return hit;
-        }
-        try {
-          const res = await fetch(req);
-          if (res.ok) cache.put(req, res.clone());
-          return res;
-        } catch {
-          return hit || Response.error();
-        }
-      }),
-    );
-    return;
-  }
 
   /* расписание — network-first с фолбэком в кэш */
   if (url.pathname === '/api/schedule') {

@@ -10,6 +10,8 @@
     "build": "NODE_OPTIONS=--max-old-space-size=700 next build --webpack",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "smoke": "node scripts/smoke.mjs",
     "check:kodik": "node scripts/check-kodik.mjs",
     "prewarm": "node -e \"if(!require('fs').existsSync('node_modules/next')){console.error('\\n✗ Нет node_modules. Сначала выполните:  npm install\\n');process.exit(1)}\"",
@@ -43,6 +45,8 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/web-push": "^3.6.4",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.5",
     "typescript": "^5.7.0",
     "vitest": "^4.1.11"
   }

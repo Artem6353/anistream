@@ -8,9 +8,21 @@ next-env.d.ts
 backups/
 test-results/
 playwright-report/
-.cache/warm-summary.json
+# Аудит 30.09: рантайм-артефакты не должны жить в git (раньше web-vitals,
+# provider-errors и data/*.json коммитились и шумели в диффах).
+# ВНИМАНИЕ: .cache/providers-resolve-cache.json остаётся tracked — это
+# намеренный seed-кэш легаси-резолвов (docs/REPORT.md W12), его не трогаем.
+.cache/*
+!.cache/providers-resolve-cache.json
+data/reports.json
+data/dmca.json
+data/vapid.json
 
 data/vapid.json
 .cache/img/
 
 screenshots/
+
+__pycache__/
+*.pyc
+*.tmp
