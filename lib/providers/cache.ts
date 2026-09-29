@@ -8,6 +8,11 @@ import { kvEnabled, kvGet, kvSet } from './cache-kv';
  * Cache-first хранилище EpisodeSources (self-growing, как в оригинале):
  * hit → отдаём сразу; miss → bridge/провайдеры → сохраняем.
  * Файл: .cache/providers-resolve-cache.json (KODIK_CACHE_FILE).
+ *
+ * Аудит 30.09 (P0-5): KV-ветка (Upstash) раньше только ЧИТАЛА — kvSet не вызывался
+ * нигде, т.е. при заданных UPSTASH_* кэш не работал вовсе (hit rate 0%) и
+ * /api/availability всегда показывал demo. Теперь cacheSet пишет в KV, а
+ * cacheEntriesForSlug ведёт в KV индекс эпизодов тайтла (epidx:<slug>).
  */
 
 interface CacheShape {
@@ -45,13 +50,48 @@ function persist(file: string) {
 
 export const cacheKey = (slug: string, episode: number) => `ep:${slug}:${episode}`;
 
+/* KV-ключи: запись серии и индекс эпизодов тайтла. */
+const kvEpKey = (key: string) => `ep:${key}`; // key уже 'ep:slug:N' → 'ep:ep:slug:N' (совместимость с прежними чтениями)
+const kvIdxKey = (slug: string) => `epidx:${slug}`;
+
+async function kvAddIndex(slug: string, episode: number) {
+  try {
+    const raw = await kvGet(kvIdxKey(slug));
+    const list = raw ? ((JSON.parse(raw) as number[]).filter((n) => Number.isFinite(n))) : [];
+    if (!list.includes(episode)) list.push(episode);
+    list.sort((a, b) => a - b);
+    await kvSet(kvIdxKey(slug), JSON.stringify(list.slice(-2000)), 30 * 86400);
+  } catch {
+    /* индекс — best-effort */
+  }
+}
+
 /** Все кэшированные серии тайтла (для синтеза и индикации доступности). */
 export async function cacheEntriesForSlug(slug: string): Promise<{ episode: number; sources: EpisodeSources }[]> {
   const cfg = getProvidersConfig().cache;
   if (!cfg.enabled) return [];
+  const out: { episode: number; sources: EpisodeSources }[] = [];
+  if (kvEnabled()) {
+    const idxRaw = await kvGet(kvIdxKey(slug));
+    const eps = idxRaw ? ((JSON.parse(idxRaw) as number[]).filter((n) => Number.isFinite(n))) : [];
+    const rows = await Promise.all(
+      eps.map(async (ep) => {
+        const raw = await kvGet(kvEpKey(cacheKey(slug, ep)));
+        if (!raw) return null;
+        try {
+          const entry = JSON.parse(raw) as { at: number; ttlMs?: number; sources: EpisodeSources };
+          if (Date.now() - entry.at > (entry.ttlMs ?? cfg.ttlMs)) return null;
+          return { episode: ep, sources: entry.sources };
+        } catch {
+          return null;
+        }
+      }),
+    );
+    for (const r of rows) if (r) out.push(r);
+    return out.sort((a, b) => a.episode - b.episode);
+  }
   const store = await load(cfg.file);
   const prefix = `ep:${slug}:`;
-  const out: { episode: number; sources: EpisodeSources }[] = [];
   for (const [key, entry] of Object.entries(store)) {
     if (!key.startsWith(prefix)) continue;
     const ep = Number(key.slice(prefix.length));
@@ -64,7 +104,7 @@ export async function cacheGet(key: string): Promise<EpisodeSources | null> {
   const cfg = getProvidersConfig().cache;
   if (!cfg.enabled) return null;
   if (kvEnabled()) {
-    const raw = await kvGet(`ep:${key}`);
+    const raw = await kvGet(kvEpKey(key));
     if (!raw) return null;
     try {
       const entry = JSON.parse(raw) as { at: number; ttlMs?: number; sources: EpisodeSources };
@@ -87,8 +127,16 @@ export async function cacheSet(key: string, sources: EpisodeSources): Promise<vo
   const cfg = getProvidersConfig().cache;
   if (!cfg.enabled || !cfg.write) return;
   if (!sources.sources.some((s) => s.providerId !== 'demo')) return;
+  const entry = { at: Date.now(), ttlMs: cfg.ttlMs, sources: { ...sources, fromCache: false } };
+  if (kvEnabled()) {
+    /* Аудит 30.09 (P0-5): KV-запись + индекс эпизодов тайтла. */
+    await kvSet(kvEpKey(key), JSON.stringify(entry), Math.round(cfg.ttlMs / 1000));
+    const m = key.match(/^ep:(.+):(\d+)$/);
+    if (m) await kvAddIndex(m[1], Number(m[2]));
+    return;
+  }
   const store = await load(cfg.file);
-  store[key] = { at: Date.now(), sources: { ...sources, fromCache: false } };
+  store[key] = entry;
   persist(cfg.file);
 }
 

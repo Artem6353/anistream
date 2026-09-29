@@ -8,16 +8,29 @@ import { genreLabel, LENGTH_BUCKETS } from './labels';
  НЕ пакуется в webpack-бандл (иначе сборка упирается в память), а читается один
  * раз на процесс с проверкой mtime (dev-friendly).
  */
-let CACHE: { mtime: number; titles: Title[] } | null = null;
-export function loadTitles(includeHidden = false): Title[] {
-  const file = path.join(process.cwd(), 'lib', 'data', 'titles.json');
-  const mtime = statSync(file).mtimeMs;
-  if (CACHE && CACHE.mtime === mtime) return CACHE.titles;
-  const titles = (JSON.parse(readFileSync(file, 'utf8')) as (Title & { hidden?: boolean })[]).filter((t) => includeHidden || !t.hidden);
-  CACHE = { mtime, titles };
+/* Аудит 30.09 (P2-15/16): кэш больше не смешивает варианты includeHidden —
+   в памяти держим СЫРОЙ список, фильтрация выполняется на каждый вызов (дешёво),
+   поэтому админское «скрыть тайтл» сразу видно и в каталоге, и в sitemap,
+   и в similarTitles/heroSlides/schedule (раньше часть кода читала застывшую
+   константу TITLES и продолжала показывать скрытое). */
+let RAW: { mtime: number; titles: (Title & { hidden?: boolean })[] } | null = null;
+const TITLES_FILE = () => path.join(process.cwd(), 'lib', 'data', 'titles.json');
+
+function rawTitles(): (Title & { hidden?: boolean })[] {
+  const mtime = statSync(TITLES_FILE()).mtimeMs;
+  if (RAW && RAW.mtime === mtime) return RAW.titles;
+  const titles = JSON.parse(readFileSync(TITLES_FILE(), 'utf8')) as (Title & { hidden?: boolean })[];
+  RAW = { mtime, titles };
   return titles;
 }
 
+export function loadTitles(includeHidden = false): Title[] {
+  const titles = rawTitles();
+  return includeHidden ? titles : titles.filter((t) => !t.hidden);
+}
+
+/** @deprecated Используйте loadTitles(): константа не инвалидируется после записи
+ *  titles.json (скрытие из админки). Сохранена для совместимости импортов. */
 export const TITLES: Title[] = loadTitles();
 
 export const PER_PAGE = 24;
@@ -25,9 +38,9 @@ export const PER_PAGE = 24;
 let slugMapCache: { mtime: number; m: Map<string, Title> } | null = null;
 let idMapCache: { mtime: number; m: Map<number, Title> } | null = null;
 function mtimeNow(): number {
-  // Всегда свежий stat: CACHE.mtime устаревает после записи titles.json
+  // Всегда свежий stat: кэш устаревает после записи titles.json
   // (скрытие тайтла из админки), и карты slug/id должны инвалидироваться.
-  return statSync(path.join(process.cwd(), 'lib', 'data', 'titles.json')).mtimeMs;
+  return statSync(TITLES_FILE()).mtimeMs;
 }
 function bySlugMap(): Map<string, Title> {
   const mt = mtimeNow();
@@ -66,7 +79,7 @@ export function homeRails() {
 }
 
 export function heroSlides(): Title[] {
-  return [...TITLES]
+  return [...loadTitles()]
     .filter((t) => t.banner)
     .sort((a, b) => b.favourites - a.favourites)
     .slice(0, 5);
@@ -166,7 +179,10 @@ export function filterCatalog(query: CatalogQuery): CatalogResult {
   items = sortTitles(items, query.sort);
   const total = items.length;
   const pages = Math.max(1, Math.ceil(total / PER_PAGE));
-  const page = Math.min(Math.max(1, query.page ?? 1), pages);
+  /* Аудит 30.09 (P2-17): ?page=abc → Number()=NaN → slice(NaN,NaN)=[] — пустая
+     выдача вместо первой страницы. Санитизируем до клампа. */
+  const rawPage = query.page ?? 1;
+  const page = Number.isFinite(rawPage) ? Math.min(Math.max(1, Math.trunc(rawPage)), pages) : 1;
   return { items: items.slice((page - 1) * PER_PAGE, page * PER_PAGE), total, page, pages };
 }
 
@@ -180,7 +196,7 @@ export function yearsAvailable(): number[] {
 
 /** Похожие тайтлы: пересечение жанров + близкий год. */
 export function similarTitles(title: Title, limit = 12): Title[] {
-  return TITLES.filter((t) => t.slug !== title.slug)
+  return loadTitles().filter((t) => t.slug !== title.slug)
     .map((t) => ({
       t,
       s:

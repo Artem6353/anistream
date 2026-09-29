@@ -10,13 +10,28 @@ import { synthesizeEpisode } from './synthesize';
 import { metrics, metricLatency, metricErrorBump, sendTgAlert } from '@/lib/metrics';
 import { promises as fs } from 'node:fs';
 import { log } from '@/lib/logger';
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 
 /** Ручные источники модератора: lib/data/manual-sources.json
-    формат: { "<slug>": { "<episode>": [ { label, embedUrl?, files?: [{quality,url,type}], providerId? } ] } } */
+    формат: { "<slug>": { "<episode>": [ { label, embedUrl?, files?: [{quality,url,type}], providerId? } ] } }
+    Аудит 30.09 (P2-20): файл читался СИНХРОННО на каждый резолв серии (блокировка
+    event-loop на горячем пути) — теперь mtime-кэш, как у titles.json. */
+const MANUAL_FILE = 'lib/data/manual-sources.json';
+let manualCache: { mtime: number; data: Record<string, Record<string, Array<Record<string, unknown>>>> } | null = null;
+function manualData(): Record<string, Record<string, Array<Record<string, unknown>>>> {
+  try {
+    const mtime = statSync(MANUAL_FILE).mtimeMs;
+    if (manualCache && manualCache.mtime === mtime) return manualCache.data;
+    const data = JSON.parse(readFileSync(MANUAL_FILE, 'utf8')) as Record<string, Record<string, Array<Record<string, unknown>>>>;
+    manualCache = { mtime, data };
+    return data;
+  } catch {
+    return {};
+  }
+}
 function manualSources(slug: string, episode: number): EpisodeSource[] {
   try {
-    const raw = JSON.parse(readFileSync('lib/data/manual-sources.json', 'utf8')) as Record<string, Record<string, Array<Record<string, unknown>>>>;
+    const raw = manualData();
     const list = raw?.[slug]?.[String(episode)] ?? [];
     return list.map((m, i) => ({
       id: `manual:${slug}:${episode}:${i}`,
@@ -120,14 +135,21 @@ export async function resolveEpisodeSources(ctx: ProviderContext): Promise<Episo
     } else {
       const outcomes = await Promise.all(
         ids.map(async (id) => {
-          const timeout = new Promise<ResolveOutcome>((resolve) =>
-            setTimeout(() => resolve({ sources: [], error: 'timeout' }), timeoutFor(id)),
-          );
-          const outcome = await Promise.race([
-            RESOLVERS[id](ctx).catch((e) => ({ sources: [], error: String(e) }) as ResolveOutcome),
-            timeout,
-          ]);
-          return { id, outcome };
+          /* Аудит 30.09 (P2-21): таймер гасится после race — раньше каждый резолв
+             оставлял висеть setTimeout до 8+ с (ручки/память под нагрузкой). */
+          let timer: ReturnType<typeof setTimeout> | undefined;
+          const timeout = new Promise<ResolveOutcome>((resolve) => {
+            timer = setTimeout(() => resolve({ sources: [], error: 'timeout' }), timeoutFor(id));
+          });
+          try {
+            const outcome = await Promise.race([
+              RESOLVERS[id](ctx).catch((e) => ({ sources: [], error: String(e) }) as ResolveOutcome),
+              timeout,
+            ]);
+            return { id, outcome };
+          } finally {
+            if (timer) clearTimeout(timer);
+          }
         }),
       );
       for (const { id, outcome } of outcomes) {
@@ -192,13 +214,20 @@ async function raceProviders(
   }
   const slots: Slot[] = ids.map((id) => {
     const slot: Slot = { id, settled: false, promise: null as unknown as Slot['promise'] };
+    let timer: ReturnType<typeof setTimeout> | undefined;
     slot.promise = Promise.race([
       RESOLVERS[id](ctx).catch((e) => ({ sources: [], error: e instanceof Error ? e.message : String(e) }) as ResolveOutcome),
-      new Promise<ResolveOutcome>((resolve) => setTimeout(() => resolve({ sources: [], error: 'timeout' }), timeoutFor(id))),
-    ]).then((outcome) => {
-      slot.settled = true;
-      return { id, outcome };
-    });
+      new Promise<ResolveOutcome>((resolve) => {
+        timer = setTimeout(() => resolve({ sources: [], error: 'timeout' }), timeoutFor(id));
+      }),
+    ])
+      .then((outcome) => {
+        slot.settled = true;
+        return { id, outcome };
+      })
+      .finally(() => {
+        if (timer) clearTimeout(timer);
+      });
     return slot;
   });
 

@@ -62,12 +62,14 @@ export async function GET(request: Request) {
           : 'orig';
 
   const key = createHash('sha1').update(`${url}|${fmt}|${w}|${q}`).digest('hex');
-  const ext = fmt === 'avif' ? '.avif' : fmt === 'webp' ? '.webp' : fmt === 'jpeg' ? '.jpg' : parsed.pathname.endsWith('.png') ? '.png' : '.jpg';
-  const file = path.join(DIR, key + ext);
-  try {
-    const cached = await fs.readFile(file);
-    return respond(cached, mimeFor(fmt, ext), fmtParam === 'auto' || !sp.has('fmt'));
-  } catch {}
+  /* Аудит 30.09 (P2-14): раньше файл читали по расширению из ЗАПРОШЕННОГО fmt,
+     а писали по расширению из РЕАЛЬНОГО outType — при transcoding-fallback
+     (passthrough оригинала) кэш никогда не находился: повторный транскод на каждый
+     запрос + мусорные файлы. Теперь перебираем возможные расширения ключа. */
+  const hit = await readCache(key);
+  if (hit) {
+    return respond(hit.buf, mimeForExt(hit.ext), fmtParam === 'auto' || !sp.has('fmt'));
+  }
 
   let up: Response;
   try {
@@ -130,11 +132,22 @@ function respond(body: Buffer, contentType: string, vary: boolean): Response {
   return new Response(new Uint8Array(body), { headers });
 }
 
-function mimeFor(fmt: Fmt, ext: string): string {
-  if (fmt === 'avif') return 'image/avif';
-  if (fmt === 'webp') return 'image/webp';
-  if (fmt === 'jpeg') return 'image/jpeg';
-  return ext === '.png' ? 'image/png' : 'image/jpeg';
+function mimeForExt(ext: string): string {
+  if (ext === '.avif') return 'image/avif';
+  if (ext === '.webp') return 'image/webp';
+  if (ext === '.png') return 'image/png';
+  return 'image/jpeg';
+}
+
+/** Поиск кэша по ключу: расширение файла определяется тем, что РЕАЛЬНО записали
+ *  (транскод мог откатиться на оригинал) — перебираем варианты. */
+async function readCache(key: string): Promise<{ buf: Buffer; ext: string } | null> {
+  for (const ext of ['.webp', '.avif', '.jpg', '.png']) {
+    try {
+      return { buf: await fs.readFile(path.join(DIR, key + ext)), ext };
+    } catch {}
+  }
+  return null;
 }
 
 function guessMime(pathname: string): string {

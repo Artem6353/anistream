@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { promises as fs } from 'node:fs';
 import { cacheStats } from '@/lib/providers';
-import { TITLES } from '@/lib/catalog';
+import { allTitles } from '@/lib/catalog';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { adminCookieName, verifyAdminCookie } from '@/lib/admin-auth';
@@ -51,7 +51,7 @@ export default async function AdminPage() {
       <header className="page-head">
         <h1>Админ-панель · модерация</h1>
         <p>
-          Тайтлов в каталоге: {TITLES.length} · записей кэша источников: {cache.entries} · warm: {warm?.withSources ?? '—'}/{warm?.total ?? '—'}
+          Тайтлов в каталоге: {allTitles().length} · записей кэша источников: {cache.entries} · warm: {warm?.withSources ?? '—'}/{warm?.total ?? '—'}
         </p>
       </header>
 

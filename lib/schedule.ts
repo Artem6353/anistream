@@ -1,7 +1,7 @@
 import { weekBounds } from './schedule-core';
 export { weekBounds, groupByDay, todayIndex } from './schedule-core';
 import type { ScheduleEntry } from './types';
-import { TITLES } from './catalog';
+import { loadTitles } from './catalog';
 import { hashStr } from './format';
 
 const ANILIST = 'https://graphql.anilist.co';
@@ -36,7 +36,7 @@ async function liveSchedule(): Promise<ScheduleEntry[]> {
   return rows
     .filter((r: any) => r.media)
     .map((r: any) => {
-      const known = TITLES.find((t) => t.anilistId === r.media.id);
+      const known = loadTitles().find((t) => t.anilistId === r.media.id);
       return {
         at: r.airingAt * 1000,
         episode: r.episode,
@@ -54,7 +54,7 @@ async function liveSchedule(): Promise<ScheduleEntry[]> {
 /** Детерминированное демо-расписание: офлайн-фолбэк и SSR-заготовка. */
 export function demoWeek(): ScheduleEntry[] {
   const { start } = weekBounds();
-  const pool = [...TITLES].sort((a, b) => b.favourites - a.favourites).slice(0, 28);
+  const pool = [...loadTitles()].sort((a, b) => b.favourites - a.favourites).slice(0, 28);
   return pool
     .map((t) => {
       const h = hashStr(t.slug) >>> 0; // unsigned: отрицательный хеш давал NaN at
