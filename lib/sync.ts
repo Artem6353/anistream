@@ -22,6 +22,7 @@ const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_URL_ANON_KEY ?? '';
 
 const LS_TOKEN = 'anistream:supa_token';
+const LS_VERIFIER = 'anistream:supa_verifier'; // PKCE code_verifier (аудит 30.09, P1-8)
 const LS_REFRESH = 'anistream:supa_refresh';
 const LS_EXPIRES = 'anistream:supa_expires';
 
@@ -287,15 +288,77 @@ export async function pullRemote(): Promise<{ lists: Record<string, string>; his
  * apikey передаём в query (?apikey=...), потому что при навигации нельзя
  * проставить заголовки — а Supabase требует apikey для /auth/v1/authorize.
  */
-export function signInWithGoogle(): void {
+/* ---------- PKCE (аудит 30.09, P1-8) ----------
+   Implicit-флоу (токены в URL-хэше) деприкейтед Supabase: токены светятся в
+   истории/логах. Переходим на Authorization Code + PKCE: на authorize уходим
+   с code_challenge (S256), callback получает ?code=… и обменивает его вместе
+   с сохранённым code_verifier. Legacy hash-ветка в callback сохранена как
+   фолбэк (на случай, если в проекте Supabase включён только implicit). */
+
+function base64url(bytes: ArrayBuffer | Uint8Array): string {
+  const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  let bin = '';
+  for (const b of arr) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function generateCodeVerifier(): string {
+  const arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  return base64url(arr); // 43 символа [A-Za-z0-9_-] — по спецификации PKCE
+}
+
+async function codeChallenge(verifier: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  return base64url(digest);
+}
+
+export async function signInWithGoogle(): Promise<void> {
   if (!syncConfigured()) throw new Error('sync не настроен');
   const redirectTo = typeof location !== 'undefined' ? location.origin + '/auth/callback' : '';
+  const verifier = generateCodeVerifier();
+  try {
+    localStorage.setItem(LS_VERIFIER, verifier);
+  } catch {
+    /* приватный режим — PKCE невозможен, уходим legacy-implicit */
+  }
+  const challenge = await codeChallenge(verifier);
   const url =
     `${SUPA_URL}/auth/v1/authorize` +
     `?provider=google` +
     `&redirect_to=${encodeURIComponent(redirectTo)}` +
-    `&apikey=${encodeURIComponent(SUPA_KEY)}`;
+    `&apikey=${encodeURIComponent(SUPA_KEY)}` +
+    `&response_type=code` +
+    `&code_challenge=${encodeURIComponent(challenge)}` +
+    `&code_challenge_method=S256`;
+  /* Внешний редирект на Supabase OAuth (не страница Next) — router здесь не применим. */
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
   window.location.href = url;
+}
+
+/** Обмен authorization code на сессию (PKCE). Вызывается со страницы /auth/callback. */
+export async function exchangeAuthCode(code: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  let verifier = '';
+  try {
+    verifier = localStorage.getItem(LS_VERIFIER) ?? '';
+    localStorage.removeItem(LS_VERIFIER);
+  } catch {}
+  if (!verifier) return { ok: false, error: 'Потерян code_verifier — вернитесь и повторите вход' };
+  try {
+    const r = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=pkce`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: SUPA_KEY },
+      body: JSON.stringify({ auth_code: code, code_verifier: verifier }),
+    });
+    const j = (await r.json()) as TokenResponse & { error_description?: string; msg?: string };
+    if (!r.ok || !j?.access_token) {
+      return { ok: false, error: j?.error_description || j?.msg || `обмен кода не удался (${r.status})` };
+    }
+    saveTokens(j);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'сеть недоступна при обмене кода' };
+  }
 }
 
 /** REST Supabase с авто-refresh (для profiles/storage и т.п.). */

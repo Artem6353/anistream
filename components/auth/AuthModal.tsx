@@ -77,9 +77,9 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
           onClick={() => {
             setBusy('google');
             try {
-              // signInWithGoogle — синхронный redirect через window.location.href.
+              // signInWithGoogle — PKCE: готовит code_challenge и уходит redirect'ом (async).
               // Никакого fetch/await — браузер сразу уходит на Google.
-              signInWithGoogle();
+              void signInWithGoogle();
             } catch (e) {
               setBusy('');
               toast(`Google: ${e instanceof Error ? e.message : 'ошибка'}`);
