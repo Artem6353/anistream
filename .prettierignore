@@ -1,0 +1,8 @@
+.next
+node_modules
+.cache
+lib/data
+data
+public/sw.js
+package-lock.json
+.next/types

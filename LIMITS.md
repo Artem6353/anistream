@@ -29,6 +29,17 @@
 под 1 ГБ VPS; при росте каталога за ~15k тайтлов сборке может не хватить — порог
 миграции: OOM сборки → поднять до 1024+ или перенести сборку в CI/Vercel.
 
+## Покрытие rate-limit (аудит 30.09, P1-3 — решение)
+
+Покрыто (`lib/rateLimit.ts` LIMITS): /api/search, /api/providers, /api/social/*,
+/api/reco, /api/availability, /api/push, /api/report, /api/dmca, /api/quiz,
+/api/admin/login (5/мин), /api/admin (60/мин).
+Осознанно НЕ покрыто: /api/titles и /api/schedule (ISR `revalidate=600` — бурст
+сервит край, до сервера доходит ≤1 RPS; плюс Allow в robots только для Googlebot),
+/api/health (лёгкий self-monitor; злоупотребление бессмысленно), /api/random
+(307-редирект), /api/metrics (закрыт admin-cookie до любых лимитов).
+Решение пересматривать при появлении write-поверхности или тяжёлых вычислений в этих роутах.
+
 ## Ключевые риски
 1. **Upstash 10k команд/день** — статус после итерации 3.0: KV-адаптер подключён
    (`lib/providers/cache-kv.ts`) и включается **только** при заданных `UPSTASH_REDIS_REST_URL/TOKEN`;

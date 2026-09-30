@@ -16,6 +16,20 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test   # 5 сценариев (e2e/smoke.spec.ts), прод-сервер поднимает webServer конфига
+      # Аудит 30.09 (волна 2): lab-гейт Lighthouse на прод-сборке: деградация
+      # perf/seo/a11y ниже порогов роняет CI. Пороги сознательно мягкие (lab-скоринг
+      # в CI шумный): ловим регрессии, а не абслютные значения.
+      - name: lighthouse gate
+        run: |
+          (npm run start &) && sleep 8
+          npx -y lighthouse@12 http://localhost:3000/             --only-categories=performance,seo,accessibility             --chrome-flags="--no-sandbox --headless=new"             --output=json --output-path=/tmp/lh-ci.json --quiet
+          node -e "
+            const r=require('/tmp/lh-ci.json');
+            const s=(c)=>Math.round(r.categories[c].score*100);
+            console.log('lighthouse lab: perf',s('performance'),'seo',s('seo'),'a11y',s('accessibility'));
+            if(s('seo')<95||s('accessibility')<95||s('performance')<80){console.error('::error::lighthouse gate failed');process.exit(1)}
+          "
+
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
