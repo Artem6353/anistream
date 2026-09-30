@@ -25,6 +25,9 @@ const analyticsScriptSrc = analyticsHosts.map((h) => `https://${h}`).join(' ');
 /* S5: Метрика включает mc.yandex.ru в CSP только при установленном счётчике —
    иначе директивы остаются минимальными. */
 const metrikaSrc = process.env.NEXT_PUBLIC_METRIKA_ID ? 'https://mc.yandex.ru' : '';
+/* Аудит 30.09 (P2-1): webvisor Метрики держит WebSocket на mc.yandex.ru — без
+   wss:// в connect-src браузер резал solid.ws CSP-ошибкой в консоли прода. */
+const metrikaWsSrc = process.env.NEXT_PUBLIC_METRIKA_ID ? 'wss://mc.yandex.ru' : '';
 const CSP_DIRECTIVES = [
   "default-src 'self'",
   "object-src 'none'",
@@ -47,7 +50,7 @@ const CSP_DIRECTIVES = [
   "font-src 'self' data:",
   "media-src 'self' https: blob:",
   "worker-src 'self'",
-  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graphql.anilist.co https://shikimori.io https://shikimori.one https://api.jikan.moe https://api.aniskip.com https://challenges.cloudflare.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io ${analyticsScriptSrc} ${metrikaSrc}`.trim(),
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graphql.anilist.co https://shikimori.io https://shikimori.one https://api.jikan.moe https://api.aniskip.com https://challenges.cloudflare.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io ${analyticsScriptSrc} ${metrikaSrc} ${metrikaWsSrc}`.trim(),
   /* баг 29.09: embed CVH реально живёт на animego.me (cdn-iframe), а не animego.org —
      без .me enforce-CSP блокировал плеер («This content is blocked»). */
   `frame-src https://kodik.info https://kodikplayer.com https://animego.org https://cdn.animego.org https://animego.me https://cdn.animego.me https://aniboom.one https://www.youtube.com https://challenges.cloudflare.com ${metrikaSrc}`.trim(),
