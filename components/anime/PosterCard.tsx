@@ -45,7 +45,10 @@ export function PosterCard({
     /* S3.1: article→div — после h3→p карточка без заголовка давала W3C-warning
        «Article lacks heading» ×20 на главной; card-семантика классом .card сохранена. */
     <div className="card">
-      <Link className="card__media" href={href} aria-label={title.ru}>
+      {/* Аудит 30.09 (P2-2, label-content-name-mismatch): aria-label убран —
+          доступное имя собирается из контента (sr-only заголовок + видимый бейдж),
+          поэтому видимый текст всегда входит в имя. */}
+      <Link className="card__media" href={href}>
         {/* S3.3: якорный текст ссылки-постера для краулеров/парсеров (аудит: неинформативные
             и дублирующиеся анкоры «Анонс 2027 12 серий»); для SR имя даёт aria-label. */}
         <span className="sr-only">{title.ru}</span>

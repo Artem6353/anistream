@@ -24,10 +24,11 @@ const analyticsHosts = (() => {
 const analyticsScriptSrc = analyticsHosts.map((h) => `https://${h}`).join(' ');
 /* S5: Метрика включает mc.yandex.ru в CSP только при установленном счётчике —
    иначе директивы остаются минимальными. */
-const metrikaSrc = process.env.NEXT_PUBLIC_METRIKA_ID ? 'https://mc.yandex.ru' : '';
-/* Аудит 30.09 (P2-1): webvisor Метрики держит WebSocket на mc.yandex.ru — без
-   wss:// в connect-src браузер резал solid.ws CSP-ошибкой в консоли прода. */
-const metrikaWsSrc = process.env.NEXT_PUBLIC_METRIKA_ID ? 'wss://mc.yandex.ru' : '';
+/* Аудит 30.09 (P2-1): tag.js Метрики обращается к обоим хостам (mc.yandex.ru и
+   mc.yandex.com — watch/solid-пиксели) и держит WebSocket webvisor'а (solid.ws):
+   без них в connect-src/script-src браузер резал запросы CSP-ошибками в консоли. */
+const metrikaSrc = process.env.NEXT_PUBLIC_METRIKA_ID ? 'https://mc.yandex.ru https://mc.yandex.com' : '';
+const metrikaWsSrc = process.env.NEXT_PUBLIC_METRIKA_ID ? 'wss://mc.yandex.ru wss://mc.yandex.com' : '';
 const CSP_DIRECTIVES = [
   "default-src 'self'",
   "object-src 'none'",

@@ -25,7 +25,10 @@ export function CookieConsent() {
         >
           Принять
         </button>
-        <a className="btn btn--ghost btn--sm" href="/privacy">
+        {/* Аудит 30.09 (P2-2, color-contrast): баннер всегда тёмный (#171a21),
+            а каскад .btn--ghost тянул туда цвет светлой темы (1.05:1). Inline-цвет
+            перебивает любой каскад тем — контраст ≈15:1 в обеих темах. */}
+        <a className="btn btn--ghost btn--sm" href="/privacy" style={{ color: '#f6f7fb' }}>
           Подробнее
         </a>
       </div>

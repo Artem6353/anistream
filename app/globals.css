@@ -3129,6 +3129,13 @@ html[data-tv='true'] .card:focus-within .card__media {
 .legal { padding: 32px 0 48px; display: flex; flex-direction: column; gap: 14px; max-width: 860px; }
 .legal h1 { font-size: 28px; }
 .legal p { color: var(--muted); line-height: 1.7; }
+/* Аудит 30.09 (P2-2, color-contrast): ghost-ссылка «Подробнее» в cookie-баннере
+   на elevated-фоне не дотягивала 4.5:1 (var(--muted)) — локально усиливаем до
+   var(--text); остальные использования .btn--ghost не трогаем. */
+.cookie-banner .btn--ghost,
+.cookie-banner .btn--ghost:hover {
+  color: #f6f7fb; /* баннер всегда тёмный (#171a21): var(--text) светлой темы давал 1.05:1 */
+}
 .cookie-banner {
   position: fixed;
   left: 50%;
