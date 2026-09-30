@@ -161,6 +161,20 @@ create table profile_lists (user_id uuid references auth.users, slug text, statu
 | 008 | 008_dm.sql | ЛС | `\dt dm_threads` |
 | 009 | 009_forum.sql | форум + 5 разделов | select count(*) from forum_categories → 5 |
 | 010 | 010_rls_hardening.sql | P0-безопасность: update отзывов автору, write реакций/подписок → service_role | anon PATCH reviews → 403 |
+| 011 | 011_dmca_reports_rls.sql | P0-3 аудита 30.09: anon-INSERT dmca/reports → service_role (для живых БД; в schema.sql уже есть) | `npm run check:rls` зелёный |
+
+### Реестр применённых миграций (аудит 30.09, P0-5)
+
+Прод-База дрейфовала от репозитория (зонды: push_subs закрыт, reactions/dmca/reports
+открыты), журнал применений не вёлся. Заполняйте при каждом применении; сверка —
+`npm run check:rls` + запрос:
+`select tablename, policyname, cmd, roles from pg_policies order by 1,2;`
+
+| Миграция | Дата применения | Кто | Комментарий |
+|---|---|---|---|
+| 001–009 | ? | ? | заполнить из истории Supabase dashboard → Database → Migrations (или logs) |
+| 010 | **НЕ применена** (зонд 30.09: anon insert review_reactions прошёл RLS) | — | применить срочно |
+| 011 | не применена (создана 30.09) | — | применить вместе с 010 |
 
 ## Чек-лист env Vercel (аудит P2-6)
 

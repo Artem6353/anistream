@@ -23,6 +23,7 @@
     "test": "vitest run",
     "preflight": "npm run check:env && npm run typecheck && npm run test && npm run build && (npm run start & sleep 8) && npm run smoke",
     "check:env": "node scripts/check-env.mjs",
+    "check:rls": "node scripts/check-rls.mjs",
     "check:posters": "node scripts/check-posters.mjs",
     "clean:titles": "node scripts/clean-titles.mjs report",
     "loadtest": "node scripts/loadtest.mjs",
