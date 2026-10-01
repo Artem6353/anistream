@@ -151,8 +151,14 @@ create table profile_lists (user_id uuid references auth.users, slug text, statu
 
 | # | Файл | Что даёт | Как проверить |
 | --- | --- | --- | --- |
-| 001 | schema.sql | reviews/profiles/push_subs/dmca + RLS | `\dt` |
+| 001 | 001_schema.sql (бывш. schema.sql) | reviews/profiles/push_subs/dmca + RLS | `\dt` |
 | 002 | 002_profile_rls.sql | политики профилей | select policyname from pg_policies |
+
+> Аудит 01.10 (P0-5, дрейф БД): `schema.sql` УПРАЗДНЁН как параллельный baseline —
+> единый источник истины теперь `supabase/migrations/001_schema.sql` … `012_…`.
+> Свежая БД поднимается применением миграций по порядку (SQL Editor/CLI),
+> `supabase start` в CI делает это автоматически. Двойная поддержка
+> «schema.sql + миграции» и породила рассинхрон политик на проде.
 | 003 | 003_review_reactions.sql | реакции + 3 триггера пересчёта | select trigger_name from information_schema.triggers where event_object_table='review_reactions' → 3 строки |
 | 004 | 004_profiles_storage.sql | profiles колонки + бакеты avatars/banners | select * from storage.buckets |
 | 005 | 005_profiles_username_backfill.sql | username из email | select count(*) from profiles where username is null |
