@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getTitle } from '@/lib/catalog';
 
-export const revalidate = 600;
 
 /** Лёгкая выдача тайтлов для клиентских компонентов (профиль, «продолжить просмотр»). */
 export async function GET(request: Request) {
@@ -23,7 +22,9 @@ export async function GET(request: Request) {
       genres: t!.genres.slice(0, 3),
       description: t!.description.slice(0, 200),
     }));
-  /* Аудит 01.10: кэширование — только через export const revalidate (ISR);
-     ручной Cache-Control перезаписывался краем и не соответствовал реальности. */
-  return NextResponse.json({ items });
+  /* Аудит 01.10, итерация 2: роут читает searchParams → это dynamic-FUNCTION,
+     revalidate=600 на таких не работает (зонд: x-vercel-cache MISS на повторах),
+     а край уважает s-maxage в ответе функции. Поэтому: без revalidate, с явным
+     s-maxage+SWR — CDN кэширует по полному URL (ключ = набор слагов). */
+  return NextResponse.json({ items }, { headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=60' } });
 }

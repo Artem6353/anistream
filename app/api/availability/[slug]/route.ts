@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getTitle } from '@/lib/catalog';
 import { cacheEntriesForSlug } from '@/lib/providers/cache';
 
-export const revalidate = 600;
 
 /** Доступность серий: cache (прямой кэш) | synth (шаблон CVH/AniBoom) | guess (пул озвучек) | demo. */
 export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
@@ -26,7 +25,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
     else if (title.shikimori?.id) episodes[ep] = 'guess';
     else episodes[ep] = 'demo';
   }
-  /* Аудит 01.10: кэширование — только через export const revalidate (ISR);
-     ручной Cache-Control перезаписывался краем и не соответствовал реальности. */
-  return NextResponse.json({ slug, episodes });
+  /* Аудит 01.10, итерация 2: роут читает searchParams → это dynamic-FUNCTION,
+     revalidate=600 на таких не работает (зонд: x-vercel-cache MISS на повторах),
+     а край уважает s-maxage в ответе функции. Поэтому: без revalidate, с явным
+     s-maxage+SWR — CDN кэширует по полному URL (ключ = набор слагов). */
+  return NextResponse.json({ slug, episodes }, { headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=60' } });
 }
