@@ -68,7 +68,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru">
+    /* suppressHydrationWarning: инлайн-скрипт ThemeInit ставит data-theme/
+       --accent на <html> ДО гидратации — без этого React логает hydration
+       mismatch на атрибутах html (рекомендация Next для тем-скриптов).
+       Пришло из локальной правки владельца, upstream 01.10. */}
+    <html lang="ru" suppressHydrationWarning>
       {/* S3.2: preconnect/dns-prefetch к s4.anilist.co и cdn.myanimelist.net убраны —
           с волны S1 все изображения идут через собственный прокси /img (server-side),
           браузер на эти origin больше не ходит (PSI: «Unused preconnect»). */}
