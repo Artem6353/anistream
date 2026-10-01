@@ -1,6 +1,6 @@
 /* RLS-оракулы прод-БД Supabase (аудит 30.09, P0-2/P0-3/P0-5): БЕЗ записей и без
  * service-ключа — только анонимные запросы, которые гарантированно НЕ мутируют данные:
- *   - insert review_reactions с несуществующим review_id: 403 = RLS закрыт (010 применена),
+ *   - insert review_reactions с несуществующим review_id: 401/403 = RLS закрыт (010+012 применены),
  *     409/23503 = RLS пропустил (010 НЕ применена — накрутка реакций открыта);
  *   - insert dmca_requests/source_reports пустым телом: 401/403 = закрыто (011 применена),
  *     400/23502 = открыто (011 НЕ применена);
@@ -41,7 +41,9 @@ const run = async () => {
       method: 'POST', headers: H,
       body: JSON.stringify({ review_id: '00000000-0000-0000-0000-000000000000', user_id: 'rls-oracle', kind: 'like' }),
     });
-    return { ok: r.status === 403, got: r.status, want: 403 };
+    /* Supabase отдаёт 401 анониму при RLS-отказе и 403 аутентифицированному —
+       оба кода означают «закрыто» (аудит-фикс оракула 01.10). */
+    return { ok: r.status === 401 || r.status === 403, got: r.status, want: '401/403' };
   }));
 
   for (const tbl of ['dmca_requests', 'source_reports']) {

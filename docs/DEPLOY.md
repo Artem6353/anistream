@@ -177,9 +177,10 @@ create table profile_lists (user_id uuid references auth.users, slug text, statu
 
 | Миграция | Дата применения | Кто | Комментарий |
 |---|---|---|---|
-| 001–009 | ? | ? | заполнить из истории Supabase dashboard → Database → Migrations (или logs) |
-| 010 | **НЕ применена** (зонд 30.09: anon insert review_reactions прошёл RLS) | — | применить срочно |
-| 011 | не применена (создана 30.09) | — | применить вместе с 010 |
+| 001–009 | до 30.09.2026 (таблицы присутствуют на проде) | владелец | точные даты — из истории Supabase dashboard → Database → Migrations (или logs) |
+| 010 | 01.10.2026 | владелец, SQL Editor | сверка pg_policies: reactions insert/update/delete = {service_role} |
+| 011 | 01.10.2026 | владелец, SQL Editor | зонды dmca/reports anon → 401 |
+| 012 | 01.10.2026 | владелец, SQL Editor | призрачные политики удалены; в pg_policies ровно 4 политики реакций; reviews_update.qual = user_id = (auth.uid())::text |
 
 ## Чек-лист env Vercel (аудит P2-6)
 
