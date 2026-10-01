@@ -162,6 +162,11 @@ create table profile_lists (user_id uuid references auth.users, slug text, statu
 | 009 | 009_forum.sql | форум + 5 разделов | select count(*) from forum_categories → 5 |
 | 010 | 010_rls_hardening.sql | P0-безопасность: update отзывов автору, write реакций/подписок → service_role | anon PATCH reviews → 403 |
 | 011 | 011_dmca_reports_rls.sql | P0-3 аудита 30.09: anon-INSERT dmca/reports → service_role (для живых БД; в schema.sql уже есть) | `npm run check:rls` зелёный |
+| 012 | 012_drop_stray_reaction_policies.sql | Удаление политик-призраков review_reactions (reactions_insert_any/update_own/delete_own/select_all), созданных вручную вне миграций; insert_any (public) обходила 010 через ИЛИ-семантику RLS | в pg_policies ровно 4 политики реакций; `check:rls` зелёный |
+
+Сверка ограничительных условий (roles не показывают USING/WITH CHECK):
+`select policyname, cmd, roles, qual, with_check from pg_policies where tablename in ('reviews','review_reactions') order by 1,2;`
+Ожидание: `reviews_update.qual` содержит `auth.uid()`, а не `true`.
 
 ### Реестр применённых миграций (аудит 30.09, P0-5)
 
