@@ -1,0 +1,50 @@
+name: RLS contracts
+# Аудит 30.09 (волна 2): контракт-тесты RLS-политик.
+#  - prod-oracle: НЕмутирующие оракулы против прода (scripts/check-rls.mjs) —
+#    еженедельно + вручную; ловит дрейф политик живой БД (P0-5).
+#  - local-contracts: полные write-контракты на локальном стеке Supabase
+#    (supabase start = docker + миграции 001…012 из репозитория).
+#    continue-on-error: true ТОЛЬКО до первого зелёного прогона (стек не
+#    превалидирован в песочнице автора); после — снять флаг и сделать гейтом.
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 4 * * 1' # понедельник 04:00 UTC
+
+jobs:
+  prod-oracle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: read-only RLS oracles vs prod
+        run: SMOKE_URL=https://aninova-catalog.vercel.app npm run check:rls
+
+  local-contracts:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: install supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: supabase start (docker stack + migrations 001…012)
+        run: supabase start
+        timeout-minutes: 12
+      - name: export local keys
+        run: |
+          supabase status --output env > /tmp/supa.env
+          cat /tmp/supa.env
+          {
+            echo "SUPA_TEST_URL=$(sed -n 's/^API_URL="\(.*\)"$/\1/p' /tmp/supa.env)"
+            echo "SUPA_TEST_ANON=$(sed -n 's/^ANON_KEY="\(.*\)"$/\1/p' /tmp/supa.env)"
+            echo "SUPA_TEST_SERVICE=$(sed -n 's/^SERVICE_ROLE_KEY="\(.*\)"$/\1/p' /tmp/supa.env)"
+          } >> "$GITHUB_ENV"
+      - name: write-path RLS contracts
+        run: npx vitest run tests/rls-contracts.test.ts
