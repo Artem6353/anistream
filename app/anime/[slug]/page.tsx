@@ -23,6 +23,7 @@ import { PosterArt } from '@/components/anime/PosterArt';
 import { WatchButton } from '@/components/anime/WatchButton';
 import { artUri } from '@/lib/art';
 import { getProvidersConfig } from '@/lib/config/providers.config';
+import { titleEditorial } from '@/lib/editorial';
 import { imgProxyUrl } from '@/lib/img';
 
 /** Обрезка описания по границе слова/предложения (SEO-6, аудит 30.09). */
@@ -66,6 +67,9 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
   const similar = similarTitles(title);
   /* ТЗ 4.1 (4.2): показываем одно основное описание; shikimori-вариант уходит
    * в сворачиваемый блок «Альтернативное описание» (по умолчанию свёрнут). */
+  /* Редполитика (SEO-9): уникальная справка из данных каталога — повышает
+     уникальность страницы поверх общего описания AniList/Shikimori. */
+  const ed = titleEditorial(title);
   const altDesc =
     title.description && title.shikimori?.description && title.shikimori.description.trim() !== title.description.trim()
       ? title.shikimori.description
@@ -194,6 +198,25 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
             <div style={{ marginTop: 24 }}>
               <TrailerCard title={title} />
             </div>
+          </section>
+          <section className="panel editorial" aria-label="Справка AniNova по тайтлу">
+            <h2 className="section-title">{ed.heading}</h2>
+            {ed.paragraphs.map((p, i) => (
+              <p key={i} className="editorial__p">
+                {p}
+              </p>
+            ))}
+            {ed.links.length ? (
+              <p className="editorial__links">
+                Смотрите также:{' '}
+                {ed.links.map((l, i) => (
+                  <span key={l.href}>
+                    {i ? ', ' : ''}
+                    <Link href={l.href}>{l.name}</Link>
+                  </span>
+                ))}
+              </p>
+            ) : null}
           </section>
           {title.episodes > 1 ? (
             <section aria-label="Серии">

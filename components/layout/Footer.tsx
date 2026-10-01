@@ -36,6 +36,7 @@ export function Footer() {
           <Link href="/catalog">Каталог</Link>
           <Link href="/schedule">Расписание</Link>
           <Link href="/genres">Жанры</Link>
+          <Link href="/season">Сезоны аниме</Link>
           <a href="https://anilist.co" target="_blank" rel="noopener noreferrer">
             Метаданные: AniList
           </a>

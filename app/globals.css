@@ -2117,6 +2117,32 @@ input, select {
   color: var(--accent-2-text);
 }
 
+/* Редполитика (SEO-9): редакционные справки на страницах тайтлов и сезонов */
+.editorial {
+  margin-top: 14px;
+  padding: 14px 16px;
+}
+.editorial__p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.editorial__p:last-child {
+  margin-bottom: 0;
+}
+.editorial__links {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--muted-2);
+}
+.editorial__links a {
+  color: var(--accent-2-text);
+}
+.season-year {
+  margin-bottom: 14px;
+}
+
 /* ---------------- Мобильная навигация ---------------- */
 
 .mobile-nav {

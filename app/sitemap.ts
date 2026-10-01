@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { allTitles, genreStats } from '@/lib/catalog';
 import { COLLECTIONS } from '@/lib/collections';
+import { seasonCombos } from '@/lib/editorial';
 import { getProvidersConfig } from '@/lib/config/providers.config';
 
 /* Аудит SEO-9 (01.10): sitemap покрывал только статику + тайтлы — хабы
@@ -11,7 +12,7 @@ export const revalidate = 3600;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = getProvidersConfig().site.url;
-  const staticRoutes: MetadataRoute.Sitemap = ['/', '/catalog', '/genres', '/schedule', '/top', '/collections'].map((href) => ({
+  const staticRoutes: MetadataRoute.Sitemap = ['/', '/catalog', '/genres', '/schedule', '/top', '/collections', '/season'].map((href) => ({
     url: `${base}${href}`,
     changeFrequency: 'daily',
     priority: href === '/' ? 1 : 0.8,
@@ -26,6 +27,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${base}/collections/${c.slug}`,
       changeFrequency: 'weekly' as const,
       priority: 0.6,
+    })),
+    ...seasonCombos().map((c) => ({
+      url: `${base}/season/${c.slug}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
     })),
   ];
   const titles: MetadataRoute.Sitemap = allTitles().map((t) => {
