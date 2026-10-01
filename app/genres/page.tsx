@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { genreStats } from '@/lib/catalog';
 import { GENRE_LABELS } from '@/lib/labels';
 import { hashStr, plural } from '@/lib/format';
+import { JsonLd, breadcrumbsLd, itemListLd } from '@/components/system/JsonLd';
+import { getProvidersConfig } from '@/lib/config/providers.config';
 
 export const metadata: Metadata = {
   title: 'Жанры аниме — все категории каталога',
@@ -13,7 +15,12 @@ export const metadata: Metadata = {
 
 export default function GenresPage() {
   const stats = genreStats();
+  const base = getProvidersConfig().site.url;
   return (
+    <>
+      {/* SEO-9: хаб жанров — крошки + ItemList жанровых страниц */}
+      <JsonLd data={breadcrumbsLd(base, [{ name: 'Жанры' }])} />
+      <JsonLd data={itemListLd(stats.map((g) => ({ href: `/genre/${g.slug}`, name: GENRE_LABELS[g.slug] ?? g.slug })), base)} />
     <div className="container">
       <header className="page-head">
         <h1>Жанры</h1>
@@ -35,5 +42,6 @@ export default function GenresPage() {
         ))}
       </div>
     </div>
+    </>
   );
 }

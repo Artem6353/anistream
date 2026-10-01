@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { loadTitles } from '@/lib/catalog';
 import { collectionTitles, COLLECTIONS } from '@/lib/collections';
 import { PosterCard } from '@/components/anime/PosterCard';
+import { JsonLd, breadcrumbsLd, itemListLd } from '@/components/system/JsonLd';
+import { getProvidersConfig } from '@/lib/config/providers.config';
 
 export const revalidate = 3600;
 
@@ -23,7 +25,12 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
   const { slug } = await params;
   const res = collectionTitles(slug, loadTitles());
   if (!res) notFound();
+  const base = getProvidersConfig().site.url;
   return (
+    <>
+      {/* SEO-9: разметка подборки */}
+      <JsonLd data={breadcrumbsLd(base, [{ name: 'Подборки', href: '/collections' }, { name: res.collection.title }])} />
+      <JsonLd data={itemListLd(res.items.slice(0, 60).map((t) => ({ href: `/anime/${t.slug}`, name: t.ru })), base)} />
     <div className="container">
       <nav className="breadcrumbs" aria-label="Хлебные крошки">
         <Link href="/">Главная</Link> / <span>Подборки</span>
@@ -36,5 +43,6 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
         ))}
       </div>
     </div>
+    </>
   );
 }

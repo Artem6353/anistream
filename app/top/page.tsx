@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { topTitles } from '@/lib/catalog';
 import { TYPE_LABELS } from '@/lib/labels';
 import { PosterArt } from '@/components/anime/PosterArt';
+import { JsonLd, breadcrumbsLd, itemListLd } from '@/components/system/JsonLd';
+import { getProvidersConfig } from '@/lib/config/providers.config';
 
 export const revalidate = 3600;
 export const metadata: Metadata = {
@@ -15,8 +17,13 @@ export const metadata: Metadata = {
 export default function TopPage() {
   const top = topTitles(250);
   const avg = top.length ? top.reduce((a, t) => a + t.score, 0) / top.length : 0;
+  /* SEO-9: разметка хаба — хлебные крошки + ItemList топа (позиция/url/имя). */
+  const base = getProvidersConfig().site.url;
 
   return (
+    <>
+      <JsonLd data={breadcrumbsLd(base, [{ name: 'ТОП-250 аниме' }])} />
+      <JsonLd data={itemListLd(top.map((t) => ({ href: `/anime/${t.slug}`, name: t.ru })), base)} />
     <div className="container top-layout">
       <div className="top-main">
         <header className="page-head">
@@ -67,5 +74,6 @@ export default function TopPage() {
         </div>
       </aside>
     </div>
+    </>
   );
 }

@@ -6,6 +6,8 @@ export const revalidate = 1800;
 import { titlesByGenre } from '@/lib/catalog';
 import { GENRE_LABELS } from '@/lib/labels';
 import { PosterCard } from '@/components/anime/PosterCard';
+import { JsonLd, breadcrumbsLd, itemListLd } from '@/components/system/JsonLd';
+import { getProvidersConfig } from '@/lib/config/providers.config';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -29,8 +31,13 @@ export default async function GenrePage({ params, searchParams }: Props) {
   const { sort } = await searchParams;
   if (!GENRE_LABELS[slug]) notFound();
   const items = titlesByGenre(slug, (sort as 'pop' | 'score' | 'new' | 'az') ?? 'pop');
+  const base = getProvidersConfig().site.url;
 
   return (
+    <>
+      {/* SEO-9: хаб-разметка жанра: крошки + ItemList первых 60 тайтлов */}
+      <JsonLd data={breadcrumbsLd(base, [{ name: 'Жанры', href: '/genres' }, { name: GENRE_LABELS[slug] }])} />
+      <JsonLd data={itemListLd(items.slice(0, 60).map((t) => ({ href: `/anime/${t.slug}`, name: t.ru })), base)} />
     <div className="container">
       <nav className="crumbs" aria-label="Хлебные крошки">
         <Link href="/genres">Жанры</Link>
@@ -61,5 +68,6 @@ export default async function GenrePage({ params, searchParams }: Props) {
         ))}
       </div>
     </div>
+    </>
   );
 }
