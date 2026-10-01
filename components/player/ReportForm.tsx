@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Форма жалобы на источник (A5.8) — вынесена из PlayerShell (аудит 30.09,
@@ -20,6 +20,10 @@ export function ReportForm({
 }) {
   const [text, setText] = useState('');
   const [sent, setSent] = useState(false);
+  /* Аудит 30.09 (P3): таймер «Отправлено → закрыть» гасится при размонтировании
+     (раньше setState-колбэк мог выстрелить в уже размонтированный родительский slot). */
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (closeTimer.current) clearTimeout(closeTimer.current); }, []);
 
   return (
     <div className="player__menu" role="dialog" aria-label="Жалоба на источник">
@@ -44,7 +48,7 @@ export function ReportForm({
             });
             setSent(true);
             setText('');
-            setTimeout(onClose, 1200);
+            closeTimer.current = setTimeout(onClose, 1200);
           }}
         >
           {sent ? 'Отправлено ✓' : 'Отправить'}

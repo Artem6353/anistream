@@ -23,5 +23,7 @@ export async function GET(request: Request) {
       genres: t!.genres.slice(0, 3),
       description: t!.description.slice(0, 200),
     }));
-  return NextResponse.json({ items }, { headers: { 'Cache-Control': 'public, s-maxage=600' } });
+  /* Аудит 01.10: кэширование — только через export const revalidate (ISR);
+     ручной Cache-Control перезаписывался краем и не соответствовал реальности. */
+  return NextResponse.json({ items });
 }

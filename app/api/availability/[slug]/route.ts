@@ -26,5 +26,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
     else if (title.shikimori?.id) episodes[ep] = 'guess';
     else episodes[ep] = 'demo';
   }
-  return NextResponse.json({ slug, episodes }, { headers: { 'Cache-Control': 'public, s-maxage=600' } });
+  /* Аудит 01.10: кэширование — только через export const revalidate (ISR);
+     ручной Cache-Control перезаписывался краем и не соответствовал реальности. */
+  return NextResponse.json({ slug, episodes });
 }
