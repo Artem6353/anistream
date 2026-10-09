@@ -121,22 +121,83 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   /* источники + доступность серий */
   useEffect(() => {
     let cancelled = false;
-    Promise.all([
-      fetch(`/api/providers/${title.slug}/${episode}`).then((r) => (r.ok ? r.json() : null)),
-      fetch(`/api/availability/${title.slug}`).then((r) => (r.ok ? r.json() : null)),
-    ])
-      .then(([prov, avail]) => {
+    const providerController = new AbortController();
+    const availabilityController = new AbortController();
+    const providerTimeout = setTimeout(() => providerController.abort(), 12_000);
+    const availabilityTimeout = setTimeout(() => availabilityController.abort(), 8_000);
+    let availabilityValue: Record<number, string> | undefined;
+
+    void (async () => {
+      try {
+        const response = await fetch(`/api/providers/${title.slug}/${episode}`, {
+          signal: providerController.signal,
+        });
+        if (!response.ok) throw new Error(`API источников вернул HTTP ${response.status}`);
+
+        const prov = (await response.json()) as {
+          sources?: EpisodeSource[];
+          skip?: DataState['skip'];
+        };
+        if (!Array.isArray(prov?.sources)) {
+          throw new Error('Некорректный ответ API источников');
+        }
         if (cancelled) return;
-        /* Аудит 30.09: prov.skip СОХРАНЯЕТСЯ (раньше терялся — автопропуск OP/ED
-           читал (data as {skip}).skip, которого в state никогда не было). */
-        setData({ key: dataKey, status: 'ready', sources: prov?.sources ?? [], availability: avail?.episodes, skip: prov?.skip });
-        const saved = typeof window !== 'undefined' ? localStorage.getItem(`anistream:lastsrc:${title.slug}`) : null;
-        if (saved && (prov?.sources ?? []).some((s: EpisodeSource) => s.id === saved)) setSelectedId(saved);
+
+        /* Ошибка availability не должна блокировать найденные источники. */
+        setData({
+          key: dataKey,
+          status: 'ready',
+          sources: prov.sources,
+          availability: availabilityValue,
+          skip: prov.skip,
+        });
+
+        let saved: string | null = null;
+        try {
+          saved = localStorage.getItem(`anistream:lastsrc:${title.slug}`);
+        } catch {
+          /* localStorage может быть недоступен в приватном/ограниченном режиме. */
+        }
+        if (saved && prov.sources.some((source) => source.id === saved)) setSelectedId(saved);
         else setSelectedId(null);
-      })
-      .catch((e) => !cancelled && setData({ key: dataKey, status: 'error', message: String(e) }));
+      } catch (error) {
+        if (cancelled) return;
+        const message = providerController.signal.aborted
+          ? 'Источники не ответили за 12 секунд'
+          : error instanceof Error
+            ? error.message
+            : String(error);
+        setData({ key: dataKey, status: 'error', message });
+      } finally {
+        clearTimeout(providerTimeout);
+      }
+    })();
+
+    void (async () => {
+      try {
+        const response = await fetch(`/api/availability/${title.slug}`, {
+          signal: availabilityController.signal,
+        });
+        if (!response.ok) return;
+        const availability = (await response.json()) as { episodes?: Record<number, string> };
+        availabilityValue = availability?.episodes;
+        if (cancelled) return;
+        setData((current) =>
+          current.key === dataKey ? { ...current, availability: availabilityValue } : current,
+        );
+      } catch {
+        /* Подсказки доступности необязательны: не блокируют загрузку плеера. */
+      } finally {
+        clearTimeout(availabilityTimeout);
+      }
+    })();
+
     return () => {
       cancelled = true;
+      clearTimeout(providerTimeout);
+      clearTimeout(availabilityTimeout);
+      providerController.abort();
+      availabilityController.abort();
     };
   }, [episode, title.slug, dataKey]);
 
