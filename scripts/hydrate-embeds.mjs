@@ -317,7 +317,7 @@ if (MODE === 'gaps') {
 
     if (inventoryTitlesChecked) {
       process.stdout.write(
-        '\\rInventory: ' + inventoryTitlesChecked + '/' + selectedTitles.length +
+        '\rInventory: ' + inventoryTitlesChecked + '/' + selectedTitles.length +
         ' titles · known gaps=' + knownGapEpisodes + ' · errors=' + inventoryErrors + '   ',
       );
       console.log('');
