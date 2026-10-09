@@ -50,6 +50,15 @@ function persist(file: string) {
 
 export const cacheKey = (slug: string, episode: number) => `ep:${slug}:${episode}`;
 
+/** Проверяет срок действия записи одинаково для файлового и KV-кэша. */
+export function isCacheEntryExpired(
+  entry: { at: number; ttlMs?: number },
+  defaultTtlMs: number,
+): boolean {
+  const ttlMs = entry.ttlMs ?? defaultTtlMs;
+  return !Number.isFinite(entry.at) || !Number.isFinite(ttlMs) || Date.now() - entry.at > ttlMs;
+}
+
 /* KV-ключи: запись серии и индекс эпизодов тайтла. */
 const kvEpKey = (key: string) => `ep:${key}`; // key уже 'ep:slug:N' → 'ep:ep:slug:N' (совместимость с прежними чтениями)
 const kvIdxKey = (slug: string) => `epidx:${slug}`;
@@ -80,7 +89,7 @@ export async function cacheEntriesForSlug(slug: string): Promise<{ episode: numb
         if (!raw) return null;
         try {
           const entry = JSON.parse(raw) as { at: number; ttlMs?: number; sources: EpisodeSources };
-          if (Date.now() - entry.at > (entry.ttlMs ?? cfg.ttlMs)) return null;
+          if (isCacheEntryExpired(entry, cfg.ttlMs)) return null;
           return { episode: ep, sources: entry.sources };
         } catch {
           return null;
@@ -95,7 +104,8 @@ export async function cacheEntriesForSlug(slug: string): Promise<{ episode: numb
   for (const [key, entry] of Object.entries(store)) {
     if (!key.startsWith(prefix)) continue;
     const ep = Number(key.slice(prefix.length));
-    if (Number.isFinite(ep)) out.push({ episode: ep, sources: entry.sources });
+    if (!Number.isInteger(ep) || ep < 1 || isCacheEntryExpired(entry, cfg.ttlMs)) continue;
+    out.push({ episode: ep, sources: entry.sources });
   }
   return out.sort((a, b) => a.episode - b.episode);
 }
@@ -108,7 +118,7 @@ export async function cacheGet(key: string): Promise<EpisodeSources | null> {
     if (!raw) return null;
     try {
       const entry = JSON.parse(raw) as { at: number; ttlMs?: number; sources: EpisodeSources };
-      if (Date.now() - entry.at > (entry.ttlMs ?? cfg.ttlMs)) return null;
+      if (isCacheEntryExpired(entry, cfg.ttlMs)) return null;
       return entry.sources;
     } catch {
       return null;
@@ -117,8 +127,7 @@ export async function cacheGet(key: string): Promise<EpisodeSources | null> {
   const store = await load(cfg.file);
   const entry = store[key];
   if (!entry) return null;
-  const ttl = entry.ttlMs ?? cfg.ttlMs;
-  if (Date.now() - entry.at > ttl) return null;
+  if (isCacheEntryExpired(entry, cfg.ttlMs)) return null;
   return entry.sources;
 }
 
