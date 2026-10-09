@@ -56,7 +56,7 @@ const synthFrom = (base: EpisodeSources, episode: number): EpisodeSource[] => {
     if (s.providerId === 'cvh') url = rewriteCvh(s.embedUrl, episode);
     else if (s.providerId === 'aniboom') url = rewriteAniboom(s.embedUrl, episode);
     if (!url) continue;
-    out.push({ ...s, id: `${s.id}:s${episode}`, embedUrl: url });
+    out.push({ ...s, id: `${s.id}:s${episode}`, embedUrl: url, synthesized: true });
   }
   return out;
 };

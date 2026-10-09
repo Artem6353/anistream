@@ -28,6 +28,8 @@ export interface EpisodeSource {
   voice?: 'voice' | 'subtitles' | 'unknown';
   /** URL подобран пулом озвучек (без кэш-шаблона) — может не найтись у провайдера. */
   guessed?: boolean;
+  /** URL получен заменой номера в шаблоне другой серии; это не прямой результат резолва. */
+  synthesized?: boolean;
   contentType?: string;
 }
 

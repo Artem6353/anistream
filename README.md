@@ -19,8 +19,9 @@ npm run dev        # 2) терминал №1: http://localhost:3000, дожда
 Дальше — во **втором** терминале (скрипты ходят в работающий сервер):
 
 ```bash
-npm run warm       # 3) warmer: у каких тайтлов есть провайдер-источники (.cache/warm-summary.json)
-npm run hydrate    # 4) hydrator: episode-specific embed в self-growing кэш
+npm run warm       # 3) обзор доступности по кэшу
+npm run hydrate -- --dry-run # 4) сначала составить план недостающих серий
+npm run hydrate    # 5) заполнить пропуски прямыми результатами провайдеров
 npm run smoke      # HTTP-проверка маршрутов (SMOKE_URL=…, если порт другой)
 npm run build && npm run start   # прод-сборка и прод-сервер
 npm run typecheck  # tsc --noEmit
@@ -250,3 +251,15 @@ lib/data/     titles.json — снапшот каталога: 5002 тайтла
 - Метаданные, постеры, баннеры и расписание — [AniList GraphQL](https://docs.anilist.co/).
 - Русские названия и описания — редакция каталога (снапшот `lib/data/titles.json`).
 - Видео демо-плеера — публичные тестовые ролики Google (gtv-videos-bucket). Права на тайтлы принадлежат правообладателям.
+
+## Массовое заполнение недостающих серий
+
+Гидратор проверяет полный `lib/data/titles.json`, а не только sitemap. В режиме `gaps` он запрашивает каждую серию, для которой нет прямого результата провайдера в кэше. Метки `guess`/`synth` не считаются заполнением. В режиме `live` он обновляет все эпизоды, обходя кэш и синтез URL.
+
+1. Поднимите Next.js (`npm run dev`) и нужные bridge (`bridges/kodik_bridge.py`, `bridges/multi_player_bridge.py`) с доступными провайдерами.
+2. Сначала безопасно оцените объём через `npm run hydrate -- --dry-run`. План будет в `.cache/hydrate-plan.json`.
+3. Для тестового прогона в PowerShell: `$env:LIMIT='25'; $env:MAX_EPISODES='200'; $env:HYDRATE_CONCURRENCY='4'; npm run hydrate`.
+4. Для полного заполнения пропусков: `Remove-Item Env:LIMIT, Env:MAX_EPISODES -ErrorAction SilentlyContinue; $env:HYDRATE_MODE='gaps'; $env:HYDRATE_CONCURRENCY='4'; npm run hydrate`.
+5. Результаты сохраняются в `.cache/hydrate-report.json`; успешные прямые источники — в `.cache/providers-resolve-cache.json` или Upstash, если он настроен. Повторный запуск безопасен: уже заполненные серии пропускаются, неудачные не исключаются навсегда.
+
+Запускайте массовый процесс на компьютере/VPS, где есть постоянное файловое хранилище и работающие bridge. Не используйте Vercel без настроенного Upstash для массового заполнения: файловый кэш serverless-функции не является постоянным хранилищем.
