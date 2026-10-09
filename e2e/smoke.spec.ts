@@ -46,7 +46,7 @@ test('4 · каталог → тайтл → отзыв (локальный ре
   // отзыв появился в списке (localStorage-режим: без капчи и перезагрузки)
   const item = page.locator('.review', { hasText: marker }).first();
   await expect(item).toBeVisible();
-  await expect(item.locator('.review__head strong')).toHaveText('E2E-бот');
+  await expect(item.locator('.review__head .review__author-name')).toHaveText('E2E-бот');
 
   // переживает перезагрузку страницы
   await page.reload({ waitUntil: 'domcontentloaded' });
