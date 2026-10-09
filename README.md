@@ -272,6 +272,9 @@ npm run cache:migrate-ttl -- --apply
 2. Сначала безопасно оцените объём через `npm run hydrate -- --dry-run`. План будет в `.cache/hydrate-plan.json`.
 3. Для тестового прогона в PowerShell: `$env:LIMIT='25'; $env:MAX_EPISODES='200'; $env:HYDRATE_CONCURRENCY='4'; npm run hydrate`.
 4. Для полного заполнения пропусков: `Remove-Item Env:LIMIT, Env:MAX_EPISODES -ErrorAction SilentlyContinue; $env:HYDRATE_MODE='gaps'; $env:HYDRATE_CONCURRENCY='4'; npm run hydrate`.
+
+Инвентаризация кэша выполняется осторожно: по умолчанию один запрос одновременно и пауза 500 мс между тайтлами; при HTTP 429 скрипт уважает `Retry-After` и использует экспоненциальные повторы. Настройки: `HYDRATE_INVENTORY_CONCURRENCY` и `HYDRATE_INVENTORY_DELAY_MS`. Если реальный запуск встретил ошибки инвентаризации, он останавливается до запросов к провайдерам, чтобы не принять неизвестные серии за пропуски. Намеренно разрешить продолжение можно через `HYDRATE_ALLOW_INVENTORY_ERRORS=1`, но это не рекомендуется.
+
 5. Результаты сохраняются в `.cache/hydrate-report.json`; успешные прямые источники — в `.cache/providers-resolve-cache.json` или Upstash, если он настроен. Повторный запуск безопасен: уже заполненные серии пропускаются, неудачные не исключаются навсегда.
 
 Запускайте массовый процесс на компьютере/VPS, где есть постоянное файловое хранилище и работающие bridge. Не используйте Vercel без настроенного Upstash для массового заполнения: файловый кэш serverless-функции не является постоянным хранилищем.
