@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { library, useLibrary } from '@/lib/library';
-import { isSessionValid } from '@/lib/sync';
+import { isSessionValid, syncConfigured } from '@/lib/sync';
 import { requireAuth } from '@/lib/auth-gate';
 import { trackEvent } from '@/lib/achievements';
 import { useToast } from '@/components/ui/Toaster';
@@ -41,11 +41,15 @@ export function ListStatusButton({ slug }: { slug: string }) {
               role="menuitem"
               className={`listbtn__item ${current === st ? 'is-active' : ''}`}
               onClick={() => {
-                requireAuth(isSessionValid, () => {
+                const applyStatus = () => {
                   library.setListStatus(slug, st);
                   trackEvent('lists');
-                });
-                toast(`Список: ${LIST_STATUS_LABELS[st]}`);
+                  toast(`Список: ${LIST_STATUS_LABELS[st]}`);
+                };
+                // Без Supabase список локальный — регистрация не требуется.
+                // Если синхронизация включена, действие ждёт успешного входа.
+                if (syncConfigured()) requireAuth(isSessionValid, applyStatus);
+                else applyStatus();
                 setOpen(false);
               }}
             >
@@ -59,8 +63,12 @@ export function ListStatusButton({ slug }: { slug: string }) {
               role="menuitem"
               className="listbtn__item listbtn__item--danger"
               onClick={() => {
-                requireAuth(isSessionValid, () => library.setListStatus(slug, null));
-                toast('Удалено из списков');
+                const removeStatus = () => {
+                  library.setListStatus(slug, null);
+                  toast('Удалено из списков');
+                };
+                if (syncConfigured()) requireAuth(isSessionValid, removeStatus);
+                else removeStatus();
                 setOpen(false);
               }}
             >
