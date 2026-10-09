@@ -24,6 +24,9 @@ const numberEnv = (name, fallback) => {
   return Number.isFinite(value) ? value : fallback;
 };
 const CONCURRENCY = Math.max(1, Math.min(12, Math.floor(numberEnv('HYDRATE_CONCURRENCY', numberEnv('CONCURRENCY', 4)))));
+const INVENTORY_CONCURRENCY = Math.max(1, Math.min(4, Math.floor(numberEnv('HYDRATE_INVENTORY_CONCURRENCY', 1))));
+const INVENTORY_DELAY_MS = Math.max(0, numberEnv('HYDRATE_INVENTORY_DELAY_MS', 500));
+const ALLOW_PARTIAL_INVENTORY = process.env.HYDRATE_ALLOW_INVENTORY_ERRORS === '1';
 const TIMEOUT_MS = Math.max(3000, numberEnv('HYDRATE_TIMEOUT_MS', 30000));
 const DELAY_MS = Math.max(0, numberEnv('HYDRATE_DELAY_MS', 120));
 const SETTLE_MS = Math.max(0, numberEnv('HYDRATE_SETTLE_MS', 6000));
@@ -40,11 +43,29 @@ if (!['gaps', 'live'].includes(MODE)) {
   process.exit(1);
 }
 
+function retryDelayMs(response, attempt) {
+  const retryAfter = response.headers.get('retry-after');
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0) return Math.min(300_000, seconds * 1000);
+    const date = Date.parse(retryAfter);
+    if (Number.isFinite(date)) return Math.min(300_000, Math.max(0, date - Date.now()));
+  }
+  // 429 gets a slower exponential backoff; 5xx/network failures use a shorter one.
+  const base = response.status === 429 ? 1000 : 400;
+  const max = response.status === 429 ? 30_000 : 8000;
+  return Math.min(max, base * (2 ** attempt)) + Math.floor(Math.random() * 250);
+}
+
 async function fetchJson(url, timeoutMs) {
   let lastError = 'unknown error';
-  for (let attempt = 0; attempt < 3; attempt++) {
+  let lastStatus = 0;
+  const maxAttempts = 5;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    let delayMs = Math.min(8000, 400 * (2 ** attempt));
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+      lastStatus = response.status;
       if (response.ok) {
         try {
           return { ok: true, status: response.status, body: await response.json(), error: null };
@@ -56,13 +77,14 @@ async function fetchJson(url, timeoutMs) {
         if (response.status !== 429 && response.status < 500) {
           return { ok: false, status: response.status, body: null, error: lastError };
         }
+        delayMs = retryDelayMs(response, attempt);
       }
     } catch (error) {
       lastError = String(error);
     }
-    if (attempt < 2) await sleep(350 * (attempt + 1));
+    if (attempt < maxAttempts - 1) await sleep(delayMs);
   }
-  return { ok: false, status: 0, body: null, error: lastError };
+  return { ok: false, status: lastStatus, body: null, error: lastError };
 }
 
 const health = await fetchJson(BASE + '/api/schedule', 5000);
@@ -95,6 +117,8 @@ console.log(
   ' · server: ' + BASE +
   ' · eligible titles: ' + selectedTitles.length +
   ' · concurrency: ' + CONCURRENCY +
+  ' · inventory concurrency: ' + INVENTORY_CONCURRENCY +
+  ' · inventory delay: ' + INVENTORY_DELAY_MS + ' ms' +
   ' · timeout: ' + TIMEOUT_MS + ' ms' +
   ' · upcoming skipped: ' + skippedUpcoming +
   ' · no-Shikimori skipped: ' + skippedNoShikimori,
@@ -104,23 +128,32 @@ const availability = new Map();
 let inventoryErrors = 0;
 if (MODE === 'gaps') {
   const queue = [...selectedTitles];
-  const inventoryWorkers = Array.from({ length: Math.min(8, CONCURRENCY * 2) }, async () => {
-    while (queue.length) {
-      const title = queue.shift();
-      if (!title) break;
-      const result = await fetchJson(
-        BASE + '/api/availability/' + encodeURIComponent(title.slug),
-        Math.min(TIMEOUT_MS, 15000),
-      );
-      if (result.ok && result.body?.episodes) {
-        availability.set(title.slug, result.body.episodes);
-      } else {
-        inventoryErrors++;
-        availability.set(title.slug, null);
-        console.warn('\nInventory failed for ' + title.slug + ': ' + (result.error ?? 'no episode map'));
+  const inventoryWorkers = Array.from(
+    { length: Math.min(INVENTORY_CONCURRENCY, queue.length || 1) },
+    async () => {
+      while (queue.length) {
+        const title = queue.shift();
+        if (!title) break;
+        try {
+          const result = await fetchJson(
+            BASE + '/api/availability/' + encodeURIComponent(title.slug),
+            Math.min(TIMEOUT_MS, 15000),
+          );
+          if (result.ok && result.body?.episodes) {
+            availability.set(title.slug, result.body.episodes);
+          } else {
+            inventoryErrors++;
+            availability.set(title.slug, null);
+            console.warn(
+              '\nInventory failed for ' + title.slug + ': ' + (result.error ?? 'no episode map'),
+            );
+          }
+        } finally {
+          if (INVENTORY_DELAY_MS) await sleep(INVENTORY_DELAY_MS);
+        }
       }
-    }
-  });
+    },
+  );
   await Promise.all(inventoryWorkers);
 }
 
@@ -167,6 +200,18 @@ writeFileSync('.cache/hydrate-plan.json', JSON.stringify({
 
 console.log('Planned: ' + planSummary.plannedTitles + ' titles / ' + tasks.length + ' episodes.');
 console.log('Plan written to .cache/hydrate-plan.json');
+if (inventoryErrors > 0) {
+  console.warn(
+    'WARNING: inventory failed for ' + inventoryErrors + ' title(s). The plan may overestimate gaps for those titles.',
+  );
+  if (!DRY_RUN && !ALLOW_PARTIAL_INVENTORY) {
+    console.error(
+      'ABORT: no provider resolutions were started. Wait for rate limits to clear and retry. ' +
+      'Set HYDRATE_ALLOW_INVENTORY_ERRORS=1 only if you intentionally want to continue with incomplete inventory.',
+    );
+    process.exit(1);
+  }
+}
 if (DRY_RUN) {
   console.log('DRY RUN: provider resolution was not started.');
   console.log('Sample: ' + tasks.slice(0, 12).map((task) => task.slug + ':' + task.episode).join(', '));
