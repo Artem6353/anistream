@@ -315,7 +315,13 @@ if (MODE === 'gaps') {
       await Promise.all(workers);
     }
 
-    if (inventoryTitlesChecked) console.log('');
+    if (inventoryTitlesChecked) {
+      process.stdout.write(
+        '\\rInventory: ' + inventoryTitlesChecked + '/' + selectedTitles.length +
+        ' titles · known gaps=' + knownGapEpisodes + ' · errors=' + inventoryErrors + '   ',
+      );
+      console.log('');
+    }
   }
 }
 
