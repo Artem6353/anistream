@@ -31,8 +31,8 @@ jobs:
             try {
               const response = await fetch(base + '/');
               const html = await response.text();
-              const heroTag = html.match(/<img\\b[^>]*class="hero__bg[^"]*"[^>]*>/)?.[0];
-              const src = heroTag?.match(/\\bsrc="([^"]+)"/)?.[1];
+              const heroTag = html.match(/<img\b[^>]*class="hero__bg[^"]*"[^>]*>/)?.[0];
+              const src = heroTag?.match(/\bsrc="([^"]+)"/)?.[1];
               if (src) {
                 const imageUrl = new URL(src.replace(/&amp;/g, '&'), base);
                 const image = await fetch(imageUrl);
