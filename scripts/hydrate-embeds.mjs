@@ -128,23 +128,32 @@ const availability = new Map();
 let inventoryErrors = 0;
 if (MODE === 'gaps') {
   const queue = [...selectedTitles];
-  const inventoryWorkers = Array.from({ length: Math.min(8, CONCURRENCY * 2) }, async () => {
-    while (queue.length) {
-      const title = queue.shift();
-      if (!title) break;
-      const result = await fetchJson(
-        BASE + '/api/availability/' + encodeURIComponent(title.slug),
-        Math.min(TIMEOUT_MS, 15000),
-      );
-      if (result.ok && result.body?.episodes) {
-        availability.set(title.slug, result.body.episodes);
-      } else {
-        inventoryErrors++;
-        availability.set(title.slug, null);
-        console.warn('\nInventory failed for ' + title.slug + ': ' + (result.error ?? 'no episode map'));
+  const inventoryWorkers = Array.from(
+    { length: Math.min(INVENTORY_CONCURRENCY, queue.length || 1) },
+    async () => {
+      while (queue.length) {
+        const title = queue.shift();
+        if (!title) break;
+        try {
+          const result = await fetchJson(
+            BASE + '/api/availability/' + encodeURIComponent(title.slug),
+            Math.min(TIMEOUT_MS, 15000),
+          );
+          if (result.ok && result.body?.episodes) {
+            availability.set(title.slug, result.body.episodes);
+          } else {
+            inventoryErrors++;
+            availability.set(title.slug, null);
+            console.warn(
+              '\\nInventory failed for ' + title.slug + ': ' + (result.error ?? 'no episode map'),
+            );
+          }
+        } finally {
+          if (INVENTORY_DELAY_MS) await sleep(INVENTORY_DELAY_MS);
+        }
       }
-    }
-  });
+    },
+  );
   await Promise.all(inventoryWorkers);
 }
 
