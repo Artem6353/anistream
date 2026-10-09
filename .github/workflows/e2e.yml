@@ -30,6 +30,62 @@ jobs:
             if(s('seo')<95||s('accessibility')<95||s('performance')<80){console.error('::error::lighthouse gate failed');process.exit(1)}
           "
 
+      # Always emit useful Lighthouse details, even when the performance gate fails.
+      - name: Lighthouse diagnostics
+        if: always()
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          if (!fs.existsSync('/tmp/lh-ci.json')) {
+            console.log('Lighthouse JSON was not generated.');
+            process.exit(0);
+          }
+          const report = JSON.parse(fs.readFileSync('/tmp/lh-ci.json', 'utf8'));
+          const score = (category) => Math.round((report.categories?.[category]?.score ?? 0) * 100);
+          const audits = report.audits ?? {};
+          const metricIds = [
+            'first-contentful-paint',
+            'largest-contentful-paint',
+            'speed-index',
+            'total-blocking-time',
+            'cumulative-layout-shift',
+            'server-response-time',
+            'total-byte-weight',
+          ];
+          console.log('Lighthouse category scores:', JSON.stringify({
+            performance: score('performance'),
+            seo: score('seo'),
+            accessibility: score('accessibility'),
+          }));
+          console.log('Lighthouse key metrics:', JSON.stringify(
+            Object.fromEntries(metricIds.map((id) => [id, {
+              score: audits[id]?.score ?? null,
+              displayValue: audits[id]?.displayValue ?? null,
+            }]))
+          ));
+          const opportunities = Object.values(audits)
+            .filter((audit) => audit.details?.type === 'opportunity')
+            .map((audit) => ({
+              id: audit.id,
+              title: audit.title,
+              score: audit.score,
+              savingsMs: audit.details?.overallSavingsMs ?? 0,
+              savingsBytes: audit.details?.overallSavingsBytes ?? 0,
+            }))
+            .filter((audit) => audit.savingsMs > 0 || audit.savingsBytes > 0)
+            .sort((a, b) => b.savingsMs - a.savingsMs || b.savingsBytes - a.savingsBytes)
+            .slice(0, 10);
+          console.log('Lighthouse top opportunities:', JSON.stringify(opportunities));
+          NODE
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-report
+          path: /tmp/lh-ci.json
+          if-no-files-found: ignore
+          retention-days: 7
+
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
