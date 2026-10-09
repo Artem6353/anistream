@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { isCacheEntryExpired, isDirectProviderSource } from '../lib/providers/cache';
+import { getProvidersConfig } from '../lib/config/providers.config';
 
 describe('provider cache TTL', () => {
   it('marks entries older than their own TTL as expired', () => {
@@ -41,5 +42,14 @@ describe('direct provider source classification', () => {
 
   it('rejects legacy synthesized cache IDs', () => {
     expect(isDirectProviderSource({ ...source, id: 'cvh:episode:1:s12' })).toBe(false);
+  });
+});
+
+describe('provider cache default configuration', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('matches the documented 24-hour cache TTL when no override is set', () => {
+    vi.stubEnv('KODIK_CACHE_TTL_MS', '');
+    expect(getProvidersConfig().cache.ttlMs).toBe(86_400_000);
   });
 });
