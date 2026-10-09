@@ -145,7 +145,7 @@ if (MODE === 'gaps') {
             inventoryErrors++;
             availability.set(title.slug, null);
             console.warn(
-              '\\nInventory failed for ' + title.slug + ': ' + (result.error ?? 'no episode map'),
+              '\nInventory failed for ' + title.slug + ': ' + (result.error ?? 'no episode map'),
             );
           }
         } finally {
