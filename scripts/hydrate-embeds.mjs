@@ -15,7 +15,7 @@
  * Requires a running Next.js server and configured live bridge(s).
  * Re-running is safe: directly-resolved episodes are skipped, failed ones remain eligible.
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const BASE = (process.env.BASE ?? 'http://localhost:3000').replace(/\/$/, '');
 const MODE = process.env.HYDRATE_MODE ?? 'gaps';
@@ -27,6 +27,7 @@ const CONCURRENCY = Math.max(1, Math.min(12, Math.floor(numberEnv('HYDRATE_CONCU
 const INVENTORY_CONCURRENCY = Math.max(1, Math.min(4, Math.floor(numberEnv('HYDRATE_INVENTORY_CONCURRENCY', 1))));
 const INVENTORY_DELAY_MS = Math.max(0, numberEnv('HYDRATE_INVENTORY_DELAY_MS', 500));
 const ALLOW_PARTIAL_INVENTORY = process.env.HYDRATE_ALLOW_INVENTORY_ERRORS === '1';
+const INVENTORY_SOURCE = (process.env.HYDRATE_INVENTORY_SOURCE ?? 'auto').toLowerCase();
 const TIMEOUT_MS = Math.max(3000, numberEnv('HYDRATE_TIMEOUT_MS', 30000));
 const DELAY_MS = Math.max(0, numberEnv('HYDRATE_DELAY_MS', 120));
 const SETTLE_MS = Math.max(0, numberEnv('HYDRATE_SETTLE_MS', 6000));
@@ -37,9 +38,81 @@ const MAX_EPISODES = Math.max(0, Math.floor(numberEnv('MAX_EPISODES', 0)));
 const DRY_RUN = process.argv.includes('--dry-run') || process.env.DRY_RUN === '1';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+function readEnvFile(file) {
+  if (!existsSync(file)) return {};
+  const values = {};
+  for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
+    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
+    if (!match) continue;
+    let value = match[2];
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    } else {
+      value = value.replace(/\s+#.*$/, '').trim();
+    }
+    values[match[1]] = value;
+  }
+  return values;
+}
+
+const localEnv = { ...readEnvFile('.env'), ...readEnvFile('.env.local') };
+const configValue = (key) => process.env[key] ?? localEnv[key];
+const cacheFile = configValue('KODIK_CACHE_FILE') || '.cache/providers-resolve-cache.json';
+const cacheEnabledValue = configValue('PROVIDER_CACHE_ENABLED');
+const localCacheEnabled = cacheEnabledValue === undefined
+  ? true
+  : ['1', 'true', 'yes', 'on'].includes(String(cacheEnabledValue).toLowerCase());
+const kvConfigured = Boolean(
+  configValue('UPSTASH_REDIS_REST_URL') && configValue('UPSTASH_REDIS_REST_TOKEN'),
+);
+const configuredTtl = Number(configValue('KODIK_CACHE_TTL_MS') ?? 86_400_000);
+const cacheDefaultTtlMs = Number.isFinite(configuredTtl) && configuredTtl > 0
+  ? configuredTtl
+  : 86_400_000;
+
+function isDirectSource(source) {
+  return source &&
+    typeof source === 'object' &&
+    source.providerId !== 'demo' &&
+    !source.guessed &&
+    !source.synthesized &&
+    !/:s\d+$/.test(String(source.id ?? ''));
+}
+
+function readLocalCacheInventory(titles) {
+  const store = JSON.parse(readFileSync(cacheFile, 'utf8'));
+  if (!store || typeof store !== 'object' || Array.isArray(store)) {
+    throw new Error('Unexpected provider cache format');
+  }
+  const now = Date.now();
+  const bySlug = new Map(titles.map((title) => [title.slug, {}]));
+  let directEpisodeCount = 0;
+  for (const [key, entry] of Object.entries(store)) {
+    const match = /^ep:([^:]+):(\d+)$/.exec(key);
+    if (!match || !entry || typeof entry !== 'object') continue;
+    const episodes = bySlug.get(match[1]);
+    if (!episodes) continue;
+    const at = Number(entry.at);
+    const ttlMs = Number(entry.ttlMs ?? cacheDefaultTtlMs);
+    if (!Number.isFinite(at) || !Number.isFinite(ttlMs) || now - at > ttlMs) continue;
+    const sources = Array.isArray(entry.sources?.sources) ? entry.sources.sources : [];
+    if (!sources.some(isDirectSource)) continue;
+    episodes[Number(match[2])] = 'cache';
+    directEpisodeCount++;
+  }
+  return { bySlug, directEpisodeCount };
+}
+
 
 if (!['gaps', 'live'].includes(MODE)) {
   console.error('HYDRATE_MODE must be "gaps" or "live".');
+  process.exit(1);
+}
+if (!['auto', 'api', 'file'].includes(INVENTORY_SOURCE)) {
+  console.error('HYDRATE_INVENTORY_SOURCE must be "auto", "api", or "file".');
   process.exit(1);
 }
 
@@ -117,6 +190,7 @@ console.log(
   ' · server: ' + BASE +
   ' · eligible titles: ' + selectedTitles.length +
   ' · concurrency: ' + CONCURRENCY +
+  ' · inventory requested: ' + INVENTORY_SOURCE +
   ' · inventory concurrency: ' + INVENTORY_CONCURRENCY +
   ' · inventory delay: ' + INVENTORY_DELAY_MS + ' ms' +
   ' · timeout: ' + TIMEOUT_MS + ' ms' +
@@ -126,35 +200,129 @@ console.log(
 
 const availability = new Map();
 let inventoryErrors = 0;
+let inventoryTitlesChecked = 0;
+let inventoryEarlyStopped = false;
+let actualInventorySource = 'none';
+
 if (MODE === 'gaps') {
-  const queue = [...selectedTitles];
-  const inventoryWorkers = Array.from(
-    { length: Math.min(INVENTORY_CONCURRENCY, queue.length || 1) },
-    async () => {
-      while (queue.length) {
-        const title = queue.shift();
-        if (!title) break;
+  const canUseLocalFile = localCacheEnabled && !kvConfigured && existsSync(cacheFile);
+  const useLocalFile = INVENTORY_SOURCE === 'file' ||
+    (INVENTORY_SOURCE === 'auto' && canUseLocalFile);
+
+  if (useLocalFile && (!localCacheEnabled || kvConfigured || !existsSync(cacheFile))) {
+    console.error(
+      'HYDRATE_INVENTORY_SOURCE=file requires an enabled local file cache and no configured Upstash KV.',
+    );
+    process.exit(1);
+  }
+
+  if (useLocalFile) {
+    try {
+      const inventory = readLocalCacheInventory(selectedTitles);
+      for (const [slug, episodes] of inventory.bySlug) availability.set(slug, episodes);
+      inventoryTitlesChecked = selectedTitles.length;
+      actualInventorySource = 'file';
+      console.log(
+        'Inventory loaded from local cache: ' + inventory.directEpisodeCount +
+        ' direct episode entries across ' + selectedTitles.length + ' selected titles.',
+      );
+    } catch (error) {
+      if (INVENTORY_SOURCE === 'file') {
+        console.error('Could not read local provider cache: ' + String(error));
+        process.exit(1);
+      }
+      console.warn('Local cache inventory unavailable; falling back to API: ' + String(error));
+    }
+  }
+
+  if (actualInventorySource !== 'file') {
+    actualInventorySource = 'api';
+    let knownGapEpisodes = 0;
+
+    const recordResult = (title, result) => {
+      inventoryTitlesChecked++;
+      if (result?.ok && result.body?.episodes) {
+        const known = result.body.episodes;
+        availability.set(title.slug, known);
+        for (let episode = 1; episode <= title.episodes; episode++) {
+          if (known[episode] !== 'cache') knownGapEpisodes++;
+        }
+      } else {
+        inventoryErrors++;
+        availability.set(title.slug, null);
+        console.warn(
+          '\nInventory failed for ' + title.slug + ': ' + (result?.error ?? 'no episode map'),
+        );
+      }
+
+      if (inventoryTitlesChecked % 25 === 0 || inventoryTitlesChecked === selectedTitles.length) {
+        process.stdout.write(
+          '\rInventory: ' + inventoryTitlesChecked + '/' + selectedTitles.length +
+          ' titles · known gaps=' + knownGapEpisodes + ' · errors=' + inventoryErrors + '   ',
+        );
+      }
+    };
+
+    if (INVENTORY_CONCURRENCY === 1) {
+      for (const title of selectedTitles) {
+        let result;
         try {
-          const result = await fetchJson(
+          result = await fetchJson(
             BASE + '/api/availability/' + encodeURIComponent(title.slug),
             Math.min(TIMEOUT_MS, 15000),
           );
-          if (result.ok && result.body?.episodes) {
-            availability.set(title.slug, result.body.episodes);
-          } else {
-            inventoryErrors++;
-            availability.set(title.slug, null);
-            console.warn(
-              '\nInventory failed for ' + title.slug + ': ' + (result.error ?? 'no episode map'),
-            );
-          }
-        } finally {
-          if (INVENTORY_DELAY_MS) await sleep(INVENTORY_DELAY_MS);
+        } catch (error) {
+          result = { ok: false, body: null, error: String(error) };
         }
+        recordResult(title, result);
+
+        // The first MAX_EPISODES gaps in title-priority order are now known.
+        // No need to query the rest of a 7k-title catalog for a capped plan.
+        if (
+          MAX_EPISODES > 0 &&
+          inventoryErrors === 0 &&
+          knownGapEpisodes >= MAX_EPISODES
+        ) {
+          inventoryEarlyStopped = inventoryTitlesChecked < selectedTitles.length;
+          break;
+        }
+        if (INVENTORY_DELAY_MS) await sleep(INVENTORY_DELAY_MS);
       }
-    },
-  );
-  await Promise.all(inventoryWorkers);
+    } else {
+      // Parallel mode deliberately scans the complete selection so results can be
+      // ordered by title priority before MAX_EPISODES is applied.
+      const queue = [...selectedTitles];
+      const workers = Array.from(
+        { length: Math.min(INVENTORY_CONCURRENCY, queue.length || 1) },
+        async () => {
+          while (queue.length) {
+            const title = queue.shift();
+            if (!title) break;
+            let result;
+            try {
+              result = await fetchJson(
+                BASE + '/api/availability/' + encodeURIComponent(title.slug),
+                Math.min(TIMEOUT_MS, 15000),
+              );
+            } catch (error) {
+              result = { ok: false, body: null, error: String(error) };
+            }
+            recordResult(title, result);
+            if (INVENTORY_DELAY_MS) await sleep(INVENTORY_DELAY_MS);
+          }
+        },
+      );
+      await Promise.all(workers);
+    }
+
+    if (inventoryTitlesChecked) {
+      process.stdout.write(
+        '\rInventory: ' + inventoryTitlesChecked + '/' + selectedTitles.length +
+        ' titles · known gaps=' + knownGapEpisodes + ' · errors=' + inventoryErrors + '   ',
+      );
+      console.log('');
+    }
+  }
 }
 
 const plan = [];
@@ -189,6 +357,9 @@ const planSummary = {
   skippedUpcoming,
   skippedNoShikimori,
   inventoryErrors,
+  inventorySource: actualInventorySource,
+  inventoryTitlesChecked,
+  inventoryEarlyStopped,
   limitTitles: LIMIT || null,
   limitEpisodes: MAX_EPISODES || null,
   note: 'Only direct non-demo resolver results count as filled; guessed/synthesized URLs are not treated as verified coverage.',
