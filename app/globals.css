@@ -473,6 +473,13 @@ input, select {
 
 /* ---------------- Герой (ТЗ 4.1, блок 2) ---------------- */
 
+.deferred-home-rail {
+  min-height: 1px;
+}
+.deferred-home-rail.is-loaded {
+  display: contents;
+}
+
 .hero {
   position: relative;
   min-height: 520px;

@@ -65,7 +65,7 @@ export function Hero({ slides }: { slides: Title[] }) {
                 alt=""
                 fill
                 sizes="100vw"
-                quality={64}
+                quality={48}
                 priority={i === 0}
                 {...(i === 0 ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const, fetchPriority: 'low' as const })}
                 onError={() => setFailed((f) => ({ ...f, [s.slug]: true }))}

@@ -3,24 +3,20 @@ import type { Metadata } from 'next';
 import { Hero } from '@/components/anime/Hero';
 import { Rail } from '@/components/anime/Rail';
 import { PosterCard } from '@/components/anime/PosterCard';
-import { ContinueWatchingRail } from '@/components/anime/ContinueWatchingRail';
 import { GenreChips } from '@/components/anime/GenreChips';
 import { homeRails, genreStats, heroSlides, toCardTitle } from '@/lib/catalog';
 import { demoWeek } from '@/lib/schedule';
 import { HomeSchedule } from '@/components/schedule/HomeSchedule';
 import { ContinueBanner } from '@/components/home/ContinueBanner';
-import { DiscussedRail } from '@/components/home/DiscussedRail';
-import { BecauseRail } from '@/components/anime/BecauseRail';
 import { LatestEpisodes } from '@/components/home/LatestEpisodes';
-import { TopTabs } from '@/components/home/TopTabs';
 import { LazyRail } from '@/components/home/LazyRail';
 import { COLLECTIONS } from '@/lib/collections';
 import { loadTitles } from '@/lib/catalog';
-import { ForYouRail } from '@/components/anime/ForYouRail';
 import { IconGrid, IconSparkles } from '@/components/ui/icons';
 import { HomeSidebar } from '@/components/home/Sidebar';
 import { SeoIntro } from '@/components/home/SeoIntro';
 import { HomeJsonLd } from '@/components/home/HomeJsonLd';
+import { DeferredHomeRail } from '@/components/home/DeferredHomeRail';
 
 export const revalidate = 3600;
 
@@ -82,12 +78,12 @@ export default async function HomePage() {
         <div className="home-layout">
           <div className="home-layout__main">
             <div className="page-section">
-              <ContinueWatchingRail />
+              <DeferredHomeRail kind="continue" />
             </div>
 
-            <ForYouRail />
+            <DeferredHomeRail kind="for-you" />
 
-            <BecauseRail />
+            <DeferredHomeRail kind="because" />
 
             {/* S2.1: EveningRail убран с главной — выдача пересекалась с ForYou/Because
                 (план аудита: оставить 2 персональные ленты из 3). */}
@@ -104,9 +100,9 @@ export default async function HomePage() {
               ))}
             </Rail>
 
-            <TopTabs week={weekTopSlugs} all={allTopSlugs} />
+            <DeferredHomeRail kind="top" week={weekTopSlugs} all={allTopSlugs} />
 
-            <DiscussedRail />
+            <DeferredHomeRail kind="discussed" />
 
             <Rail title="Подборки" action={{ href: '/collections/novichku', label: 'Все подборки' }}>
               {COLLECTIONS.map((c) => (

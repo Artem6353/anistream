@@ -56,6 +56,12 @@ async function liveSchedule(): Promise<ScheduleEntry[]> {
     .sort((a: ScheduleEntry, b: ScheduleEntry) => a.at - b.at);
 }
 
+/** Номер серии для демо-расписания: беззнаковый сдвиг исключает отрицательные значения. */
+export function demoEpisodeFromHash(hash: number): number {
+  const unsignedHash = hash >>> 0;
+  return ((unsignedHash >>> 6) % 12) + 1;
+}
+
 /** Детерминированное демо-расписание: офлайн-фолбэк и SSR-заготовка. */
 export function demoWeek(): ScheduleEntry[] {
   const { start } = weekBounds();
@@ -69,7 +75,7 @@ export function demoWeek(): ScheduleEntry[] {
       const at = (start + weekday * 86400 + hour * 3600 + minute * 60) * 1000;
       return {
         at,
-        episode: ((h >> 6) % 12) + 1,
+        episode: demoEpisodeFromHash(h),
         anilistId: t.anilistId,
         slug: t.slug,
         ru: t.ru,

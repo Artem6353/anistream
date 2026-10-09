@@ -43,7 +43,7 @@ export function MobileNav() {
           );
         })}
       </nav>
-      <CommandPalette open={palette} onClose={() => setPalette(false)} />
+      {palette ? <CommandPalette open onClose={() => setPalette(false)} /> : null}
     </>
   );
 }
