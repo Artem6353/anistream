@@ -95,7 +95,10 @@ function enabledProviderIds(): string[] {
  * в единый список источников; demo добавляется как офлайн-база.
  * PROVIDER_MODE: merge (ждем всех с таймаутом) | first (первый ответивший).
  */
-export async function resolveEpisodeSources(ctx: ProviderContext): Promise<EpisodeSources> {
+export async function resolveEpisodeSources(
+  ctx: ProviderContext,
+  options: { liveOnly?: boolean } = {},
+): Promise<EpisodeSources> {
   const cfg = getProvidersConfig();
   const key = cacheKey(ctx.slug, ctx.episode);
 
@@ -105,7 +108,7 @@ export async function resolveEpisodeSources(ctx: ProviderContext): Promise<Episo
 
   /* 1) cache-first */
   const t0 = Date.now();
-  const cached = await cacheGet(key);
+  const cached = options.liveOnly ? null : await cacheGet(key);
   const cacheUsable =
     cached &&
     cached.sources.length &&
@@ -178,12 +181,12 @@ export async function resolveEpisodeSources(ctx: ProviderContext): Promise<Episo
   };
 
   /* 3) синтез: шаблон из кэша других серий или guess-пул озвучек CVH (любой номер серии) */
-  if (!deduped.length) {
+  if (!deduped.length && !options.liveOnly) {
     const synth = await synthesizeEpisode(ctx);
     if (synth?.sources.length) {
       if (synth.sources.some((x) => x.guessed)) metrics.guess++;
       else metrics.synth++;
-      await cacheSet(key, synth);
+      // Derived URLs are useful player fallbacks, but are not confirmed episode sources.
       return withDemo(synth, ctx);
     }
   }
