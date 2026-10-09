@@ -44,8 +44,8 @@ export function DeferredHomeRail({
     if (!target) return;
 
     if (!('IntersectionObserver' in window)) {
-      const timer = window.setTimeout(() => setActive(true), 0);
-      return () => window.clearTimeout(timer);
+      const timer = setTimeout(() => setActive(true), 0);
+      return () => clearTimeout(timer);
     }
 
     const observer = new IntersectionObserver(
