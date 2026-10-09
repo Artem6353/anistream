@@ -86,8 +86,9 @@ export function ReviewsSection({ slug }: { slug: string }) {
   };
 
   const submit = async () => {
-    // ТЗ блок 14: без входа — модалка, после входа отзыв отправится автоматически
-    if (!isSessionValid()) {
+    // В локальном режиме отзывы сохраняются в localStorage и доступны без аккаунта.
+    // Общему Supabase-хранилищу требуется авторизация; после входа действие выполнится из очереди.
+    if (SOCIAL_MODE === 'supabase' && !isSessionValid()) {
       queueAuthAction(() => submit());
       return;
     }
