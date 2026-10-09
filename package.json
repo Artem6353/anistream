@@ -18,6 +18,7 @@
     "check:kodik": "node scripts/check-kodik.mjs",
     "prewarm": "node scripts/check-deps.mjs",
     "warm": "node scripts/warm-providers.mjs",
+    "cache:migrate-ttl": "node scripts/migrate-provider-cache-ttl.mjs",
     "prehydrate": "node scripts/check-deps.mjs",
     "hydrate": "node scripts/hydrate-embeds.mjs",
     "import-legacy": "node scripts/import-legacy-cache.mjs",
