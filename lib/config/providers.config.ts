@@ -94,7 +94,7 @@ export function getProvidersConfig(): ProvidersConfig {
     cache: {
       enabled: bool(env.PROVIDER_CACHE_ENABLED, true),
       write: bool(env.PROVIDER_CACHE_WRITE, true),
-      ttlMs: num(env.KODIK_CACHE_TTL_MS, 600_000),
+      ttlMs: num(env.KODIK_CACHE_TTL_MS, 86_400_000),
       file: env.KODIK_CACHE_FILE ?? '.cache/providers-resolve-cache.json',
     },
     shikimori: {
