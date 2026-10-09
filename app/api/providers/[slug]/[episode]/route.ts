@@ -14,10 +14,14 @@ interface Props {
  *  числом одновременных клиентов. Результат общий для всех участников. */
 const inflight = new Map<string, ReturnType<typeof resolveEpisodeSources>>();
 
-function resolveOnce(key: string, ctx: Parameters<typeof resolveEpisodeSources>[0]) {
+function resolveOnce(
+  key: string,
+  ctx: Parameters<typeof resolveEpisodeSources>[0],
+  options: { liveOnly?: boolean } = {},
+) {
   const existing = inflight.get(key);
   if (existing) return existing;
-  const p = resolveEpisodeSources(ctx).finally(() => inflight.delete(key));
+  const p = resolveEpisodeSources(ctx, options).finally(() => inflight.delete(key));
   inflight.set(key, p);
   return p;
 }
@@ -39,11 +43,15 @@ export async function GET(request: Request, { params }: Props) {
     return NextResponse.json({ error: 'bad episode' }, { status: 400 });
   }
   const episode = epNum;
-  const preferFiles = new URL(request.url).searchParams.get('files') === '1';
+  const searchParams = new URL(request.url).searchParams;
+  const preferFiles = searchParams.get('files') === '1';
+  // Bulk backfill can bypass existing cache and URL-template synthesis.
+  const liveOnly = searchParams.get('live') === '1';
 
   try {
     const ctx = { ...contextFromTitle(title, episode), preferFiles };
-    const sources = await resolveOnce(`${slug}:${episode}${preferFiles ? ':files' : ''}`, ctx);
+    const resolveKey = `${slug}:${episode}${preferFiles ? ':files' : ''}${liveOnly ? ':live' : ''}`;
+    const sources = await resolveOnce(resolveKey, ctx, { liveOnly });
     return NextResponse.json(
       { ...sources, providers: providersWithAvailability() },
       { headers: { 'Cache-Control': sources.fromCache ? 'public, s-maxage=3600' : 'no-store' } },
