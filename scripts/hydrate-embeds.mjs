@@ -238,15 +238,21 @@ if (MODE === 'gaps') {
   if (actualInventorySource !== 'file') {
     actualInventorySource = 'api';
     let knownGapEpisodes = 0;
+    let knownGapTitles = 0;
 
     const recordResult = (title, result) => {
       inventoryTitlesChecked++;
       if (result?.ok && result.body?.episodes) {
         const known = result.body.episodes;
         availability.set(title.slug, known);
+        let titleGaps = 0;
         for (let episode = 1; episode <= title.episodes; episode++) {
-          if (known[episode] !== 'cache') knownGapEpisodes++;
+          if (known[episode] !== 'cache') {
+            knownGapEpisodes++;
+            titleGaps++;
+          }
         }
+        if (titleGaps > 0) knownGapTitles++;
       } else {
         inventoryErrors++;
         availability.set(title.slug, null);
@@ -258,7 +264,7 @@ if (MODE === 'gaps') {
       if (inventoryTitlesChecked % 25 === 0 || inventoryTitlesChecked === selectedTitles.length) {
         process.stdout.write(
           '\rInventory: ' + inventoryTitlesChecked + '/' + selectedTitles.length +
-          ' titles · known gaps=' + knownGapEpisodes + ' · errors=' + inventoryErrors + '   ',
+          ' titles · known gaps=' + knownGapEpisodes + ' · gap titles=' + knownGapTitles + ' · errors=' + inventoryErrors + '   ',
         );
       }
     };
@@ -276,12 +282,13 @@ if (MODE === 'gaps') {
         }
         recordResult(title, result);
 
-        // The first MAX_EPISODES gaps in title-priority order are now known.
-        // No need to query the rest of a 7k-title catalog for a capped plan.
+        // A capped batch is spread round-robin across titles. Only stop after we
+        // know at least MAX_EPISODES distinct titles have gaps, otherwise a handful
+        // of long-running series could consume the entire batch.
         if (
           MAX_EPISODES > 0 &&
           inventoryErrors === 0 &&
-          knownGapEpisodes >= MAX_EPISODES
+          knownGapTitles >= Math.min(MAX_EPISODES, selectedTitles.length)
         ) {
           inventoryEarlyStopped = inventoryTitlesChecked < selectedTitles.length;
           break;
@@ -338,11 +345,27 @@ for (const title of selectedTitles) {
   if (episodes.length) plan.push({ slug: title.slug, episodes, favourites: title.favourites });
 }
 
-const allTasks = plan.flatMap((item) => item.episodes.map((episode) => ({
-  slug: item.slug,
-  episode,
-  favourites: item.favourites,
-})));
+// When capped, fill one missing episode per title before moving to the next
+// missing episode of those titles. This keeps a 500-episode batch broad rather
+// than spending almost all of it on a few long-running anime.
+const allTasks = [];
+if (MAX_EPISODES > 0) {
+  const maxGapDepth = Math.max(0, ...plan.map((item) => item.episodes.length));
+  for (let depth = 0; depth < maxGapDepth; depth++) {
+    for (const item of plan) {
+      const episode = item.episodes[depth];
+      if (episode !== undefined) {
+        allTasks.push({ slug: item.slug, episode, favourites: item.favourites });
+      }
+    }
+  }
+} else {
+  for (const item of plan) {
+    for (const episode of item.episodes) {
+      allTasks.push({ slug: item.slug, episode, favourites: item.favourites });
+    }
+  }
+}
 const tasks = MAX_EPISODES ? allTasks.slice(0, MAX_EPISODES) : allTasks;
 const planSummary = {
   generatedAt: new Date().toISOString(),
@@ -362,6 +385,7 @@ const planSummary = {
   inventoryEarlyStopped,
   limitTitles: LIMIT || null,
   limitEpisodes: MAX_EPISODES || null,
+  taskSelection: MAX_EPISODES ? 'round-robin by title and missing-episode depth' : 'title-priority, then episode order',
   note: 'Only direct non-demo resolver results count as filled; guessed/synthesized URLs are not treated as verified coverage.',
 };
 writeFileSync('.cache/hydrate-plan.json', JSON.stringify({
