@@ -79,7 +79,7 @@ function isDirectSource(source) {
     source.providerId !== 'demo' &&
     !source.guessed &&
     !source.synthesized &&
-    !/:s\\d+$/.test(String(source.id ?? ''));
+    !/:s\d+$/.test(String(source.id ?? ''));
 }
 
 function readLocalCacheInventory(titles) {
@@ -91,7 +91,7 @@ function readLocalCacheInventory(titles) {
   const bySlug = new Map(titles.map((title) => [title.slug, {}]));
   let directEpisodeCount = 0;
   for (const [key, entry] of Object.entries(store)) {
-    const match = /^ep:([^:]+):(\\d+)$/.exec(key);
+    const match = /^ep:([^:]+):(\d+)$/.exec(key);
     if (!match || !entry || typeof entry !== 'object') continue;
     const episodes = bySlug.get(match[1]);
     if (!episodes) continue;
@@ -238,26 +238,15 @@ if (MODE === 'gaps') {
   if (actualInventorySource !== 'file') {
     actualInventorySource = 'api';
     let knownGapEpisodes = 0;
-    for (const title of selectedTitles) {
-      let result;
-      try {
-        result = await fetchJson(
-          BASE + '/api/availability/' + encodeURIComponent(title.slug),
-          Math.min(TIMEOUT_MS, 15000),
-        );
-      } catch (error) {
-        result = { ok: false, body: null, error: String(error) };
-      }
 
+    const recordResult = (title, result) => {
       inventoryTitlesChecked++;
       if (result?.ok && result.body?.episodes) {
         const known = result.body.episodes;
         availability.set(title.slug, known);
-        let titleGaps = 0;
         for (let episode = 1; episode <= title.episodes; episode++) {
-          if (known[episode] !== 'cache') titleGaps++;
+          if (known[episode] !== 'cache') knownGapEpisodes++;
         }
-        knownGapEpisodes += titleGaps;
       } else {
         inventoryErrors++;
         availability.set(title.slug, null);
@@ -272,21 +261,60 @@ if (MODE === 'gaps') {
           ' titles · known gaps=' + knownGapEpisodes + ' · errors=' + inventoryErrors + '   ',
         );
       }
+    };
 
-      // With sequential inventory and no failures, the first MAX_EPISODES gaps in
-      // title-priority order are known. No need to query the rest of a 7k-title catalog.
-      if (
-        INVENTORY_CONCURRENCY === 1 &&
-        MAX_EPISODES > 0 &&
-        inventoryErrors === 0 &&
-        knownGapEpisodes >= MAX_EPISODES
-      ) {
-        inventoryEarlyStopped = inventoryTitlesChecked < selectedTitles.length;
-        break;
+    if (INVENTORY_CONCURRENCY === 1) {
+      for (const title of selectedTitles) {
+        let result;
+        try {
+          result = await fetchJson(
+            BASE + '/api/availability/' + encodeURIComponent(title.slug),
+            Math.min(TIMEOUT_MS, 15000),
+          );
+        } catch (error) {
+          result = { ok: false, body: null, error: String(error) };
+        }
+        recordResult(title, result);
+
+        // The first MAX_EPISODES gaps in title-priority order are now known.
+        // No need to query the rest of a 7k-title catalog for a capped plan.
+        if (
+          MAX_EPISODES > 0 &&
+          inventoryErrors === 0 &&
+          knownGapEpisodes >= MAX_EPISODES
+        ) {
+          inventoryEarlyStopped = inventoryTitlesChecked < selectedTitles.length;
+          break;
+        }
+        if (INVENTORY_DELAY_MS) await sleep(INVENTORY_DELAY_MS);
       }
-
-      if (INVENTORY_DELAY_MS) await sleep(INVENTORY_DELAY_MS);
+    } else {
+      // Parallel mode deliberately scans the complete selection so results can be
+      // ordered by title priority before MAX_EPISODES is applied.
+      const queue = [...selectedTitles];
+      const workers = Array.from(
+        { length: Math.min(INVENTORY_CONCURRENCY, queue.length || 1) },
+        async () => {
+          while (queue.length) {
+            const title = queue.shift();
+            if (!title) break;
+            let result;
+            try {
+              result = await fetchJson(
+                BASE + '/api/availability/' + encodeURIComponent(title.slug),
+                Math.min(TIMEOUT_MS, 15000),
+              );
+            } catch (error) {
+              result = { ok: false, body: null, error: String(error) };
+            }
+            recordResult(title, result);
+            if (INVENTORY_DELAY_MS) await sleep(INVENTORY_DELAY_MS);
+          }
+        },
+      );
+      await Promise.all(workers);
     }
+
     if (inventoryTitlesChecked) console.log('');
   }
 }
