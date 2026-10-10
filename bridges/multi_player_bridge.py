@@ -19,6 +19,8 @@ import hmac
 import json
 import os
 import time
+import re
+import unicodedata
 import importlib.util
 import sys
 import types
@@ -164,65 +166,188 @@ def resolve(provider, context):
     return _single_flight(key, lambda: _resolve_live(provider, context, episode))
 
 
+def _normalize_title(value):
+    """Сравнение названий без пробелов/пунктуации, с Unicode-normalization."""
+    text = unicodedata.normalize("NFKC", str(value or "")).casefold()
+    return "".join(char for char in text if char.isalnum())
+
+
+def _candidate_year(candidate):
+    for name in ("year", "year_release", "aired_year", "release_year"):
+        value = candidate.get(name)
+        if value:
+            match = re.search(r"\\b(19|20)\\d{2}\\b", str(value))
+            if match:
+                return int(match.group(0))
+    return None
+
+
+def _find_animego_id(parser, context):
+    """Получает именно ID AnimeGO по точному названию, не путая его с Shikimori ID."""
+    targets = {
+        value for value in (
+            _normalize_title(context.get("originalTitle")),
+            _normalize_title(context.get("title")),
+        ) if value
+    }
+    if not targets:
+        return None
+
+    slug = str(context.get("slug") or "")
+    year = context.get("year")
+    cache_key = f"animego-id:{slug}:{year}:{'|'.join(sorted(targets))}"
+    hit = _cached(cache_key)
+    if hit is not None:
+        rows = hit.get("sources") or []
+        return str(rows[0].get("id")) if rows and rows[0].get("id") else None
+
+    def lookup():
+        matches = {}
+        queries = list(dict.fromkeys(
+            value for value in (context.get("originalTitle"), context.get("title"))
+            if isinstance(value, str) and value.strip()
+        ))
+        for query in queries:
+            try:
+                results = parser.search(query) or []
+            except Exception:
+                continue
+            for candidate in results:
+                if not isinstance(candidate, dict):
+                    continue
+                candidate_names = {
+                    _normalize_title(candidate.get(name))
+                    for name in ("original_title", "originalTitle", "title", "name")
+                }
+                if not targets.intersection(candidate_names):
+                    continue
+                candidate_id = candidate.get("id")
+                if candidate_id in (None, ""):
+                    continue
+                matches[str(candidate_id)] = {
+                    "id": str(candidate_id),
+                    "year": _candidate_year(candidate),
+                }
+
+        if not matches:
+            return {"sources": [], "error": "AnimeGO: exact title not found"}
+
+        try:
+            target_year = int(year) if year else None
+        except (TypeError, ValueError):
+            target_year = None
+        if target_year:
+            exact_year = {
+                key: value for key, value in matches.items()
+                if value["year"] == target_year
+            }
+            unknown_year = {
+                key: value for key, value in matches.items()
+                if value["year"] is None
+            }
+            if exact_year:
+                matches = exact_year
+            elif unknown_year:
+                matches = unknown_year
+            elif any(value["year"] is not None for value in matches.values()):
+                return {"sources": [], "error": "AnimeGO: title year mismatch"}
+
+        if len(matches) != 1:
+            return {"sources": [], "error": "AnimeGO: ambiguous exact title match"}
+        only = next(iter(matches.values()))
+        return {"sources": [{"id": only["id"]}]}
+
+    result = _single_flight(cache_key, lookup)
+    rows = result.get("sources") or []
+    return str(rows[0].get("id")) if rows and rows[0].get("id") else None
+
+
+def _get_episode_voices(parser, anime_id, episode):
+    """Один запрос get_voices на серию для параллельных CVH и AniBoom."""
+    cache_key = f"animego-voices:{anime_id}:{episode}"
+    hit = _cached(cache_key)
+    if hit is not None:
+        return hit.get("sources") or []
+
+    def lookup():
+        try:
+            raw = parser.get_voices(str(anime_id), int(episode)) or {}
+        except Exception as exc:
+            return {"sources": [], "error": f"AnimeGO voices: {exc}"}
+        if isinstance(raw, dict):
+            raw = raw.get("voices") or []
+        voices = [voice for voice in raw if isinstance(voice, dict)] if isinstance(raw, list) else []
+        return {"sources": voices, "error": None if voices else "AnimeGO: no voices for episode"}
+
+    result = _single_flight(cache_key, lookup)
+    return result.get("sources") or []
+
+
+def _voice_provider(voice, embed):
+    """Определяет плеер по embed URL, затем по явному полю API."""
+    if embed:
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(embed)
+            host = (parsed.hostname or "").lower()
+            path = (parsed.path or "").lower()
+            if "/cdn-iframe/" in path:
+                return "cvh"
+            if "aniboom.one" in host and "/embed/" in path:
+                return "aniboom"
+            if "kodik" in host or any(segment in path for segment in ("/seria/", "/serial/", "/video/")):
+                return "kodik"
+        except Exception:
+            pass
+
+    player = str(voice.get("player") or voice.get("source") or "").strip().lower()
+    if player in ("cvh", "cdnvideohub"):
+        return "cvh"
+    if player == "animego":
+        return "cvh" if voice.get("cvh_id") else None
+    if player in ("aniboom", "ani-boom"):
+        return "aniboom"
+    if player in ("kodik", "kodikplayer"):
+        return "kodik"
+    return None
+
+
 def _resolve_live(provider, context, episode):
     a = _load_animego()
     if not a["parser"]:
         return {"error": f"animego: {a['error']}"}
     parser = a["parser"]
-    episode = int(context.get("episode") or 1)
-    anime_id = str(context.get("shikimoriId") or "")
-    if not anime_id:
-        return {"error": "animego: нужен shikimoriId в контексте"}
-    def fetch_voices(aid):
-        try:
-            raw = parser.get_voices(str(aid), episode) or {}
-        except Exception:
-            return []
-        if isinstance(raw, dict):
-            raw = raw.get("voices") or []
-        return [v for v in raw if isinstance(v, dict)]
 
-    voices = fetch_voices(anime_id)
-    if not voices:
-        # fолбэк: id animego ≠ id shikimori — ищем тайтл по названию
-        query = context.get("originalTitle") or context.get("title") or ""
-        try:
-            found = parser.search(query) or []
-        except Exception as e:  # noqa: BLE001
-            return {"error": f"animego search: {e}"}
-        norm = lambda x: x.lower().replace(" ", "")
-        best = None
-        for cand in found:
-            if norm(cand.get("original_title") or "") == norm(query):
-                best = cand
-                break
-        best = best or (found[0] if found else None)
-        if best and best.get("id"):
-            voices = fetch_voices(best["id"])
+    # Важно: shikimoriId и AnimeGO ID — разные пространства идентификаторов.
+    # Сначала находим точное совпадение тайтла и используем его собственный AnimeGO ID.
+    anime_id = _find_animego_id(parser, context)
+    if not anime_id:
+        return {"error": "AnimeGO: exact title match not found (safe skip)"}
+
+    voices = _get_episode_voices(parser, anime_id, episode)
     if not voices:
         return {"error": f"{provider}: голоса/источники для серии {episode} не найдены"}
 
     sources = []
     for key, voice in enumerate(voices):
-        player = str(voice.get("player") or voice.get("source") or "").lower()
-        if provider == "cvh" and player not in ("cvh", "animego", ""):
-            continue
-        if provider == "aniboom" and player not in ("aniboom", ""):
-            continue
         embed = _norm_embed(voice.get("embed") or voice.get("embedUrl") or voice.get("url"))
+
         if not embed:
-            # пробуем собрать stream-URL методами парсера
+            # Старые ответы AnimeGO иногда содержат только ID. Сохраняем их
+            # прежний fallback; обычные embed-ссылки проходят ниже без лишних запросов.
             try:
                 if provider == "cvh" and voice.get("cvh_id"):
-                    stream = parser.cvh_get_stream(voice["cvh_id"], 1, episode, str(key))
+                    stream = parser.cvh_get_stream(voice["cvh_id"], 1, episode, str(voice.get("label") or voice.get("title") or key))
                     embed = _norm_embed((stream or {}).get("stream") or (stream or {}).get("url"))
                 elif provider == "aniboom" and voice.get("translation_id"):
                     stream = parser.aniboom_get_stream_for_voice(str(voice["translation_id"]), episode, anime_id)
                     embed = _norm_embed((stream or {}).get("stream") or (stream or {}).get("url"))
             except Exception:
                 embed = None
-        if not embed:
+
+        if not embed or _voice_provider(voice, embed) != provider:
             continue
+
         sources.append(
             {
                 "translationId": str(voice.get("translation_id") or voice.get("cvh_id") or key),
@@ -235,7 +360,6 @@ def _resolve_live(provider, context, episode):
     if not sources:
         return {"error": f"{provider}: голоса/источники для серии {episode} не найдены"}
     return {"sources": sources}
-
 
 ABORTED = (ConnectionAbortedError, BrokenPipeError, ConnectionResetError)
 
