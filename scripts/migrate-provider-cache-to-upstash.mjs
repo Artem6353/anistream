@@ -132,6 +132,7 @@ export function collectMigratableEntries(store, now = Date.now(), defaultTtlMs =
     expiredEntries: 0,
     entriesWithoutDirectSources: 0,
     directSources: 0,
+    estimatedEpisodeValueBytes: 0,
   };
 
   for (const [key, rawEntry] of Object.entries(store)) {
@@ -172,6 +173,8 @@ export function collectMigratableEntries(store, now = Date.now(), defaultTtlMs =
       sourcesUsed: [...new Set(sources.map((source) => String(source.providerId || 'unknown')))].sort(),
       fromCache: false,
     };
+    const estimatedRecord = { at, ttlMs, sources: normalizedSources };
+    stats.estimatedEpisodeValueBytes += Buffer.byteLength(JSON.stringify(estimatedRecord), 'utf8');
     entries.push({
       key,
       slug: match[1],
@@ -447,6 +450,11 @@ async function main() {
   console.log('Entries without direct sources skipped: ' + stats.entriesWithoutDirectSources);
   console.log('Eligible fresh episode entries: ' + entries.length);
   console.log('Direct sources in eligible entries: ' + stats.directSources);
+  console.log(
+    'Estimated serialized episode value size (lower bound, excludes Redis keys/indexes/existing merged sources): ' +
+    stats.estimatedEpisodeValueBytes + ' bytes (' +
+    (stats.estimatedEpisodeValueBytes / (1024 * 1024)).toFixed(2) + ' MiB)',
+  );
   console.log('Unique titles with eligible entries: ' + stats.uniqueTitles);
   console.log('Batch size: ' + batchSize + '; command budget per apply run: ' + commandBudget);
   console.log('Estimated command count for full pass (upper bound): ' + estimatedCommands);
