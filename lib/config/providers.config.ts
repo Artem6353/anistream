@@ -107,11 +107,11 @@ export function getProvidersConfig(): ProvidersConfig {
     bridges: {
       kodik: {
         url: resolveBridgeUrl(env, 'KODIK_BRIDGE_URL', 'KODIK_BRIDGE_PORT', 8765),
-        timeoutMs: num(env.KODIK_BRIDGE_TIMEOUT_MS, 12000),
+        timeoutMs: num(env.KODIK_BRIDGE_TIMEOUT_MS, 6000),
       },
       multiplayer: {
         url: resolveBridgeUrl(env, 'MULTIPLAYER_BRIDGE_URL', 'MULTIPLAYER_BRIDGE_PORT', 8766),
-        timeoutMs: num(env.MULTIPLAYER_BRIDGE_TIMEOUT_MS, 8000),
+        timeoutMs: num(env.MULTIPLAYER_BRIDGE_TIMEOUT_MS, 6000),
       },
     },
     providerMode: 'merge',
