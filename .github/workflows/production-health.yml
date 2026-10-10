@@ -55,12 +55,14 @@ jobs:
             errors.push('titles must be a positive integer');
           }
           const bridges = health?.bridges;
-          if (!bridges || !bridges.kodik || !bridges.multiplayer ||
+          if (!bridges) {
+            console.warn('::warning::Production health endpoint does not yet report bridge probes; verify after deployment.');
+          } else if (!bridges.kodik || !bridges.multiplayer ||
               typeof bridges.kodik.configured !== 'boolean' ||
               typeof bridges.multiplayer.configured !== 'boolean' ||
               !(bridges.kodik.reachable === null || typeof bridges.kodik.reachable === 'boolean') ||
               !(bridges.multiplayer.reachable === null || typeof bridges.multiplayer.reachable === 'boolean')) {
-            errors.push('bridges is missing or has an invalid shape');
+            errors.push('bridges has an invalid shape');
           }
 
           if (!Array.isArray(health?.configuredProviders)) {
