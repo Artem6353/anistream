@@ -79,7 +79,7 @@ function resolveBridgeUrl(
   } catch {
     /* Валидность URL окончательно проверит fetch; здесь не падаем при загрузке конфига. */
   }
-  return value.replace(/\\/+$/, '');
+  return value.replace(/\/+$/, '');
 }
 
 export function getProvidersConfig(): ProvidersConfig {
