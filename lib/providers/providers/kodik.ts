@@ -13,6 +13,7 @@ export async function resolveKodik(ctx: ProviderContext): Promise<ResolveOutcome
   const cfg = getProvidersConfig();
 
   /* 1) локальный bridge — проверенная схема */
+  let bridgeError: string | undefined;
   if (cfg.bridges.kodik.url) {
     const res = await bridgeResolve(
       { baseUrl: cfg.bridges.kodik.url, timeoutMs: cfg.bridges.kodik.timeoutMs },
@@ -20,12 +21,17 @@ export async function resolveKodik(ctx: ProviderContext): Promise<ResolveOutcome
       ctx,
     );
     if (res.sources.length) return { sources: res.sources };
-    if (res.error && res.error !== 'bridge unreachable') return { sources: [], error: res.error };
+    bridgeError = res.error;
   }
 
-  /* 2) прямой kodikwrapper (episode-specific link + VideoLinks) */
+  /* 2) bridge недоступен ИЛИ не нашёл эпизод — пробуем прямой Kodik API.
+     Ошибка health-gate не должна блокировать этот fallback (особенно на Vercel). */
   const { resolveKodikDirect } = await import('../kodik-direct');
-  return resolveKodikDirect(ctx);
+  const direct = await resolveKodikDirect(ctx);
+  if (direct.sources.length) return direct;
+
+  const errors = [bridgeError, direct.error].filter(Boolean);
+  return { sources: [], error: errors.length ? errors.join('; ') : 'Kodik: источники не найдены' };
 }
 
 /** Превращает прямой резолв kodikwrapper в EpisodeSource (озвучка + файлы/embed). */
