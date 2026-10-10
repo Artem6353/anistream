@@ -11,7 +11,10 @@ export function proxy(request: NextRequest) {
        берём последний (его дописывает доверенный прокси) через общий clientIp(). */
     const ip = clientIp(request);
     if (!rateLimit(`${ip}:${rule.prefix}`, rule.limit)) {
-      return NextResponse.json({ error: 'слишком много запросов, подождите' }, { status: 429 });
+      return NextResponse.json(
+        { error: 'слишком много запросов, подождите' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
     }
   }
   return NextResponse.next();
