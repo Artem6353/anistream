@@ -54,6 +54,15 @@ jobs:
           if (!Number.isSafeInteger(health?.titles) || health.titles < 1) {
             errors.push('titles must be a positive integer');
           }
+          const bridges = health?.bridges;
+          if (!bridges || !bridges.kodik || !bridges.multiplayer ||
+              typeof bridges.kodik.configured !== 'boolean' ||
+              typeof bridges.multiplayer.configured !== 'boolean' ||
+              !(bridges.kodik.reachable === null || typeof bridges.kodik.reachable === 'boolean') ||
+              !(bridges.multiplayer.reachable === null || typeof bridges.multiplayer.reachable === 'boolean')) {
+            errors.push('bridges is missing or has an invalid shape');
+          }
+
           if (!Array.isArray(health?.configuredProviders)) {
             errors.push('configuredProviders must be an array');
           } else {
@@ -87,6 +96,10 @@ jobs:
             ok: health?.ok === true,
             titles: health?.titles,
             configuredLiveProviders: configuredLive,
+            bridges: bridges ? {
+              kodik: bridges.kodik,
+              multiplayer: bridges.multiplayer,
+            } : null,
             providerCache: cache ? {
               enabled: cache.enabled,
               writesEnabled: cache.writesEnabled,
@@ -107,5 +120,11 @@ jobs:
           }
           if (cache?.backend === 'upstash' && cache.reachable === false) {
             console.warn('::warning::Upstash is configured but the Redis connectivity probe failed.');
+          }
+          if (bridges?.kodik?.configured && bridges.kodik.reachable === false) {
+            console.warn('::warning::Kodik bridge is configured but its health endpoint failed.');
+          }
+          if (bridges?.multiplayer?.configured && bridges.multiplayer.reachable === false) {
+            console.warn('::warning::Multiplayer bridge is configured but its health endpoint failed.');
           }
           NODE
