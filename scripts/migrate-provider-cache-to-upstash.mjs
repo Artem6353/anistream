@@ -455,10 +455,19 @@ async function main() {
     console.log('Checkpoint position: ' + startIndex + ' of ' + entries.length);
     if (progress.stale) console.warn('A prior checkpoint belongs to a different cache file. Use --restart with --apply to rescan.');
     if (estimatedCommands > commandBudget) {
-      console.warn('This migration requires multiple apply runs; the default command budget prevents one unbounded write.');
+      console.warn('This migration requires multiple apply runs; the command budget prevents one unbounded write.');
     }
     console.log('DRY RUN complete. No Redis commands were sent and no files were modified.');
     return;
+  }
+
+  if (entries.length === 0) {
+    console.log('No fresh direct-source entries are eligible; nothing to write.');
+    return;
+  }
+
+  if (commandBudget < batchSize * 2 + 1) {
+    throw new Error('--max-commands must be at least 2 * --batch-size + 1 so one worst-case batch can complete.');
   }
 
   const url = String(getEnv('UPSTASH_REDIS_REST_URL') || '').trim().replace(/\/+$/, '');
@@ -497,6 +506,7 @@ async function main() {
   let batchesCompleted = 0;
 
   while (progress.nextIndex < entries.length) {
+    const commandsBeforeBatch = commandsUsed;
     const batch = entries.slice(progress.nextIndex, progress.nextIndex + batchSize);
     const slugs = [...new Set(batch.map((entry) => entry.slug))];
     const redisKeys = [
@@ -569,7 +579,7 @@ async function main() {
     progress.nextIndex += batch.length;
     progress.totalWrittenEntries += batchWritten;
     progress.totalAddedSources += batchAdded;
-    progress.totalCommands += commandsUsed;
+    progress.totalCommands += commandsUsed - commandsBeforeBatch;
     progress.updatedAt = new Date().toISOString();
     atomicWriteJson(progressFile, progress);
     batchesCompleted += 1;
