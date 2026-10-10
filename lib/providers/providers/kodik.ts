@@ -27,7 +27,7 @@ export async function resolveKodik(ctx: ProviderContext): Promise<ResolveOutcome
        второй поиск на каждом запросе. Прямой API оставляем для проблем транспорта
        и авторизации bridge, когда bridge не смог выполнить поиск. */
     const bridgeUnavailable = Boolean(bridgeError && (
-      /health-gate|timeout|unreachable|network|fetch failed|ECONN|ETIMEDOUT|bad gateway|unauthori[sz]ed|\\b401\\b|\\b403\\b|\\b5\\d\\d\\b/i.test(bridgeError)
+      /health-gate|timeout|unreachable|network|fetch failed|ECONN|ETIMEDOUT|bad gateway|unauthori[sz]ed|\b401\b|\b403\b|\b5\d\d\b/i.test(bridgeError)
     ));
     if (!bridgeUnavailable) {
       return { sources: [], error: bridgeError ?? 'Kodik: источники не найдены' };
