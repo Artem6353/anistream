@@ -32,7 +32,7 @@ jobs:
       - name: repo size watch
         run: |
           git count-objects -vH | grep size-pack
-          SIZE_KB=$(git count-objects -v | awk '/size-pack/ {print $3}')
+          SIZE_KB=$(git count-objects -v | awk '/size-pack/ {print $2}')
           if [ "$SIZE_KB" -gt 307200 ]; then echo "::warning::pack >300MB — пора выносить titles.json из git (см. LIMITS.md)"; fi
       - run: npm run lint
       - run: npm run typecheck
