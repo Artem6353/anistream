@@ -93,7 +93,7 @@ function enabledProviderIds(): string[] {
  *   GET /api/providers/[slug]/[episode] → EpisodeSources
  * Схема оригинала: cache-first → bridge (kodik / multi-player) → merge озвучек
  * в единый список источников; demo добавляется как офлайн-база.
- * PROVIDER_MODE: merge (ждем всех с таймаутом) | first (первый ответивший).
+ * Все настроенные плееры ищутся параллельно; сбой одного не отменяет остальные.
  */
 const EMPTY_PROVIDER_RETRY_MS = 10 * 60 * 1000;
 const ERROR_PROVIDER_RETRY_MS = 45 * 1000;
@@ -103,6 +103,22 @@ const providerRetryAfter = new Map<string, number>();
 
 function providerRetryKey(key: string, id: string): string {
   return `${key}:${id}`;
+}
+
+function rememberProviderRetry(key: string, until: number): void {
+  /* Ограничиваем вспомогательную память при большой гидрации каталога. */
+  if (providerRetryAfter.size >= 10_000) {
+    const now = Date.now();
+    for (const [entryKey, expiresAt] of providerRetryAfter) {
+      if (expiresAt <= now) providerRetryAfter.delete(entryKey);
+    }
+    while (providerRetryAfter.size >= 10_000) {
+      const first = providerRetryAfter.keys().next();
+      if (first.done) break;
+      providerRetryAfter.delete(first.value);
+    }
+  }
+  providerRetryAfter.set(key, until);
 }
 
 function hasUsableProviderSource(
@@ -219,7 +235,7 @@ export async function resolveEpisodeSources(
       if (!forceLive) {
         const retryAt = Date.now() + (outcome.error ? ERROR_PROVIDER_RETRY_MS : EMPTY_PROVIDER_RETRY_MS);
         checks[id] = retryAt;
-        providerRetryAfter.set(providerRetryKey(key, id), retryAt);
+        rememberProviderRetry(providerRetryKey(key, id), retryAt);
       }
     }
     liveSources.push(...providerSources);
@@ -239,7 +255,7 @@ export async function resolveEpisodeSources(
   const result: EpisodeSources = {
     sources: merged,
     sourcesUsed: providersUsed,
-    fromCache: Boolean(base && !addedLiveSources),
+    fromCache: Boolean(base && ids.length === 0),
     cachedAt: base?.cachedAt,
     skip,
     errors: Object.keys(errors).length ? errors : undefined,
