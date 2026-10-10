@@ -108,7 +108,7 @@ def title_shikimori_id(title: dict) -> str | None:
     return str(value) if value not in (None, "", 0, "0") else None
 
 
-def eligible_title_map() -> tuple[dict[str, dict], int, int]:
+def eligible_title_map() -> tuple[dict[str, list[dict]], int, int]:
     titles = load_json(TITLES_PATH)
     if not isinstance(titles, list):
         raise RuntimeError("lib/data/titles.json must contain an array")
@@ -127,11 +127,96 @@ def eligible_title_map() -> tuple[dict[str, dict], int, int]:
         if sid:
             by_id_lists.setdefault(sid, []).append(title)
 
-    # A duplicate Shikimori ID is ambiguous in this catalog. Do not guess which
-    # slug should receive another title's links.
-    unique = {sid: rows[0] for sid, rows in by_id_lists.items() if len(rows) == 1}
+    # Keep all candidates. Each Kodik material is matched independently below.
     ambiguous = sum(1 for rows in by_id_lists.values() if len(rows) > 1)
-    return unique, eligible_count, ambiguous
+    return by_id_lists, eligible_count, ambiguous
+
+
+def material_episode_numbers(material: dict) -> set[int]:
+    numbers: set[int] = set()
+
+    def collect(raw) -> None:
+        if isinstance(raw, dict):
+            items = raw.items()
+            for raw_number, episode in items:
+                try:
+                    number = int(raw_number)
+                except (TypeError, ValueError):
+                    continue
+                link = normalize_link(episode)
+                if number > 0 and link:
+                    numbers.add(number)
+        elif isinstance(raw, list):
+            for episode in raw:
+                if not isinstance(episode, dict):
+                    continue
+                try:
+                    number = int(episode.get("episode"))
+                except (TypeError, ValueError):
+                    continue
+                link = normalize_link(episode)
+                if number > 0 and link:
+                    numbers.add(number)
+
+    seasons = material.get("seasons")
+    season_values = (
+        seasons.values() if isinstance(seasons, dict)
+        else seasons if isinstance(seasons, list)
+        else []
+    )
+    for season in season_values:
+        if isinstance(season, dict):
+            collect(season.get("episodes"))
+
+    if not numbers:
+        collect(material.get("episodes"))
+
+    return numbers
+
+
+def match_title(material: dict, candidates: list[dict]) -> dict | None:
+    if not candidates:
+        return None
+    if len(candidates) == 1:
+        return candidates[0]
+
+    material_type = str(material.get("type") or "")
+    if material_type in {"anime-serial", "foreign-serial"}:
+        preferred = [
+            title for title in candidates
+            if str(title.get("type") or "") in {"tv", "ona"}
+        ]
+        if not preferred:
+            return None
+        candidates = preferred
+    elif material_type == "anime":
+        preferred = [
+            title for title in candidates
+            if str(title.get("type") or "") in {"movie", "ova", "special"}
+        ]
+        if not preferred:
+            return None
+        candidates = preferred
+
+    numbers = material_episode_numbers(material)
+    extent = max(numbers) if numbers else None
+
+    ranked = []
+    for title in candidates:
+        try:
+            expected = max(1, int(title.get("episodes") or 1))
+        except (TypeError, ValueError):
+            expected = 1
+
+        distance = abs(expected - extent) if extent is not None else 0
+        ranked.append(((distance,), title))
+
+    ranked.sort(key=lambda item: item[0])
+    best_score = ranked[0][0]
+    best = [title for score, title in ranked if score == best_score]
+
+    # If two catalog records fit equally well, do not guess.
+    return best[0] if len(best) == 1 else None
 
 
 def normalize_link(value) -> str | None:
@@ -150,47 +235,89 @@ def normalize_link(value) -> str | None:
 
 
 def extract_episode_links(material: dict, expected_episodes: int) -> dict[int, str]:
+    def collect(raw_episodes) -> dict[int, str]:
+        found: dict[int, str] = {}
+
+        if isinstance(raw_episodes, dict):
+            items = raw_episodes.items()
+        elif isinstance(raw_episodes, list):
+            items = (
+                (episode.get("episode"), episode)
+                for episode in raw_episodes
+                if isinstance(episode, dict)
+            )
+        else:
+            return found
+
+        for raw_number, raw_episode in items:
+            try:
+                number = int(raw_number)
+            except (TypeError, ValueError):
+                continue
+
+            if number < 1 or number > expected_episodes:
+                continue
+
+            link = normalize_link(raw_episode)
+            if link:
+                found[number] = link
+
+        return found
+
     seasons = material.get("seasons")
+    season_values = (
+        seasons.values() if isinstance(seasons, dict)
+        else seasons if isinstance(seasons, list)
+        else []
+    )
+
     groups: list[dict[int, str]] = []
 
-    if isinstance(seasons, dict):
-        for season in seasons.values():
-            if not isinstance(season, dict):
-                continue
-            raw_episodes = season.get("episodes")
-            if not isinstance(raw_episodes, dict):
-                continue
-            found: dict[int, str] = {}
-            for raw_number, raw_episode in raw_episodes.items():
-                try:
-                    number = int(raw_number)
-                except (TypeError, ValueError):
-                    continue
-                if number < 1 or number > expected_episodes:
-                    continue
-                link = normalize_link(raw_episode)
-                if link:
-                    found[number] = link
-            if found:
-                groups.append(found)
+    for season in season_values:
+        if not isinstance(season, dict):
+            continue
+
+        found = collect(season.get("episodes"))
+        if found:
+            groups.append(found)
 
     if len(groups) == 1:
         return groups[0]
+
     if len(groups) > 1:
-        # A catalog title may correspond to exactly one season even when Kodik
-        # groups multiple seasons together. Only import when one season uniquely
-        # spans the local episode count; otherwise leave it for live resolution.
         exact = [
             group
             for group in groups
-            if all(number in group for number in range(1, expected_episodes + 1))
+            if all(
+                number in group
+                for number in range(1, expected_episodes + 1)
+            )
         ]
-        return exact[0] if len(exact) == 1 else {}
+        if len(exact) == 1:
+            return exact[0]
 
-    # Single-video materials have one top-level player link instead of seasons.
+        # Do not combine seasons that reuse episode numbers.
+        occupied = set()
+        for group in groups:
+            if occupied.intersection(group):
+                return {}
+            occupied.update(group)
+
+        merged = {}
+        for group in groups:
+            merged.update(group)
+        return merged
+
+    # Some materials expose episode data at the top level.
+    top_level = collect(material.get("episodes"))
+    if top_level:
+        return top_level
+
+    # Single-video anime may have only one top-level link.
     if expected_episodes == 1 and material.get("type") == "anime":
         link = normalize_link(material.get("link"))
         return {1: link} if link else {}
+
     return {}
 
 
@@ -363,7 +490,7 @@ def inspect_page(body: dict, by_id: dict[str, dict]) -> dict:
         if not isinstance(material, dict):
             continue
         sid = str(material.get("shikimori_id") or "")
-        title = by_id.get(sid)
+        title = match_title(material, by_id.get(sid, []))
         if not title:
             continue
         matched_materials += 1
@@ -408,7 +535,7 @@ def main() -> int:
         raise RuntimeError(f"Provider cache not found: {CACHE_PATH}. Run from a synchronized repository first.")
 
     by_id, eligible_count, ambiguous_ids = eligible_title_map()
-    print(f"Eligible catalog titles: {eligible_count}; unique Shikimori IDs: {len(by_id)}; ambiguous IDs skipped: {ambiguous_ids}")
+    print(f"Eligible catalog titles: {eligible_count}; Shikimori IDs indexed: {len(by_id)}; ambiguous IDs skipped: {ambiguous_ids}")
     print(f"Kodik API: {API_BASE}; types={QUERY_TYPES}; page limit={PAGE_LIMIT}; episode data enabled.")
     print("Mode: APPLY (incremental cache writes)" if apply else "Mode: PROBE (read-only; one page only).")
 
@@ -481,7 +608,7 @@ def main() -> int:
             if not isinstance(material, dict):
                 continue
             sid = str(material.get("shikimori_id") or "")
-            title = by_id.get(sid)
+            title = match_title(material, by_id.get(sid, []))
             if not title:
                 continue
             matching_slugs.add(str(title["slug"]))
