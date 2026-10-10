@@ -85,10 +85,10 @@ describe('providers cache: Upstash KV (P0-5)', () => {
         const key = String(body[1]);
         if (cmd === 'SET') {
           store.set(key, String(body[2]));
-          return { json: async () => ({ result: 'OK' }) };
+          return { ok: true, json: async () => ({ result: 'OK' }) };
         }
-        if (cmd === 'GET') return { json: async () => ({ result: store.get(key) ?? null }) };
-        return { json: async () => ({ result: null }) };
+        if (cmd === 'GET') return { ok: true, json: async () => ({ result: store.get(key) ?? null }) };
+        return { ok: true, json: async () => ({ result: null }) };
       }) as unknown as typeof fetch,
     );
     const mod = await import('@/lib/providers/cache');
