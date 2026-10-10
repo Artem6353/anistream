@@ -23,7 +23,7 @@ vi.mock('@/lib/providers/cache', () => ({
     source.providerId !== 'demo' &&
     !source.guessed &&
     !source.synthesized &&
-    !/:s\\d+$/.test(source.id),
+    !/:s\d+$/.test(source.id),
 }));
 
 vi.mock('@/lib/providers/bridge', () => ({
