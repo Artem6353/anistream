@@ -193,7 +193,7 @@ export function buildEpisodeCoverageReport(titles, cacheStore, options = {}) {
 
   titleCoverage.sort((a, b) =>
     a.coveragePercent - b.coveragePercent
-    || a.favourites - b.favourites
+    || b.favourites - a.favourites
     || a.slug.localeCompare(b.slug),
   );
 
