@@ -30,6 +30,11 @@ export function PosterArt({
 }) {
   const [failed, setFailed] = useState(false);
   const fallback = artUri(seed, initials);
+  // Tiny poster slots (episode rows, mini lists) should request 1x/2x assets for
+  // their actual CSS width instead of inheriting the full-card 44vw hint.
+  const responsiveSizes = width <= 96
+    ? `${width}px`
+    : '(max-width: 640px) 44vw, (max-width: 1080px) 20vw, (min-width: 1600px) 210px, 180px';
   if (!failed && isProxiable(src)) {
     return (
       <Image
@@ -39,7 +44,7 @@ export function PosterArt({
         alt={alt}
         width={width}
         height={Math.round(width * 1.5)}
-        sizes="(max-width: 640px) 44vw, (max-width: 1080px) 20vw, (min-width: 1600px) 210px, 180px"
+        sizes={responsiveSizes}
         quality={quality}
         priority={!!eager}
         {...(eager ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const, fetchPriority: 'low' as const })}
