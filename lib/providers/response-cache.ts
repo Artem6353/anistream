@@ -10,8 +10,11 @@ export function providerResponseCacheControl(
 ): string {
   if (!sources.fromCache) return 'no-store';
 
-  const pendingChecks = Object.values(sources.providerChecks ?? {})
-    .filter((timestamp) => Number.isFinite(timestamp) && timestamp > now);
+  const checks = Object.values(sources.providerChecks ?? {})
+    .filter((timestamp) => Number.isFinite(timestamp));
+
+  if (checks.some((timestamp) => timestamp <= now)) return 'no-store';
+  const pendingChecks = checks.filter((timestamp) => timestamp > now);
 
   if (!pendingChecks.length) return 'public, s-maxage=3600';
 
