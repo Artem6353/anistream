@@ -126,6 +126,10 @@ describe('safe Upstash cache migration CLI', () => {
     expect(result.stdout).toContain('Eligible fresh episode entries: 1');
     expect(result.stdout).toContain('Direct sources in eligible entries: 1');
     expect(result.stdout).toContain('No Redis commands were sent');
+    expect(result.stdout).toContain('Source file bytes: ');
+    expect(result.stdout).toContain('Estimated incoming cache bytes (lower bound): ');
+    expect(result.stdout).toContain('Direct source counts by provider: {"kodik":1}');
+    expect(result.stdout).not.toContain('https://kodik.example/episode/1');
     expect(readFileSync(file, 'utf8')).toBe(before);
     expect(existsSync(progress)).toBe(false);
   });

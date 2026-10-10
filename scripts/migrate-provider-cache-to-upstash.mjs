@@ -191,6 +191,56 @@ export function collectMigratableEntries(store, now = Date.now(), defaultTtlMs =
   return { entries, stats };
 }
 
+export function estimateMigrationFootprint(entries) {
+  const providerSourceCounts = {};
+  const episodesBySlug = new Map();
+  let episodeRecordBytes = 0;
+  let largestEpisodeRecordBytes = 0;
+  let sourceCount = 0;
+
+  for (const entry of entries) {
+    const recordBytes = Buffer.byteLength(JSON.stringify({
+      at: entry.at,
+      ttlMs: entry.ttlMs,
+      sources: entry.sources,
+    }), 'utf8');
+    episodeRecordBytes += recordBytes;
+    largestEpisodeRecordBytes = Math.max(largestEpisodeRecordBytes, recordBytes);
+
+    const episodes = episodesBySlug.get(entry.slug) ?? [];
+    episodes.push(entry.episode);
+    episodesBySlug.set(entry.slug, episodes);
+
+    for (const source of entry.sources.sources) {
+      const provider = ['kodik', 'cvh', 'aniboom'].includes(source.providerId)
+        ? source.providerId
+        : 'other';
+      providerSourceCounts[provider] = (providerSourceCounts[provider] ?? 0) + 1;
+      sourceCount += 1;
+    }
+  }
+
+  let episodeIndexBytes = 0;
+  for (const episodes of episodesBySlug.values()) {
+    const index = [...new Set(episodes)]
+      .sort((a, b) => a - b)
+      .slice(-2000);
+    episodeIndexBytes += Buffer.byteLength(JSON.stringify(index), 'utf8');
+  }
+
+  return {
+    episodeRecordBytes,
+    episodeIndexBytes,
+    totalIncomingBytes: episodeRecordBytes + episodeIndexBytes,
+    averageEpisodeRecordBytes: entries.length ? Math.round(episodeRecordBytes / entries.length) : 0,
+    largestEpisodeRecordBytes,
+    sourceCount,
+    providerSourceCounts: Object.fromEntries(
+      Object.entries(providerSourceCounts).sort(([a], [b]) => a.localeCompare(b)),
+    ),
+  };
+}
+
 export const upstashEpisodeKey = (cacheKey) => 'ep:' + cacheKey;
 export const upstashIndexKey = (slug) => 'epidx:' + slug;
 
@@ -428,6 +478,8 @@ async function main() {
 
   const now = Date.now();
   const { entries, stats } = collectMigratableEntries(store, now);
+  const footprint = estimateMigrationFootprint(entries);
+  const sourceFileBytes = Buffer.byteLength(rawText, 'utf8');
   const progress = loadProgress(progressFile, fingerprint, entries.length, restart, apply);
   const startIndex = progress.nextIndex;
   if (!Number.isSafeInteger(startIndex) || startIndex < 0 || startIndex > entries.length) {
@@ -441,6 +493,7 @@ async function main() {
   console.log('Mode: ' + (apply ? 'APPLY' : 'DRY RUN (read-only)'));
   console.log('Source file: ' + cacheFile);
   console.log('Source fingerprint: ' + fingerprint.slice(0, 12));
+  console.log('Source file bytes: ' + sourceFileBytes);
   console.log('Cache keys: ' + stats.cacheKeys);
   console.log('Episode keys: ' + stats.episodeKeys);
   console.log('Expired/malformed entries skipped: ' + (stats.expiredEntries + stats.malformedEpisodeKeys));
@@ -448,6 +501,13 @@ async function main() {
   console.log('Eligible fresh episode entries: ' + entries.length);
   console.log('Direct sources in eligible entries: ' + stats.directSources);
   console.log('Unique titles with eligible entries: ' + stats.uniqueTitles);
+  console.log('Direct source counts by provider: ' + JSON.stringify(footprint.providerSourceCounts));
+  console.log('Estimated serialized episode records bytes: ' + footprint.episodeRecordBytes);
+  console.log('Estimated serialized episode indexes bytes: ' + footprint.episodeIndexBytes);
+  console.log('Estimated incoming cache bytes (lower bound): ' + footprint.totalIncomingBytes);
+  console.log('Average serialized episode record bytes: ' + footprint.averageEpisodeRecordBytes);
+  console.log('Largest serialized episode record bytes: ' + footprint.largestEpisodeRecordBytes);
+  console.log('Estimate excludes existing Upstash-only sources and Redis allocator overhead.');
   console.log('Batch size: ' + batchSize + '; command budget per apply run: ' + commandBudget);
   console.log('Estimated command count for full pass (upper bound): ' + estimatedCommands);
 
