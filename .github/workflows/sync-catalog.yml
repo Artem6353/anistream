@@ -16,6 +16,11 @@ on:
         description: "Добор каталога через Jikan (MyAnimeList): только ручной запуск, cron не гоняет"
         type: boolean
         default: false
+# Prevent scheduled and manual catalog sync jobs from racing while committing batches.
+concurrency:
+  group: aninova-catalog-sync
+  cancel-in-progress: false
+
 permissions:
   contents: write
 jobs:
