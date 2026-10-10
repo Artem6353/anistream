@@ -58,33 +58,13 @@ jobs:
           set -euo pipefail
           git config user.name "anistream-bot"
           git config user.email "bot@anistream.local"
-          # If an unrelated PR advances main after checkout, retry by rebasing this
-          # single catalog batch on the latest main. Never force-push catalog data.
-          push_catalog_commit() {
-            local attempt=1
-            while [ "$attempt" -le 3 ]; do
-              if git push origin HEAD:main; then
-                return 0
-              fi
-              echo "::warning::Catalog push rejected; fetch main and rebase (attempt $attempt/3)."
-              git fetch origin main
-              if ! git rebase origin/main; then
-                git rebase --abort || true
-                echo "::error::Catalog batch conflicts with latest main; no force-push attempted. Rerun after reviewing the conflict."
-                return 1
-              fi
-              attempt=$((attempt + 1))
-            done
-            echo "::error::Catalog push failed after three attempts."
-            return 1
-          }
           for i in 1 2 3 4 5 6; do
             node scripts/enrich-shikimori-resumable.mjs --limit 500 || true
             node scripts/validate-catalog.mjs || exit 1
             git add lib/data/titles.json
             if ! git diff --cached --quiet; then
               git commit -m "chore(catalog): enrich batch $i"
-              push_catalog_commit
+              bash scripts/push-catalog-commit.sh
             fi
             echo "batch $i done"
           done
@@ -94,33 +74,13 @@ jobs:
           set -euo pipefail
           git config user.name "anistream-bot"
           git config user.email "bot@anistream.local"
-          # If an unrelated PR advances main after checkout, retry by rebasing this
-          # single catalog batch on the latest main. Never force-push catalog data.
-          push_catalog_commit() {
-            local attempt=1
-            while [ "$attempt" -le 3 ]; do
-              if git push origin HEAD:main; then
-                return 0
-              fi
-              echo "::warning::Catalog push rejected; fetch main and rebase (attempt $attempt/3)."
-              git fetch origin main
-              if ! git rebase origin/main; then
-                git rebase --abort || true
-                echo "::error::Catalog batch conflicts with latest main; no force-push attempted. Rerun after reviewing the conflict."
-                return 1
-              fi
-              attempt=$((attempt + 1))
-            done
-            echo "::error::Catalog push failed after three attempts."
-            return 1
-          }
           for i in 1 2 3 4 5 6; do
             node scripts/enrich-shikimori-resumable.mjs --heal --limit 500 || true
             node scripts/validate-catalog.mjs || exit 1
             git add lib/data/titles.json
             if ! git diff --cached --quiet; then
               git commit -m "chore(catalog): heal batch $i"
-              push_catalog_commit
+              bash scripts/push-catalog-commit.sh
             fi
             echo "heal batch $i done"
           done
@@ -130,33 +90,13 @@ jobs:
           set -euo pipefail
           git config user.name "anistream-bot"
           git config user.email "bot@anistream.local"
-          # If an unrelated PR advances main after checkout, retry by rebasing this
-          # single catalog batch on the latest main. Never force-push catalog data.
-          push_catalog_commit() {
-            local attempt=1
-            while [ "$attempt" -le 3 ]; do
-              if git push origin HEAD:main; then
-                return 0
-              fi
-              echo "::warning::Catalog push rejected; fetch main and rebase (attempt $attempt/3)."
-              git fetch origin main
-              if ! git rebase origin/main; then
-                git rebase --abort || true
-                echo "::error::Catalog batch conflicts with latest main; no force-push attempted. Rerun after reviewing the conflict."
-                return 1
-              fi
-              attempt=$((attempt + 1))
-            done
-            echo "::error::Catalog push failed after three attempts."
-            return 1
-          }
           for i in 1 2 3; do
             node scripts/fetch-episode-dates.mjs --limit 500 || true
             node scripts/validate-catalog.mjs || exit 1
             git add lib/data/titles.json .cache/episode-dates-report.json 2>/dev/null || true
             if ! git diff --cached --quiet; then
               git commit -m "chore(catalog): dates batch $i"
-              push_catalog_commit
+              bash scripts/push-catalog-commit.sh
             fi
             echo "dates batch $i done"
           done
@@ -166,26 +106,6 @@ jobs:
           node scripts/validate-catalog.mjs
           git config user.name "anistream-bot"
           git config user.email "bot@anistream.local"
-          # If an unrelated PR advances main after checkout, retry by rebasing this
-          # single catalog batch on the latest main. Never force-push catalog data.
-          push_catalog_commit() {
-            local attempt=1
-            while [ "$attempt" -le 3 ]; do
-              if git push origin HEAD:main; then
-                return 0
-              fi
-              echo "::warning::Catalog push rejected; fetch main and rebase (attempt $attempt/3)."
-              git fetch origin main
-              if ! git rebase origin/main; then
-                git rebase --abort || true
-                echo "::error::Catalog batch conflicts with latest main; no force-push attempted. Rerun after reviewing the conflict."
-                return 1
-              fi
-              attempt=$((attempt + 1))
-            done
-            echo "::error::Catalog push failed after three attempts."
-            return 1
-          }
           git add lib/data/titles.json
           # кэши — по одному с || true: git add с несуществующим pathspec падает (fatal: pathspec
           # did not match any files, exit 128), а bridge в GH Actions не запускается, поэтому
@@ -197,5 +117,5 @@ jobs:
           # --cached --quiet даёт exit 0, и push пропускался — коммит терялся на раннере.
           if ! git diff --cached --quiet; then
             git commit -m "chore(catalog): auto-sync $(date -u +%F-%H%M)"
-            push_catalog_commit
+            bash scripts/push-catalog-commit.sh
           fi
