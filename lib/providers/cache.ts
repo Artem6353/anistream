@@ -2,7 +2,7 @@ import type { EpisodeSource, EpisodeSources, ProviderContext } from './types';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { getProvidersConfig } from '@/lib/config/providers.config';
-import { kvEnabled, kvGet, kvSet } from './cache-kv';
+import { kvDel, kvEnabled, kvGet, kvSet } from './cache-kv';
 
 /**
  * Cache-first хранилище EpisodeSources (self-growing, как в оригинале):
@@ -100,24 +100,63 @@ export async function cacheEntriesForSlug(slug: string): Promise<{ episode: numb
   if (!cfg.enabled) return [];
   const out: { episode: number; sources: EpisodeSources }[] = [];
   if (kvEnabled()) {
-    const idxRaw = await kvGet(kvIdxKey(slug));
-    const eps = idxRaw ? ((JSON.parse(idxRaw) as number[]).filter((n) => Number.isFinite(n))) : [];
+    const indexKey = kvIdxKey(slug);
+    let idxRaw: string | null;
+    try {
+      idxRaw = await kvGet(indexKey);
+    } catch {
+      // Keep the index intact on network/Redis errors: null and unreachable must differ.
+      return [];
+    }
+
+    let eps: number[] = [];
+    if (idxRaw) {
+      try {
+        eps = (JSON.parse(idxRaw) as unknown[])
+          .filter((n): n is number => Number.isSafeInteger(n) && Number(n) > 0);
+      } catch {
+        // A corrupt index cannot be used safely; delete only after a successful GET.
+        await kvDel(indexKey);
+        return [];
+      }
+    }
+
     const rows = await Promise.all(
-      eps.map(async (ep) => {
-        const raw = await kvGet(kvEpKey(cacheKey(slug, ep)));
-        if (!raw) return null;
+      [...new Set(eps)].map(async (ep) => {
         try {
+          const raw = await kvGet(kvEpKey(cacheKey(slug, ep)));
+          if (!raw) return { episode: ep, sources: null, failed: false };
           const entry = JSON.parse(raw) as { at: number; ttlMs?: number; sources: EpisodeSources };
-          if (isCacheEntryExpired(entry, cfg.ttlMs)) return null;
+          if (isCacheEntryExpired(entry, cfg.ttlMs)) {
+            return { episode: ep, sources: null, failed: false };
+          }
           const sources = directResult(entry.sources);
-          return sources ? { episode: ep, sources } : null;
+          return { episode: ep, sources, failed: false };
         } catch {
-          return null;
+          return { episode: ep, sources: null, failed: true };
         }
       }),
     );
-    for (const r of rows) if (r) out.push(r);
-    return out.sort((a, b) => a.episode - b.episode);
+
+    const out = rows
+      .filter((row): row is typeof row & { sources: EpisodeSources } => Boolean(row.sources))
+      .map((row) => ({ episode: row.episode, sources: row.sources }))
+      .sort((a, b) => a.episode - b.episode);
+
+    // Indexes intentionally outlive cache records. Prune stale entries on reads,
+    // but never prune when any episode read failed due to a transient Redis error.
+    if (!rows.some((row) => row.failed)) {
+      const activeEpisodes = out.map((row) => row.episode).slice(-2000);
+      const normalizedIndexed = [...new Set(eps)].sort((a, b) => a - b).slice(-2000);
+      if (JSON.stringify(activeEpisodes) !== JSON.stringify(normalizedIndexed)) {
+        if (activeEpisodes.length) {
+          await kvSet(indexKey, JSON.stringify(activeEpisodes), 30 * 86400);
+        } else if (idxRaw) {
+          await kvDel(indexKey);
+        }
+      }
+    }
+    return out;
   }
   const store = await load(cfg.file);
   const prefix = `ep:${slug}:`;
@@ -135,7 +174,12 @@ export async function cacheGet(key: string): Promise<EpisodeSources | null> {
   const cfg = getProvidersConfig().cache;
   if (!cfg.enabled) return null;
   if (kvEnabled()) {
-    const raw = await kvGet(kvEpKey(key));
+    let raw: string | null;
+    try {
+      raw = await kvGet(kvEpKey(key));
+    } catch {
+      return null;
+    }
     if (!raw) return null;
     try {
       const entry = JSON.parse(raw) as { at: number; ttlMs?: number; sources: EpisodeSources };
