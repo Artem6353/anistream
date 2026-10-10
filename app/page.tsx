@@ -49,7 +49,7 @@ export default async function HomePage() {
           SuperSEO игнорировал sr-only и выдавал «H1 присутствует — Внимание».
           Ровно один H1 на документ сохранён. */}
       <div className="container home-head">
-        <h1 className="home-head__title">AniNova — каталог аниме: онгоинги, расписание выхода серий и плеер</h1>
+        <h1 className="home-head__title">AniNova — твой мир аниме</h1>
       </div>
 
       {/* S3.2: JSON-LD — WebSite+SearchAction, CollectionPage+ItemList, FAQPage */}
@@ -119,7 +119,7 @@ export default async function HomePage() {
                 title="Онгоинги: выходят сейчас"
                 action={{ href: '/catalog?status=ongoing', label: 'Все онгоинги' }}
                 slugs={rails.ongoing.map((t) => t.slug)}
-                skeleton={rails.ongoing.length}
+                skeleton={Math.min(8, rails.ongoing.length)}
               />
             ) : null}
 
@@ -127,7 +127,7 @@ export default async function HomePage() {
               title="Полнометражки"
               action={{ href: '/catalog?type=movie', label: 'Все фильмы' }}
               slugs={rails.movies.map((t) => t.slug)}
-              skeleton={rails.movies.length}
+              skeleton={Math.min(8, rails.movies.length)}
             />
 
             <section className="page-section" aria-label="Расписание и обновления">

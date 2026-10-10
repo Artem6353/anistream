@@ -48,6 +48,9 @@ export function DeferredHomeRail({
       return () => clearTimeout(timer);
     }
 
+    const rootMargin = window.matchMedia('(max-width: 640px)').matches
+      ? '300px 0px'
+      : '700px 0px';
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
@@ -55,7 +58,7 @@ export function DeferredHomeRail({
           observer.disconnect();
         }
       },
-      { rootMargin: '800px 0px' },
+      { rootMargin },
     );
     observer.observe(target);
     return () => observer.disconnect();

@@ -29,6 +29,9 @@ export function useLazyTitles(slugs: string[]) {
       });
       return;
     }
+    const rootMargin = window.matchMedia('(max-width: 640px)').matches
+      ? '320px 0px'
+      : '700px 0px';
     const io = new IntersectionObserver(
       (entries) => {
         if (!entries.some((e) => e.isIntersecting) || started.current) return;
@@ -37,7 +40,7 @@ export function useLazyTitles(slugs: string[]) {
         setState('loading');
         load();
       },
-      { rootMargin: '800px 0px' },
+      { rootMargin },
     );
     io.observe(node);
     return () => io.disconnect();

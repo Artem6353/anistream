@@ -39,6 +39,7 @@ export function PosterArt({
         alt={alt}
         width={width}
         height={Math.round(width * 1.5)}
+        sizes="(max-width: 640px) 44vw, (max-width: 1080px) 20vw, (min-width: 1600px) 210px, 180px"
         quality={quality}
         priority={!!eager}
         {...(eager ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const, fetchPriority: 'low' as const })}

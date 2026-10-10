@@ -23,9 +23,19 @@ export function Hero({ slides }: { slides: Title[] }) {
 
   useEffect(() => {
     if (paused || slides.length < 2) return;
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) return;
-    timer.current = setInterval(() => setIndex((i) => (i + 1) % slides.length), 8000);
+
+    // On phones, don't rotate a full-bleed image every few seconds while the user
+    // is reading or scrolling. It saves image work and avoids unexpected movement.
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const touchDevice = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    if (reduceMotion || touchDevice) return;
+
+    timer.current = setInterval(() => {
+      // Don't trigger image loads or React updates for a hidden tab.
+      if (document.visibilityState === 'visible') {
+        setIndex((i) => (i + 1) % slides.length);
+      }
+    }, 8000);
     return () => {
       if (timer.current) clearInterval(timer.current);
     };
@@ -33,6 +43,8 @@ export function Hero({ slides }: { slides: Title[] }) {
 
   const active = slides[index];
   if (!active) return null;
+  const bg = active.banner ?? active.poster ?? null;
+  const backgroundClass = `hero__bg ${active.banner ? '' : 'hero__bg--blurred'}`;
 
   return (
     <section
@@ -48,44 +60,39 @@ export function Hero({ slides }: { slides: Title[] }) {
         if (e.key === 'ArrowRight') go(index + 1);
       }}
     >
-      {slides.map((s, i) => {
-        const bg = s.banner ?? s.poster ?? null;
-        const cls = `hero__bg ${s.banner ? '' : 'hero__bg--blurred'}`;
-        return (
-          <div
-            key={s.slug}
-            className={`hero__slide ${i === index ? 'is-active' : ''}`}
-            aria-hidden={i !== index}
-          >
-            {!failed[s.slug] && isProxiable(bg) ? (
-              <Image
-                className={cls}
-                loader={imgLoader}
-                src={bg}
-                alt=""
-                fill
-                sizes="100vw"
-                quality={48}
-                priority={i === 0}
-                {...(i === 0 ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const, fetchPriority: 'low' as const })}
-                onError={() => setFailed((f) => ({ ...f, [s.slug]: true }))}
-              />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                className={failed[s.slug] || !bg ? 'hero__bg hero__bg--blurred' : cls}
-                src={failed[s.slug] || !bg ? artUri(s.slug, s.romaji, true) : bg!}
-                alt=""
-                loading={i === 0 ? 'eager' : 'lazy'}
-                fetchPriority={i === 0 ? 'high' : 'low'}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = artUri(s.slug, s.romaji, true);
-                }}
-              />
-            )}
-          </div>
-        );
-      })}
+      {/* A single active image prevents hidden slides from decoding on phones. */}
+      <div key={active.slug} className="hero__slide is-active" aria-hidden={false}>
+        {!failed[active.slug] && isProxiable(bg) ? (
+          <Image
+            className={backgroundClass}
+            loader={imgLoader}
+            src={bg}
+            alt=""
+            fill
+            sizes="100vw"
+            quality={44}
+            priority={index === 0}
+            {...(index === 0
+              ? { fetchPriority: 'high' as const }
+              : { loading: 'eager' as const, fetchPriority: 'auto' as const })}
+            decoding="async"
+            onError={() => setFailed((f) => ({ ...f, [active.slug]: true }))}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            className={failed[active.slug] || !bg ? 'hero__bg hero__bg--blurred' : backgroundClass}
+            src={failed[active.slug] || !bg ? artUri(active.slug, active.romaji, true) : bg!}
+            alt=""
+            loading="eager"
+            decoding="async"
+            fetchPriority={index === 0 ? 'high' : 'auto'}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = artUri(active.slug, active.romaji, true);
+            }}
+          />
+        )}
+      </div>
       <div className="hero__scrim" aria-hidden />
       <div className="hero__content container">
         <div className="hero__inner">

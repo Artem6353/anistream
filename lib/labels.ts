@@ -104,7 +104,7 @@ export const SORT_LABELS: Record<string, string> = {
 };
 
 export const ACCENTS: Record<string, { label: string; a: string; b: string }> = {
-  violet: { label: 'Фиолетовый', a: '#8b5cf6', b: '#f472b6' },
+  violet: { label: 'Лаванда + бирюза', a: '#7669f4', b: '#42d5c3' },
   ice: { label: 'Ледяной', a: '#38bdf8', b: '#818cf8' },
   emerald: { label: 'Изумруд', a: '#34d399', b: '#22d3ee' },
   sunset: { label: 'Закат', a: '#fb923c', b: '#f43f5e' },
