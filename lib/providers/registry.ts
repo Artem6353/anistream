@@ -135,7 +135,8 @@ function hasUsableProviderSource(
 
 function isTransientProviderError(error: string | undefined): boolean {
   if (!error) return false;
-  return /timeout|offline|unreachable|network|fetch failed|ECONN|ETIMEDOUT|HTTP 5\d\d|\b429\b|unauthori[sz]ed/i.test(error);
+  /* Явное отсутствие материала — негативный результат; всё остальное считаем временной ошибкой. */
+  return !/not found|no voices|no sources|no source|no material|no episodes|ambiguous exact title|title year mismatch|не найден|нет источников|нет источника|нет ссылок|нет голосов|нет голоса/i.test(error);
 }
 
 function shouldResolveProvider(
