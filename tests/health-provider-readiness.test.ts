@@ -1,0 +1,66 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+  allTitles: vi.fn(),
+  providersWithAvailability: vi.fn(),
+}));
+
+vi.mock('@/lib/catalog', () => ({
+  allTitles: mocks.allTitles,
+}));
+
+vi.mock('@/lib/providers/registry-meta', () => ({
+  providersWithAvailability: mocks.providersWithAvailability,
+}));
+
+import { GET } from '../app/api/health/route';
+
+describe('provider configuration in health endpoint', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.allTitles.mockReturnValue(Array.from({ length: 42 }, (_, i) => ({ slug: `title-${i}` })));
+    mocks.providersWithAvailability.mockReturnValue([
+      { id: 'demo', label: 'AniNova Demo', available: true },
+      { id: 'kodik', label: 'Kodik', available: false },
+      { id: 'cvh', label: 'CVH (AnimeGo)', available: false },
+      { id: 'aniboom', label: 'AniBoom', available: false },
+    ]);
+  });
+
+  it('reports which providers are configured without exposing URLs or credentials', async () => {
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.titles).toBe(42);
+    expect(body.configuredProviders).toEqual([
+      { id: 'demo', configured: true },
+      { id: 'kodik', configured: false },
+      { id: 'cvh', configured: false },
+      { id: 'aniboom', configured: false },
+    ]);
+
+    const serialized = JSON.stringify(body.configuredProviders);
+    expect(serialized).not.toContain('https://');
+    expect(serialized).not.toContain('token');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('keeps site health separate from provider configuration readiness', async () => {
+    mocks.providersWithAvailability.mockReturnValue([
+      { id: 'demo', label: 'AniNova Demo', available: true },
+      { id: 'kodik', label: 'Kodik', available: false },
+      { id: 'cvh', label: 'CVH (AnimeGo)', available: false },
+      { id: 'aniboom', label: 'AniBoom', available: false },
+    ]);
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(body.ok).toBe(true);
+    expect(body.configuredProviders.filter((provider: { id: string; configured: boolean }) =>
+      provider.id !== 'demo' && provider.configured,
+    )).toEqual([]);
+  });
+});
