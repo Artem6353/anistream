@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { IconChevronLeft, IconChevronRight } from '@/components/ui/icons';
 
@@ -17,16 +17,34 @@ export function Rail({
   id?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const frame = useRef<number | null>(null);
   const [edges, setEdges] = useState({ left: false, right: true });
 
-  const update = () => {
-    const el = ref.current;
-    if (!el) return;
-    setEdges({
-      left: el.scrollLeft > 8,
-      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 8,
+  // Scroll events can fire many times per frame on touch screens. Batch the
+  // measurement to one animation frame and avoid React renders when edge state
+  // hasn't changed.
+  const update = useCallback(() => {
+    if (frame.current !== null) return;
+    frame.current = window.requestAnimationFrame(() => {
+      frame.current = null;
+      const el = ref.current;
+      if (!el) return;
+      const left = el.scrollLeft > 8;
+      const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 8;
+      setEdges((previous) =>
+        previous.left === left && previous.right === right
+          ? previous
+          : { left, right },
+      );
     });
-  };
+  }, []);
+
+  useEffect(() => {
+    update();
+    return () => {
+      if (frame.current !== null) window.cancelAnimationFrame(frame.current);
+    };
+  }, [update]);
 
   const scroll = (dir: 1 | -1) => {
     const el = ref.current;
