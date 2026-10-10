@@ -101,7 +101,13 @@ describe('provider configuration in health endpoint', () => {
   });
 
   it('reports disabled cache distinctly from filesystem fallback', async () => {
-    mocks.getProvidersConfig.mockReturnValue({ cache: { enabled: false, write: false } });
+    mocks.getProvidersConfig.mockReturnValue({
+      cache: { enabled: false, write: false },
+      bridges: {
+        kodik: { url: '', timeoutMs: 6000 },
+        multiplayer: { url: '', timeoutMs: 6000 },
+      },
+    });
 
     const response = await GET();
     const body = await response.json();
