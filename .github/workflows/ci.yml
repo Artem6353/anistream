@@ -18,6 +18,8 @@ jobs:
           python-version: '3.13'
       - name: compile Python importers and player bridges
         run: python -m py_compile scripts/import-kodik-bulk.py bridges/kodik_bridge.py bridges/multi_player_bridge.py
+      - name: test Kodik bulk importer matching and cache merge
+        run: python -m unittest discover -s tests -p 'test_*.py'
       - uses: actions/setup-node@v4
         with:
           node-version: 20
