@@ -8,6 +8,7 @@ on:
     paths-ignore: ['docs/**', '*.md']
   pull_request:
     branches: [main, dev]
+    types: [opened, synchronize, reopened, labeled]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,6 +35,35 @@ jobs:
           git count-objects -vH | grep size-pack
           SIZE_KB=$(git count-objects -v | awk '/size-pack/ {print $2}')
           if [ "$SIZE_KB" -gt 307200 ]; then echo "::warning::pack >300MB — пора выносить titles.json из git (см. LIMITS.md)"; fi
+      # Attach the "episode-coverage-audit" PR label to run a full read-only
+      # comparison between the checked-in catalog and checked-in provider cache.
+      - name: On-demand episode coverage audit
+        if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'episode-coverage-audit')
+        run: |
+          npm run audit:episodes
+          node <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('.cache/episode-coverage-report.json', 'utf8'));
+          console.log('EPISODE_COVERAGE_SUMMARY=' + JSON.stringify(report.summary));
+          console.log('LOWEST_COVERAGE_TITLES_BEGIN');
+          for (const item of report.titles.slice(0, 40)) {
+            const ranges = item.missingEpisodeRanges
+              .map(([first, last]) => first === last ? String(first) : first + '-' + last)
+              .join(',');
+            console.log(item.slug + '\t' + item.coveragePercent + '%\t' +
+              item.episodesWithDirectSources + '/' + item.episodesExpected +
+              '\tmissing=' + (ranges || 'none'));
+          }
+          console.log('LOWEST_COVERAGE_TITLES_END');
+          NODE
+      - name: Upload episode coverage report
+        if: always() && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'episode-coverage-audit')
+        uses: actions/upload-artifact@v4
+        with:
+          name: episode-coverage-report
+          path: .cache/episode-coverage-report.json
+          if-no-files-found: ignore
+          retention-days: 7
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
