@@ -351,14 +351,21 @@ def make_source(material: dict, slug: str, episode: int, link: str) -> dict:
 
 
 def source_identity(source: dict) -> str:
+    """Deduplicate URLs within one provider, not across unrelated providers."""
+    provider = str(source.get("providerId") or "unknown")
+    identity = ""
     if source.get("embedUrl"):
-        return str(source["embedUrl"])
-    files = source.get("files")
-    if isinstance(files, list):
-        for item in files:
-            if isinstance(item, dict) and item.get("url"):
-                return str(item["url"])
-    return str(source.get("id") or "")
+        identity = str(source["embedUrl"])
+    else:
+        files = source.get("files")
+        if isinstance(files, list):
+            for item in files:
+                if isinstance(item, dict) and item.get("url"):
+                    identity = str(item["url"])
+                    break
+        if not identity:
+            identity = str(source.get("id") or "")
+    return f"{provider}:{identity}" if identity else ""
 
 
 def merge_episode(store: dict, slug: str, episode: int, incoming: list[dict]) -> tuple[bool, int]:
@@ -376,15 +383,24 @@ def merge_episode(store: dict, slug: str, episode: int, incoming: list[dict]) ->
     merged = [source for source in existing if direct_source(source)]
     seen = {source_identity(source) for source in merged if isinstance(source, dict)}
     added = 0
+    confirmed = 0
     for source in incoming:
-        identity = str(source.get("embedUrl") or source.get("id"))
-        if not identity or identity in seen:
+        if not direct_source(source):
+            continue
+        identity = source_identity(source)
+        if not identity:
+            continue
+        confirmed += 1
+        if identity in seen:
             continue
         seen.add(identity)
         merged.append(source)
         added += 1
 
-    if added == 0:
+    # A fresh paginated Kodik response confirms existing URLs too. Refresh their
+    # timestamp/TTL even when it adds no new URL; otherwise a full import can
+    # leave already-known links expired forever.
+    if confirmed == 0:
         return False, 0
 
     sources_used = sorted(
@@ -604,6 +620,7 @@ def main() -> int:
         matching_slugs = set()
         page_updated_episodes = set()
         page_new_sources = 0
+        page_cache_changed = False
         for material in items:
             if not isinstance(material, dict):
                 continue
@@ -625,6 +642,7 @@ def main() -> int:
                 changed, added = merge_episode(store, str(title["slug"]), episode, incoming)
                 if changed:
                     page_updated_episodes.add(f"{title['slug']}:{episode}")
+                    page_cache_changed = True
                     page_new_sources += added
 
         pages_this_run += 1
@@ -641,7 +659,8 @@ def main() -> int:
         cursor = cursor_from_next_page(body.get("next_page"))
         progress["cursor"] = cursor
         progress["updatedAt"] = datetime.now(timezone.utc).isoformat()
-        pending_cache_changes = pending_cache_changes or bool(page_new_sources)
+        # Persist freshness-only updates as well as genuinely new URLs.
+        pending_cache_changes = pending_cache_changes or page_cache_changed
 
         if pages_this_run == 1 or pages_this_run % 10 == 0:
             elapsed = max(0.001, time.monotonic() - started)
@@ -679,7 +698,7 @@ def main() -> int:
             print("Matched materials:", progress["matchedMaterials"])
             print("Unique matched titles observed across pages:", progress["matchedTitles"])
             print("Episode links seen in eligible matches:", progress["episodeLinksSeen"])
-            print("Episode entries updated with new source links:", progress["episodeEntriesUpdated"])
+            print("Episode entries updated or refreshed:", progress["episodeEntriesUpdated"])
             print("New distinct source links added:", progress["newSources"])
             print(f"Elapsed this run: {elapsed / 60:.1f} minutes")
             print("Cache backup:", backup.name)
