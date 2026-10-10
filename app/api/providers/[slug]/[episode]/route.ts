@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getTitle } from '@/lib/catalog';
 import { resolveEpisodeSources, contextFromTitle, providersWithAvailability } from '@/lib/providers';
+import { providerResponseCacheControl } from '@/lib/providers/response-cache';
 
 export const revalidate = 0;
 
@@ -14,21 +15,6 @@ interface Props {
  *  числом одновременных клиентов. Результат общий для всех участников. */
 const inflight = new Map<string, ReturnType<typeof resolveEpisodeSources>>();
 
-function providerResponseCacheControl(
-  sources: Awaited<ReturnType<typeof resolveEpisodeSources>>,
-): string {
-  if (!sources.fromCache) return 'no-store';
-
-  const now = Date.now();
-  const pendingChecks = Object.values(sources.providerChecks ?? {})
-    .filter((timestamp) => Number.isFinite(timestamp) && timestamp > now);
-
-  if (!pendingChecks.length) return 'public, s-maxage=3600';
-
-  const nextCheckInSeconds = Math.floor((Math.min(...pendingChecks) - now) / 1000);
-  if (nextCheckInSeconds <= 0) return 'no-store';
-  return `public, s-maxage=${Math.min(3600, Math.max(1, nextCheckInSeconds))}`;
-}
 
 function resolveOnce(
   key: string,
