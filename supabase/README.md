@@ -1,15 +1,17 @@
 # Supabase schema and migrations
 
-The social tables in the current production project predate tracked migrations. Do not
-assume an empty `supabase/migrations` directory means the database has no schema.
+The repository's canonical bootstrap is the numbered sequence in `supabase/migrations/`
+(the previous standalone `schema.sql` was consolidated into `001_schema.sql` to avoid
+two diverging setup paths).
 
-- `migrations/20261011000000_harden_social_rls.sql` records the latest incremental
-  production security fix.
-- `tests/social_rls_regression.sql` is reserved for read-only post-deployment assertions.
-- Apply incremental migrations only after the baseline social tables exist. A clean
-  project still needs a reviewed baseline snapshot before it can be provisioned solely
-  from this repository.
+The connected production project has an existing social schema, but its reported
+migration history is empty. That is migration-metadata drift, not an empty database.
+Do not blindly replay the full bootstrap or mark every old migration as applied without
+comparing each migration's effects to the live schema.
 
-The production change was applied directly through the Supabase database connection and
-verified against policy and column-privilege metadata. Do not re-run baseline DDL on the
-existing production project.
+- `migrations/20261011000000_harden_social_rls.sql` records the current incremental
+  access-control fix.
+- Apply the new incremental SQL only after reviewing the current schema and checking
+  the migration state.
+- The current production security change was applied directly through the Supabase
+  database connection and verified against policy and column-privilege metadata.
