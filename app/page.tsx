@@ -119,7 +119,7 @@ export default async function HomePage() {
                 title="Онгоинги: выходят сейчас"
                 action={{ href: '/catalog?status=ongoing', label: 'Все онгоинги' }}
                 slugs={rails.ongoing.map((t) => t.slug)}
-                skeleton={rails.ongoing.length}
+                skeleton={Math.min(8, rails.ongoing.length)}
               />
             ) : null}
 
@@ -127,7 +127,7 @@ export default async function HomePage() {
               title="Полнометражки"
               action={{ href: '/catalog?type=movie', label: 'Все фильмы' }}
               slugs={rails.movies.map((t) => t.slug)}
-              skeleton={rails.movies.length}
+              skeleton={Math.min(8, rails.movies.length)}
             />
 
             <section className="page-section" aria-label="Расписание и обновления">
