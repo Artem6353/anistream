@@ -22,10 +22,19 @@ export async function resolveKodik(ctx: ProviderContext): Promise<ResolveOutcome
     );
     if (res.sources.length) return { sources: res.sources };
     bridgeError = res.error;
+
+    /* Если bridge ответил корректно, но не нашёл материал, не запускаем дорогой
+       второй поиск на каждом запросе. Прямой API оставляем для проблем транспорта
+       и авторизации bridge, когда bridge не смог выполнить поиск. */
+    const bridgeUnavailable = Boolean(bridgeError && (
+      /health-gate|timeout|unreachable|network|fetch failed|ECONN|ETIMEDOUT|bad gateway|unauthori[sz]ed|\\b401\\b|\\b403\\b|\\b5\\d\\d\\b/i.test(bridgeError)
+    ));
+    if (!bridgeUnavailable) {
+      return { sources: [], error: bridgeError ?? 'Kodik: источники не найдены' };
+    }
   }
 
-  /* 2) bridge недоступен ИЛИ не нашёл эпизод — пробуем прямой Kodik API.
-     Ошибка health-gate не должна блокировать этот fallback (особенно на Vercel). */
+  /* 2) bridge выключен/недоступен: пробуем прямой Kodik API. */
   const { resolveKodikDirect } = await import('../kodik-direct');
   const direct = await resolveKodikDirect(ctx);
   if (direct.sources.length) return direct;
