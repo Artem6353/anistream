@@ -66,6 +66,8 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['sharp'],
   outputFileTracingIncludes: {
     '/**': ['./lib/data/titles.json'],
+    '/api/providers/*/*': ['./.cache/providers-resolve-cache.json'],
+    '/api/availability/*': ['./.cache/providers-resolve-cache.json'],
   },
   images: {
     remotePatterns: [
