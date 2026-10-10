@@ -351,14 +351,21 @@ def make_source(material: dict, slug: str, episode: int, link: str) -> dict:
 
 
 def source_identity(source: dict) -> str:
+    """Deduplicate URLs within one provider, not across unrelated providers."""
+    provider = str(source.get("providerId") or "unknown")
+    identity = ""
     if source.get("embedUrl"):
-        return str(source["embedUrl"])
-    files = source.get("files")
-    if isinstance(files, list):
-        for item in files:
-            if isinstance(item, dict) and item.get("url"):
-                return str(item["url"])
-    return str(source.get("id") or "")
+        identity = str(source["embedUrl"])
+    else:
+        files = source.get("files")
+        if isinstance(files, list):
+            for item in files:
+                if isinstance(item, dict) and item.get("url"):
+                    identity = str(item["url"])
+                    break
+        if not identity:
+            identity = str(source.get("id") or "")
+    return f"{provider}:{identity}" if identity else ""
 
 
 def merge_episode(store: dict, slug: str, episode: int, incoming: list[dict]) -> tuple[bool, int]:
@@ -376,15 +383,24 @@ def merge_episode(store: dict, slug: str, episode: int, incoming: list[dict]) ->
     merged = [source for source in existing if direct_source(source)]
     seen = {source_identity(source) for source in merged if isinstance(source, dict)}
     added = 0
+    confirmed = 0
     for source in incoming:
-        identity = str(source.get("embedUrl") or source.get("id"))
-        if not identity or identity in seen:
+        if not direct_source(source):
+            continue
+        identity = source_identity(source)
+        if not identity:
+            continue
+        confirmed += 1
+        if identity in seen:
             continue
         seen.add(identity)
         merged.append(source)
         added += 1
 
-    if added == 0:
+    # A fresh paginated Kodik response confirms existing URLs too. Refresh their
+    # timestamp/TTL even when it adds no new URL; otherwise a full import can
+    # leave already-known links expired forever.
+    if confirmed == 0:
         return False, 0
 
     sources_used = sorted(
