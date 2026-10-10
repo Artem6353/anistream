@@ -125,6 +125,7 @@ describe('safe Upstash cache migration CLI', () => {
     expect(result.stdout).toContain('Mode: DRY RUN (read-only)');
     expect(result.stdout).toContain('Eligible fresh episode entries: 1');
     expect(result.stdout).toContain('Direct sources in eligible entries: 1');
+    expect(result.stdout).toMatch(/Estimated serialized episode value size .*: [1-9][0-9]* bytes/);
     expect(result.stdout).toContain('No Redis commands were sent');
     expect(readFileSync(file, 'utf8')).toBe(before);
     expect(existsSync(progress)).toBe(false);
