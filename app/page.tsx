@@ -49,7 +49,7 @@ export default async function HomePage() {
           SuperSEO игнорировал sr-only и выдавал «H1 присутствует — Внимание».
           Ровно один H1 на документ сохранён. */}
       <div className="container home-head">
-        <h1 className="home-head__title">AniNova — каталог аниме: онгоинги, расписание выхода серий и плеер</h1>
+        <h1 className="home-head__title">AniNova — твой мир аниме</h1>
       </div>
 
       {/* S3.2: JSON-LD — WebSite+SearchAction, CollectionPage+ItemList, FAQPage */}
