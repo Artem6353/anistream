@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   allTitles: vi.fn(),
   providersWithAvailability: vi.fn(),
+  getProvidersConfig: vi.fn(),
+  kvEnabled: vi.fn(),
 }));
 
 vi.mock('@/lib/catalog', () => ({
@@ -11,6 +13,14 @@ vi.mock('@/lib/catalog', () => ({
 
 vi.mock('@/lib/providers/registry-meta', () => ({
   providersWithAvailability: mocks.providersWithAvailability,
+}));
+
+vi.mock('@/lib/config/providers.config', () => ({
+  getProvidersConfig: mocks.getProvidersConfig,
+}));
+
+vi.mock('@/lib/providers/cache-kv', () => ({
+  kvEnabled: mocks.kvEnabled,
 }));
 
 import { GET } from '../app/api/health/route';
@@ -25,6 +35,8 @@ describe('provider configuration in health endpoint', () => {
       { id: 'cvh', label: 'CVH (AnimeGo)', available: false },
       { id: 'aniboom', label: 'AniBoom', available: false },
     ]);
+    mocks.getProvidersConfig.mockReturnValue({ cache: { enabled: true, write: true } });
+    mocks.kvEnabled.mockReturnValue(false);
   });
 
   it('reports which providers are configured without exposing URLs or credentials', async () => {
@@ -45,6 +57,34 @@ describe('provider configuration in health endpoint', () => {
     expect(serialized).not.toContain('https://');
     expect(serialized).not.toContain('token');
     expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('reports the configured cache backend without exposing Redis credentials', async () => {
+    mocks.kvEnabled.mockReturnValue(true);
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(body.providerCache).toEqual({
+      enabled: true,
+      writesEnabled: true,
+      backend: 'upstash',
+    });
+    expect(JSON.stringify(body.providerCache)).not.toContain('token');
+    expect(JSON.stringify(body.providerCache)).not.toContain('https://');
+  });
+
+  it('reports disabled cache distinctly from filesystem fallback', async () => {
+    mocks.getProvidersConfig.mockReturnValue({ cache: { enabled: false, write: false } });
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(body.providerCache).toEqual({
+      enabled: false,
+      writesEnabled: false,
+      backend: 'disabled',
+    });
   });
 
   it('keeps site health separate from provider configuration readiness', async () => {
