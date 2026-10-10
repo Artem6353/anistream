@@ -243,13 +243,7 @@ export async function resolveEpisodeSources(
   }
 
   const oldSources = base?.sources ?? [];
-  const oldSourceKeys = new Set(
-    oldSources.map((source) => `${source.providerId}:${source.embedUrl ?? source.files?.[0]?.url ?? source.id}`),
-  );
   const merged = dedupe([...oldSources, ...liveSources]);
-  const addedLiveSources = merged.some((source) =>
-    !oldSourceKeys.has(`${source.providerId}:${source.embedUrl ?? source.files?.[0]?.url ?? source.id}`),
-  );
   const providersUsed = [...new Set(merged.filter(isDirectProviderSource).map((source) => source.providerId))];
 
   const result: EpisodeSources = {
