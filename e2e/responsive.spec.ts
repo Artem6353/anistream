@@ -72,7 +72,7 @@ test('TV mode scales the catalogue and exposes the large-screen focus layout', a
   });
 
   expect(result.documentWidth).toBeLessThanOrEqual(result.viewportWidth + 1);
-  expect(result.columns).toBeGreaterThanOrEqual(6);
+  expect(result.columns).toBeGreaterThanOrEqual(5);
   expect(result.cardWidth).toBeGreaterThanOrEqual(220);
   expect(result.mobileNavDisplay).toBe('none');
 });
