@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { allTitles } from '@/lib/catalog';
 import { providersWithAvailability } from '@/lib/providers/registry-meta';
 import { getProvidersConfig } from '@/lib/config/providers.config';
-import { kvEnabled } from '@/lib/providers/cache-kv';
+import { kvEnabled, kvPing } from '@/lib/providers/cache-kv';
 import { uptime as osUptime } from 'node:os';
 import { performance } from 'node:perf_hooks';
 
@@ -19,10 +19,13 @@ export async function GET() {
     id,
     configured: available,
   }));
+  const cacheUsesUpstash = providerConfig.cache.enabled && kvEnabled();
   const providerCache = {
     enabled: providerConfig.cache.enabled,
     writesEnabled: providerConfig.cache.write,
-    backend: !providerConfig.cache.enabled ? 'disabled' : kvEnabled() ? 'upstash' : 'file',
+    backend: !providerConfig.cache.enabled ? 'disabled' : cacheUsesUpstash ? 'upstash' : 'file',
+    // null means this deployment uses the filesystem cache (no Redis connection to probe).
+    reachable: cacheUsesUpstash ? await kvPing() : null,
   };
   return NextResponse.json(
     {
