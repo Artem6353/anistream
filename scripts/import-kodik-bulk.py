@@ -620,6 +620,7 @@ def main() -> int:
         matching_slugs = set()
         page_updated_episodes = set()
         page_new_sources = 0
+        page_cache_changed = False
         for material in items:
             if not isinstance(material, dict):
                 continue
@@ -641,6 +642,7 @@ def main() -> int:
                 changed, added = merge_episode(store, str(title["slug"]), episode, incoming)
                 if changed:
                     page_updated_episodes.add(f"{title['slug']}:{episode}")
+                    page_cache_changed = True
                     page_new_sources += added
 
         pages_this_run += 1
@@ -657,7 +659,8 @@ def main() -> int:
         cursor = cursor_from_next_page(body.get("next_page"))
         progress["cursor"] = cursor
         progress["updatedAt"] = datetime.now(timezone.utc).isoformat()
-        pending_cache_changes = pending_cache_changes or bool(page_new_sources)
+        # Persist freshness-only updates as well as genuinely new URLs.
+        pending_cache_changes = pending_cache_changes or page_cache_changed
 
         if pages_this_run == 1 or pages_this_run % 10 == 0:
             elapsed = max(0.001, time.monotonic() - started)
