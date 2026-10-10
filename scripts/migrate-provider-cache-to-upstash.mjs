@@ -133,6 +133,11 @@ export function collectMigratableEntries(store, now = Date.now(), defaultTtlMs =
     entriesWithoutDirectSources: 0,
     directSources: 0,
     estimatedEpisodeValueBytes: 0,
+    remainingTtlUnder24h: 0,
+    remainingTtl1to7d: 0,
+    remainingTtlOver7d: 0,
+    minimumRemainingTtlMs: Number.POSITIVE_INFINITY,
+    maximumRemainingTtlMs: 0,
   };
 
   for (const [key, rawEntry] of Object.entries(store)) {
@@ -173,6 +178,12 @@ export function collectMigratableEntries(store, now = Date.now(), defaultTtlMs =
       sourcesUsed: [...new Set(sources.map((source) => String(source.providerId || 'unknown')))].sort(),
       fromCache: false,
     };
+    const remainingTtlMs = expiresAt - now;
+    if (remainingTtlMs <= DAY_MS) stats.remainingTtlUnder24h += 1;
+    else if (remainingTtlMs <= 7 * DAY_MS) stats.remainingTtl1to7d += 1;
+    else stats.remainingTtlOver7d += 1;
+    stats.minimumRemainingTtlMs = Math.min(stats.minimumRemainingTtlMs, remainingTtlMs);
+    stats.maximumRemainingTtlMs = Math.max(stats.maximumRemainingTtlMs, remainingTtlMs);
     const estimatedRecord = { at, ttlMs, sources: normalizedSources };
     stats.estimatedEpisodeValueBytes += Buffer.byteLength(JSON.stringify(estimatedRecord), 'utf8');
     entries.push({
@@ -455,6 +466,13 @@ async function main() {
     stats.estimatedEpisodeValueBytes + ' bytes (' +
     (stats.estimatedEpisodeValueBytes / (1024 * 1024)).toFixed(2) + ' MiB)',
   );
+  console.log('Remaining TTL ≤24h: ' + stats.remainingTtlUnder24h);
+  console.log('Remaining TTL >24h and ≤7d: ' + stats.remainingTtl1to7d);
+  console.log('Remaining TTL >7d: ' + stats.remainingTtlOver7d);
+  if (entries.length) {
+    console.log('Minimum remaining TTL hours: ' + (stats.minimumRemainingTtlMs / 3_600_000).toFixed(2));
+    console.log('Maximum remaining TTL days: ' + (stats.maximumRemainingTtlMs / DAY_MS).toFixed(2));
+  }
   console.log('Unique titles with eligible entries: ' + stats.uniqueTitles);
   console.log('Batch size: ' + batchSize + '; command budget per apply run: ' + commandBudget);
   console.log('Estimated command count for full pass (upper bound): ' + estimatedCommands);
