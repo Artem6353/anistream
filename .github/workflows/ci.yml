@@ -56,6 +56,14 @@ jobs:
           }
           console.log('LOWEST_COVERAGE_TITLES_END');
           NODE
+      # Read-only size estimate; never writes to Upstash. The 45 MB safety gate
+      # in the separate apply workflow is why we measure before migrating the cache.
+      - name: Estimate Upstash migration footprint (read-only)
+        if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'episode-coverage-audit')
+        run: |
+          node scripts/migrate-provider-cache-to-upstash.mjs \
+            --file .cache/providers-resolve-cache.json \
+            --dry-run
       - name: Upload episode coverage report
         if: always() && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'episode-coverage-audit')
         uses: actions/upload-artifact@v4
