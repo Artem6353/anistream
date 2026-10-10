@@ -72,7 +72,9 @@ jobs:
           const cache = health?.providerCache;
           if (!cache || typeof cache.enabled !== 'boolean' ||
               typeof cache.writesEnabled !== 'boolean' ||
-              !['upstash', 'file', 'disabled'].includes(cache.backend)) {
+              !['upstash', 'file', 'disabled'].includes(cache.backend) ||
+              !(cache.reachable === null || typeof cache.reachable === 'boolean') ||
+              (cache.backend === 'upstash' && typeof cache.reachable !== 'boolean')) {
             errors.push('providerCache is missing or has an invalid shape');
           }
 
@@ -89,6 +91,7 @@ jobs:
               enabled: cache.enabled,
               writesEnabled: cache.writesEnabled,
               backend: cache.backend,
+              reachable: cache.reachable,
             } : null,
           }));
 
@@ -101,5 +104,8 @@ jobs:
           }
           if (cache?.enabled && !cache.writesEnabled) {
             console.warn('::warning::Provider cache is enabled but cache writes are disabled.');
+          }
+          if (cache?.backend === 'upstash' && cache.reachable === false) {
+            console.warn('::warning::Upstash is configured but the Redis connectivity probe failed.');
           }
           NODE
