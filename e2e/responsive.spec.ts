@@ -18,13 +18,17 @@ for (const device of devices) {
       const grid = document.querySelector<HTMLElement>('.poster-grid');
       const nav = document.querySelector<HTMLElement>('.mobile-nav');
       if (!grid || !nav) throw new Error('Expected catalog grid and responsive navigation.');
-      const columns = getComputedStyle(grid).gridTemplateColumns.match(/\\d+(?:\\.\\d+)?px/g) ?? [];
+      const cards = Array.from(grid.querySelectorAll<HTMLElement>('.card'));
+      const firstCardRect = cards[0]?.getBoundingClientRect();
+      const columns = firstCardRect
+        ? cards.filter((card) => Math.abs(card.getBoundingClientRect().top - firstCardRect.top) < 2).length
+        : 0;
       return {
         viewportWidth: window.innerWidth,
         documentWidth: document.documentElement.scrollWidth,
-        columns: columns.length,
+        columns,
         mobileNavDisplay: getComputedStyle(nav).display,
-        posterWidth: grid.querySelector<HTMLElement>('.card')?.getBoundingClientRect().width ?? 0,
+        posterWidth: firstCardRect?.width ?? 0,
       };
     });
 
@@ -41,6 +45,10 @@ for (const device of devices) {
 test('TV mode scales the catalogue and exposes the large-screen focus layout', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/catalog?sort=pop', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() =>
+    document.documentElement.dataset.tv === 'false' ||
+    document.documentElement.dataset.tv === 'true',
+  );
   await page.evaluate(() => {
     document.documentElement.dataset.tv = 'true';
   });
@@ -48,14 +56,17 @@ test('TV mode scales the catalogue and exposes the large-screen focus layout', a
   const result = await page.evaluate(() => {
     const grid = document.querySelector<HTMLElement>('.poster-grid');
     const nav = document.querySelector<HTMLElement>('.mobile-nav');
-    const card = grid?.querySelector<HTMLElement>('.card');
-    if (!grid || !nav || !card) throw new Error('TV layout elements are missing.');
-    const columns = getComputedStyle(grid).gridTemplateColumns.match(/\\d+(?:\\.\\d+)?px/g) ?? [];
+    const cards = Array.from(grid?.querySelectorAll<HTMLElement>('.card') ?? []);
+    const firstCardRect = cards[0]?.getBoundingClientRect();
+    if (!grid || !nav || !firstCardRect) throw new Error('TV layout elements are missing.');
+    const columns = cards.filter((card) =>
+      Math.abs(card.getBoundingClientRect().top - firstCardRect.top) < 2,
+    ).length;
     return {
       documentWidth: document.documentElement.scrollWidth,
       viewportWidth: window.innerWidth,
-      columns: columns.length,
-      cardWidth: card.getBoundingClientRect().width,
+      columns,
+      cardWidth: firstCardRect.width,
       mobileNavDisplay: getComputedStyle(nav).display,
     };
   });
