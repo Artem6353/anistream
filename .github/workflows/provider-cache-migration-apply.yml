@@ -1,0 +1,88 @@
+name: Apply provider cache migration (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Write the cache migration to Upstash (otherwise read-only inventory only)"
+        type: boolean
+        required: true
+        default: false
+      confirmation:
+        description: "For apply only, type MIGRATE-ANINOVA-CACHE exactly"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aninova-upstash-cache-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Inspect or migrate the provider cache
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Read-only migration inventory
+        run: |
+          set -euo pipefail
+          node scripts/migrate-provider-cache-to-upstash.mjs \
+            --file .cache/providers-resolve-cache.json \
+            --dry-run
+
+      - name: Apply confirmed migration to Upstash
+        if: ${{ inputs.apply }}
+        env:
+          APPLY_CONFIRMATION: ${{ inputs.confirmation }}
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$APPLY_CONFIRMATION" != "MIGRATE-ANINOVA-CACHE" ]]; then
+            echo "::error::Apply requires the exact confirmation text MIGRATE-ANINOVA-CACHE."
+            exit 2
+          fi
+          if [[ -z "$UPSTASH_REDIS_REST_URL" || -z "$UPSTASH_REDIS_REST_TOKEN" ]]; then
+            echo "::error::Repository Actions secrets UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be configured. Secret values are never printed."
+            exit 2
+          fi
+
+          progress_file="$RUNNER_TEMP/provider-cache-upstash-migration-progress.json"
+          max_passes=25
+
+          # The migration script enforces an 8,000-command budget per pass,
+          # writes an atomic checkpoint after each batch, and merges by provider+URL.
+          # Progress stays on this runner during the job; if interrupted, re-running
+          # is safe and idempotent even when the temporary checkpoint is lost.
+          for pass in $(seq 1 "$max_passes"); do
+            echo "Migration pass $pass/$max_passes"
+            node scripts/migrate-provider-cache-to-upstash.mjs \
+              --file .cache/providers-resolve-cache.json \
+              --progress-file "$progress_file" \
+              --batch-size 100 \
+              --max-commands 8000 \
+              --apply
+
+            checkpoint="$(node -e "const p = require(process.argv[1]); process.stdout.write(String(p.nextIndex) + '/' + String(p.totalEntries));" "$progress_file")"
+            echo "Non-sensitive migration checkpoint: $checkpoint"
+            next_index="${checkpoint%/*}"
+            total_entries="${checkpoint#*/}"
+            if [[ "$next_index" == "$total_entries" ]]; then
+              echo "Upstash cache migration completed."
+              exit 0
+            fi
+          done
+
+          echo "::error::Migration reached the 25-pass safety limit. Already completed batches remain merged; rerun the workflow to resume idempotently."
+          exit 1
