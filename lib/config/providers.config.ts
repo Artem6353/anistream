@@ -81,15 +81,23 @@ export function getProvidersConfig(): ProvidersConfig {
     },
     bridges: {
       kodik: {
-        url: env.KODIK_BRIDGE_URL ?? (env.KODIK_BRIDGE_PORT ? `http://127.0.0.1:${env.KODIK_BRIDGE_PORT}` : 'http://127.0.0.1:8765'),
+        url: env.KODIK_BRIDGE_URL ?? (
+          env.VERCEL ? '' :
+          env.KODIK_BRIDGE_PORT ? `http://127.0.0.1:${env.KODIK_BRIDGE_PORT}` :
+          'http://127.0.0.1:8765'
+        ),
         timeoutMs: num(env.KODIK_BRIDGE_TIMEOUT_MS, 12000),
       },
       multiplayer: {
-        url: env.MULTIPLAYER_BRIDGE_URL ?? (env.MULTIPLAYER_BRIDGE_PORT ? `http://127.0.0.1:${env.MULTIPLAYER_BRIDGE_PORT}` : 'http://127.0.0.1:8766'),
+        url: env.MULTIPLAYER_BRIDGE_URL ?? (
+          env.VERCEL ? '' :
+          env.MULTIPLAYER_BRIDGE_PORT ? `http://127.0.0.1:${env.MULTIPLAYER_BRIDGE_PORT}` :
+          'http://127.0.0.1:8766'
+        ),
         timeoutMs: num(env.MULTIPLAYER_BRIDGE_TIMEOUT_MS, 8000),
       },
     },
-    providerMode: env.PROVIDER_MODE === 'first' ? 'first' : 'merge',
+    providerMode: 'merge',
     providerTimeoutMs: num(env.PROVIDER_TIMEOUT_MS, 6000),
     cache: {
       enabled: bool(env.PROVIDER_CACHE_ENABLED, true),
