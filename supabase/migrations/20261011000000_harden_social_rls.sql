@@ -7,7 +7,20 @@ CREATE POLICY club_members_insert_own
   ON public.club_members
   FOR INSERT
   TO authenticated
-  WITH CHECK ((SELECT auth.uid()) = user_id AND role = 'member');
+  WITH CHECK (
+    (SELECT auth.uid()) = user_id
+    AND (
+      role = 'member'
+      OR (
+        role = 'owner'
+        AND EXISTS (
+          SELECT 1 FROM public.clubs c
+          WHERE c.id = club_members.club_id
+            AND c.owner_id = (SELECT auth.uid())
+        )
+      )
+    )
+  );
 
 DROP POLICY IF EXISTS dm_threads_update_part ON public.dm_threads;
 CREATE POLICY dm_threads_update_part
