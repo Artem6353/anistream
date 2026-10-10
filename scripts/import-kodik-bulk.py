@@ -37,7 +37,7 @@ sys.path.insert(0, str(ROOT))
 CACHE_PATH = ROOT / ".cache" / "providers-resolve-cache.json"
 PROGRESS_PATH = ROOT / ".cache" / "kodik-bulk-import-progress.json"
 TITLES_PATH = ROOT / "lib" / "data" / "titles.json"
-API_BASE = os.environ.get("KODIK_API_BASE_URL", "https://kodik-api.com").rstrip("/")
+API_BASE = "https://kodik-api.com"
 QUERY_TYPES = "anime,anime-serial"
 QUERY_VERSION = "kodik-list-anime-episodes-v1"
 DEFAULT_TTL_MS = 86_400_000
@@ -68,11 +68,19 @@ def read_env_file(path: Path) -> dict[str, str]:
 
 
 ENV_FILES = {**read_env_file(ROOT / ".env"), **read_env_file(ROOT / ".env.local")}
-CACHE_TTL_MS = int(
-    os.environ.get("KODIK_CACHE_TTL_MS")
-    or ENV_FILES.get("KODIK_CACHE_TTL_MS")
-    or DEFAULT_TTL_MS
-)
+API_BASE = (
+    os.environ.get("KODIK_API_BASE_URL")
+    or ENV_FILES.get("KODIK_API_BASE_URL")
+    or "https://kodik-api.com"
+).rstrip("/")
+try:
+    CACHE_TTL_MS = int(
+        os.environ.get("KODIK_CACHE_TTL_MS")
+        or ENV_FILES.get("KODIK_CACHE_TTL_MS")
+        or DEFAULT_TTL_MS
+    )
+except (TypeError, ValueError):
+    CACHE_TTL_MS = DEFAULT_TTL_MS
 CACHE_TTL_MS = CACHE_TTL_MS if CACHE_TTL_MS > 0 else DEFAULT_TTL_MS
 
 
@@ -215,6 +223,17 @@ def make_source(material: dict, slug: str, episode: int, link: str) -> dict:
     }
 
 
+def source_identity(source: dict) -> str:
+    if source.get("embedUrl"):
+        return str(source["embedUrl"])
+    files = source.get("files")
+    if isinstance(files, list):
+        for item in files:
+            if isinstance(item, dict) and item.get("url"):
+                return str(item["url"])
+    return str(source.get("id") or "")
+
+
 def merge_episode(store: dict, slug: str, episode: int, incoming: list[dict]) -> tuple[bool, int]:
     key = f"ep:{slug}:{episode}"
     now = int(time.time() * 1000)
@@ -228,11 +247,7 @@ def merge_episode(store: dict, slug: str, episode: int, incoming: list[dict]) ->
     # Keep real sources from every provider; drop only demo/guessed/synthesized
     # entries because this cache is intended to represent confirmed links.
     merged = [source for source in existing if direct_source(source)]
-    seen = {
-        str(source.get("embedUrl") or source.get("files", [{}])[0].get("url") or source.get("id"))
-        for source in merged
-        if isinstance(source, dict)
-    }
+    seen = {source_identity(source) for source in merged if isinstance(source, dict)}
     added = 0
     for source in incoming:
         identity = str(source.get("embedUrl") or source.get("id"))
@@ -428,8 +443,9 @@ def main() -> int:
             "materialsProcessed": 0,
             "matchedMaterials": 0,
             "matchedTitles": 0,
+            "matchedSlugs": [],
             "episodeLinksSeen": 0,
-            "newEpisodes": 0,
+            "episodeEntriesUpdated": 0,
             "newSources": 0,
             "completed": False,
             "startedAt": datetime.now(timezone.utc).isoformat(),
@@ -459,7 +475,7 @@ def main() -> int:
         report = inspect_page(body, by_id)
         items = body["results"]
         matching_slugs = set()
-        page_new_episodes = set()
+        page_updated_episodes = set()
         page_new_sources = 0
         for material in items:
             if not isinstance(material, dict):
@@ -481,7 +497,7 @@ def main() -> int:
             for episode, incoming in incoming_by_episode.items():
                 changed, added = merge_episode(store, str(title["slug"]), episode, incoming)
                 if changed:
-                    page_new_episodes.add(f"{title['slug']}:{episode}")
+                    page_updated_episodes.add(f"{title['slug']}:{episode}")
                     page_new_sources += added
 
         pages_this_run += 1
@@ -489,9 +505,11 @@ def main() -> int:
         progress["pagesCompleted"] = int(progress.get("pagesCompleted") or 0) + 1
         progress["materialsProcessed"] = int(progress.get("materialsProcessed") or 0) + len(items)
         progress["matchedMaterials"] = int(progress.get("matchedMaterials") or 0) + report["matchedMaterials"]
-        progress["matchedTitles"] = int(progress.get("matchedTitles") or 0) + len(matching_slugs)
+        all_matched_slugs = set(progress.get("matchedSlugs") or []) | matching_slugs
+        progress["matchedSlugs"] = sorted(all_matched_slugs)
+        progress["matchedTitles"] = len(all_matched_slugs)
         progress["episodeLinksSeen"] = int(progress.get("episodeLinksSeen") or 0) + report["usableEpisodeLinks"]
-        progress["newEpisodes"] = int(progress.get("newEpisodes") or 0) + len(page_new_episodes)
+        progress["episodeEntriesUpdated"] = int(progress.get("episodeEntriesUpdated") or 0) + len(page_updated_episodes)
         progress["newSources"] = int(progress.get("newSources") or 0) + page_new_sources
         cursor = cursor_from_next_page(body.get("next_page"))
         progress["cursor"] = cursor
@@ -504,7 +522,7 @@ def main() -> int:
                 f"Page {progress['pagesCompleted']} · page-items={len(items)}"
                 f" · matched-materials={report['matchedMaterials']}"
                 f" · episode-links={report['usableEpisodeLinks']}"
-                f" · new-episodes-in-page={len(page_new_episodes)}"
+                f" · episode-entries-updated={len(page_updated_episodes)}"
                 f" · new-sources-in-page={page_new_sources}"
                 f" · elapsed={elapsed:.1f}s"
             )
@@ -521,7 +539,7 @@ def main() -> int:
             pending_pages = 0
             print(
                 f"Checkpoint saved · pages={progress['pagesCompleted']}"
-                f" · new-episodes={progress['newEpisodes']}"
+                f" · episode-entries-updated={progress['episodeEntriesUpdated']}"
                 f" · new-sources={progress['newSources']}"
                 f" · cache={CACHE_PATH.name}"
             )
@@ -534,7 +552,7 @@ def main() -> int:
             print("Matched materials:", progress["matchedMaterials"])
             print("Unique matched titles observed across pages:", progress["matchedTitles"])
             print("Episode links seen in eligible matches:", progress["episodeLinksSeen"])
-            print("Episode entries added/updated:", progress["newEpisodes"])
+            print("Episode entries updated with new source links:", progress["episodeEntriesUpdated"])
             print("New distinct source links added:", progress["newSources"])
             print(f"Elapsed this run: {elapsed / 60:.1f} minutes")
             print("Cache backup:", backup.name)
