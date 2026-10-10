@@ -135,7 +135,7 @@ function hasUsableProviderSource(
 
 function isTransientProviderError(error: string | undefined): boolean {
   if (!error) return false;
-  return /timeout|offline|unreachable|network|fetch failed|ECONN|ETIMEDOUT|HTTP 5\\d\\d|\\b429\\b|unauthori[sz]ed/i.test(error);
+  return /timeout|offline|unreachable|network|fetch failed|ECONN|ETIMEDOUT|HTTP 5\d\d|\b429\b|unauthori[sz]ed/i.test(error);
 }
 
 function shouldResolveProvider(
