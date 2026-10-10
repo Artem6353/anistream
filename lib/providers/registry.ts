@@ -133,6 +133,11 @@ function hasUsableProviderSource(
   );
 }
 
+function isTransientProviderError(error: string | undefined): boolean {
+  if (!error) return false;
+  return /timeout|offline|unreachable|network|fetch failed|ECONN|ETIMEDOUT|HTTP 5\\d\\d|\\b429\\b|unauthori[sz]ed/i.test(error);
+}
+
 function shouldResolveProvider(
   id: string,
   key: string,
@@ -233,7 +238,11 @@ export async function resolveEpisodeSources(
       metrics.liveFail++;
       if (outcome.error) errors[id] = outcome.error;
       if (!forceLive) {
-        const retryAt = Date.now() + (outcome.error ? ERROR_PROVIDER_RETRY_MS : EMPTY_PROVIDER_RETRY_MS);
+        const retryAt = Date.now() + (
+          isTransientProviderError(outcome.error)
+            ? ERROR_PROVIDER_RETRY_MS
+            : EMPTY_PROVIDER_RETRY_MS
+        );
         checks[id] = retryAt;
         rememberProviderRetry(providerRetryKey(key, id), retryAt);
       }
