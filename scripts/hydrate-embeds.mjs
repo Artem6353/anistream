@@ -10,7 +10,7 @@
  *   MAX_EPISODES=200           cap a run to a fixed number of episodes
  *   SKIP_UPCOMING=1             skip not-yet-aired titles (default)
  *   SKIP_NO_SHIKIMORI=1         optionally skip titles without a Shikimori ID
- *   HYDRATE_CONCURRENCY=4       restrained default concurrency
+ *   HYDRATE_CONCURRENCY=1       conservative default; stays below the API provider-route rate limit
  *
  * Requires a running Next.js server and configured live bridge(s).
  * Re-running is safe: directly-resolved episodes are skipped, failed ones remain eligible.
@@ -23,13 +23,13 @@ const numberEnv = (name, fallback) => {
   const value = Number(process.env[name] ?? fallback);
   return Number.isFinite(value) ? value : fallback;
 };
-const CONCURRENCY = Math.max(1, Math.min(12, Math.floor(numberEnv('HYDRATE_CONCURRENCY', numberEnv('CONCURRENCY', 4)))));
+const CONCURRENCY = Math.max(1, Math.min(12, Math.floor(numberEnv('HYDRATE_CONCURRENCY', numberEnv('CONCURRENCY', 1)))));
 const INVENTORY_CONCURRENCY = Math.max(1, Math.min(4, Math.floor(numberEnv('HYDRATE_INVENTORY_CONCURRENCY', 1))));
 const INVENTORY_DELAY_MS = Math.max(0, numberEnv('HYDRATE_INVENTORY_DELAY_MS', 500));
 const ALLOW_PARTIAL_INVENTORY = process.env.HYDRATE_ALLOW_INVENTORY_ERRORS === '1';
 const INVENTORY_SOURCE = (process.env.HYDRATE_INVENTORY_SOURCE ?? 'auto').toLowerCase();
 const TIMEOUT_MS = Math.max(3000, numberEnv('HYDRATE_TIMEOUT_MS', 30000));
-const DELAY_MS = Math.max(0, numberEnv('HYDRATE_DELAY_MS', 120));
+const DELAY_MS = Math.max(0, numberEnv('HYDRATE_DELAY_MS', 1800));
 const SETTLE_MS = Math.max(0, numberEnv('HYDRATE_SETTLE_MS', 6000));
 const SKIP_UPCOMING = (process.env.SKIP_UPCOMING ?? '1') !== '0';
 const SKIP_NO_SHIKIMORI = (process.env.SKIP_NO_SHIKIMORI ?? '0') !== '0';
