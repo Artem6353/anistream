@@ -25,6 +25,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - name: validate catalog integrity
+        run: node scripts/validate-catalog.mjs
       # Аудит 30.09 (LIMITS.md «Git-хранилище»): titles.json коммитится кронами —
       # контролируем рост pack-файла; порог миграции на внешнее хранилище — 300 МБ.
       - name: repo size watch

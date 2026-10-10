@@ -30,6 +30,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci --omit=dev || true
+      - name: validate catalog before external updates
+        run: node scripts/validate-catalog.mjs
       - name: expand catalog (new titles + franchise links + characters)
         env:
           # dispatch: deep/max_new из inputs; cron: deep выключен, квота 200 (ТЗ блок 12).
@@ -43,47 +45,60 @@ jobs:
         continue-on-error: true
       - name: remove hentai (18+ policy, safety net)
         run: node scripts/remove-hentai.mjs
+      - name: validate catalog after initial mutations
+        run: node scripts/validate-catalog.mjs
       - name: enrich with Shikimori (batched)
-        continue-on-error: true
         timeout-minutes: 90
         run: |
+          set -euo pipefail
           git config user.name "anistream-bot"
           git config user.email "bot@anistream.local"
           for i in 1 2 3 4 5 6; do
             node scripts/enrich-shikimori-resumable.mjs --limit 500 || true
+            node scripts/validate-catalog.mjs || exit 1
             git add lib/data/titles.json
-            git diff --cached --quiet || git commit -m "chore(catalog): enrich batch $i" || true
-            git push || true
+            if ! git diff --cached --quiet; then
+              git commit -m "chore(catalog): enrich batch $i"
+              git push
+            fi
             echo "batch $i done"
           done
       - name: heal screenshots+characters (batched, Jikan pictures)
-        continue-on-error: true
         timeout-minutes: 60
         run: |
+          set -euo pipefail
           git config user.name "anistream-bot"
           git config user.email "bot@anistream.local"
           for i in 1 2 3 4 5 6; do
             node scripts/enrich-shikimori-resumable.mjs --heal --limit 500 || true
+            node scripts/validate-catalog.mjs || exit 1
             git add lib/data/titles.json
-            git diff --cached --quiet || git commit -m "chore(catalog): heal batch $i" || true
-            git push || true
+            if ! git diff --cached --quiet; then
+              git commit -m "chore(catalog): heal batch $i"
+              git push
+            fi
             echo "heal batch $i done"
           done
       - name: fetch episode dates for finished titles (batched)
-        continue-on-error: true
         timeout-minutes: 60
         run: |
+          set -euo pipefail
           git config user.name "anistream-bot"
           git config user.email "bot@anistream.local"
           for i in 1 2 3; do
             node scripts/fetch-episode-dates.mjs --limit 500 || true
+            node scripts/validate-catalog.mjs || exit 1
             git add lib/data/titles.json .cache/episode-dates-report.json 2>/dev/null || true
-            git diff --cached --quiet || git commit -m "chore(catalog): dates batch $i" || true
-            git push || true
+            if ! git diff --cached --quiet; then
+              git commit -m "chore(catalog): dates batch $i"
+              git push
+            fi
             echo "dates batch $i done"
           done
       - name: commit if changed
         run: |
+          set -euo pipefail
+          node scripts/validate-catalog.mjs
           git config user.name "anistream-bot"
           git config user.email "bot@anistream.local"
           git add lib/data/titles.json
