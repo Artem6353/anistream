@@ -698,7 +698,7 @@ def main() -> int:
             print("Matched materials:", progress["matchedMaterials"])
             print("Unique matched titles observed across pages:", progress["matchedTitles"])
             print("Episode links seen in eligible matches:", progress["episodeLinksSeen"])
-            print("Episode entries updated with new source links:", progress["episodeEntriesUpdated"])
+            print("Episode entries updated or refreshed:", progress["episodeEntriesUpdated"])
             print("New distinct source links added:", progress["newSources"])
             print(f"Elapsed this run: {elapsed / 60:.1f} minutes")
             print("Cache backup:", backup.name)
