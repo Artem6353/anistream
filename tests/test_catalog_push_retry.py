@@ -30,7 +30,7 @@ from pathlib import Path
 args = sys.argv[1:]
 log = Path(os.environ["FAKE_GIT_LOG"])
 with log.open("a", encoding="utf-8") as stream:
-    stream.write(" ".join(args) + "\\n")
+    stream.write(" ".join(args) + "\n")
 lines = log.read_text(encoding="utf-8").splitlines()
 if args and args[0] == "push" and os.environ.get("FAKE_FIRST_PUSH_FAIL") == "1":
     if sum(line.startswith("push ") for line in lines) == 1:
