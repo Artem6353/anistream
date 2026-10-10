@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getProvidersConfig: vi.fn(),
   kvEnabled: vi.fn(),
   kvPing: vi.fn(),
+  bridgeHealth: vi.fn(),
 }));
 
 vi.mock('@/lib/catalog', () => ({
@@ -25,6 +26,10 @@ vi.mock('@/lib/providers/cache-kv', () => ({
   kvPing: mocks.kvPing,
 }));
 
+vi.mock('@/lib/providers/bridge', () => ({
+  bridgeHealth: mocks.bridgeHealth,
+}));
+
 import { GET } from '../app/api/health/route';
 
 describe('provider configuration in health endpoint', () => {
@@ -37,9 +42,16 @@ describe('provider configuration in health endpoint', () => {
       { id: 'cvh', label: 'CVH (AnimeGo)', available: false },
       { id: 'aniboom', label: 'AniBoom', available: false },
     ]);
-    mocks.getProvidersConfig.mockReturnValue({ cache: { enabled: true, write: true } });
+    mocks.getProvidersConfig.mockReturnValue({
+      cache: { enabled: true, write: true },
+      bridges: {
+        kodik: { url: '', timeoutMs: 6000 },
+        multiplayer: { url: '', timeoutMs: 6000 },
+      },
+    });
     mocks.kvEnabled.mockReturnValue(false);
     mocks.kvPing.mockResolvedValue(true);
+    mocks.bridgeHealth.mockResolvedValue({ ok: true });
   });
 
   it('reports which providers are configured without exposing URLs or credentials', async () => {
@@ -61,6 +73,10 @@ describe('provider configuration in health endpoint', () => {
       { id: 'cvh', configured: false },
       { id: 'aniboom', configured: false },
     ]);
+    expect(body.bridges).toEqual({
+      kodik: { configured: false, reachable: null },
+      multiplayer: { configured: false, reachable: null },
+    });
 
     const serialized = JSON.stringify(body.configuredProviders);
     expect(serialized).not.toContain('https://');
@@ -96,6 +112,26 @@ describe('provider configuration in health endpoint', () => {
       backend: 'disabled',
       reachable: null,
     });
+  });
+
+  it('reports configured bridges as unreachable without exposing their URLs', async () => {
+    mocks.getProvidersConfig.mockReturnValue({
+      cache: { enabled: true, write: true },
+      bridges: {
+        kodik: { url: 'https://bridge.example', timeoutMs: 3000 },
+        multiplayer: { url: '', timeoutMs: 3000 },
+      },
+    });
+    mocks.bridgeHealth.mockResolvedValue({ ok: false, reason: 'bridge offline' });
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(body.bridges).toEqual({
+      kodik: { configured: true, reachable: false },
+      multiplayer: { configured: false, reachable: null },
+    });
+    expect(JSON.stringify(body.bridges)).not.toContain('https://');
   });
 
   it('reports an unreachable configured Redis backend without crashing health checks', async () => {
