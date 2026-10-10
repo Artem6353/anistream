@@ -107,6 +107,12 @@ describe('unified player search', () => {
   });
 
   it('queries CVH and AniBoom in parallel even when Kodik is already cached', async () => {
+    mocks.cvh.mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      expect(mocks.aniboom).toHaveBeenCalledTimes(1);
+      return outcome('cvh');
+    });
+
     const { resolveEpisodeSources } = await import('../lib/providers/registry');
 
     const result = await resolveEpisodeSources(context);
