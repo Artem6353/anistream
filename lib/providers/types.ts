@@ -41,6 +41,8 @@ export interface EpisodeSources {
   /** Тайминги OP/ED (Kodik skipButtons или AniSkip). */
   skip?: SkipWindow;
   errors?: Record<string, string>;
+  /** Timestamp (ms) until which a provider with no usable source should not be retried. */
+  providerChecks?: Record<string, number>;
 }
 
 export interface ProviderMeta {
