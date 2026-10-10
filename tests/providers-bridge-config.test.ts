@@ -35,4 +35,29 @@ describe('bridge URL configuration', () => {
     expect(config.bridges.kodik.url).toBe('');
     expect(config.bridges.multiplayer.url).toBe('https://bridge.example.test');
   });
+
+  it('uses the known production host instead of a loopback site URL on Vercel', () => {
+    vi.stubEnv('VERCEL', '1');
+    vi.stubEnv('VERCEL_PROJECT_PRODUCTION_URL', 'aninova-catalog.vercel.app');
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'http://localhost:3000');
+
+    const config = getProvidersConfig();
+    expect(config.site.url).toBe('https://aninova-catalog.vercel.app');
+  });
+
+  it('uses the known production host when the configured site URL is invalid', () => {
+    vi.stubEnv('VERCEL', '1');
+    vi.stubEnv('VERCEL_PROJECT_PRODUCTION_URL', 'aninova-catalog.vercel.app');
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'not a URL');
+
+    const config = getProvidersConfig();
+    expect(config.site.url).toBe('https://aninova-catalog.vercel.app');
+  });
+
+  it('falls back to AniNova when the site name is empty or whitespace', () => {
+    vi.stubEnv('NEXT_PUBLIC_SITE_NAME', '   ');
+
+    const config = getProvidersConfig();
+    expect(config.site.name).toBe('AniNova');
+  });
 });
