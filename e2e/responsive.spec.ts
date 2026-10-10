@@ -45,12 +45,22 @@ for (const device of devices) {
 test('TV mode scales the catalogue and exposes the large-screen focus layout', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/catalog?sort=pop', { waitUntil: 'domcontentloaded' });
+  const firstCard = page.locator('.poster-grid .card').first();
+  await expect(firstCard).toBeVisible();
+
+  // The TV preference hook initializes after hydration. Wait for its first state
+  // before forcing TV styles, then wait for the grid to lay out at TV card width.
   await page.waitForFunction(() =>
     document.documentElement.dataset.tv === 'false' ||
     document.documentElement.dataset.tv === 'true',
   );
   await page.evaluate(() => {
     document.documentElement.dataset.tv = 'true';
+  });
+  await page.waitForFunction(() => {
+    const card = document.querySelector<HTMLElement>('.poster-grid .card');
+    return document.documentElement.dataset.tv === 'true' &&
+      Boolean(card && card.getBoundingClientRect().width >= 220);
   });
 
   const result = await page.evaluate(() => {
