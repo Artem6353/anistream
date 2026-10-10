@@ -64,7 +64,7 @@ jobs:
             git add lib/data/titles.json
             if ! git diff --cached --quiet; then
               git commit -m "chore(catalog): enrich batch $i"
-              git push
+              bash scripts/push-catalog-commit.sh
             fi
             echo "batch $i done"
           done
@@ -80,7 +80,7 @@ jobs:
             git add lib/data/titles.json
             if ! git diff --cached --quiet; then
               git commit -m "chore(catalog): heal batch $i"
-              git push
+              bash scripts/push-catalog-commit.sh
             fi
             echo "heal batch $i done"
           done
@@ -96,7 +96,7 @@ jobs:
             git add lib/data/titles.json .cache/episode-dates-report.json 2>/dev/null || true
             if ! git diff --cached --quiet; then
               git commit -m "chore(catalog): dates batch $i"
-              git push
+              bash scripts/push-catalog-commit.sh
             fi
             echo "dates batch $i done"
           done
@@ -117,5 +117,5 @@ jobs:
           # --cached --quiet даёт exit 0, и push пропускался — коммит терялся на раннере.
           if ! git diff --cached --quiet; then
             git commit -m "chore(catalog): auto-sync $(date -u +%F-%H%M)"
-            git push
+            bash scripts/push-catalog-commit.sh
           fi
