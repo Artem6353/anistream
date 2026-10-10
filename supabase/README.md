@@ -9,8 +9,8 @@ migration history is empty. That is migration-metadata drift, not an empty datab
 Do not blindly replay the full bootstrap or mark every old migration as applied without
 comparing each migration's effects to the live schema.
 
-- `migrations/20261011000000_harden_social_rls.sql` records the current incremental
-  access-control fix.
+- `migrations/20261010215216_harden_social_rls.sql` records the social RLS access-control fix.
+- `migrations/20261010215240_fix_review_function_search_path.sql` pins review-trigger function search paths.
 - Apply the new incremental SQL only after reviewing the current schema and checking
   the migration state.
 - The current production security change was applied directly through the Supabase
