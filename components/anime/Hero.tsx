@@ -43,6 +43,8 @@ export function Hero({ slides }: { slides: Title[] }) {
 
   const active = slides[index];
   if (!active) return null;
+  const bg = active.banner ?? active.poster ?? null;
+  const backgroundClass = `hero__bg ${active.banner ? '' : 'hero__bg--blurred'}`;
 
   return (
     <section
@@ -58,47 +60,39 @@ export function Hero({ slides }: { slides: Title[] }) {
         if (e.key === 'ArrowRight') go(index + 1);
       }}
     >
-      {(() => {
-        // Keep exactly one full-bleed image mounted. Previously every slide had an
-        // image in the viewport-sized DOM, so phones could decode several huge
-        // backgrounds even when their opacity was zero.
-        const s = active;
-        const bg = s.banner ?? s.poster ?? null;
-        const cls = `hero__bg ${s.banner ? '' : 'hero__bg--blurred'}`;
-        return (
-          <div key={s.slug} className="hero__slide is-active" aria-hidden={false}>
-            {!failed[s.slug] && isProxiable(bg) ? (
-              <Image
-                className={cls}
-                loader={imgLoader}
-                src={bg}
-                alt=""
-                fill
-                sizes="100vw"
-                quality={44}
-                priority={index === 0}
-                loading="eager"
-                fetchPriority={index === 0 ? 'high' : 'auto'}
-                decoding="async"
-                onError={() => setFailed((f) => ({ ...f, [s.slug]: true }))}
-              />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                className={failed[s.slug] || !bg ? 'hero__bg hero__bg--blurred' : cls}
-                src={failed[s.slug] || !bg ? artUri(s.slug, s.romaji, true) : bg!}
-                alt=""
-                loading="eager"
-                decoding="async"
-                fetchPriority={index === 0 ? 'high' : 'auto'}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = artUri(s.slug, s.romaji, true);
-                }}
-              />
-            )}
-          </div>
-        );
-      })()}
+      {/* A single active image prevents hidden slides from decoding on phones. */}
+      <div key={active.slug} className="hero__slide is-active" aria-hidden={false}>
+        {!failed[active.slug] && isProxiable(bg) ? (
+          <Image
+            className={backgroundClass}
+            loader={imgLoader}
+            src={bg}
+            alt=""
+            fill
+            sizes="100vw"
+            quality={44}
+            priority={index === 0}
+            {...(index === 0
+              ? { fetchPriority: 'high' as const }
+              : { loading: 'eager' as const, fetchPriority: 'auto' as const })}
+            decoding="async"
+            onError={() => setFailed((f) => ({ ...f, [active.slug]: true }))}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            className={failed[active.slug] || !bg ? 'hero__bg hero__bg--blurred' : backgroundClass}
+            src={failed[active.slug] || !bg ? artUri(active.slug, active.romaji, true) : bg!}
+            alt=""
+            loading="eager"
+            decoding="async"
+            fetchPriority={index === 0 ? 'high' : 'auto'}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = artUri(active.slug, active.romaji, true);
+            }}
+          />
+        )}
+      </div>
       <div className="hero__scrim" aria-hidden />
       <div className="hero__content container">
         <div className="hero__inner">
