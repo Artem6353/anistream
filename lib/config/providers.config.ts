@@ -57,6 +57,31 @@ function resolveSiteUrl(env: NodeJS.ProcessEnv): string {
   return vercelProd || fromEnv || 'http://localhost:3000';
 }
 
+/** В Vercel 127.0.0.1 указывает на сам serverless-контейнер, а не на локальный Python bridge. */
+function resolveBridgeUrl(
+  env: NodeJS.ProcessEnv,
+  urlKey: string,
+  portKey: string,
+  fallbackPort: number,
+): string {
+  const configured = env[urlKey];
+  const value = configured !== undefined
+    ? configured
+    : env.VERCEL
+      ? ''
+      : env[portKey]
+        ? `http://127.0.0.1:${env[portKey]}`
+        : `http://127.0.0.1:${fallbackPort}`;
+  if (!value.trim()) return '';
+  try {
+    const host = new URL(value).hostname.toLowerCase();
+    if (env.VERCEL && ['localhost', '127.0.0.1', '::1'].includes(host)) return '';
+  } catch {
+    /* Валидность URL окончательно проверит fetch; здесь не падаем при загрузке конфига. */
+  }
+  return value.replace(/\\/+$/, '');
+}
+
 export function getProvidersConfig(): ProvidersConfig {
   const env = process.env;
   return {
@@ -81,19 +106,11 @@ export function getProvidersConfig(): ProvidersConfig {
     },
     bridges: {
       kodik: {
-        url: env.KODIK_BRIDGE_URL ?? (
-          env.VERCEL ? '' :
-          env.KODIK_BRIDGE_PORT ? `http://127.0.0.1:${env.KODIK_BRIDGE_PORT}` :
-          'http://127.0.0.1:8765'
-        ),
+        url: resolveBridgeUrl(env, 'KODIK_BRIDGE_URL', 'KODIK_BRIDGE_PORT', 8765),
         timeoutMs: num(env.KODIK_BRIDGE_TIMEOUT_MS, 12000),
       },
       multiplayer: {
-        url: env.MULTIPLAYER_BRIDGE_URL ?? (
-          env.VERCEL ? '' :
-          env.MULTIPLAYER_BRIDGE_PORT ? `http://127.0.0.1:${env.MULTIPLAYER_BRIDGE_PORT}` :
-          'http://127.0.0.1:8766'
-        ),
+        url: resolveBridgeUrl(env, 'MULTIPLAYER_BRIDGE_URL', 'MULTIPLAYER_BRIDGE_PORT', 8766),
         timeoutMs: num(env.MULTIPLAYER_BRIDGE_TIMEOUT_MS, 8000),
       },
     },
