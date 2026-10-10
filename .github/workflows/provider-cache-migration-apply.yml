@@ -34,11 +34,38 @@ jobs:
           node-version: 20
 
       - name: Read-only migration inventory
+        id: inventory
         run: |
           set -euo pipefail
-          node scripts/migrate-provider-cache-to-upstash.mjs \
+          report="$(node scripts/migrate-provider-cache-to-upstash.mjs \
             --file .cache/providers-resolve-cache.json \
-            --dry-run
+            --dry-run)"
+          printf '%s\n' "$report"
+          estimated_bytes="$(printf '%s\n' "$report" | awk -F': ' '/Estimated incoming cache bytes \(lower bound\):/ {print $2}' | tail -n 1)"
+          if [[ ! "$estimated_bytes" =~ ^[0-9]+$ ]]; then
+            echo "::error::Could not parse the cache size estimate; migration will not be applied."
+            exit 2
+          fi
+          echo "estimated_bytes=$estimated_bytes" >> "$GITHUB_OUTPUT"
+
+      - name: Enforce free-tier memory safety limit
+        if: ${{ inputs.apply }}
+        env:
+          ESTIMATED_BYTES: ${{ steps.inventory.outputs.estimated_bytes }}
+        run: |
+          set -euo pipefail
+          # Leave room below Upstash's 64 MiB memory limit for key names,
+          # indexes, merged existing records, and allocator overhead.
+          max_bytes=45000000
+          if [[ ! "$ESTIMATED_BYTES" =~ ^[0-9]+$ ]]; then
+            echo "::error::Missing cache size estimate; refusing to write."
+            exit 2
+          fi
+          if (( ESTIMATED_BYTES > max_bytes )); then
+            echo "::error::Estimated cache values exceed the safe 45,000,000-byte budget for the current free-tier Redis. No Redis writes were started."
+            exit 2
+          fi
+          echo "Estimated values fit the conservative Redis budget: $ESTIMATED_BYTES bytes."
 
       - name: Apply confirmed migration to Upstash
         if: ${{ inputs.apply }}

@@ -54,6 +54,17 @@ jobs:
           if (!Number.isSafeInteger(health?.titles) || health.titles < 1) {
             errors.push('titles must be a positive integer');
           }
+          const bridges = health?.bridges;
+          if (!bridges) {
+            console.warn('::warning::Production health endpoint does not yet report bridge probes; verify after deployment.');
+          } else if (!bridges.kodik || !bridges.multiplayer ||
+              typeof bridges.kodik.configured !== 'boolean' ||
+              typeof bridges.multiplayer.configured !== 'boolean' ||
+              !(bridges.kodik.reachable === null || typeof bridges.kodik.reachable === 'boolean') ||
+              !(bridges.multiplayer.reachable === null || typeof bridges.multiplayer.reachable === 'boolean')) {
+            errors.push('bridges has an invalid shape');
+          }
+
           if (!Array.isArray(health?.configuredProviders)) {
             errors.push('configuredProviders must be an array');
           } else {
@@ -72,7 +83,9 @@ jobs:
           const cache = health?.providerCache;
           if (!cache || typeof cache.enabled !== 'boolean' ||
               typeof cache.writesEnabled !== 'boolean' ||
-              !['upstash', 'file', 'disabled'].includes(cache.backend)) {
+              !['upstash', 'file', 'disabled'].includes(cache.backend) ||
+              !(cache.reachable === null || typeof cache.reachable === 'boolean') ||
+              (cache.backend === 'upstash' && typeof cache.reachable !== 'boolean')) {
             errors.push('providerCache is missing or has an invalid shape');
           }
 
@@ -85,10 +98,15 @@ jobs:
             ok: health?.ok === true,
             titles: health?.titles,
             configuredLiveProviders: configuredLive,
+            bridges: bridges ? {
+              kodik: bridges.kodik,
+              multiplayer: bridges.multiplayer,
+            } : null,
             providerCache: cache ? {
               enabled: cache.enabled,
               writesEnabled: cache.writesEnabled,
               backend: cache.backend,
+              reachable: cache.reachable,
             } : null,
           }));
 
@@ -101,5 +119,14 @@ jobs:
           }
           if (cache?.enabled && !cache.writesEnabled) {
             console.warn('::warning::Provider cache is enabled but cache writes are disabled.');
+          }
+          if (cache?.backend === 'upstash' && cache.reachable === false) {
+            console.warn('::warning::Upstash is configured but the Redis connectivity probe failed.');
+          }
+          if (bridges?.kodik?.configured && bridges.kodik.reachable === false) {
+            console.warn('::warning::Kodik bridge is configured but its health endpoint failed.');
+          }
+          if (bridges?.multiplayer?.configured && bridges.multiplayer.reachable === false) {
+            console.warn('::warning::Multiplayer bridge is configured but its health endpoint failed.');
           }
           NODE

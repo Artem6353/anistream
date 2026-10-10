@@ -7,8 +7,8 @@ import { getUserId, getOrCreateUserId } from '@/lib/userId';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 const SUPA_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
-const SUPA_SERVICE =
-  process.env.SUPABASE_SERVICE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+// Write policies intentionally require service_role. Never silently fall back to anon.
+const SUPA_SERVICE = process.env.SUPABASE_SERVICE_KEY ?? '';
 
 type ReviewItem = Record<string, unknown> & { id: string };
 
@@ -123,6 +123,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   if (!supabaseConfigured()) return NextResponse.json({ error: 'общий режим выключен: используйте локальные отзывы' }, { status: 409 });
+  if (!SUPA_SERVICE) {
+    return NextResponse.json(
+      { error: 'серверная запись отзывов временно недоступна: не настроен серверный ключ Supabase' },
+      { status: 503 },
+    );
+  }
   /* Аудит 30.09 (P1-6): IP — последний элемент XFF (дописывается доверенным прокси),
      первый элемент подделывался клиентом и обнулял бакет. */
   const ip = clientIp(request);
