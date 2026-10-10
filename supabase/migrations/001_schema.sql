@@ -10,7 +10,8 @@ create table if not exists public.reviews (
   ts bigint not null,
   likes int not null default 0,
   dislikes int not null default 0,
-  parent text
+  parent text,
+  user_id text
 );
 
 create index if not exists reviews_slug_ts on public.reviews (slug, ts desc);
