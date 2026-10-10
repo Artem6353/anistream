@@ -4238,7 +4238,7 @@ html[data-tv='true'] .mobile-nav { display: none; }
   --line-strong: rgba(27, 42, 66, 0.19);
   --text: #111b2c;
   --muted: #4d5b71;
-  --muted-2: #64738a;
+  --muted-2: #5c6a80;
   --accent-text: #5144c6;
   --accent-2-text: #087f75;
   --dot-l: 42%;
@@ -4777,4 +4777,13 @@ html[data-tv='true'] .rail:not(.rail--grid) .card {
     overscroll-behavior: contain;
   }
   .player-side .panel { padding: 12px; }
+}
+
+
+/* Links embedded in explanatory copy remain identifiable without relying on hue alone. */
+.sidebar-block__empty a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+  font-weight: 650;
 }
