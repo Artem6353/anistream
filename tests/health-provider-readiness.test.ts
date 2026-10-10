@@ -46,6 +46,11 @@ describe('provider configuration in health endpoint', () => {
     expect(response.status).toBe(200);
     expect(body.ok).toBe(true);
     expect(body.titles).toBe(42);
+    expect(body.providerCache).toEqual({
+      enabled: true,
+      writesEnabled: true,
+      backend: 'file',
+    });
     expect(body.configuredProviders).toEqual([
       { id: 'demo', configured: true },
       { id: 'kodik', configured: false },
