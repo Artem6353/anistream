@@ -42,19 +42,31 @@ const num = (v: string | undefined, fallback: number) => {
  *  (VERCEL_PROJECT_PRODUCTION_URL) → localhost. Значения *.vercel.app в env
  *  считаются устаревшими, если известен фактический прод-домен Vercel. */
 function resolveSiteUrl(env: NodeJS.ProcessEnv): string {
-  const vercelProd = env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`
+  const productionHost = (env.VERCEL_PROJECT_PRODUCTION_URL ?? '')
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/+$/, '');
+  const vercelProd = productionHost && !productionHost.includes('/')
+    ? `https://${productionHost}`
     : '';
-  const fromEnv = env.NEXT_PUBLIC_SITE_URL ?? '';
+  const fromEnv = (env.NEXT_PUBLIC_SITE_URL ?? '').trim();
+
   if (fromEnv) {
     try {
-      const host = new URL(fromEnv).hostname;
-      if (!host.endsWith('.vercel.app') || !vercelProd) return fromEnv;
+      const parsed = new URL(fromEnv);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return vercelProd || 'http://localhost:3000';
+      const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+      const loopback = ['localhost', '127.0.0.1', '::1'].includes(host) || host.endsWith('.localhost');
+      const staleVercelHost = host.endsWith('.vercel.app') && Boolean(vercelProd);
+
+      // A local development URL must never override Vercel's known production host.
+      if (!(env.VERCEL && loopback) && !staleVercelHost) return parsed.origin;
     } catch {
-      /* невалидный URL — падаем дальше */
+      /* Invalid/whitespace values fall through to the known Vercel host or local default. */
     }
   }
-  return vercelProd || fromEnv || 'http://localhost:3000';
+
+  return vercelProd || 'http://localhost:3000';
 }
 
 /** В Vercel 127.0.0.1 указывает на сам serverless-контейнер, а не на локальный Python bridge. */
@@ -86,7 +98,7 @@ export function getProvidersConfig(): ProvidersConfig {
   const env = process.env;
   return {
     site: {
-      name: env.NEXT_PUBLIC_SITE_NAME ?? 'AniNova',
+      name: env.NEXT_PUBLIC_SITE_NAME?.trim() || 'AniNova',
       url: resolveSiteUrl(env),
     },
     demo: {
