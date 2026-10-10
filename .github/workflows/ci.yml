@@ -16,8 +16,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - name: compile Kodik bulk importer
-        run: python -m py_compile scripts/import-kodik-bulk.py
+      - name: compile Python importers and player bridges
+        run: python -m py_compile scripts/import-kodik-bulk.py bridges/kodik_bridge.py bridges/multi_player_bridge.py
       - uses: actions/setup-node@v4
         with:
           node-version: 20

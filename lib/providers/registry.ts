@@ -1,6 +1,6 @@
 import type { EpisodeSource, EpisodeSources, ProviderContext, ResolveOutcome } from './types';
 import { getProvidersConfig } from '@/lib/config/providers.config';
-import { cacheGet, cacheSet, cacheKey } from './cache';
+import { cacheGet, cacheSet, cacheKey, isDirectProviderSource } from './cache';
 import { providerLabel } from './bridge';
 import { resolveKodik } from './providers/kodik';
 import { resolveCvh } from './providers/cvh';
@@ -93,158 +93,210 @@ function enabledProviderIds(): string[] {
  *   GET /api/providers/[slug]/[episode] → EpisodeSources
  * Схема оригинала: cache-first → bridge (kodik / multi-player) → merge озвучек
  * в единый список источников; demo добавляется как офлайн-база.
- * PROVIDER_MODE: merge (ждем всех с таймаутом) | first (первый ответивший).
+ * Все настроенные плееры ищутся параллельно; сбой одного не отменяет остальные.
+ */
+const EMPTY_PROVIDER_RETRY_MS = 10 * 60 * 1000;
+const ERROR_PROVIDER_RETRY_MS = 45 * 1000;
+
+/** Защита от повторных запросов к пустому/падающему провайдеру на одном процессе. */
+const providerRetryAfter = new Map<string, number>();
+
+function providerRetryKey(key: string, id: string): string {
+  return `${key}:${id}`;
+}
+
+function rememberProviderRetry(key: string, until: number): void {
+  /* Ограничиваем вспомогательную память при большой гидрации каталога. */
+  if (providerRetryAfter.size >= 10_000) {
+    const now = Date.now();
+    for (const [entryKey, expiresAt] of providerRetryAfter) {
+      if (expiresAt <= now) providerRetryAfter.delete(entryKey);
+    }
+    while (providerRetryAfter.size >= 10_000) {
+      const first = providerRetryAfter.keys().next();
+      if (first.done) break;
+      providerRetryAfter.delete(first.value);
+    }
+  }
+  providerRetryAfter.set(key, until);
+}
+
+function hasUsableProviderSource(
+  sources: EpisodeSource[],
+  providerId: string,
+  ctx: ProviderContext,
+): boolean {
+  return sources.some((source) =>
+    source.providerId === providerId &&
+    isDirectProviderSource(source) &&
+    (!ctx.preferFiles || (source.kind === 'file' && (source.files?.length ?? 0) > 0)),
+  );
+}
+
+function isTransientProviderError(error: string | undefined): boolean {
+  if (!error) return false;
+  /* Явное отсутствие материала — негативный результат; всё остальное считаем временной ошибкой. */
+  return !/not found|no voices|no sources|no source|no material|no episodes|ambiguous exact title|title year mismatch|не найден|нет источников|нет источника|нет ссылок|нет голосов|нет голоса/i.test(error);
+}
+
+function shouldResolveProvider(
+  id: string,
+  key: string,
+  base: EpisodeSources | null,
+  ctx: ProviderContext,
+  forceLive: boolean,
+): boolean {
+  if (forceLive) return true;
+  if (base && hasUsableProviderSource(base.sources, id, ctx)) return false;
+  const persistedUntil = base?.providerChecks?.[id] ?? 0;
+  const memoryUntil = providerRetryAfter.get(providerRetryKey(key, id)) ?? 0;
+  return Math.max(persistedUntil, memoryUntil) <= Date.now();
+}
+
+async function runProviderQueries(
+  ids: string[],
+  ctx: ProviderContext,
+): Promise<Array<{ id: string; outcome: ResolveOutcome }>> {
+  return Promise.all(ids.map(async (id) => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<ResolveOutcome>((resolve) => {
+      timer = setTimeout(() => resolve({ sources: [], error: 'timeout' }), timeoutFor(id));
+    });
+    try {
+      const outcome = await Promise.race([
+        RESOLVERS[id](ctx).catch((e) => ({
+          sources: [],
+          error: e instanceof Error ? e.message : String(e),
+        }) as ResolveOutcome),
+        timeout,
+      ]);
+      return { id, outcome };
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }));
+}
+
+/**
+ * Единый поиск по всем активным провайдерам.
+ * Cache-first, но кэш одного плеера больше не блокирует поиск остальных:
+ * недостающие провайдеры запрашиваются параллельно и добавляются в общий список.
+ * Отрицательные результаты имеют TTL, чтобы не дергать недоступные источники на каждом просмотре.
  */
 export async function resolveEpisodeSources(
   ctx: ProviderContext,
   options: { liveOnly?: boolean } = {},
 ): Promise<EpisodeSources> {
-  const cfg = getProvidersConfig();
   const key = cacheKey(ctx.slug, ctx.episode);
 
   /* 0) ручные источники модератора — приоритет над всем */
   const manual = manualSources(ctx.slug, ctx.episode);
   if (manual.length) return withDemo({ sources: manual, sourcesUsed: ['manual'], fromCache: false }, ctx);
 
-  /* 1) cache-first */
+  /* 1) Читаем кэш; в liveOnly режиме пропускаем его полностью. */
   const t0 = Date.now();
   const cached = options.liveOnly ? null : await cacheGet(key);
-  const cacheUsable =
-    cached &&
-    cached.sources.length &&
-    !(ctx.preferFiles && !cached.sources.some((s) => s.kind === 'file' && (s.files?.length ?? 0) > 0));
-  if (cacheUsable) {
-    metrics.cacheHit++;
+  const cachedHasFiles = Boolean(
+    cached?.sources.some((s) => s.kind === 'file' && (s.files?.length ?? 0) > 0),
+  );
+  const cacheUsable = Boolean(
+    cached?.sources.length && (!ctx.preferFiles || cachedHasFiles),
+  );
+  const base = cacheUsable ? cached : null;
+  const forceLive = Boolean(options.liveOnly || (ctx.preferFiles && !cacheUsable));
+
+  if (base) metrics.cacheHit++;
+  else metrics.cacheMiss++;
+
+  /* 2) Резолверы запускаются одновременно. Наличие Kodik в кэше не отключает CVH/AniBoom. */
+  const enabledIds = enabledProviderIds();
+  const ids = enabledIds.filter((id) => shouldResolveProvider(id, key, base, ctx, forceLive));
+
+  if (!ids.length && base) {
     metricLatency(Date.now() - t0);
-    return withDemo({ ...cached, fromCache: true, cachedAt: cached.cachedAt ?? Date.now() }, ctx);
+    return withDemo({
+      ...base,
+      fromCache: true,
+      cachedAt: base.cachedAt ?? Date.now(),
+    }, ctx);
   }
-  metrics.cacheMiss++;
 
-  /* 2) live: провайдеры по конфигу (bridge важнее guess-синтеза) */
-  const ids = enabledProviderIds();
+  const outcomes = await runProviderQueries(ids, ctx);
+  const checks: Record<string, number> = { ...(base?.providerChecks ?? {}) };
   const errors: Record<string, string> = {};
-  const collected: EpisodeSource[] = [];
-  const used: string[] = [];
-  let skip: EpisodeSources['skip'];
+  const liveSources: EpisodeSource[] = [];
+  let skip = base?.skip;
 
-  if (ids.length) {
-    if (cfg.providerMode === 'first') {
-      const winner = await raceProviders(ids, ctx, errors);
-      if (winner) {
-        collected.push(...winner.sources);
-        used.push(winner.id);
-        skip = winner.skip;
-      }
+  for (const { id, outcome } of outcomes) {
+    const providerSources = outcome.sources.filter((source) =>
+      source.providerId === id && isDirectProviderSource(source),
+    );
+    if (providerSources.length) {
+      metrics.liveOk++;
+      delete checks[id];
+      if (!forceLive) providerRetryAfter.delete(providerRetryKey(key, id));
     } else {
-      const outcomes = await Promise.all(
-        ids.map(async (id) => {
-          /* Аудит 30.09 (P2-21): таймер гасится после race — раньше каждый резолв
-             оставлял висеть setTimeout до 8+ с (ручки/память под нагрузкой). */
-          let timer: ReturnType<typeof setTimeout> | undefined;
-          const timeout = new Promise<ResolveOutcome>((resolve) => {
-            timer = setTimeout(() => resolve({ sources: [], error: 'timeout' }), timeoutFor(id));
-          });
-          try {
-            const outcome = await Promise.race([
-              RESOLVERS[id](ctx).catch((e) => ({ sources: [], error: String(e) }) as ResolveOutcome),
-              timeout,
-            ]);
-            return { id, outcome };
-          } finally {
-            if (timer) clearTimeout(timer);
-          }
-        }),
-      );
-      for (const { id, outcome } of outcomes) {
-        if (outcome.sources.length) metrics.liveOk++;
-        else metrics.liveFail++;
-        if (outcome.sources.length) {
-          collected.push(...outcome.sources);
-          used.push(id);
-          skip = skip ?? outcome.skip;
-        } else if (outcome.error) {
-          errors[id] = outcome.error;
-        }
+      metrics.liveFail++;
+      if (outcome.error) errors[id] = outcome.error;
+      if (!forceLive) {
+        const retryAt = Date.now() + (
+          isTransientProviderError(outcome.error)
+            ? ERROR_PROVIDER_RETRY_MS
+            : EMPTY_PROVIDER_RETRY_MS
+        );
+        checks[id] = retryAt;
+        rememberProviderRetry(providerRetryKey(key, id), retryAt);
       }
     }
+    liveSources.push(...providerSources);
+    skip = skip ?? outcome.skip;
   }
 
-  /* 3) dedupe по embedUrl/id */
-  const deduped = dedupe(collected);
+  const oldSources = base?.sources ?? [];
+  const merged = dedupe([...oldSources, ...liveSources]);
+  const providersUsed = [...new Set(merged.filter(isDirectProviderSource).map((source) => source.providerId))];
 
   const result: EpisodeSources = {
-    sources: deduped,
-    sourcesUsed: used,
-    fromCache: false,
+    sources: merged,
+    sourcesUsed: providersUsed,
+    fromCache: Boolean(base && ids.length === 0),
+    cachedAt: base?.cachedAt,
     skip,
     errors: Object.keys(errors).length ? errors : undefined,
+    providerChecks: Object.keys(checks).length ? checks : undefined,
   };
 
-  /* 3) синтез: шаблон из кэша других серий или guess-пул озвучек CVH (любой номер серии) */
-  if (!deduped.length && !options.liveOnly) {
+  if (Object.keys(errors).length) {
+    void logProviderErrors(ctx.slug, ctx.episode, errors);
+    if (metricErrorBump()) {
+      void sendTgAlert(`⚠ AniNova: 20+ ошибок парсеров за час (последняя: ${ctx.slug} ep${ctx.episode} ${JSON.stringify(errors).slice(0, 120)})`);
+    }
+  }
+  metricLatency(Date.now() - t0);
+
+  /* 3) Если новых прямых источников нет, сохраняем безопасный синтез как fallback. */
+  if (!merged.length && !options.liveOnly) {
     const synth = await synthesizeEpisode(ctx);
     if (synth?.sources.length) {
-      if (synth.sources.some((x) => x.guessed)) metrics.guess++;
+      if (synth.sources.some((source) => source.guessed)) metrics.guess++;
       else metrics.synth++;
-      // Derived URLs are useful player fallbacks, but are not confirmed episode sources.
       return withDemo(synth, ctx);
     }
   }
 
-  if (Object.keys(errors).length) {
-    void logProviderErrors(ctx.slug, ctx.episode, errors);
-    if (metricErrorBump()) void sendTgAlert(`⚠ AniNova: 20+ ошибок парсеров за час (последняя: ${ctx.slug} ep${ctx.episode} ${JSON.stringify(errors).slice(0, 120)})`);
-  }
-  metricLatency(Date.now() - t0);
-
-  /* 4) self-growing cache: miss → сохранили на будущее */
-  if (deduped.length) await cacheSet(key, result);
+  /* 4) Сохраняем объединённый список + короткие retry-окна недоступных провайдеров. */
+  if (merged.length) await cacheSet(key, result);
   else metrics.demo++;
 
   return withDemo(result, ctx);
 }
 
-async function raceProviders(
-  ids: string[],
-  ctx: ProviderContext,
-  errors: Record<string, string>,
-): Promise<{ id: string; sources: EpisodeSource[]; skip?: EpisodeSources['skip'] } | null> {
-  interface Slot {
-    id: string;
-    settled: boolean;
-    promise: Promise<{ id: string; outcome: ResolveOutcome }>;
-  }
-  const slots: Slot[] = ids.map((id) => {
-    const slot: Slot = { id, settled: false, promise: null as unknown as Slot['promise'] };
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    slot.promise = Promise.race([
-      RESOLVERS[id](ctx).catch((e) => ({ sources: [], error: e instanceof Error ? e.message : String(e) }) as ResolveOutcome),
-      new Promise<ResolveOutcome>((resolve) => {
-        timer = setTimeout(() => resolve({ sources: [], error: 'timeout' }), timeoutFor(id));
-      }),
-    ])
-      .then((outcome) => {
-        slot.settled = true;
-        return { id, outcome };
-      })
-      .finally(() => {
-        if (timer) clearTimeout(timer);
-      });
-    return slot;
-  });
-
-  while (slots.some((sl) => !sl.settled)) {
-    const { id, outcome } = await Promise.race(slots.filter((sl) => !sl.settled).map((sl) => sl.promise));
-    if (outcome.sources.length) return { id, sources: outcome.sources, skip: outcome.skip };
-    if (outcome.error) errors[id] = outcome.error;
-  }
-  return null;
-}
-
 function dedupe(sources: EpisodeSource[]): EpisodeSource[] {
   const seen = new Set<string>();
-  return sources.filter((s) => {
-    const key = s.embedUrl ?? s.files?.[0]?.url ?? s.id;
+  return sources.filter((source) => {
+    /* Один URL у разных плееров не скрывает альтернативный источник. */
+    const target = source.embedUrl ?? source.files?.[0]?.url ?? source.id;
+    const key = `${source.providerId}:${target}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

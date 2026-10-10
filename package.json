@@ -7,7 +7,7 @@
     "predev": "node scripts/check-deps.mjs",
     "dev": "next dev",
     "prestart": "node scripts/check-deps.mjs",
-    "build": "node scripts/build.js",
+    "build": "node scripts/build.mjs",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

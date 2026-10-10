@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getTitle } from '@/lib/catalog';
 import { resolveEpisodeSources, contextFromTitle, providersWithAvailability } from '@/lib/providers';
+import { providerResponseCacheControl } from '@/lib/providers/response-cache';
 
 export const revalidate = 0;
 
@@ -13,6 +14,7 @@ interface Props {
  *  сам шёл в bridge/кэш); c dedupe память и апстрим-трафик не масштабируются
  *  числом одновременных клиентов. Результат общий для всех участников. */
 const inflight = new Map<string, ReturnType<typeof resolveEpisodeSources>>();
+
 
 function resolveOnce(
   key: string,
@@ -30,7 +32,7 @@ function resolveOnce(
  * Единая точка входа плеер-источников (схема оригинала):
  *   GET /api/providers/[slug]/[episode]
  *   → EpisodeSources: озвучки/источники всех включённых провайдеров + demo,
- *     cache-first, merge или first (PROVIDER_MODE).
+ *     cache-first; missing providers are resolved in parallel and merged.
  * Токены и bridge-адреса не покидают сервер.
  */
 export async function GET(request: Request, { params }: Props) {
@@ -54,7 +56,7 @@ export async function GET(request: Request, { params }: Props) {
     const sources = await resolveOnce(resolveKey, ctx, { liveOnly });
     return NextResponse.json(
       { ...sources, providers: providersWithAvailability() },
-      { headers: { 'Cache-Control': sources.fromCache ? 'public, s-maxage=3600' : 'no-store' } },
+      { headers: { 'Cache-Control': providerResponseCacheControl(sources) } },
     );
   } catch (e) {
     return NextResponse.json({ error: 'upstream', message: e instanceof Error ? e.message : String(e) }, { status: 502 });
