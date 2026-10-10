@@ -190,7 +190,7 @@ def _candidate_year(candidate):
     for name in ("year", "year_release", "aired_year", "release_year"):
         value = candidate.get(name)
         if value:
-            match = re.search(r"\\b(19|20)\\d{2}\\b", str(value))
+            match = re.search(r"\b(19|20)\d{2}\b", str(value))
             if match:
                 return int(match.group(0))
     return None
