@@ -1,0 +1,105 @@
+name: Production health probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/production-health.yml'
+      - 'app/api/health/route.ts'
+      - 'lib/config/providers.config.ts'
+      - 'lib/providers/registry-meta.ts'
+      - 'lib/providers/cache-kv.ts'
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Probe public production health endpoint
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Request production health
+        env:
+          PRODUCTION_URL: https://aninova-catalog.vercel.app
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+          status="$(curl --silent --show-error --location \
+            --connect-timeout 10 --max-time 25 \
+            --retry 2 --retry-all-errors --retry-delay 2 \
+            --output "$response_file" --write-out '%{http_code}' \
+            "${PRODUCTION_URL}/api/health")"
+          if [ "$status" != "200" ]; then
+            echo "::error::Production health endpoint returned HTTP $status"
+            exit 1
+          fi
+          node - "$response_file" <<'NODE'
+          const fs = require('node:fs');
+
+          let health;
+          try {
+            health = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          } catch {
+            console.error('Production health endpoint returned invalid JSON.');
+            process.exit(1);
+          }
+
+          const errors = [];
+          if (health?.ok !== true) errors.push('ok is not true');
+          if (!Number.isSafeInteger(health?.titles) || health.titles < 1) {
+            errors.push('titles must be a positive integer');
+          }
+          if (!Array.isArray(health?.configuredProviders)) {
+            errors.push('configuredProviders must be an array');
+          } else {
+            for (const provider of health.configuredProviders) {
+              if (!provider || typeof provider.id !== 'string' || typeof provider.configured !== 'boolean') {
+                errors.push('configuredProviders contains an invalid item');
+                break;
+              }
+            }
+            const ids = new Set(health.configuredProviders.map((provider) => provider.id));
+            for (const id of ['kodik', 'cvh', 'aniboom']) {
+              if (!ids.has(id)) errors.push(`configuredProviders is missing ${id}`);
+            }
+          }
+
+          const cache = health?.providerCache;
+          if (!cache || typeof cache.enabled !== 'boolean' ||
+              typeof cache.writesEnabled !== 'boolean' ||
+              !['upstash', 'file', 'disabled'].includes(cache.backend)) {
+            errors.push('providerCache is missing or has an invalid shape');
+          }
+
+          // Publish only non-sensitive state. Never print environment values, URLs
+          // returned by providers, headers, credentials, or raw response bodies.
+          const configuredLive = Array.isArray(health?.configuredProviders)
+            ? health.configuredProviders.filter((provider) => provider.id !== 'demo' && provider.configured).map((provider) => provider.id)
+            : [];
+          console.log('Production health summary:', JSON.stringify({
+            ok: health?.ok === true,
+            titles: health?.titles,
+            configuredLiveProviders: configuredLive,
+            providerCache: cache ? {
+              enabled: cache.enabled,
+              writesEnabled: cache.writesEnabled,
+              backend: cache.backend,
+            } : null,
+          }));
+
+          if (errors.length) {
+            for (const error of errors) console.error('::error::' + error);
+            process.exit(1);
+          }
+          if (configuredLive.length === 0) {
+            console.warn('::warning::No live provider is configured; playback may rely on cached sources and demo fallback.');
+          }
+          if (cache?.enabled && !cache.writesEnabled) {
+            console.warn('::warning::Provider cache is enabled but cache writes are disabled.');
+          }
+          NODE
