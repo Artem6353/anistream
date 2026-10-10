@@ -20,7 +20,7 @@ export interface ProvidersConfig {
     kodik: { url: string; timeoutMs: number };
     multiplayer: { url: string; timeoutMs: number };
   };
-  providerMode: 'merge' | 'first';
+  providerMode: 'merge';
   providerTimeoutMs: number;
   shikimori: { enabled: boolean; userAgent: string };
   aniskip: { enabled: boolean };
