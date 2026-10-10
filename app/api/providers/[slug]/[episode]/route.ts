@@ -30,7 +30,7 @@ function resolveOnce(
  * Единая точка входа плеер-источников (схема оригинала):
  *   GET /api/providers/[slug]/[episode]
  *   → EpisodeSources: озвучки/источники всех включённых провайдеров + demo,
- *     cache-first, merge или first (PROVIDER_MODE).
+ *     cache-first; missing providers are resolved in parallel and merged.
  * Токены и bridge-адреса не покидают сервер.
  */
 export async function GET(request: Request, { params }: Props) {
