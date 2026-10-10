@@ -76,3 +76,16 @@ test('TV mode scales the catalogue and exposes the large-screen focus layout', a
   expect(result.cardWidth).toBeGreaterThanOrEqual(220);
   expect(result.mobileNavDisplay).toBe('none');
 });
+
+
+test('mini episode posters request image sizes that match their 44px slot', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  const poster = page.locator('.latest-eps__poster img.poster-art').first();
+  await expect(poster).toBeVisible();
+  await expect(poster).toHaveAttribute('sizes', '44px');
+
+  const renderedWidth = await poster.evaluate((image) => image.getBoundingClientRect().width);
+  expect(renderedWidth).toBeLessThanOrEqual(48);
+});
