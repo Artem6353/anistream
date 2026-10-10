@@ -55,10 +55,24 @@ def _cached(key):
 
 
 def _store(key, val, ttl=None):
+    now = time.time()
     with _CACHE_LOCK:
-        if len(_CACHE) > 5000:
-            _CACHE.clear()
-        _CACHE[key] = (time.time(), val, ttl or _CACHE_TTL)
+        # Keep hot cache entries across long imports instead of clearing all
+        # provider results whenever the size limit is crossed.
+        if len(_CACHE) >= 5000 and key not in _CACHE:
+            expired = [
+                cache_key
+                for cache_key, value in _CACHE.items()
+                if now - value[0] >= (value[2] if len(value) > 2 else _CACHE_TTL)
+            ]
+            for cache_key in expired:
+                _CACHE.pop(cache_key, None)
+            if len(_CACHE) >= 5000:
+                remove_count = len(_CACHE) - 3999
+                oldest = sorted(_CACHE.items(), key=lambda item: item[1][0])[:remove_count]
+                for cache_key, _ in oldest:
+                    _CACHE.pop(cache_key, None)
+        _CACHE[key] = (now, val, ttl or _CACHE_TTL)
 
 # --- A8.1: single-flight + лимит апстрима + негативный кэш ---------------------
 # Бурст из N одновременных запросов одного ключа = ОДИН поход в апстрим:
