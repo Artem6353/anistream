@@ -23,9 +23,19 @@ export function Hero({ slides }: { slides: Title[] }) {
 
   useEffect(() => {
     if (paused || slides.length < 2) return;
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) return;
-    timer.current = setInterval(() => setIndex((i) => (i + 1) % slides.length), 8000);
+
+    // On phones, don't rotate a full-bleed image every few seconds while the user
+    // is reading or scrolling. It saves image work and avoids unexpected movement.
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const touchDevice = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    if (reduceMotion || touchDevice) return;
+
+    timer.current = setInterval(() => {
+      // Don't trigger image loads or React updates for a hidden tab.
+      if (document.visibilityState === 'visible') {
+        setIndex((i) => (i + 1) % slides.length);
+      }
+    }, 8000);
     return () => {
       if (timer.current) clearInterval(timer.current);
     };
@@ -48,15 +58,15 @@ export function Hero({ slides }: { slides: Title[] }) {
         if (e.key === 'ArrowRight') go(index + 1);
       }}
     >
-      {slides.map((s, i) => {
+      {(() => {
+        // Keep exactly one full-bleed image mounted. Previously every slide had an
+        // image in the viewport-sized DOM, so phones could decode several huge
+        // backgrounds even when their opacity was zero.
+        const s = active;
         const bg = s.banner ?? s.poster ?? null;
         const cls = `hero__bg ${s.banner ? '' : 'hero__bg--blurred'}`;
         return (
-          <div
-            key={s.slug}
-            className={`hero__slide ${i === index ? 'is-active' : ''}`}
-            aria-hidden={i !== index}
-          >
+          <div key={s.slug} className="hero__slide is-active" aria-hidden={false}>
             {!failed[s.slug] && isProxiable(bg) ? (
               <Image
                 className={cls}
@@ -65,9 +75,11 @@ export function Hero({ slides }: { slides: Title[] }) {
                 alt=""
                 fill
                 sizes="100vw"
-                quality={48}
-                priority={i === 0}
-                {...(i === 0 ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const, fetchPriority: 'low' as const })}
+                quality={44}
+                priority={index === 0}
+                loading="eager"
+                fetchPriority={index === 0 ? 'high' : 'auto'}
+                decoding="async"
                 onError={() => setFailed((f) => ({ ...f, [s.slug]: true }))}
               />
             ) : (
@@ -76,8 +88,9 @@ export function Hero({ slides }: { slides: Title[] }) {
                 className={failed[s.slug] || !bg ? 'hero__bg hero__bg--blurred' : cls}
                 src={failed[s.slug] || !bg ? artUri(s.slug, s.romaji, true) : bg!}
                 alt=""
-                loading={i === 0 ? 'eager' : 'lazy'}
-                fetchPriority={i === 0 ? 'high' : 'low'}
+                loading="eager"
+                decoding="async"
+                fetchPriority={index === 0 ? 'high' : 'auto'}
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = artUri(s.slug, s.romaji, true);
                 }}
@@ -85,7 +98,7 @@ export function Hero({ slides }: { slides: Title[] }) {
             )}
           </div>
         );
-      })}
+      })()}
       <div className="hero__scrim" aria-hidden />
       <div className="hero__content container">
         <div className="hero__inner">
