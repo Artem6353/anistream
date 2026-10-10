@@ -74,14 +74,14 @@ jobs:
           const now = Date.now();
           const defaultTtl = Number(process.env.KODIK_CACHE_TTL_MS || 86400000);
           const isDirect = (s) => s && typeof s === 'object' &&
-            s.providerId !== 'demo' && !s.guessed && !s.synthesized && !/:s\\d+$/.test(String(s.id || ''));
+            s.providerId !== 'demo' && !s.guessed && !s.synthesized && !/:s\d+$/.test(String(s.id || ''));
           const rows = [];
           const bySlug = new Map();
           let rawBytes = 0, fullDeflateBase64Bytes = 0, compactDeflateBase64Bytes = 0;
           let directSources = 0;
           const base64Size = (n) => 4 * Math.ceil(n / 3) + 3; // includes the future "z1:" storage prefix
           for (const [key, entry] of Object.entries(store)) {
-            const match = /^ep:([^:]+):(\\d+)$/.exec(key);
+            const match = /^ep:([^:]+):(\d+)$/.exec(key);
             if (!match || !entry || typeof entry !== 'object' || !entry.sources || !Array.isArray(entry.sources.sources)) continue;
             const at = Number(entry.at), ttlMs = Number(entry.ttlMs ?? defaultTtl);
             if (!Number.isFinite(at) || !Number.isFinite(ttlMs) || ttlMs <= 0 || now - at > ttlMs) continue;
