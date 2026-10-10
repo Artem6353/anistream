@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   providersWithAvailability: vi.fn(),
   getProvidersConfig: vi.fn(),
   kvEnabled: vi.fn(),
+  kvPing: vi.fn(),
 }));
 
 vi.mock('@/lib/catalog', () => ({
@@ -21,6 +22,7 @@ vi.mock('@/lib/config/providers.config', () => ({
 
 vi.mock('@/lib/providers/cache-kv', () => ({
   kvEnabled: mocks.kvEnabled,
+  kvPing: mocks.kvPing,
 }));
 
 import { GET } from '../app/api/health/route';
@@ -37,6 +39,7 @@ describe('provider configuration in health endpoint', () => {
     ]);
     mocks.getProvidersConfig.mockReturnValue({ cache: { enabled: true, write: true } });
     mocks.kvEnabled.mockReturnValue(false);
+    mocks.kvPing.mockResolvedValue(true);
   });
 
   it('reports which providers are configured without exposing URLs or credentials', async () => {
@@ -50,6 +53,7 @@ describe('provider configuration in health endpoint', () => {
       enabled: true,
       writesEnabled: true,
       backend: 'file',
+      reachable: null,
     });
     expect(body.configuredProviders).toEqual([
       { id: 'demo', configured: true },
@@ -74,6 +78,7 @@ describe('provider configuration in health endpoint', () => {
       enabled: true,
       writesEnabled: true,
       backend: 'upstash',
+      reachable: true,
     });
     expect(JSON.stringify(body.providerCache)).not.toContain('token');
     expect(JSON.stringify(body.providerCache)).not.toContain('https://');
@@ -89,6 +94,24 @@ describe('provider configuration in health endpoint', () => {
       enabled: false,
       writesEnabled: false,
       backend: 'disabled',
+      reachable: null,
+    });
+  });
+
+  it('reports an unreachable configured Redis backend without crashing health checks', async () => {
+    mocks.kvEnabled.mockReturnValue(true);
+    mocks.kvPing.mockResolvedValue(false);
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.providerCache).toEqual({
+      enabled: true,
+      writesEnabled: true,
+      backend: 'upstash',
+      reachable: false,
     });
   });
 
