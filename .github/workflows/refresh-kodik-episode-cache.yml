@@ -44,6 +44,10 @@ jobs:
           KODIK_BULK_SAVE_EVERY_PAGES: '10'
         run: |
           set -euo pipefail
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::This cache refresh must run from main to avoid pushing a stale cache."
+            exit 2
+          fi
           python -m py_compile scripts/import-kodik-bulk.py bridges/kodik_bridge.py
           python scripts/import-kodik-bulk.py --restart --apply
 
