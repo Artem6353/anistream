@@ -2,7 +2,8 @@ import type { EpisodeSource, EpisodeSources, ProviderContext } from './types';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { getProvidersConfig } from '@/lib/config/providers.config';
-import { kvDel, kvEnabled, kvGet, kvSet } from './cache-kv';
+import { kvDel, kvEnabled, kvGet, kvMget, kvSet } from './cache-kv';
+import { decodeEpisodeCacheValue, encodeEpisodeCacheValue } from './cache-codec.mjs';
 
 /**
  * Cache-first хранилище EpisodeSources (self-growing, как в оригинале):
@@ -121,22 +122,47 @@ export async function cacheEntriesForSlug(slug: string): Promise<{ episode: numb
       }
     }
 
-    const rows = await Promise.all(
-      [...new Set(eps)].map(async (ep) => {
+    // Batch episode reads: an individual GET per episode overloaded Redis for
+    // long series (e.g. hundreds of episodes). Four workers keep the burst bounded.
+    const episodes = [...new Set(eps)].sort((a, b) => a - b);
+    const batchSize = 100;
+    const batches: number[][] = [];
+    for (let offset = 0; offset < episodes.length; offset += batchSize) {
+      batches.push(episodes.slice(offset, offset + batchSize));
+    }
+    const valuesByEpisode = new Map<number, { raw: string | null; failed: boolean }>();
+    let nextBatch = 0;
+    await Promise.all(Array.from({ length: Math.min(4, batches.length) }, async () => {
+      while (nextBatch < batches.length) {
+        const batch = batches[nextBatch++];
         try {
-          const raw = await kvGet(kvEpKey(cacheKey(slug, ep)));
-          if (!raw) return { episode: ep, sources: null, failed: false };
-          const entry = JSON.parse(raw) as { at: number; ttlMs?: number; sources: EpisodeSources };
-          if (isCacheEntryExpired(entry, cfg.ttlMs)) {
-            return { episode: ep, sources: null, failed: false };
-          }
-          const sources = directResult(entry.sources);
-          return { episode: ep, sources, failed: false };
+          const values = await kvMget(batch.map((episode) => kvEpKey(cacheKey(slug, episode))));
+          if (values.length !== batch.length) throw new Error('Upstash MGET returned an unexpected result length.');
+          batch.forEach((episode, index) => valuesByEpisode.set(episode, {
+            raw: values[index],
+            failed: false,
+          }));
         } catch {
-          return { episode: ep, sources: null, failed: true };
+          // A failed batch is not proof that its entries are stale; don't prune the index.
+          for (const episode of batch) valuesByEpisode.set(episode, { raw: null, failed: true });
         }
-      }),
-    );
+      }
+    }));
+
+    const rows = episodes.map((episode) => {
+      const stored = valuesByEpisode.get(episode);
+      if (!stored || stored.failed) return { episode, sources: null, failed: true };
+      if (!stored.raw) return { episode, sources: null, failed: false };
+      try {
+        const entry = decodeEpisodeCacheValue(stored.raw) as { at: number; ttlMs?: number; sources: EpisodeSources };
+        if (isCacheEntryExpired(entry, cfg.ttlMs)) {
+          return { episode, sources: null, failed: false };
+        }
+        return { episode, sources: directResult(entry.sources), failed: false };
+      } catch {
+        return { episode, sources: null, failed: true };
+      }
+    });
 
     const out = rows
       .filter((row): row is typeof row & { sources: EpisodeSources } => Boolean(row.sources))
@@ -182,7 +208,7 @@ export async function cacheGet(key: string): Promise<EpisodeSources | null> {
     }
     if (!raw) return null;
     try {
-      const entry = JSON.parse(raw) as { at: number; ttlMs?: number; sources: EpisodeSources };
+      const entry = decodeEpisodeCacheValue(raw) as { at: number; ttlMs?: number; sources: EpisodeSources };
       if (isCacheEntryExpired(entry, cfg.ttlMs)) return null;
       return directResult(entry.sources);
     } catch {
@@ -209,7 +235,7 @@ export async function cacheSet(key: string, sources: EpisodeSources): Promise<vo
   };
   if (kvEnabled()) {
     /* Аудит 30.09 (P0-5): KV-запись + индекс эпизодов тайтла. */
-    await kvSet(kvEpKey(key), JSON.stringify(entry), Math.round(cfg.ttlMs / 1000));
+    await kvSet(kvEpKey(key), encodeEpisodeCacheValue(entry), Math.round(cfg.ttlMs / 1000));
     const m = key.match(/^ep:(.+):(\d+)$/);
     if (m) await kvAddIndex(m[1], Number(m[2]));
     return;

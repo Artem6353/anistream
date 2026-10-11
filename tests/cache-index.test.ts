@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   getProvidersConfig: vi.fn(),
   kvEnabled: vi.fn(),
   kvGet: vi.fn(),
+  kvMget: vi.fn(),
   kvSet: vi.fn(),
   kvDel: vi.fn(),
 }));
@@ -15,6 +16,7 @@ vi.mock('@/lib/config/providers.config', () => ({
 vi.mock('../lib/providers/cache-kv', () => ({
   kvEnabled: mocks.kvEnabled,
   kvGet: mocks.kvGet,
+  kvMget: mocks.kvMget,
   kvSet: mocks.kvSet,
   kvDel: mocks.kvDel,
 }));
@@ -43,6 +45,7 @@ describe('Upstash episode index maintenance', () => {
       cache: { enabled: true, write: true, ttlMs: 86_400_000, file: '.cache/providers-resolve-cache.json' },
     });
     mocks.kvEnabled.mockReturnValue(true);
+    mocks.kvMget.mockImplementation(async (keys: string[]) => Promise.all(keys.map((key) => mocks.kvGet(key))));
     mocks.kvSet.mockResolvedValue(undefined);
     mocks.kvDel.mockResolvedValue(undefined);
   });

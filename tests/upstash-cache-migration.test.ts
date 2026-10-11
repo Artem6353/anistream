@@ -9,6 +9,7 @@ import {
 } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { decodeEpisodeCacheValue } from '../lib/providers/cache-codec.mjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const scriptPath = path.resolve(process.cwd(), 'scripts/migrate-provider-cache-to-upstash.mjs');
@@ -158,9 +159,12 @@ describe('safe Upstash cache migration CLI', () => {
     expect(result.stdout).toContain('New sources merged this run: 2');
     expect(result.stdout).not.toContain(token);
 
-    const first = JSON.parse(redis.get('ep:ep:series:1') || '{}');
+    const first = decodeEpisodeCacheValue(redis.get('ep:ep:series:1') || '{}');
     expect(new Set(first.sources.sources.map((item: { providerId: string }) => item.providerId))).toEqual(new Set(['cvh', 'kodik']));
-    expect(JSON.parse(redis.get('ep:ep:series:2') || '{}').sources.sources[0].providerId).toBe('kodik');
+    expect(first.ttlMs).toBeGreaterThanOrEqual(29 * 86_400_000);
+    const second = decodeEpisodeCacheValue(redis.get('ep:ep:series:2') || '{}');
+    expect(second.sources.sources[0].providerId).toBe('kodik');
+    expect(second.ttlMs).toBeGreaterThanOrEqual(29 * 86_400_000);
     expect(JSON.parse(redis.get('epidx:series') || '[]')).toEqual([1, 2]);
     expect(JSON.parse(readFileSync(progressFile, 'utf8')).nextIndex).toBe(2);
 
