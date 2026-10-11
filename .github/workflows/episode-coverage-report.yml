@@ -1,0 +1,97 @@
+name: Episode coverage report
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/episode-coverage-report.yml'
+      - 'scripts/audit-episode-coverage.mjs'
+      - 'scripts/episode-coverage-core.mjs'
+      - 'tests/episode-coverage.test.ts'
+      - 'lib/data/titles.json'
+      - '.cache/providers-resolve-cache.json'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/episode-coverage-report.yml'
+      - 'scripts/audit-episode-coverage.mjs'
+      - 'scripts/episode-coverage-core.mjs'
+      - 'lib/data/titles.json'
+      - '.cache/providers-resolve-cache.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: episode-coverage-report
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Audit catalog episodes against tracked cache
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build coverage report (offline, read-only)
+        run: |
+          set -euo pipefail
+          node scripts/audit-episode-coverage.mjs \
+            --include-upcoming \
+            --include-hidden \
+            --output .cache/episode-coverage-report.json
+      - name: Add concise summary to workflow
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('.cache/episode-coverage-report.json', 'utf8'));
+          const s = report.summary;
+          const lines = [
+            '# AniNova episode coverage audit',
+            '',
+            '> Tracked local cache only. Not a live URL test or a production Upstash report.',
+            '',
+            '## Totals',
+            '',
+            '- Catalog titles: **' + s.catalogTitles + '** (included: ' + s.eligibleTitles + ')',
+            '- Expected episodes: **' + s.eligibleExpectedEpisodes + '**',
+            '- Fresh exact-source entries: **' + s.directCoveredEpisodes + ' / ' + s.eligibleExpectedEpisodes + ' (' + s.directEpisodeCoveragePercent + '%)**',
+            '- Historical exact-source presence, including expired cache rows: **' + s.historicalDirectCoveredEpisodes + ' / ' + s.eligibleExpectedEpisodes + ' (' + s.historicalDirectEpisodeCoveragePercent + '%)**',
+            '- Fresh gaps: **' + s.missingEpisodes + '**',
+            '- Episodes never found in this cache: **' + s.historicalMissingEpisodes + '**',
+            '- Titles fully covered by fresh cache: **' + s.fullyCoveredTitles + '**',
+            '- Titles fully covered historically: **' + s.historicalFullyCoveredTitles + '**',
+            '- Titles with no historical direct sources: **' + s.historicalNoDirectSourceTitles + '**',
+            '- Expired direct records needing refresh: **' + s.expiredDirectCacheRecordsIgnored + '**',
+            '- Provider episode records by provider (fresh only): ' + JSON.stringify(s.providerEpisodeCounts),
+            '',
+            '## First 25 titles with the most important gaps',
+            '',
+            '| Slug | Fresh | Historical | Expected | Never-found episode ranges |',
+            '|---|---:|---:|---:|---|',
+          ];
+          for (const t of report.titles.slice(0, 25)) {
+            const ranges = t.missingEpisodeRangesAnyAge.map(([from, to]) => from === to ? String(from) : from + '-' + to).join(', ') || '—';
+            lines.push('| ' + t.slug + ' | ' + t.episodesWithDirectSources + ' | ' + t.episodesWithAnyAgeDirectSources + ' | ' + t.episodesExpected + ' | ' + ranges + ' |');
+          }
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          console.log(JSON.stringify({
+            catalogTitles: s.catalogTitles,
+            eligibleTitles: s.eligibleTitles,
+            expectedEpisodes: s.eligibleExpectedEpisodes,
+            freshCovered: s.directCoveredEpisodes,
+            historicalCovered: s.historicalDirectCoveredEpisodes,
+            historicalMissing: s.historicalMissingEpisodes,
+            expiredDirectRecords: s.expiredDirectCacheRecordsIgnored,
+          }));
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: episode-coverage-report
+          path: .cache/episode-coverage-report.json
+          if-no-files-found: error
+          retention-days: 14
