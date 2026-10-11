@@ -8,6 +8,11 @@ on:
         type: boolean
         required: true
         default: false
+      retention_days:
+        description: "Keep imported direct episode links for this many days (1-365; default 30)"
+        type: string
+        required: true
+        default: "30"
       confirmation:
         description: "For apply only, type MIGRATE-ANINOVA-CACHE exactly"
         type: string
@@ -35,10 +40,13 @@ jobs:
 
       - name: Read-only migration inventory
         id: inventory
+        env:
+          RETENTION_DAYS: ${{ inputs.retention_days }}
         run: |
           set -euo pipefail
           report="$(node scripts/migrate-provider-cache-to-upstash.mjs \
             --file .cache/providers-resolve-cache.json \
+            --retention-days "$RETENTION_DAYS" \
             --dry-run)"
           printf '%s\n' "$report"
           estimated_bytes="$(printf '%s\n' "$report" | awk -F': ' '/Estimated incoming cache bytes \(lower bound\):/ {print $2}' | tail -n 1)"
@@ -71,6 +79,7 @@ jobs:
         if: ${{ inputs.apply }}
         env:
           APPLY_CONFIRMATION: ${{ inputs.confirmation }}
+          RETENTION_DAYS: ${{ inputs.retention_days }}
           UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
           UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
         run: |
@@ -99,6 +108,7 @@ jobs:
               --progress-file "$progress_file" \
               --batch-size 100 \
               --max-commands 8000 \
+              --retention-days "$RETENTION_DAYS" \
               --apply
 
             checkpoint="$(node -e "const p = require(process.argv[1]); process.stdout.write(String(p.nextIndex) + '/' + String(p.totalEntries));" "$progress_file")"

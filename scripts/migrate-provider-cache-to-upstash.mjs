@@ -27,6 +27,8 @@ import { pathToFileURL } from 'node:url';
 import { decodeEpisodeCacheValue, encodeEpisodeCacheValue } from '../lib/providers/cache-codec.mjs';
 
 const DAY_MS = 86_400_000;
+const DEFAULT_RETENTION_DAYS = 30;
+const MAX_RETENTION_DAYS = 365;
 const INDEX_TTL_SECONDS = 30 * 86_400;
 const DEFAULT_BATCH_SIZE = 100;
 const MAX_BATCH_SIZE = 500;
@@ -192,7 +194,7 @@ export function collectMigratableEntries(store, now = Date.now(), defaultTtlMs =
   return { entries, stats };
 }
 
-export function estimateMigrationFootprint(entries) {
+export function estimateMigrationFootprint(entries, now = Date.now(), retentionMs = 0) {
   const providerSourceCounts = {};
   const episodesBySlug = new Map();
   let episodeRecordBytes = 0;
@@ -200,9 +202,11 @@ export function estimateMigrationFootprint(entries) {
   let sourceCount = 0;
 
   for (const entry of entries) {
+    const expiresAt = Math.max(Number(entry.expiresAt ?? (entry.at + entry.ttlMs)), now + retentionMs);
+    const ttlMs = Math.max(1, expiresAt - now);
     const recordBytes = Buffer.byteLength(encodeEpisodeCacheValue({
-      at: entry.at,
-      ttlMs: entry.ttlMs,
+      at: now,
+      ttlMs,
       sources: entry.sources,
     }), 'utf8');
     episodeRecordBytes += recordBytes;
@@ -279,11 +283,15 @@ function sourceChecks(...values) {
   return Object.keys(checks).length ? checks : undefined;
 }
 
-export function mergeEpisodeRecord(incoming, existing, now = Date.now()) {
-  const incomingExpiry = incoming.expiresAt ?? (incoming.at + incoming.ttlMs);
-  if (!Number.isFinite(incomingExpiry) || incomingExpiry <= now) {
+export function mergeEpisodeRecord(incoming, existing, now = Date.now(), retentionMs = 0) {
+  const originalExpiry = incoming.expiresAt ?? (incoming.at + incoming.ttlMs);
+  if (!Number.isFinite(originalExpiry) || originalExpiry <= now) {
     throw new Error('Incoming cache entry must be fresh before migration.');
   }
+  // Seed records are not refreshed by the Vercel runtime when the remote bridges
+  // are unavailable. Extend only confirmed, still-fresh entries to the configured
+  // migration retention so the imported coverage does not vanish after 24 hours.
+  const incomingExpiry = Math.max(originalExpiry, now + Math.max(0, retentionMs));
 
   const keepExisting = isFreshRecord(existing, now) && isRecord(existing.sources);
   const oldSources = keepExisting ? uniqueDirectSources(existing.sources.sources) : [];
@@ -437,6 +445,7 @@ function help() {
   console.log('  --progress-file PATH       Local checkpoint file (default ' + DEFAULT_PROGRESS_FILE + ')');
   console.log('  --batch-size N             Entries per batch, 1..' + MAX_BATCH_SIZE + ' (default ' + DEFAULT_BATCH_SIZE + ')');
   console.log('  --max-commands N           Command budget for this run, 1..' + MAX_COMMAND_BUDGET + ' (default ' + DEFAULT_COMMAND_BUDGET + ')');
+  console.log('  --retention-days N         Seed source TTL, 1..' + MAX_RETENTION_DAYS + ' days (default ' + DEFAULT_RETENTION_DAYS + ')');
   console.log('  --restart                  Reset only the local checkpoint; does not delete Redis data');
   console.log('  --help                     Show help');
 }
@@ -447,7 +456,7 @@ async function main() {
     help();
     return;
   }
-  const allowed = new Set(['--apply', '--dry-run', '--restart', '--file', '--progress-file', '--batch-size', '--max-commands']);
+  const allowed = new Set(['--apply', '--dry-run', '--restart', '--file', '--progress-file', '--batch-size', '--max-commands', '--retention-days']);
   for (const arg of args.filter((value) => value.startsWith('--'))) {
     if (!allowed.has(arg)) throw new Error('Unknown option ' + arg + '. Use --help for usage.');
   }
@@ -462,13 +471,17 @@ async function main() {
   const progressFile = path.resolve(optionValue(args, '--progress-file', DEFAULT_PROGRESS_FILE));
   const batchSize = positiveInteger(optionValue(args, '--batch-size', String(DEFAULT_BATCH_SIZE)), '--batch-size', MAX_BATCH_SIZE);
   const commandBudget = positiveInteger(optionValue(args, '--max-commands', String(DEFAULT_COMMAND_BUDGET)), '--max-commands', MAX_COMMAND_BUDGET);
+  const retentionDays = positiveInteger(optionValue(args, '--retention-days', String(DEFAULT_RETENTION_DAYS)), '--retention-days', MAX_RETENTION_DAYS);
+  const retentionMs = retentionDays * DAY_MS;
 
   if (!existsSync(cacheFile)) {
     throw new Error('Cache file not found: ' + cacheFile + '. Run this command from the repository root or pass --file.');
   }
 
   const rawText = readFileSync(cacheFile, 'utf8');
-  const fingerprint = createHash('sha256').update(rawText).digest('hex');
+  const sourceFingerprint = createHash('sha256').update(rawText).digest('hex');
+  // A checkpoint is valid only for the exact cache file AND its retention policy.
+  const fingerprint = createHash('sha256').update(sourceFingerprint).update(':retention-days=' + retentionDays).digest('hex');
   let store;
   try {
     store = JSON.parse(rawText);
@@ -479,7 +492,7 @@ async function main() {
 
   const now = Date.now();
   const { entries, stats } = collectMigratableEntries(store, now);
-  const footprint = estimateMigrationFootprint(entries);
+  const footprint = estimateMigrationFootprint(entries, now, retentionMs);
   const sourceFileBytes = Buffer.byteLength(rawText, 'utf8');
   const progress = loadProgress(progressFile, fingerprint, entries.length, restart, apply);
   const startIndex = progress.nextIndex;
@@ -493,7 +506,8 @@ async function main() {
   console.log('Provider cache → Upstash migration');
   console.log('Mode: ' + (apply ? 'APPLY' : 'DRY RUN (read-only)'));
   console.log('Source file: ' + cacheFile);
-  console.log('Source fingerprint: ' + fingerprint.slice(0, 12));
+  console.log('Source fingerprint: ' + sourceFingerprint.slice(0, 12));
+  console.log('Retention for migrated source records: ' + retentionDays + ' days');
   console.log('Source file bytes: ' + sourceFileBytes);
   console.log('Cache keys: ' + stats.cacheKeys);
   console.log('Episode keys: ' + stats.episodeKeys);
@@ -598,7 +612,7 @@ async function main() {
     for (let index = 0; index < batch.length; index += 1) {
       const entry = batch[index];
       const existing = storedRecord(cachedEpisodeValues[index], 'episode record');
-      const merged = mergeEpisodeRecord(entry, existing, Date.now());
+      const merged = mergeEpisodeRecord(entry, existing, Date.now(), retentionMs);
       batchAdded += merged.addedSources;
       if (!merged.shouldWrite) continue;
       const ttlSeconds = Math.max(1, Math.ceil(merged.record.ttlMs / 1000));
