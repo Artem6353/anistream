@@ -41,7 +41,6 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/audit-episode-coverage.mjs \
-            --include-upcoming \
             --include-hidden \
             --output .cache/episode-coverage-report.json
       - name: Add concise summary to workflow
@@ -57,7 +56,8 @@ jobs:
             '',
             '## Totals',
             '',
-            '- Catalog titles: **' + s.catalogTitles + '** (included: ' + s.eligibleTitles + ')',
+            '- Catalog titles: **' + s.catalogTitles + '** (eligible for episode lookup: ' + s.eligibleTitles + ')',
+            '- Upcoming titles excluded from fill target: **' + s.upcomingTitles + '**',
             '- Expected episodes: **' + s.eligibleExpectedEpisodes + '**',
             '- Fresh exact-source entries: **' + s.directCoveredEpisodes + ' / ' + s.eligibleExpectedEpisodes + ' (' + s.directEpisodeCoveragePercent + '%)**',
             '- Historical exact-source presence, including expired cache rows: **' + s.historicalDirectCoveredEpisodes + ' / ' + s.eligibleExpectedEpisodes + ' (' + s.historicalDirectEpisodeCoveragePercent + '%)**',
