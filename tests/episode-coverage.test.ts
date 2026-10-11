@@ -56,12 +56,13 @@ describe('episode coverage report', () => {
     expect(report.summary.orphanCacheRecordsIgnored).toBe(1);
     expect(report.summary.outOfRangeDirectCacheRecordsIgnored).toBe(1);
     expect(report.summary.providerEpisodeCounts).toEqual({ cvh: 1, kodik: 1 });
-    expect(report.titles[0].slug).toBe('empty');
-    expect(report.titles[0].missingEpisodeRanges).toEqual([[1, 2]]);
-    expect(report.titles[0].missingEpisodeRangesAnyAge).toEqual([[2, 2]]);
-    expect(report.titles[0].historicalCoveragePercent).toBe(50);
-    expect(report.titles[1].missingEpisodeRanges).toEqual([[2, 4]]);
-    expect(report.titles[1].missingEpisodeRangesAnyAge).toEqual([[2, 4]]);
+    const emptyTitle = report.titles.find((title) => title.slug === 'empty');
+    const showTitle = report.titles.find((title) => title.slug === 'show');
+    expect(emptyTitle?.missingEpisodeRanges).toEqual([[1, 2]]);
+    expect(emptyTitle?.missingEpisodeRangesAnyAge).toEqual([[2, 2]]);
+    expect(emptyTitle?.historicalCoveragePercent).toBe(50);
+    expect(showTitle?.missingEpisodeRanges).toEqual([[2, 4]]);
+    expect(showTitle?.missingEpisodeRangesAnyAge).toEqual([[2, 4]]);
   });
 
   it('can include upcoming and hidden titles explicitly', () => {
