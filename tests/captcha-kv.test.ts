@@ -88,6 +88,7 @@ describe('providers cache: Upstash KV (P0-5)', () => {
           return { ok: true, json: async () => ({ result: 'OK' }) };
         }
         if (cmd === 'GET') return { ok: true, json: async () => ({ result: store.get(key) ?? null }) };
+        if (cmd === 'MGET') return { ok: true, json: async () => ({ result: body.slice(1).map((item) => store.get(String(item)) ?? null) }) };
         return { ok: true, json: async () => ({ result: null }) };
       }) as unknown as typeof fetch,
     );
