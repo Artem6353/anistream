@@ -101,11 +101,15 @@ try {
   console.log('Episode coverage audit (local cache; no network requests)');
   console.log('Catalog: ' + summary.catalogTitles + ' titles; eligible: ' + summary.eligibleTitles);
   console.log('Expected episodes: ' + summary.eligibleExpectedEpisodes);
-  console.log('Direct cache coverage: ' + summary.directCoveredEpisodes + '/' + summary.eligibleExpectedEpisodes + ' (' + summary.directEpisodeCoveragePercent + '%)');
-  console.log('Missing episode entries: ' + summary.missingEpisodes);
+  console.log('Fresh direct cache coverage: ' + summary.directCoveredEpisodes + '/' + summary.eligibleExpectedEpisodes + ' (' + summary.directEpisodeCoveragePercent + '%)');
+  console.log('Fresh missing episode entries: ' + summary.missingEpisodes);
+  console.log('Historical direct-source presence: ' + summary.historicalDirectCoveredEpisodes + '/' + summary.eligibleExpectedEpisodes + ' (' + summary.historicalDirectEpisodeCoveragePercent + '%)');
+  console.log('Episodes with any-age source gap: ' + summary.historicalMissingEpisodes);
   console.log('Fully covered titles: ' + summary.fullyCoveredTitles);
   console.log('Partially covered titles: ' + summary.partiallyCoveredTitles);
-  console.log('Titles with no direct sources: ' + summary.noDirectSourceTitles);
+  console.log('Titles with no fresh direct sources: ' + summary.noDirectSourceTitles);
+  console.log('Titles never found in cache: ' + summary.historicalNoDirectSourceTitles);
+  console.log('Expired direct records needing refresh: ' + summary.expiredDirectCacheRecordsIgnored);
   console.log('Titles missing Shikimori ID: ' + summary.titlesMissingShikimoriId);
   console.log('Fresh episode records by provider: ' + JSON.stringify(summary.providerEpisodeCounts));
   console.log('Ignored cache records: expired=' + summary.expiredCacheRecordsIgnored +

@@ -16,6 +16,8 @@ npm run audit:episodes -- --include-upcoming --include-hidden
 
 The audit makes no provider requests, does not alter the catalog or cache, and does not verify that third-party player URLs still work. Guessed, synthesized and demo entries do not count as confirmed episodes.
 
+The report separates fresh direct sources (still inside the cache TTL) from historical direct sources (exact URLs still recorded in the file, regardless of TTL). Compare `missingEpisodeRanges` with `missingEpisodeRangesAnyAge`: the former needs re-resolution now; the latter identifies episodes never found in this cache snapshot. TTL expiry does not prove a video URL is dead.
+
 ## Local cache versus production
 
 When UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are configured, production uses Upstash instead of the local JSON cache. In that case, this report only describes the local file and is not a production coverage report. The local import must be migrated separately, using the existing migration's dry-run size and command checks first and a write-capable token. Never assume that finishing a local import made those links live on Vercel.

@@ -45,6 +45,9 @@ describe('episode coverage report', () => {
     expect(report.summary.eligibleExpectedEpisodes).toBe(6);
     expect(report.summary.directCoveredEpisodes).toBe(1);
     expect(report.summary.missingEpisodes).toBe(5);
+    expect(report.summary.historicalDirectCoveredEpisodes).toBe(2);
+    expect(report.summary.historicalMissingEpisodes).toBe(4);
+    expect(report.summary.expiredDirectCacheRecordsIgnored).toBe(1);
     expect(report.summary.fullyCoveredTitles).toBe(0);
     expect(report.summary.partiallyCoveredTitles).toBe(1);
     expect(report.summary.noDirectSourceTitles).toBe(1);
@@ -53,9 +56,13 @@ describe('episode coverage report', () => {
     expect(report.summary.orphanCacheRecordsIgnored).toBe(1);
     expect(report.summary.outOfRangeDirectCacheRecordsIgnored).toBe(1);
     expect(report.summary.providerEpisodeCounts).toEqual({ cvh: 1, kodik: 1 });
-    expect(report.titles[0].slug).toBe('empty');
-    expect(report.titles[0].missingEpisodeRanges).toEqual([[1, 2]]);
-    expect(report.titles[1].missingEpisodeRanges).toEqual([[2, 4]]);
+    const emptyTitle = report.titles.find((title) => title.slug === 'empty');
+    const showTitle = report.titles.find((title) => title.slug === 'show');
+    expect(emptyTitle?.missingEpisodeRanges).toEqual([[1, 2]]);
+    expect(emptyTitle?.missingEpisodeRangesAnyAge).toEqual([[2, 2]]);
+    expect(emptyTitle?.historicalCoveragePercent).toBe(50);
+    expect(showTitle?.missingEpisodeRanges).toEqual([[2, 4]]);
+    expect(showTitle?.missingEpisodeRangesAnyAge).toEqual([[2, 4]]);
   });
 
   it('can include upcoming and hidden titles explicitly', () => {
