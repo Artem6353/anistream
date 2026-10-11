@@ -26,6 +26,19 @@ export async function kvGet(key: string): Promise<string | null> {
   return typeof value === 'string' ? value : value == null ? null : String(value);
 }
 
+/**
+ * Bounded multi-key read for episode indexes. Every returned item corresponds
+ * to the key at the same position; missing keys are null and transport failures throw.
+ */
+export async function kvMget(keys: string[]): Promise<(string | null)[]> {
+  if (!keys.length) return [];
+  const value = await cmd(['MGET', ...keys]);
+  if (!Array.isArray(value) || value.length !== keys.length) {
+    throw new Error('Upstash MGET returned an unexpected result shape.');
+  }
+  return value.map((item) => item == null ? null : typeof item === 'string' ? item : String(item));
+}
+
 export async function kvSet(key: string, value: string, ttlSeconds = 7 * 86400): Promise<void> {
   try {
     await cmd(['SET', key, value, 'EX', ttlSeconds]);

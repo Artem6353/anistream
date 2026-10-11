@@ -24,6 +24,7 @@ import {
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
+import { decodeEpisodeCacheValue, encodeEpisodeCacheValue } from '../lib/providers/cache-codec.mjs';
 
 const DAY_MS = 86_400_000;
 const INDEX_TTL_SECONDS = 30 * 86_400;
@@ -199,7 +200,7 @@ export function estimateMigrationFootprint(entries) {
   let sourceCount = 0;
 
   for (const entry of entries) {
-    const recordBytes = Buffer.byteLength(JSON.stringify({
+    const recordBytes = Buffer.byteLength(encodeEpisodeCacheValue({
       at: entry.at,
       ttlMs: entry.ttlMs,
       sources: entry.sources,
@@ -248,9 +249,9 @@ function storedRecord(raw, label) {
   if (raw == null || raw === '') return null;
   let record;
   try {
-    record = JSON.parse(raw);
+    record = decodeEpisodeCacheValue(raw);
   } catch {
-    throw new Error('An existing Upstash ' + label + ' value is invalid JSON; no writes were started.');
+    throw new Error('An existing Upstash ' + label + ' value is invalid; no writes were started.');
   }
   if (!isRecord(record)) {
     throw new Error('An existing Upstash ' + label + ' value has an invalid shape; no writes were started.');
@@ -604,7 +605,7 @@ async function main() {
       writeCommands.push([
         'SET',
         upstashEpisodeKey(entry.key),
-        JSON.stringify(merged.record),
+        encodeEpisodeCacheValue(merged.record),
         'EX',
         ttlSeconds,
       ]);
