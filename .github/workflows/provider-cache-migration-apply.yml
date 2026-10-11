@@ -56,6 +56,38 @@ jobs:
           fi
           echo "estimated_bytes=$estimated_bytes" >> "$GITHUB_OUTPUT"
 
+      - name: Verify production can read compressed cache values
+        if: ${{ inputs.apply }}
+        env:
+          PRODUCTION_URL: https://aninova-catalog.vercel.app
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+          status="$(curl --silent --show-error --location \
+            --connect-timeout 10 --max-time 25 \
+            --output "$response_file" --write-out '%{http_code}' \
+            "$PRODUCTION_URL/api/health")"
+          if [[ "$status" != "200" ]]; then
+            echo "::error::Production health returned HTTP $status; no Upstash writes were started."
+            exit 2
+          fi
+          node - "$response_file" <<'NODE'
+          const fs = require('node:fs');
+          let health;
+          try {
+            health = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          } catch {
+            console.error('::error::Production health returned invalid JSON; no Upstash writes were started.');
+            process.exit(2);
+          }
+          if (health?.ok !== true || health?.providerCache?.episodeCacheFormatVersion !== 1) {
+            console.error('::error::Production is not confirmed compatible with compressed episode-cache values (expected providerCache.episodeCacheFormatVersion=1). No Upstash writes were started. Deploy the codec-enabled main commit, then rerun this workflow.');
+            process.exit(2);
+          }
+          console.log('Production reports episodeCacheFormatVersion=1. Migration compatibility gate passed.');
+          NODE
+
       - name: Enforce free-tier memory safety limit
         if: ${{ inputs.apply }}
         env:

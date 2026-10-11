@@ -39,6 +39,8 @@ export async function GET() {
     enabled: providerConfig.cache.enabled,
     writesEnabled: providerConfig.cache.write,
     backend: !providerConfig.cache.enabled ? 'disabled' : cacheUsesUpstash ? 'upstash' : 'file',
+    // Version 1 declares support for the losslessly compressed z1: episode-cache values.
+    episodeCacheFormatVersion: 1,
     // null means this deployment uses the filesystem cache (no Redis connection to probe).
     reachable: cacheUsesUpstash ? await kvPing() : null,
   };
