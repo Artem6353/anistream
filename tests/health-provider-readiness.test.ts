@@ -65,6 +65,7 @@ describe('provider configuration in health endpoint', () => {
       enabled: true,
       writesEnabled: true,
       backend: 'file',
+      episodeCacheFormatVersion: 1,
       reachable: null,
     });
     expect(body.configuredProviders).toEqual([
@@ -94,6 +95,7 @@ describe('provider configuration in health endpoint', () => {
       enabled: true,
       writesEnabled: true,
       backend: 'upstash',
+      episodeCacheFormatVersion: 1,
       reachable: true,
     });
     expect(JSON.stringify(body.providerCache)).not.toContain('token');
@@ -116,6 +118,7 @@ describe('provider configuration in health endpoint', () => {
       enabled: false,
       writesEnabled: false,
       backend: 'disabled',
+      episodeCacheFormatVersion: 1,
       reachable: null,
     });
   });
@@ -153,6 +156,7 @@ describe('provider configuration in health endpoint', () => {
       enabled: true,
       writesEnabled: true,
       backend: 'upstash',
+      episodeCacheFormatVersion: 1,
       reachable: false,
     });
   });
