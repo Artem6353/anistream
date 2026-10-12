@@ -1,4 +1,7 @@
 import type { Title } from './types';
+import { loadTitles } from './catalog';
+import { episodeCount } from './episodes';
+import { setReleasedOverrides } from './episode-overrides';
 
 /**
  * Чтение таблицы `episodes` из Supabase (аудит 2026-10, ТЗ 1.3).
@@ -101,4 +104,133 @@ export async function episodeDataFor(t: Title): Promise<EpisodeData> {
   const fromDb = await getEpisodeData(t.anilistId);
   if (fromDb) return fromDb;
   return catalogEpisodeData(t);
+}
+
+/* ---------------------------------------------------------------------------
+ * Задача 1 аудита: «сколько серий вышло» — из БД, а не из устаревшего каталога.
+ *
+ * Прайм выполняется один раз при старте процесса (instrumentation.ts) и подмешивает
+ * числа в lib/episode-overrides.ts, поэтому episodeInfo() остаётся синхронной и её
+ * по-прежнему можно звать из generateStaticParams, JSON-LD, карточек и /api/*.
+ * Страницы серий от этого НЕ становятся динамическими: данные читаются до рендера.
+ * ------------------------------------------------------------------------- */
+
+const SUPA_SERVICE = process.env.SUPABASE_SERVICE_KEY ?? '';
+const dbConfigured = () => Boolean(SUPA_URL && (SUPA_ANON || SUPA_SERVICE));
+
+/* Фильтр «aired_at <= now()» живёт в представлениях БД (миграция
+   20261012_set_episodes_released.sql), а не в query-строке: PostgREST не умеет
+   GROUP BY, а тянуть десятки тысяч строк на каждый старт процесса нельзя. */
+
+async function fetchJson<T>(path: string): Promise<T[] | null> {
+  if (!dbConfigured()) return null;
+  const key = SUPA_SERVICE || SUPA_ANON;
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(15_000),
+      /* Кэш Next: прайм случается раз на процесс, но ревалидация ISR не должна
+         дёргать БД повторно. no-store здесь означал бы dynamic-роут — его не будет,
+         потому что запрос идёт из instrumentation, а не из рендера. */
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as T[];
+    return Array.isArray(rows) ? rows : null;
+  } catch {
+    return null;
+  }
+}
+
+export interface PrimeResult {
+  /** Сколько тайтлов получили свежее число из БД. */
+  updated: number;
+  /** Откуда взялись числа (для логов и /api/health). */
+  from: ('episodes' | 'airing_schedule' | 'titles')[];
+  configured: boolean;
+}
+
+/**
+ * Собирает «вышло N серий» из трёх таблиц и кладёт в overrides:
+ *   episodes         → max(number), где aired_at <= now или дата неизвестна;
+ *   airing_schedule  → max(episode) среди уже вышедших;
+ *   titles           → episodes_released (его пишет sync-episodes из Shikimori episodes_aired).
+ * Берётся МАКСИМУМ из трёх и из числа в каталоге: источники дополняют друг друга
+ * (у AniList расписание только с апреля 2025, у Shikimori нет дат по сериям).
+ */
+export async function primeEpisodeData(): Promise<PrimeResult> {
+  if (!dbConfigured()) return { updated: 0, from: [], configured: false };
+
+  const [episodes, airing, titles] = await Promise.all([
+    fetchJson<{ anime_id: number; max_number: number }>(`episode_progress?select=anime_id,max_number`),
+    fetchJson<{ anime_id: number; max_episode: number }>(`airing_progress?select=anime_id,max_episode`),
+    fetchJson<{ id: number; episodes_released: number | null }>(
+      `titles?select=id,episodes_released&episodes_released=not.is.null&limit=20000`,
+    ),
+  ]);
+
+  const best = new Map<number, number>();
+  const from = new Set<PrimeResult['from'][number]>();
+  const put = (id: number | null | undefined, n: number | null | undefined, src: PrimeResult['from'][number]) => {
+    if (!Number.isFinite(id as number) || !Number.isFinite(n as number) || (n as number) <= 0) return;
+    const prev = best.get(id as number) ?? 0;
+    if ((n as number) > prev) best.set(id as number, n as number);
+    from.add(src);
+  };
+  for (const r of episodes ?? []) put(r.anime_id, r.max_number, 'episodes');
+  for (const r of airing ?? []) put(r.anime_id, r.max_episode, 'airing_schedule');
+  for (const r of titles ?? []) put(r.id, r.episodes_released, 'titles');
+  if (!best.size) return { updated: 0, from: [], configured: true };
+
+  /* Сверяем с каталогом: override имеет смысл, только если он БОЛЬше известного. */
+  const merged = new Map<number, number>();
+  for (const t of loadTitles()) {
+    const fromDb = best.get(t.anilistId);
+    if (!fromDb) continue;
+    const known = Math.max(catalogEpisodeData(t).maxNumber, t.episodesReleased ?? 0);
+    if (fromDb > known) merged.set(t.anilistId, fromDb);
+  }
+  setReleasedOverrides(merged);
+  return { updated: merged.size, from: [...from], configured: true };
+}
+
+/* ---------------------------------------------------------------------------
+ * Точное «вышло N серий» для конкретного тайтла — асинхронно, из БД.
+ *
+ * Зачем отдельно от primeEpisodeData(): прайм кладёт числа в процессный Map
+ * (lib/episode-overrides.ts), а его видят не все исполнители — в dev-режиме Next
+ * рендерит страницы в отдельных воркерах, и override туда не доезжает (проверено:
+ * лог «[episodes] … 1 тайтлов» есть, а страница показывает число из каталога).
+ * Поэтому маршруты, от которых зависит граница 404 и длина списка серий,
+ * спрашивают БД напрямую. Ответ кэшируется data-кэшем Next (revalidate),
+ * поэтому на ISR это не влияет и запрос не уходит на каждый рендер.
+ * ------------------------------------------------------------------------- */
+
+/** Сколько серий вышло по данным БД. null — БД не настроена или в ней нет строки. */
+export async function releasedFromDb(animeId: number): Promise<number | null> {
+  if (!dbConfigured()) return null;
+  const [progress, airing, row] = await Promise.all([
+    fetchJson<{ max_number: number }>(`episode_progress?anime_id=eq.${animeId}&select=max_number&limit=1`),
+    fetchJson<{ max_episode: number }>(`airing_progress?anime_id=eq.${animeId}&select=max_episode&limit=1`),
+    fetchJson<{ episodes_released: number | null }>(
+      `titles?id=eq.${animeId}&select=episodes_released&limit=1`,
+    ),
+  ]);
+  const candidates = [progress?.[0]?.max_number, airing?.[0]?.max_episode, row?.[0]?.episodes_released];
+  let best = 0;
+  for (const c of candidates) if (Number.isFinite(c as number) && (c as number) > best) best = c as number;
+  return best > 0 ? best : null;
+}
+
+/**
+ * Число серий для маршрута: максимум из БД и каталога.
+ * Единственная точка, которой должны пользоваться страница тайтла, страница серии,
+ * /api/providers и /api/availability — иначе граница 404 разъезжается с UI.
+ */
+export async function releasedCountFor(t: Title): Promise<number | null> {
+  const fromCatalog = episodeCount(t);
+  if (t.status !== 'ongoing') return fromCatalog; // фильм/finished/анонс — правило из каталога
+  const fromDb = await releasedFromDb(t.anilistId);
+  if (fromDb === null) return fromCatalog;
+  return Math.max(fromDb, fromCatalog ?? 0);
 }

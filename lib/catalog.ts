@@ -145,7 +145,16 @@ export function primeCatalogFromDb(): Promise<number> {
         for (const r of rows) out.push(fromDbRow(r));
         if (rows.length < DB_PAGE) break;
       }
-      if (!out.length) return 0;
+      /* Предохранитель (аудит 2026-10, задача 1): неполная таблица не должна
+         подменять каталог. Если импорт прервался или в БД пока одна строка,
+         сайт показывал бы один тайтл вместо 8017 — остаёмся на файле. */
+      const minRows = Number(process.env.CATALOG_DB_MIN_ROWS ?? 100);
+      if (out.length < minRows) {
+        console.warn(
+          `[catalog] в Supabase всего ${out.length} строк (порог CATALOG_DB_MIN_ROWS=${minRows}) — остаёмся на файловом каталоге`,
+        );
+        return 0;
+      }
       RAW = { mtime: 0, titles: out };
       RAW_FROM_DB = true;
       slugMapCache = null;

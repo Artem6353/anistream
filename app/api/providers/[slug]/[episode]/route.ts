@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getTitle } from '@/lib/catalog';
-import { episodeCount } from '@/lib/episodes';
+import { maxEpisodeNumberDb } from '@/lib/episode-route';
 import { resolveEpisodeSources, contextFromTitle, providersWithAvailability } from '@/lib/providers';
 import { providerResponseCacheControl } from '@/lib/providers/response-cache';
 
@@ -40,7 +40,7 @@ export async function GET(request: Request, { params }: Props) {
      Раньше здесь стояло поле `episodes` с заглушкой импортера: /api/providers/one-piece/25
      отвечал 400, хотя серий вышло 1134. */
   const epNum = Number(episodeRaw);
-  const maxEpisode = Math.max(1, episodeCount(title) ?? 1);
+  const maxEpisode = await maxEpisodeNumberDb(title);
   if (!Number.isInteger(epNum) || epNum < 1 || epNum > maxEpisode) {
     return NextResponse.json({ error: 'bad episode', maxEpisode }, { status: 400 });
   }

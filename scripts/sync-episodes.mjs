@@ -323,24 +323,34 @@ async function drainShikimori() {
   }
 }
 
-/** Пишет уточнённое число вышедших серий в public.titles (если таблица уже создана). */
+/** Пишет уточнённое число вышедших серий в public.titles через RPC.
+ *
+ *  Почему не POST /titles?on_conflict=id: частичная строка {id, episodes_released}
+ *  СОЗДАЛА бы строку-огрызок с null во всех остальных колонках, если тайтла ещё нет
+ *  в таблице (до импорта каталога). RPC `set_episodes_released` делает UPDATE
+ *  существующих строк и только на увеличение — миграция
+ *  supabase/migrations/20261012_set_episodes_released.sql. */
 async function flushReleasedFix() {
   if (!releasedFix.size || !SUPA_URL || !SUPA_KEY || DRY_RUN) return;
-  const payload = [...releasedFix.entries()].map(([id, released]) => ({ id, episodes_released: released }));
-  const res = await fetch(`${SUPA_URL}/rest/v1/titles?on_conflict=id`, {
+  const rows = [...releasedFix.entries()].map(([id, released]) => ({ id, released }));
+  const res = await fetch(`${SUPA_URL}/rest/v1/rpc/set_episodes_released`, {
     method: 'POST',
     headers: {
       apikey: SUPA_KEY,
       Authorization: `Bearer ${SUPA_KEY}`,
       'Content-Type': 'application/json',
-      Prefer: 'resolution=merge-duplicates,return=minimal',
+      Prefer: 'return=representation',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ p_rows: rows }),
     signal: AbortSignal.timeout(30_000),
   }).catch(() => null);
   if (!res) return;
-  if (res.ok) log(`  episodes_released уточнён для ${payload.length} тайтлов`);
-  else log(`  episodes_released не записан (${res.status}): таблица titles ещё не создана — пропускаем`);
+  if (res.ok) {
+    const updated = await res.json().catch(() => null);
+    log(`  episodes_released: отправлено ${rows.length}, обновлено строк ${updated ?? '?'}`);
+  } else {
+    log(`  episodes_released не записан (${res.status}): нет RPC/таблицы titles — пропускаем`);
+  }
   releasedFix.clear();
 }
 

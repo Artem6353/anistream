@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getTitle } from '@/lib/catalog';
 import { cacheEntriesForSlug, isDirectProviderSource } from '@/lib/providers/cache';
-import { episodeCount } from '@/lib/episodes';
+import { releasedCountFor } from '@/lib/episode-data';
 import { titleHasSources } from '@/lib/episode-sources';
 
 /** Доступность серий: cache (прямой ответ провайдера) | synth (шаблон CVH/AniBoom)
@@ -19,7 +19,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   const { slug } = await params;
   const title = getTitle(slug);
   if (!title) return NextResponse.json({ error: 'not found' }, { status: 404 });
-  const total = episodeCount(title) ?? 0;
+  const total = (await releasedCountFor(title)) ?? 0;
   const entries = await cacheEntriesForSlug(slug);
   const byEp = new Map<number, string[]>();
   for (const e of entries) {

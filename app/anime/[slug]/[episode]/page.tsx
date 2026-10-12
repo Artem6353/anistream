@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 export const revalidate = 3600;
 import { getTitle, loadTitles } from '@/lib/catalog';
 import { episodeCount } from '@/lib/episodes';
+import { maxEpisodeNumberDb, validEpisodeDb } from '@/lib/episode-route';
 import dynamic from 'next/dynamic';
 
 // Плеер (hls.js + контролы) — только клиент и лениво: минус ~100 КБ из First Load JS (ТЗ блок 8)
@@ -42,23 +43,16 @@ export function generateStaticParams() {
     .map((t) => ({ slug: t.slug, episode: '1' }));
 }
 
-/* Аудит 30.09 (P2-18): валидация номера серии — /anime/x/999 и /anime/x/abc раньше
-   рендерили клампнутый контент с canonical на СЫРОЙ url (бесконечные soft-дубли).
-   Аудит 2026-10 (ТЗ 1.2): граница — НЕ поле `episodes` (у онгоингов там стояла
-   заглушка 24, из-за чего /anime/one-piece/25 отдавал 404 при 1134 вышедших сериях),
-   а единое правило lib/episodes.ts. */
-function validEpisode(t: Parameters<typeof episodeCount>[0], raw: string): number | null {
-  const n = Number(raw);
-  const max = episodeCount(t) ?? 0;
-  if (!Number.isInteger(n) || n < 1 || n > Math.max(1, max)) return null;
-  return n;
-}
+/* Валидация номера серии — общая с /api/providers, см. lib/episode-route.ts
+   (экспортировать её из page.tsx нельзя: контракт файлов страниц App Router). */
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, episode: episodeRaw } = await params;
   const t = getTitle(slug);
   if (!t) notFound();
-  const episode = validEpisode(t, episodeRaw);
+  /* Граница — из БД (задача 1): по устаревшему каталогу серии 1135…1180 «Ван-Пис»
+     отдавали 404, хотя Shikimori сообщает episodes_aired=1180. */
+  const episode = await validEpisodeDb(t, episodeRaw);
   if (episode === null) notFound();
   const name = titleWithYear(t.ru, t.year);
   const description = `Смотреть ${name} серия ${episode} онлайн: озвучки и субтитры, автопереход к следующей серии, сохранение прогресса.`;
@@ -92,10 +86,10 @@ export default async function PlayerPage({ params }: Props) {
   const { slug, episode: episodeRaw } = await params;
   const title = getTitle(slug);
   if (!title) notFound();
-  const episode = validEpisode(title, episodeRaw);
+  const episode = await validEpisodeDb(title, episodeRaw);
   if (episode === null) notFound();
   const similar = similarTitles(title, 10);
-  const total = episodeCount(title);
+  const total = await maxEpisodeNumberDb(title);
   const base = getProvidersConfig().site.url;
 
   return (

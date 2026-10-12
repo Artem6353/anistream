@@ -26,10 +26,11 @@ import { artUri } from '@/lib/art';
 import { getProvidersConfig } from '@/lib/config/providers.config';
 import { titleEditorial } from '@/lib/editorial';
 import { imgProxyUrl } from '@/lib/img';
-import { episodeCount, episodeCountLabel, episodeInfo } from '@/lib/episodes';
-import { episodeDataFor, type EpisodeRow } from '@/lib/episode-data';
+import { episodeInfo } from '@/lib/episodes';
+import { episodeDataFor, releasedCountFor, type EpisodeRow } from '@/lib/episode-data';
 import { LegalWatchBlock } from '@/components/anime/LegalWatchBlock';
 import { titleMetaDescription, titleWithYear } from '@/lib/text';
+import { plural } from '@/lib/format';
 
 /** meta/og/twitter description одной сборкой: 150–160 символов, обрезка по границе
     предложения (ТЗ 1.4). Раньше description обрывался на «…Мировым» посреди фразы. */
@@ -132,9 +133,14 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
   const similar = similarTitles(title);
   /* ТЗ 1.2: число серий — из единого правила. У онгоинга без объявленного итога
      показываем «1134+ серий», у анонса — прочерк, а не выдуманную заглушку. */
-  const eps = episodeInfo(title);
-  const epsCount = episodeCount(title);
-  const epsLabel = episodeCountLabel(title);
+  /* Задача 1 аудита: «вышло N» берём из БД (episode_progress / airing_progress /
+     Shikimori episodes_aired в titles.episodes_released), а не из замороженного
+     поля airing в titles.json — иначе у «Ван-Пис» список обрывался на 1134
+     при реально вышедших 1180, а серии 1135…1180 отдавали 404. */
+  const info = episodeInfo(title);
+  const epsCount = await releasedCountFor(title);
+  const eps = { ...info, released: epsCount };
+  const epsLabel = epsCount === null ? null : `${epsCount}${info.totalUnknown ? '+' : ''} ${plural(epsCount, ['серия', 'серии', 'серий'])}`;
   /* ТЗ 4.1 (4.2): показываем одно основное описание; shikimori-вариант уходит
    * в сворачиваемый блок «Альтернативное описание» (по умолчанию свёрнут). */
   /* Редполитика (SEO-9): уникальная справка из данных каталога — повышает

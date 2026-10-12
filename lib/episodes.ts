@@ -1,5 +1,6 @@
 import type { CardTitle, Title } from './types';
 import { plural } from './format';
+import { getReleasedOverride } from './episode-overrides';
 
 /**
  * Единое правило подсчёта серий (аудит 2026-10, ТЗ 1.2).
@@ -20,8 +21,16 @@ import { plural } from './format';
 /** Заглушки импортера: 24 для онгоингов, 12 для остальных ТВ-тайтлов. */
 const IMPORT_STUBS = new Set([12, 24]);
 
-/** Максимальный известный номер серии из airing-графика и точных дат. */
-export function maxKnownEpisode(t: Pick<Title, 'airing' | 'epdates'>): number {
+/** Максимальный известный номер серии: airing-график, точные даты и свежее число из БД.
+ *
+ *  Задача 1 аудита: поле `airing` в titles.json заморожено на момент импорта, поэтому
+ *  у «Ван-Пис» границей осталось 1134 (данные июня 2025), хотя Shikimori отдаёт
+ *  episodes_aired=1180, а AniList знает график до 1189 — серии 1135…1180 отдавали 404.
+ *  Свежее число из БД (episodes / airing_schedule / titles.episodes_released)
+ *  подмешивается через lib/episode-overrides.ts при старте процесса: функция остаётся
+ *  синхронной, потому что её зовут generateStaticParams, JSON-LD, карточки и /api/*. */
+/** Максимум по каталогу: airing-график и точные даты серий. */
+export function maxCatalogEpisode(t: Pick<Title, 'airing' | 'epdates'>): number {
   let max = 0;
   for (const a of t.airing ?? []) if (a.ep > max) max = a.ep;
   const ed = t.epdates;
@@ -32,6 +41,11 @@ export function maxKnownEpisode(t: Pick<Title, 'airing' | 'epdates'>): number {
     }
   }
   return max;
+}
+
+/** То же + свежее число из БД (lib/episode-overrides.ts). Используется для онгоингов. */
+export function maxKnownEpisode(t: Pick<Title, 'airing' | 'epdates'> & { anilistId?: number }): number {
+  return Math.max(getReleasedOverride(t.anilistId) ?? 0, maxCatalogEpisode(t));
 }
 
 export interface EpisodeInfo {
@@ -54,7 +68,10 @@ const info = (released: number | null, total: number | null, totalUnknown: boole
 
 /** Число серий по единому правилу. Единственная точка правды для UI и валидации. */
 export function episodeInfo(t: Title): EpisodeInfo {
-  const aired = maxKnownEpisode(t);
+  /* Override из БД учитываем только у онгоингов: у фильма/завершённого сериала итог
+     и так известен из источника, а airing_schedule хранит окно -2…+8 дней и мог бы
+     «дорисовать» фильму несуществующие серии. */
+  const aired = t.status === 'ongoing' ? maxKnownEpisode(t) : maxCatalogEpisode(t);
   const stated = Number.isFinite(t.episodes as number) && t.episodes !== null ? Number(t.episodes) : null;
   // Заглушку импортера за реальное число не считаем.
   const stub = stated !== null && IMPORT_STUBS.has(stated);
@@ -69,10 +86,13 @@ export function episodeInfo(t: Title): EpisodeInfo {
   if (t.type === 'movie' && !aired) return info(1, 1, false);
 
   if (t.status === 'ongoing') {
-    // Онгоинг: «вышло» — это график эфира. `episodes` у онгоинга означает ИТОГ,
-    // поэтому max(aired, stated) рисовал бы несуществующие серии (у «Ван-Пис»
-    // заглушка 24 при aired 1134, а при announced=25/airing=12 — наоборот).
-    const released = aired > 0 ? aired : statedUsable ? (stated as number) : null;
+    /* Онгоинг: «вышло» — это график эфира (и свежее число из БД), а `episodes`
+       означает ИТОГ. Приоритет: max(БД, airing/epdates, episodesReleased), и только
+       если ничего нет — episodes, когда он не заглушка. Прямой max(aired, stated)
+       рисовал бы несуществующие серии (у «Ван-Пис» заглушка 24 при aired 1134,
+       а при announced=25/airing=12 — наоборот). */
+    const fromCatalog = Number.isFinite(t.episodesReleased as number) ? Number(t.episodesReleased) : 0;
+    const released = Math.max(aired, fromCatalog) || (statedUsable ? (stated as number) : null);
     // Итог известен, только если он не заглушка и строго больше уже вышедшего.
     const total = statedUsable && (stated as number) > aired ? stated : null;
     return info(released, total, released !== null && total === null);
