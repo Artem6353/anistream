@@ -92,7 +92,11 @@ test('mini episode posters request image sizes that match their 44px slot', asyn
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-  const poster = page.locator('.latest-eps__poster img.poster-art').first();
+  // «Новые эпизоды» — CSS-вкладки Вчера/Сегодня/Завтра на :checked: панели
+  // неактивных вкладок скрыты (visibility:hidden), хотя в DOM могут идти
+  // первыми («Вчера» стоит до активной «Сегодня»). Берём первый ВИДИМЫЙ
+  // постер (активная вкладка гарантированно непустая), проверки sizes/ширины строгие.
+  const poster = page.locator('.latest-eps__poster img.poster-art:visible').first();
   await expect(poster).toBeVisible();
   await expect(poster).toHaveAttribute('sizes', '44px');
 
