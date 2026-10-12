@@ -24,8 +24,29 @@ let memory: CacheShape | null = null;
 let writeTimer: ReturnType<typeof setTimeout> | null = null;
 let writing: Promise<void> = Promise.resolve();
 
+let fileDisabledWarned = false;
+
+/** Файловый бэкенд доступен? В проде — нет (задача 4 аудита). */
+function fileBackendUsable(): boolean {
+  if (getProvidersConfig().cache.fileBackend) return true;
+  if (!fileDisabledWarned) {
+    fileDisabledWarned = true;
+    console.warn(
+      '[providers] файловый кэш отключён в production: источник правды — Supabase episode_sources, ' +
+        'горячий кэш — Upstash Redis. Файл .cache/providers-resolve-cache.json (97,6 МБ) в рантайме не читается. ' +
+        'Перенос: node scripts/import-provider-cache-to-db.mjs; для self-hosted можно вернуть ' +
+        'PROVIDER_CACHE_FILE_BACKEND=1.',
+    );
+  }
+  return false;
+}
+
 async function load(file: string): Promise<CacheShape> {
   if (memory) return memory;
+  if (!fileBackendUsable()) {
+    memory = {};
+    return memory;
+  }
   try {
     memory = JSON.parse(await fs.readFile(file, 'utf8')) as CacheShape;
   } catch {
@@ -36,6 +57,7 @@ async function load(file: string): Promise<CacheShape> {
 
 /** Дебаунс-запись: коалесцируем частые miss'ы в один flush (PROVIDER_CACHE_WRITE_DEBOUNCE_MS). */
 function persist(file: string) {
+  if (!fileBackendUsable()) return;
   const debounce = Number(process.env.PROVIDER_CACHE_WRITE_DEBOUNCE_MS ?? 750);
   if (writeTimer) clearTimeout(writeTimer);
   writeTimer = setTimeout(() => {

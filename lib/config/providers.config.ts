@@ -15,7 +15,18 @@ export interface ProvidersConfig {
     episodeSearchLimit: number;
   };
   aniboom: { enabled: boolean; token?: string };
-  cache: { enabled: boolean; write: boolean; ttlMs: number; file: string };
+  cache: {
+    enabled: boolean;
+    write: boolean;
+    ttlMs: number;
+    file: string;
+    /** Файловый бэкенд кэша. На проде выключен (задача 4 аудита): рантайм не должен
+        поднимать в память .cache/providers-resolve-cache.json на 97,6 МБ — замер дал
+        675 мс чтения, 1038 мс JSON.parse и 370 МБ RSS на одном резолве при лимите
+        функции Vercel 1024 МБ. В проде кэш только Redis (UPSTASH_*), а источник
+        правды — Supabase episode_sources. */
+    fileBackend: boolean;
+  };
   bridges: {
     kodik: { url: string; timeoutMs: number };
     multiplayer: { url: string; timeoutMs: number };
@@ -47,6 +58,12 @@ const num = (v: string | undefined, fallback: number) => {
  * если флаг не выставлен ЯВНО (`DEMO_PROVIDER_ENABLED=1`) — например, для проверки
  * самого плеера. В dev поведение прежнее.
  */
+function resolveCacheFileBackend(env: NodeJS.ProcessEnv): boolean {
+  const raw = env.PROVIDER_CACHE_FILE_BACKEND;
+  if (raw !== undefined) return bool(raw, true);
+  return !(env.NODE_ENV === 'production' || Boolean(env.VERCEL));
+}
+
 /** Синтез/подбор URL — только явно (dev или PROVIDER_UNVERIFIED_FALLBACK=1), ТЗ 1.6.4. */
 function resolveUnverifiedFallback(env: NodeJS.ProcessEnv): boolean {
   const raw = env.PROVIDER_UNVERIFIED_FALLBACK;
@@ -160,6 +177,9 @@ export function getProvidersConfig(): ProvidersConfig {
       enabled: bool(env.PROVIDER_CACHE_ENABLED, true),
       write: bool(env.PROVIDER_CACHE_WRITE, true),
       ttlMs: num(env.KODIK_CACHE_TTL_MS, 86_400_000),
+      /* PROVIDER_CACHE_FILE_BACKEND=1 включает файл даже в проде (self-hosted/VPS,
+         где памяти больше и нет Supabase) — осознанно, не по умолчанию. */
+      fileBackend: resolveCacheFileBackend(env),
       file: env.KODIK_CACHE_FILE ?? '.cache/providers-resolve-cache.json',
     },
     shikimori: {

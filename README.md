@@ -305,6 +305,13 @@ supabase/     migrations/ — схема (в т.ч. titles, airing_schedule, epi
 | `episode_sources` | озвучка тайтла (провайдер, translation, embed, статус ok/dead) | `scripts/sync-sources.mjs` | `lib/episode-sources.ts` → `/api/providers`, robots/index страниц серий, зелёная точка |
 | `episode_source_urls` | ссылка конкретной серии (нужно для Kodik: hash уникален для серии) | тот же воркер | там же |
 
+Отдельно `episode_sources`/`episode_source_urls` наполняются не только воркером:
+`node scripts/import-provider-cache-to-db.mjs` переносит исторический кэш
+`.cache/providers-resolve-cache.json` (97,6 МБ) в БД — idempotentно, resumable,
+с `--dry-run`/`--limit`/`--verify`. Замер фактического файла: 79 426 записей,
+79 424 из них с ПРЯМЫМИ источниками (336 515 штук: kodik 334 471 · cvh 1 214 ·
+aniboom 850; guessed 20, synthesized 0), 5 778 тайтлов, 30 202 озвучки.
+
 RLS у всех таблиц одинаковый: публичное чтение, запись только `service_role`.
 Миграции идемпотентные (`create table if not exists`, `drop policy if exists`):
 `supabase/migrations/20261012_{titles,airing_schedule,episodes,episode_sources}.sql`.
@@ -316,7 +323,8 @@ RLS у всех таблиц одинаковый: публичное чтени
 | `sync-airing.yml` | каждые 30 минут | AniList `airingSchedules` → `airing_schedule` | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_KEY` |
 | `sync-episodes.yml` | 6 часов (онгоинги) + сутки (полный проход) | номера/даты серий, `episodes_aired` Shikimori, опционально названия через Jikan | те же |
 | `sync-sources.yml` | сутки (онгоинги) + неделя (bulk) | Kodik `/list` или `/search` → `episode_sources` + `episode_source_urls` | те же + `KODIK_TOKEN` |
-| `sync-catalog.yml` | 6 часов | как прежде: новые тайтлы из AniList/Jikan в `titles.json` | — |
+| `sync-catalog.yml` | 6 часов | новые тайтлы из AniList/Jikan в `titles.json` → **repair-catalog (офлайн, идемпотентно)** → **check-catalog-quality --gate** → коммит | — |
+| `repair-catalog-descriptions.yml` | только `workflow_dispatch` | сетевой ремонт: описания из Shikimori, `episodes_aired`, русские имена персонажей (`--limit`/`--cursor`) | `SHIKIMORI_USER_AGENT` |
 
 ### Защита правок данных от кронов
 
@@ -339,6 +347,26 @@ RLS у всех таблиц одинаковый: публичное чтени
 дефект — у них нет ни `airing`, ни `epdates`, то есть опровергнуть число нечем, и
 `lib/episodes.ts` показывает их как «вышло N, итог неизвестен». Gate ловит только
 заглушку, противоречащую графику эфира (`aired > stated`).
+
+### Кэш источников: что читает рантайм
+
+Порядок резолва в production (задача 4 аудита):
+
+```
+manual-sources.json  →  Upstash Redis (горячий кэш, TTL 24 ч)  →  Supabase episode_sources
+                       →  живые провайдеры (на Vercel фактически не работают: bridge нет,
+                          Kodik с дата-центр IP отвечает 401)  →  честное «Источников пока нет»
+```
+
+Файловый кэш `.cache/providers-resolve-cache.json` в production **не читается и не
+пишется** (`cache.fileBackend`, включается обратно только `PROVIDER_CACHE_FILE_BACKEND=1`
+для self-hosted) и больше не пакуется в serverless-функции. Причина в цифрах: одно
+чтение файла давало 675 мс + 1038 мс на парсинг и 370 МБ RSS при лимите функции 1024 МБ.
+Изолированный замер 20 итераций: **497 МБ → 123 МБ RSS**.
+
+`scripts/migrate-provider-cache-to-upstash.mjs` оставлен как legacy, но `--apply`
+требует явного `--i-understand-redis-threshold`: сид всего кэша — это 37,9 МБ при
+`db_memory_threshold=64 MiB` и ~85 900 команд при лимите 500k/мес.
 
 Все воркеры: resumable-чекпоинт в `.cache/`, экспоненциальная задержка, уважение
 `Retry-After` при 429, лимиты из LIMITS.md (AniList 90 запросов/мин, Shikimori ~1/с

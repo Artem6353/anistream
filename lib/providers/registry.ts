@@ -194,20 +194,12 @@ export async function resolveEpisodeSources(
   const manual = manualSources(ctx.slug, ctx.episode);
   if (manual.length) return withDemo({ sources: manual, sourcesUsed: ['manual'], fromCache: false }, ctx);
 
-  /* 0.5) Аудит 2026-10 (ТЗ 1.6.2): реестр источников из БД. На Vercel нет bridge,
-     а прямой резолв Kodik с дата-центр IP отвечает 401, поэтому единственные
-     достоверные данные — то, что заранее собрал воркер scripts/sync-sources.mjs.
-     liveOnly (bulk-backfill) намеренно пропускает БД: ему нужны живые ответы. */
-  if (!options.liveOnly && ctx.animeId) {
-    const fromDb = await dbEpisodeSources(ctx.animeId, ctx.episode);
-    if (fromDb?.sources.length) {
-      metrics.cacheHit++;
-      return withDemo({ ...fromDb, fromCache: true, cachedAt: Date.now() }, ctx);
-    }
-  }
-
-  /* 1) Читаем кэш; в liveOnly режиме пропускаем его полностью. */
   const t0 = Date.now();
+
+  /* 1) Горячий кэш (Upstash Redis). В liveOnly режиме пропускаем его полностью.
+     Задача 4 аудита: в production это ЕДИНСТВЕННЫЙ кэш — файловая ветка отключена
+     в lib/providers/cache.ts, поэтому cacheGet() там возвращает null, если Redis
+     не настроен, и резолв идёт дальше в БД, а не в чтение 97,6 МБ JSON. */
   const cached = options.liveOnly ? null : await cacheGet(key);
   const cachedHasFiles = Boolean(
     cached?.sources.some((s) => s.kind === 'file' && (s.files?.length ?? 0) > 0),
@@ -220,6 +212,23 @@ export async function resolveEpisodeSources(
 
   if (base) metrics.cacheHit++;
   else metrics.cacheMiss++;
+
+  /* 1.5) Реестр источников из БД (ТЗ 1.6.2, задача 4): порядок по ТЗ —
+     Redis hot-cache → Supabase → честное «источников нет». На Vercel нет bridge,
+     а прямой резолв Kodik с дата-центр IP отвечает 401, поэтому достоверные данные
+     только те, что заранее собрал воркер scripts/sync-sources.mjs.
+     liveOnly (bulk-backfill) БД намеренно пропускает: ему нужны живые ответы. */
+  if (!base && !options.liveOnly && ctx.animeId) {
+    const fromDb = await dbEpisodeSources(ctx.animeId, ctx.episode);
+    if (fromDb?.sources.length) {
+      /* Прогреваем горячий кэш, чтобы повторные запросы не ходили в БД.
+         cacheSet сам решает, куда писать: в проде — только Redis (TTL),
+         файловый бэкенд там отключён. Ошибку глотаем: кэш не должен ронять резолв. */
+      void cacheSet(key, fromDb).catch(() => {});
+      metricLatency(Date.now() - t0);
+      return withDemo({ ...fromDb, fromCache: true, cachedAt: Date.now() }, ctx);
+    }
+  }
 
   /* 2) Резолверы запускаются одновременно. Наличие Kodik в кэше не отключает CVH/AniBoom. */
   const enabledIds = enabledProviderIds();

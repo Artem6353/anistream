@@ -441,6 +441,8 @@ function help() {
   console.log('');
   console.log('Default mode is dry-run; no Redis commands are sent.');
   console.log('  --apply                    Write eligible entries to Upstash');
+  console.log('  --i-understand-redis-threshold');
+  console.log('                             Подтверждение для --apply (см. DEPRECATION_BANNER)');
   console.log('  --file PATH                Input cache (default ' + DEFAULT_CACHE_FILE + ')');
   console.log('  --progress-file PATH       Local checkpoint file (default ' + DEFAULT_PROGRESS_FILE + ')');
   console.log('  --batch-size N             Entries per batch, 1..' + MAX_BATCH_SIZE + ' (default ' + DEFAULT_BATCH_SIZE + ')');
@@ -450,13 +452,40 @@ function help() {
   console.log('  --help                     Show help');
 }
 
+/* Аудит 2026-10 (задача 4): скрипт оставлен как legacy, но по умолчанию НЕ пишет.
+   Сид всего кэша в Redis не нужен и опасен: см. banner в main(). */
+const DEPRECATION_BANNER = [
+  'ВНИМАНИЕ: этот скрипт устарел (аудит 2026-10, задача 4).',
+  '',
+  'Он переносит ВЕСЬ .cache/providers-resolve-cache.json (97,6 МБ, 79 426 записей) в Redis.',
+  'Замер: в компактном виде это 37,9 МБ при db_memory_threshold=64 MiB у подключённой базы',
+  '(LIMITS.md) и ~79 426 команд при месячном лимите 500k. Такой сид оставляет меньше',
+  'половины порога памяти и расходует шестую часть месячных команд за один прогон.',
+  '',
+  'Правильный путь теперь: постоянное хранилище — Supabase (episode_sources /',
+  'episode_source_urls), Redis — только горячий кэш с TTL на ключ «тайтл+серия».',
+  'Перенос делает: node scripts/import-provider-cache-to-db.mjs --dry-run, затем без --dry-run.',
+].join('\n');
+
 async function main() {
   const args = process.argv.slice(2);
+  console.warn(DEPRECATION_BANNER);
+  console.warn('');
   if (args.includes('--help') || args.includes('-h')) {
     help();
     return;
   }
-  const allowed = new Set(['--apply', '--dry-run', '--restart', '--file', '--progress-file', '--batch-size', '--max-commands', '--retention-days']);
+  const allowed = new Set([
+    '--apply',
+    '--dry-run',
+    '--restart',
+    '--file',
+    '--progress-file',
+    '--batch-size',
+    '--max-commands',
+    '--retention-days',
+    '--i-understand-redis-threshold',
+  ]);
   for (const arg of args.filter((value) => value.startsWith('--'))) {
     if (!allowed.has(arg)) throw new Error('Unknown option ' + arg + '. Use --help for usage.');
   }
@@ -466,6 +495,21 @@ async function main() {
   const apply = args.includes('--apply');
   const restart = args.includes('--restart');
   if (restart && !apply) throw new Error('--restart only applies with --apply.');
+
+  /* Защита от случайного сида 97,6 МБ в Redis (задача 4): --apply теперь требует
+     явного подтверждения. Тесты и легаси-workflow обходят флаг переменной
+     ALLOW_LEGACY_UPSTASH_SEED=1 — она видна в логе прогона. */
+  const confirmed =
+    args.includes('--i-understand-redis-threshold') ||
+    ['1', 'true', 'yes'].includes(String(process.env.ALLOW_LEGACY_UPSTASH_SEED ?? '').toLowerCase());
+  if (apply && !confirmed) {
+    console.error('');
+    console.error('--apply отклонён: требуется явное подтверждение.');
+    console.error('Добавьте --i-understand-redis-threshold, если вы точно хотите залить сид в Redis.');
+    console.error('Рекомендуется вместо этого: node scripts/import-provider-cache-to-db.mjs');
+    process.exitCode = 2;
+    return;
+  }
 
   const cacheFile = path.resolve(optionValue(args, '--file', DEFAULT_CACHE_FILE));
   const progressFile = path.resolve(optionValue(args, '--progress-file', DEFAULT_PROGRESS_FILE));
