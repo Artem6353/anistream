@@ -168,6 +168,9 @@ npm run warm | hydrate | enrich # наполнение кэша источник
 npm run check:kodik             # диагностика Kodik-цепочки с вашей машины (токен → search → VideoLinks)
 npm run check:posters           # HEAD-проверка всех постеров каталога (.cache/broken-posters.json)
 npm run check:readme            # сверка заявленных в README/LIMITS чисел с каталогом
+npm run check:catalog           # gate качества данных (пороги — в шапке скрипта)
+npm run report:catalog          # тот же отчёт без порогов (всегда exit 0)
+npm run repair:offline          # идемпотентный офлайн-ремонт каталога (бэкап в backups/)
 npm run clean:titles            # отчёт по артефактам каталога (fix — чистка с бэкапом)
 npm run loadtest                # 100 параллельных резолвов: p50/p95/ошибки (LOADTEST_URL/CONC;
                                 #   BRIDGE_URL=http://127.0.0.1:8765 — нагрузка прямо на bridge)
@@ -314,6 +317,28 @@ RLS у всех таблиц одинаковый: публичное чтени
 | `sync-episodes.yml` | 6 часов (онгоинги) + сутки (полный проход) | номера/даты серий, `episodes_aired` Shikimori, опционально названия через Jikan | те же |
 | `sync-sources.yml` | сутки (онгоинги) + неделя (bulk) | Kodik `/list` или `/search` → `episode_sources` + `episode_source_urls` | те же + `KODIK_TOKEN` |
 | `sync-catalog.yml` | 6 часов | как прежде: новые тайтлы из AniList/Jikan в `titles.json` | — |
+
+### Защита правок данных от кронов
+
+`sync-catalog.yml` каждые 6 часов добавляет новые тайтлы и коммитит `titles.json`.
+Новые записи приходят из AniList/Jikan сырыми, поэтому между генерацией и коммитом
+в пайплайн встроены два обязательных шага:
+
+1. `node scripts/repair-catalog.mjs --fix-episodes --fix-desc --fix-dupes --fix-studios --apply`
+   — офлайн-ремонт (идемпотентность проверена двойным прогоном: второй даёт 0 изменений);
+2. `node scripts/check-catalog-quality.mjs --gate` — предохранитель: коммит отменяется,
+   если число тайтлов упало больше чем на 2 % или доля дефектов выше порога
+   (обрывы описаний 10 %, опровергнутые заглушки серий 1 %, заглушки у анонсов 1 %,
+   лицензиары в студиях 0,5 %, одинаковые названия у разных лет 1 %).
+
+Тот же gate работает в `ci.yml`. Сетевой ремонт (`--fix-desc-net`, `--fix-shiki-eps`,
+`--fix-characters`) в cron НЕ входит — он в отдельном `repair-catalog-descriptions.yml`
+по `workflow_dispatch` с `--limit`/`--cursor` для прогона порциями.
+
+Важно про заглушки: в каталоге остаётся 114 онгоингов с `episodes` 12/24, но это не
+дефект — у них нет ни `airing`, ни `epdates`, то есть опровергнуть число нечем, и
+`lib/episodes.ts` показывает их как «вышло N, итог неизвестен». Gate ловит только
+заглушку, противоречащую графику эфира (`aired > stated`).
 
 Все воркеры: resumable-чекпоинт в `.cache/`, экспоненциальная задержка, уважение
 `Retry-After` при 429, лимиты из LIMITS.md (AniList 90 запросов/мин, Shikimori ~1/с

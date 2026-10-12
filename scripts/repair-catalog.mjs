@@ -32,6 +32,7 @@
  * Без --apply изменения не записываются (печатается отчёт). Бэкап — в backups/.
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { NOT_ANIMATION_STUDIOS } from './lib/studios.mjs';
 
 const FILE = process.env.TITLES_FILE ?? 'lib/data/titles.json';
 const argv = process.argv.slice(2);
@@ -45,6 +46,10 @@ const argVal = (name, dflt) => {
 
 const APPLY = has('--apply');
 const LIMIT = Number(argVal('limit', process.env.LIMIT ?? 0));
+/* --cursor N: пропустить первые N кандидатов сетевого прохода. Нужен, чтобы гонять
+   ремонт порциями из workflow без чекпоинта (иначе каждый вызов начинал бы
+   с тех же тайтлов, а --limit обрывал бы проход на середине). */
+const CURSOR = Number(argVal('cursor', process.env.CURSOR ?? 0));
 const SLEEP_MS = Number(process.env.SLEEP_MS ?? 1100);
 const SHIKI_WORKERS = Math.min(3, Number(process.env.SHIKI_WORKERS ?? 3));
 const UA = { 'User-Agent': process.env.SHIKIMORI_USER_AGENT || 'AniNova catalog repair (aninova-catalog.vercel.app)' };
@@ -52,24 +57,9 @@ const UA = { 'User-Agent': process.env.SHIKIMORI_USER_AGENT || 'AniNova catalog 
 /** Заглушки, которые подставлял scripts/expand-catalog.mjs вместо неизвестного числа. */
 const STUBS = new Set([12, 24]);
 
-/** Не анимационные студии: лицензиары, продюсеры, вещатели (ТЗ 3.1.3). */
-const NOT_STUDIOS = new Set(
-  [
-    'Funimation', 'Viz Media', 'Aniplex', 'Aniplex of America', 'Crunchyroll', 'Sentai Filmworks',
-    'Nihon Ad Systems', 'Dentsu', 'Mainichi Broadcasting System', 'TV Tokyo', 'Toho', 'Shueisha',
-    'Kodansha', 'Shogakukan-Shueisha Productions', 'Bandai Visual', 'Bandai Namco Arts', 'Lantis',
-    'Sony Pictures Entertainment', 'Hakuhodo DY Media Partners', 'Kadokawa', 'Kadokawa Shoten',
-    'ASCII Media Works', 'AT-X', 'BS Fuji', 'NHK', 'TBS', 'Fuji TV', 'Yomiuri Telecasting',
-    'Shochiku', 'Toei Company', 'Square Enix', 'Konami', 'Sega', 'Bandai', 'Bandai Namco Games',
-    'VAP', 'King Records', 'Avex Entertainment', 'Pony Canyon', 'Media Factory', 'Houbunsha',
-    'Ichijinsha', 'Enterbrain', 'Frontier Works', 'Marvelous', 'Marvelous AQL', 'TMS Music',
-    'Geneon Universal Entertainment', 'NBCUniversal Entertainment', 'Warner Bros. Japan',
-    'Walt Disney Studios', 'Netflix', 'Amazon Studios', 'Hulu', 'ADK Emotions', 'Asatsu DK',
-    'Sotsu', 'Sotsu Music Publishing', 'Pierrot Plus', 'DMM.com', 'Cygames', 'Movic',
-    'Bushiroad', 'Good Smile Company', 'KlockWorx', 'Nippon Television Network', 'TV Asahi',
-    'MBS', 'Rakuten', 'Gree', 'Mixi', 'CyberAgent', 'Happinet', 'Pony Canyon Enterprises',
-  ].map((s) => s.toLowerCase()),
-);
+/* Список лицензиаров/продюсеров общий с scripts/check-catalog-quality.mjs,
+   чтобы «починено» и «проверено» не разъезжались (ТЗ 3.1.3). */
+const NOT_STUDIOS = NOT_ANIMATION_STUDIOS;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const titles = JSON.parse(readFileSync(FILE, 'utf8'));
@@ -214,7 +204,8 @@ const stripBbcode = (s) =>
 /** Дочитывает ПОЛНЫЕ описания из Shikimori и режет их по границе предложения (ТЗ 1.4.3). */
 async function refetchDescriptions(max = 900) {
   const pool = titles.filter((t) => t.needsDescriptionRefresh && t.shikimori?.id);
-  const plan = LIMIT > 0 ? pool.slice(0, LIMIT) : pool;
+  const from = Number.isFinite(CURSOR) && CURSOR > 0 ? CURSOR : 0;
+  const plan = pool.slice(from, LIMIT > 0 ? from + LIMIT : undefined);
   let fixed = 0;
   let empty = 0;
   const queue = [...plan];
@@ -301,7 +292,8 @@ async function shiki(path) {
 
 async function fixShikimoriEpisodes() {
   const pool = titles.filter((t) => t.status === 'ongoing' && t.shikimori?.id);
-  const plan = LIMIT > 0 ? pool.slice(0, LIMIT) : pool;
+  const from = Number.isFinite(CURSOR) && CURSOR > 0 ? CURSOR : 0;
+  const plan = pool.slice(from, LIMIT > 0 ? from + LIMIT : undefined);
   let fixed = 0;
   const queue = [...plan];
   const worker = async () => {
@@ -327,7 +319,8 @@ async function fixShikimoriEpisodes() {
 
 async function fixCharacters() {
   const pool = titles.filter((t) => t.shikimori?.id && (t.characters?.length ?? 0) > 0);
-  const plan = LIMIT > 0 ? pool.slice(0, LIMIT) : pool;
+  const from = Number.isFinite(CURSOR) && CURSOR > 0 ? CURSOR : 0;
+  const plan = pool.slice(from, LIMIT > 0 ? from + LIMIT : undefined);
   let fixed = 0;
   const queue = [...plan];
   const worker = async () => {
@@ -385,6 +378,7 @@ if (has('--fix-characters')) stats.characters = await fixCharacters();
 
 if (!Object.keys(stats).length) {
   console.log('Нужен хотя бы один флаг: --fix-episodes --fix-desc --fix-desc-net --fix-dupes --fix-studios --fix-shiki-eps --fix-characters');
+  console.log('Для сетевых флагов доступны --limit N и --cursor N (прогон порциями без чекпоинта).');
   process.exit(2);
 }
 
