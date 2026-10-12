@@ -234,3 +234,14 @@ export async function releasedCountFor(t: Title): Promise<number | null> {
   if (fromDb === null) return fromCatalog;
   return Math.max(fromDb, fromCatalog ?? 0);
 }
+
+/* Самостарт прайма после инцидента 2026-10-13 (вторая линия защиты рядом с
+   самостартом каталога в lib/catalog.ts): хук instrumentation убран из проекта,
+   потому что webpack собирал его edge-чанк с node:fs из lib/catalog и ронял
+   сборку (UnhandledSchemeError) — прод оставался на старом деплое. Модуль
+   грузится только в nodejs-рантайме (импортируют route/страницы), guard по
+   NEXT_RUNTIME оставлен как защита от будущего edge-импорта. Повторный вызов
+   безопасен: primeEpisodeData идемпотентен в пределах процесса. */
+if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
+  void primeEpisodeData().catch(() => {});
+}
