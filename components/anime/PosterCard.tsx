@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import type { CardTitle } from '@/lib/types';
 import { TYPE_LABELS, genreLabel } from '@/lib/labels';
 import { episodesWord } from '@/lib/format';
+import { cardEpisodeInfo } from '@/lib/episodes';
 import { PosterArt } from './PosterArt';
 import { BookmarkButton } from './BookmarkButton';
 import { IconPlay, IconStar } from '@/components/ui/icons';
@@ -41,6 +42,8 @@ export function PosterCard({
 }) {
   const href = resumeHref ?? `/anime/${title.slug}`;
   const badge = statusBadge(title);
+  /* ТЗ 1.2: число серий карточки — из единого правила (заглушки 12/24 не показываем). */
+  const card = cardEpisodeInfo(title);
   return (
     /* S3.1: article→div — после h3→p карточка без заголовка давала W3C-warning
        «Article lacks heading» ×20 на главной; card-семантика классом .card сохранена. */
@@ -54,10 +57,7 @@ export function PosterCard({
         <span className="sr-only">{title.ru}</span>
         <PosterArt src={title.poster} seed={title.slug} initials={title.romaji} alt={`Постер: ${title.ru}`} />
         {showBadge && badge ? (
-          <span
-            className="card__badge"
-            style={{ '--badge-color': badge.color } as CSSProperties}
-          >
+          <span className="card__badge" style={{ '--badge-color': badge.color } as CSSProperties}>
             {badge.label}
           </span>
         ) : null}
@@ -69,7 +69,15 @@ export function PosterCard({
         ) : null}
         <span className="card__foot">
           <span>{title.year}</span>
-          {title.episodes > 1 ? <span>{title.episodes} {episodesWord(title.episodes)}</span> : <span>{TYPE_LABELS[title.type]}</span>}
+          {/* ТЗ 1.2: «1134+ серий» для онгоинга без итога, ничего — для анонса с заглушкой */}
+          {card.count !== null && card.count > 1 ? (
+            <span>
+              {card.count}
+              {card.totalUnknown ? '+' : ''} {episodesWord(card.count)}
+            </span>
+          ) : (
+            <span>{TYPE_LABELS[title.type]}</span>
+          )}
         </span>
         <span className="card__play" aria-hidden>
           <IconPlay size={18} />
@@ -90,7 +98,7 @@ export function PosterCard({
         </p>
         {resumeEpisode ? (
           <p className="card__resume">
-            {resumeNote ?? (title.episodes > 1 ? `Продолжить с серии ${resumeEpisode}` : 'Продолжить просмотр')}
+            {resumeNote ?? (card.count !== null && card.count > 1 ? `Продолжить с серии ${resumeEpisode}` : 'Продолжить просмотр')}
           </p>
         ) : null}
       </div>

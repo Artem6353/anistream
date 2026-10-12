@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Title } from '@/lib/types';
 import { useEffect, useState } from 'react';
+import { episodeCount, episodeInfo } from '@/lib/episodes';
+import { availabilityHint } from '@/lib/source-hints';
 import { useLibrary } from '@/lib/library';
 import { IconCheck, IconPlay } from '@/components/ui/icons';
 
@@ -26,23 +28,44 @@ export function EpisodeList({ title }: { title: Title }) {
     };
   }, [title.slug]);
   const entry = history.find((h) => h.slug === title.slug);
+  /* ТЗ 1.2: список строим от числа ВЫШЕДШИХ серий. Раньше брали поле `episodes`,
+     где у онгоингов лежала заглушка импортера 24: у «Ван-Пис» рисовалось 24 кнопки
+     вместо 1134, а серия 25 отдавала 404. */
+  const total = episodeCount(title) ?? 0;
+  const { totalUnknown } = episodeInfo(title);
   const CHUNK = 60;
   const [chunk, setChunk] = useState(0);
-  const chunks = Math.max(1, Math.ceil(title.episodes / CHUNK));
-  const episodes = Array.from({ length: title.episodes }, (_, i) => i + 1).slice(chunk * CHUNK, (chunk + 1) * CHUNK);
+  const chunks = Math.max(1, Math.ceil(total / CHUNK));
+  const episodes = Array.from({ length: total }, (_, i) => i + 1).slice(chunk * CHUNK, (chunk + 1) * CHUNK);
+
+  if (!total) {
+    return (
+      <div className="episodes">
+        <div className="episodes__head">
+          <h2 className="section-title">Серии</h2>
+        </div>
+        <p className="panel__note">
+          Число серий ещё не объявлено: как только источник подтвердит количество или даты выхода, список появится здесь автоматически.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="episodes">
       <div className="episodes__head">
         <h2 className="section-title">Серии</h2>
-        <span className="episodes__count">{title.episodes} шт.</span>
+        <span className="episodes__count">
+          {total}
+          {totalUnknown ? '+' : ''} шт.
+        </span>
       </div>
       <form
         className="episodes__jump"
         onSubmit={(e) => {
           e.preventDefault();
           const n = Number(jump);
-          if (Number.isInteger(n) && n >= 1 && n <= title.episodes) {
+          if (Number.isInteger(n) && n >= 1 && n <= total) {
             router.push(`/anime/${title.slug}/${n}`);
             setJump('');
           }
@@ -51,7 +74,7 @@ export function EpisodeList({ title }: { title: Title }) {
         <input
           className="input episodes__jump-input"
           inputMode="numeric"
-          placeholder={`Перейти к серии (1–${title.episodes})`}
+          placeholder={`Перейти к серии (1–${total})`}
           value={jump}
           onChange={(e) => setJump(e.target.value.replace(/\D/g, '').slice(0, 4))}
           aria-label="Перейти к серии"
@@ -61,7 +84,7 @@ export function EpisodeList({ title }: { title: Title }) {
         <div className="chips" style={{ marginBottom: 10 }}>
           {Array.from({ length: chunks }, (_, i) => (
             <button key={i} type="button" className={`chip ${chunk === i ? 'is-active' : ''}`} onClick={() => setChunk(i)}>
-              {i * CHUNK + 1}–{Math.min(title.episodes, (i + 1) * CHUNK)}
+              {i * CHUNK + 1}–{Math.min(total, (i + 1) * CHUNK)}
             </button>
           ))}
         </div>
@@ -82,16 +105,8 @@ export function EpisodeList({ title }: { title: Title }) {
               <span className="episode__label">Серия {ep}</span>
               {avail ? (
                 <span
-                  className={`episode__avail episode__avail--${avail[ep] ?? 'demo'}`}
-                  title={
-                    avail[ep] === 'cache'
-                      ? 'Источник серии в кэше'
-                      : avail[ep] === 'synth'
-                        ? 'Источник синтезируется из кэша'
-                        : avail[ep] === 'guess'
-                          ? 'Источник подбирается пулом озвучек'
-                          : 'Только тест-поток'
-                  }
+                  className={`episode__avail episode__avail--${availabilityHint(avail[ep]).tone}`}
+                  title={availabilityHint(avail[ep]).label}
                 />
               ) : null}
               {done ? (
@@ -99,7 +114,10 @@ export function EpisodeList({ title }: { title: Title }) {
                   <IconCheck size={13} />
                 </span>
               ) : watched ? (
-                <span className="episode__resume" title={`Продолжить с ${Math.round((watched.position / Math.max(1, watched.duration)) * 100)}%`}>
+                <span
+                  className="episode__resume"
+                  title={`Продолжить с ${Math.round((watched.position / Math.max(1, watched.duration)) * 100)}%`}
+                >
                   <IconPlay size={12} />
                 </span>
               ) : null}

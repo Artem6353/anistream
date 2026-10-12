@@ -49,11 +49,21 @@ export async function resolveKodikDirect(ctx: ProviderContext): Promise<ResolveO
     const client = Client.fromToken(tk, { kodikApiUrl: cfg.kodik.apiUrl, fetcher });
     return client.search(params as never);
   };
+  /* Аудит 2026-10 (ТЗ 1.6.6): getPublicToken — DEV-утилита. Автоподбор публичных
+     токенов плеера Kodik в продакшен-пути не используется: токены ротируются, а
+     Kodik блокирует дата-центр IP (401), поэтому прод получает предсказуемую ошибку
+     вместо случайного чужого токена. Включается явно KODIK_ALLOW_PUBLIC_TOKEN=1. */
+  const allowPublicToken =
+    ['1', 'true', 'yes', 'on'].includes(String(process.env.KODIK_ALLOW_PUBLIC_TOKEN ?? '').toLowerCase()) ||
+    process.env.NODE_ENV !== 'production';
   let response;
   try {
     response = await searchWith(token);
   } catch (e) {
     if (!isAuthError(e)) return { sources: [], error: e instanceof Error ? e.message : 'kodik error' };
+    if (!allowPublicToken) {
+      return { sources: [], error: 'Kodik: токен отклонён (нужен собственный KODIK_TOKEN)' };
+    }
     try {
       const publicToken = String(await getPublicToken({ fetcher }));
       if (publicToken === token) return { sources: [], error: 'Kodik: токен отклонён (ротация/geo-block)' };

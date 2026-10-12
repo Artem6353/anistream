@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getTitle } from '@/lib/catalog';
+import { episodeCount } from '@/lib/episodes';
 import { resolveEpisodeSources, contextFromTitle, providersWithAvailability } from '@/lib/providers';
 import { providerResponseCacheControl } from '@/lib/providers/response-cache';
 
@@ -15,12 +16,7 @@ interface Props {
  *  числом одновременных клиентов. Результат общий для всех участников. */
 const inflight = new Map<string, ReturnType<typeof resolveEpisodeSources>>();
 
-
-function resolveOnce(
-  key: string,
-  ctx: Parameters<typeof resolveEpisodeSources>[0],
-  options: { liveOnly?: boolean } = {},
-) {
+function resolveOnce(key: string, ctx: Parameters<typeof resolveEpisodeSources>[0], options: { liveOnly?: boolean } = {}) {
   const existing = inflight.get(key);
   if (existing) return existing;
   const p = resolveEpisodeSources(ctx, options).finally(() => inflight.delete(key));
@@ -39,10 +35,14 @@ export async function GET(request: Request, { params }: Props) {
   const { slug, episode: episodeRaw } = await params;
   const title = getTitle(slug);
   if (!title) return NextResponse.json({ error: 'title not found' }, { status: 404 });
-  /* Аудит 30.09 (P2-24): 'abc'/9999 молча отдавали серию 1 — невалидный ввод теперь 400. */
+  /* Аудит 30.09 (P2-24): 'abc'/9999 молча отдавали серию 1 — невалидный ввод теперь 400.
+     Аудит 2026-10 (ТЗ 1.2): граница — число ВЫШЕДШИХ серий из единого правила.
+     Раньше здесь стояло поле `episodes` с заглушкой импортера: /api/providers/one-piece/25
+     отвечал 400, хотя серий вышло 1134. */
   const epNum = Number(episodeRaw);
-  if (!Number.isInteger(epNum) || epNum < 1 || epNum > Math.max(1, title.episodes)) {
-    return NextResponse.json({ error: 'bad episode' }, { status: 400 });
+  const maxEpisode = Math.max(1, episodeCount(title) ?? 1);
+  if (!Number.isInteger(epNum) || epNum < 1 || epNum > maxEpisode) {
+    return NextResponse.json({ error: 'bad episode', maxEpisode }, { status: 400 });
   }
   const episode = epNum;
   const searchParams = new URL(request.url).searchParams;

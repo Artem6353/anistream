@@ -59,6 +59,8 @@ export interface ProviderMeta {
 export interface ProviderContext {
   slug: string;
   anilistId: number;
+  /** id тайтла в каталоге (= AniList id) — ключ таблицы `episode_sources` (ТЗ 1.6). */
+  animeId?: number;
   malId?: number | null;
   shikimoriId?: number | null;
   title: string;

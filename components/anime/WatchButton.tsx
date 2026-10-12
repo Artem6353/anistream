@@ -14,7 +14,7 @@ import { IconPlay } from '@/components/ui/icons';
  * Серия берётся из самой свежей записи slug по updatedAt (история хранится
  * newest-first, но перестраховываемся явным максимумом — как в рейле).
  */
-export function WatchButton({ slug, episodes, type }: { slug: string; episodes: number; type?: string }) {
+export function WatchButton({ slug, episodes, type }: { slug: string; episodes: number | null; type?: string }) {
   const { history } = useLibrary();
   let entry: HistoryEntry | undefined;
   for (const h of history) {
@@ -33,7 +33,9 @@ export function WatchButton({ slug, episodes, type }: { slug: string; episodes: 
     );
   }
 
-  if (isMovie || episodes <= 1) {
+  /* Аудит 2026-10 (ТЗ 1.2): episodes = null — итог не объявлен (онгоинг/анонс),
+     но смотреть можно: кнопка «Продолжить» ведёт на сохранённую серию. */
+  if (isMovie || (episodes !== null && episodes <= 1)) {
     return (
       <Link className="btn btn--primary btn--lg" href={`/anime/${slug}/1`}>
         <IconPlay size={16} />
