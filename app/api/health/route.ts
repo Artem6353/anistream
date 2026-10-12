@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { allTitles } from '@/lib/catalog';
+import { allTitles, catalogSourceInfo } from '@/lib/catalog';
 import { providersWithAvailability } from '@/lib/providers/registry-meta';
 import { getProvidersConfig } from '@/lib/config/providers.config';
 import { kvEnabled, kvPing } from '@/lib/providers/cache-kv';
@@ -50,6 +50,8 @@ export async function GET() {
       ts: new Date().toISOString(),
       uptime: Math.round(osUptime()),
       titles: total,
+      /* ТЗ 2.1: видно, откуда фактически прочитан каталог (db или файловый fallback). */
+      catalog: catalogSourceInfo(),
       catalogMs: Math.round(performance.now() - t0),
       supabase: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
       configuredProviders,

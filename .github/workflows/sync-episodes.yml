@@ -1,0 +1,81 @@
+name: Sync episodes (номера, даты, названия → Supabase)
+
+# Аудит 2026-10 (ТЗ 1.3): данные серий живут в таблице `episodes`, а не в titles.json.
+# Онгоинги — каждые 6 часов (даты устаревают быстрее всего), полный проход — раз в сутки.
+on:
+  schedule:
+    - cron: "15 */6 * * *" # онгоинги каждые 6 часов
+    - cron: "40 3 * * *" # полный проход раз в сутки (resumable по чекпоинту)
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Режим: ongoing (только онгоинги) или full (весь каталог)"
+        type: choice
+        default: ongoing
+        options: [ongoing, full]
+      limit:
+        description: "Лимит тайтлов за прогон (0 = без лимита)"
+        type: string
+        default: "0"
+      titles:
+        description: "Добирать названия серий через Jikan (медленно, ~3 req/min)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: aninova-sync-episodes
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # Полный проход — это ~6500 тайтлов батчами по 50 + постраничные дозапросы длинных
+    # онгоингов; закладываем запас. Cron-прогон прерывается по чекпоинту и продолжается.
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/cache@v4
+        with:
+          # Чекпоинт между прогонами: полный проход не начинает каждый раз с нуля.
+          path: .cache/sync-episodes-checkpoint.json
+          key: sync-episodes-${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'cron' }}-${{ github.run_id }}
+          restore-keys: |
+            sync-episodes-${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'cron' }}-
+            sync-episodes-
+
+      - name: sync episodes
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SHIKIMORI_USER_AGENT: ${{ secrets.SHIKIMORI_USER_AGENT }}
+          MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || '' }}
+          LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.limit || '0' }}
+          EPISODE_TITLES: ${{ github.event_name == 'workflow_dispatch' && inputs.titles && 'jikan' || '' }}
+        run: |
+          set -euo pipefail
+          # cron «15 */6» → онгоинги; cron «40 3» → полный проход (resumable).
+          if [ -n "$MODE" ]; then
+            mode="$MODE"
+          elif [ "$(date -u +%-H)" = "3" ]; then
+            mode="full"
+          else
+            mode="ongoing"
+          fi
+          echo "режим: $mode (лимит: ${LIMIT:-0})"
+          ARGS="--mode $mode"
+          if [ "${LIMIT:-0}" != "0" ]; then ARGS="$ARGS --limit $LIMIT"; fi
+          node scripts/sync-episodes.mjs $ARGS
+
+      - name: coverage report
+        if: always()
+        run: node scripts/sync-episodes.mjs --report || true

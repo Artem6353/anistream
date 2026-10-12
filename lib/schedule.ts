@@ -1,108 +1,134 @@
-import { weekBounds } from './schedule-core';
-export { weekBounds, groupByDay, todayIndex } from './schedule-core';
+import { weekBounds, mskDayIndex } from './schedule-core';
+export { weekBounds, groupByDay, todayIndex, mskDayIndex } from './schedule-core';
 import type { ScheduleEntry } from './types';
-import { loadTitles } from './catalog';
-import { hashStr } from './format';
+import { loadTitles, titleById } from './catalog';
 
-const ANILIST = 'https://graphql.anilist.co';
+/**
+ * Расписание выхода серий (аудит 2026-10, ТЗ 1.1).
+ *
+ * Раньше рантайм Vercel сам ходил в AniList и при 429 (лимит 90 запросов/мин по IP,
+ * а IP у Vercel общие) подставлял `demoWeek()` — детерминированную фейковую неделю
+ * из хеша слага. На проде это выглядело как «AniList недоступен — показана неделя
+ * из кэша (демо)» и карточки «One Piece серия 5 / Наруто серия 11 / Хоримия серия 8».
+ *
+ * Теперь:
+ *  1) источник №1 — таблица Supabase `airing_schedule`, которую наполняет воркер
+ *     scripts/sync-airing.mjs из GitHub Actions (свой IP, cron каждые 30 минут);
+ *  2) источник №2 (fallback до заполнения таблицы) — реальный график `airing`
+ *     из каталога, отфильтрованный по свежести: прошедшие серии старше 2 дней не
+ *     показываются, чтобы не выдавать устаревшие даты за актуальные;
+ *  3) данных нет вовсе → пустой список, UI рисует нормальное пустое состояние.
+ * Демо-недели больше нет: прямые запросы к AniList из рантайма удалены.
+ */
 
-const QUERY = `query($start:Int!,$end:Int!){
-  Page(page:1,perPage:250){
-    airingSchedules(airingAt_greater:$start,airingAt_lesser:$end, sort:TIME){
-      airingAt episode mediaId
-      media{ id title{romaji} coverImage{large} }
-    }
-  }
-}`;
+const SUPA_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').replace(/\/$/, '');
+const SUPA_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
+/** Сколько дней назад ещё показываем вышедшие серии (блок «Вчера» на главной). */
+const RECENT_DAYS = 2;
 
+type Row = { anime_id: number; episode: number; airing_at: string };
 
-async function liveSchedule(): Promise<ScheduleEntry[]> {
-  const { start, end } = weekBounds();
-  const res = await fetch(ANILIST, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-    },
-    body: JSON.stringify({ query: QUERY, variables: { start, end } }),
-    next: { revalidate: 3600 },
-  });
-  if (!res.ok) throw new Error(`anilist ${res.status}`);
-  const json = await res.json();
-  const rows = json?.data?.Page?.airingSchedules ?? [];
-  type AiringRow = {
-    airingAt: number;
-    episode: number;
-    media: { id: number; title: { romaji: string }; coverImage: { large: string } };
-  };
-  return (rows as AiringRow[])
-    .filter((r) => r.media)
-    .map((r) => {
-      const known = loadTitles().find((t) => t.anilistId === r.media.id);
-      return {
-        at: r.airingAt * 1000,
-        episode: r.episode,
-        anilistId: r.media.id,
-        slug: known?.slug,
-        ru: known?.ru,
-        romaji: r.media.title.romaji,
-        poster: r.media.coverImage.large,
-        source: 'live',
-      } as ScheduleEntry;
-    })
-    .sort((a: ScheduleEntry, b: ScheduleEntry) => a.at - b.at);
-}
-
-/** Номер серии для демо-расписания: беззнаковый сдвиг исключает отрицательные значения. */
-export function demoEpisodeFromHash(hash: number): number {
-  const unsignedHash = hash >>> 0;
-  return ((unsignedHash >>> 6) % 12) + 1;
-}
-
-/** Детерминированное демо-расписание: офлайн-фолбэк и SSR-заготовка. */
-export function demoWeek(): ScheduleEntry[] {
-  const { start } = weekBounds();
-  const pool = [...loadTitles()].sort((a, b) => b.favourites - a.favourites).slice(0, 28);
-  return pool
-    .map((t) => {
-      const h = hashStr(t.slug) >>> 0; // unsigned: отрицательный хеш давал NaN at
-      const weekday = h % 7;
-      const hour = 10 + (h >>> 4) % 13;
-      const minute = [0, 15, 30, 45][(h >>> 8) % 4];
-      const at = (start + weekday * 86400 + hour * 3600 + minute * 60) * 1000;
-      return {
-        at,
-        episode: demoEpisodeFromHash(h),
-        anilistId: t.anilistId,
-        slug: t.slug,
-        ru: t.ru,
-        romaji: t.romaji,
-        poster: t.poster,
-        source: 'demo',
-      } as ScheduleEntry;
-    })
-    .sort((a, b) => a.at - b.at);
-}
-
-let cache: { at: number; entries: ScheduleEntry[] } | null = null;
-
-export async function getWeekSchedule(): Promise<{ entries: ScheduleEntry[]; live: boolean }> {
-  if (cache && Date.now() - cache.at < 10 * 60_000) return { entries: cache.entries, live: cache.entries[0]?.source === 'live' };
+async function readDbWindow(startMs: number, endMs: number): Promise<ScheduleEntry[] | null> {
+  if (!SUPA_URL || !SUPA_ANON) return null;
+  const from = new Date(startMs).toISOString();
+  const to = new Date(endMs).toISOString();
+  const query =
+    `${SUPA_URL}/rest/v1/airing_schedule` +
+    `?select=anime_id,episode,airing_at&airing_at=gte.${from}&airing_at=lte.${to}` +
+    `&order=airing_at.asc&limit=5000`;
   try {
-    const entries = await liveSchedule();
-    if (entries.length) {
-      cache = { at: Date.now(), entries };
-      return { entries, live: true };
-    }
-    throw new Error('empty');
+    const res = await fetch(query, {
+      headers: { apikey: SUPA_ANON, Authorization: `Bearer ${SUPA_ANON}` },
+      signal: AbortSignal.timeout(6000),
+      /* ISR-кэш: страница и так ревалидируется раз в 10 минут, не дёргаем БД чаще. */
+      next: { revalidate: 600 },
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Row[];
+    if (!Array.isArray(rows)) return null;
+    return rows
+      .filter((r) => Number.isFinite(r.anime_id) && Number.isFinite(r.episode))
+      .map((r) => toEntry(r.anime_id, r.episode, Date.parse(r.airing_at), 'db'))
+      .filter((e): e is ScheduleEntry => e !== null && Number.isFinite(e.at));
   } catch {
-    const entries = demoWeek();
-    cache = { at: Date.now(), entries };
-    return { entries, live: false };
+    return null; // БД недоступна — падаем в каталожный fallback, страницу не роняем
   }
 }
 
+function toEntry(animeId: number, episode: number, at: number, source: ScheduleEntry['source']): ScheduleEntry | null {
+  const known = titleById.get(animeId);
+  // В расписании показываем только тайтлы нашего каталога: иначе кликнуть некуда.
+  if (!known || known.hidden) return null;
+  return {
+    at,
+    episode,
+    anilistId: animeId,
+    slug: known.slug,
+    ru: known.ru,
+    romaji: known.romaji,
+    poster: known.poster,
+    source,
+  };
+}
 
+/** Fallback: реальный график из каталога (без фейковых номеров и дат). */
+export function catalogWeek(startMs: number, endMs: number): ScheduleEntry[] {
+  const out: ScheduleEntry[] = [];
+  for (const t of loadTitles()) {
+    for (const a of t.airing ?? []) {
+      if (!Number.isFinite(a.at) || a.at < startMs || a.at > endMs) continue;
+      const entry = toEntry(t.anilistId, a.ep, a.at, 'catalog');
+      if (entry) out.push(entry);
+    }
+  }
+  return out.sort((a, b) => a.at - b.at);
+}
+
+/** Границы окна расписания в unix-ms: −2 дня … +8 дней (как у воркера). */
+export function scheduleWindow(now = Date.now()): { startMs: number; endMs: number } {
+  return { startMs: now - RECENT_DAYS * 86_400_000, endMs: now + 8 * 86_400_000 };
+}
+
+export type ScheduleSource = 'db' | 'catalog' | 'empty';
+
+export interface WeekSchedule {
+  entries: ScheduleEntry[];
+  /** Откуда данные: БД, каталожный fallback или пусто. В UI не показывается как «демо». */
+  source: ScheduleSource;
+  /** ISO-время самой свежей записи — для подписи «обновлено N назад». */
+  freshAt: number | null;
+}
+
+/** Расписание на окно −2…+8 дней. Не бросает: при любом сбое — пустой список. */
+export async function getSchedule(now = Date.now()): Promise<WeekSchedule> {
+  const { startMs, endMs } = scheduleWindow(now);
+  const fromDb = await readDbWindow(startMs, endMs);
+  const entries = fromDb && fromDb.length ? fromDb : catalogWeek(startMs, endMs);
+  const freshAt = entries.reduce((m, e) => (e.at > m ? e.at : m), 0) || null;
+  return {
+    entries,
+    source: entries.length ? ((fromDb && fromDb.length ? 'db' : 'catalog') as ScheduleSource) : 'empty',
+    freshAt,
+  };
+}
+
+/** Неделя Пн–Вс МСК для доски расписания. */
+export async function getWeekSchedule(): Promise<WeekSchedule & { live: boolean }> {
+  const { start, end } = weekBounds();
+  const all = await getSchedule();
+  const entries = all.entries.filter((e) => {
+    const ms = e.at;
+    return ms >= start * 1000 && ms < end * 1000;
+  });
+  /* `live` сохранён для совместимости с API-контрактом (/api/schedule), но больше
+     не означает «демо»: true — данные из БД воркера, false — каталожный fallback. */
+  return { ...all, entries, live: all.source === 'db' };
+}
+
+/** Эфиры конкретного дня (МСК): блок «Сегодня» на главной и в сайдбаре. */
+export async function getDaySchedule(dayOffset = 0, now = Date.now()): Promise<ScheduleEntry[]> {
+  const { entries } = await getSchedule(now);
+  const target = mskDayIndex(now + dayOffset * 86_400_000);
+  return entries.filter((e) => mskDayIndex(e.at) === target);
+}

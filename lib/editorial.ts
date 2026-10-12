@@ -59,7 +59,15 @@ export interface Editorial {
   links: { href: string; name: string }[];
 }
 
-export function titleEditorial(t: Title): Editorial {
+/** Данные о сериях для «свежести ленты»: максимум из таблицы `episodes`/`airing_schedule`
+ *  и каталожного fallback (lib/episode-data.ts). */
+export interface Freshness {
+  maxNumber: number;
+  lastAiredAt: number | null;
+  source: 'db' | 'catalog' | 'empty';
+}
+
+export function titleEditorial(t: Title, fresh?: Freshness): Editorial {
   const paragraphs: string[] = [];
   const links: { href: string; name: string }[] = [];
 
@@ -94,11 +102,17 @@ export function titleEditorial(t: Title): Editorial {
     for (const x of sim) links.push({ href: `/anime/${x.slug}`, name: x.ru });
   }
 
-  // 5) свежесть эфира
+  /* 5) свежесть эфира.
+     ТЗ 1.3.5: считаем из таблицы `episodes`/`airing_schedule`, а не из поля `airing`
+     в titles.json. На проде в октябре 2026 страница «Ван-Пис» сообщала «последняя серия
+     вышла 29 июня 2025 (эп. 1134)» — ровно потому, что airing не обновлялся с импорта. */
   const air = t.airing ?? [];
-  if (air.length && t.status === 'ongoing') {
-    const last = air.reduce((m, a) => (a.at > m.at ? a : m), air[0]);
-    if (last.at > 0) paragraphs.push(`Свежесть ленты: последняя серия вышла ${ruDate(last.at)} (эп. ${last.ep}); расписание выхода обновляется автоматически.`);
+  const lastAt = fresh?.lastAiredAt ?? (air.length ? air.reduce((m, a) => (a.at > m.at ? a : m), air[0]).at : 0);
+  const lastEp = fresh?.maxNumber ?? (air.length ? air.reduce((m, a) => (a.ep > m.ep ? a : m), air[0]).ep : 0);
+  if (lastAt > 0 && lastEp > 0 && t.status === 'ongoing') {
+    paragraphs.push(
+      `Свежесть ленты: последняя серия вышла ${ruDate(lastAt)} (эп. ${lastEp}); расписание выхода обновляется автоматически.`,
+    );
   } else if (air.length && t.status === 'upcoming') {
     const first = air.reduce((m, a) => (a.at < m.at ? a : m), air[0]);
     if (first.at > 0) paragraphs.push(`Премьера по графику AniList: ${ruDate(first.at)}.`);

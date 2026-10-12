@@ -2,32 +2,37 @@
 
 import { useEffect, useState } from 'react';
 import type { ScheduleEntry } from '@/lib/types';
+import type { ScheduleSource } from '@/lib/schedule';
 import { ScheduleBoard, TodayList } from './ScheduleBoard';
 
 /**
- * Прогрессивное расписание: SSR отдаёт детерминированный демо-набор (работает
- * офлайн), затем клиент подтягивает живые данные AniList через /api/schedule.
+ * Прогрессивное расписание (аудит 2026-10, ТЗ 1.1): SSR отдаёт РЕАЛЬНЫЕ данные из
+ * таблицы airing_schedule, клиент только освежает их через /api/schedule.
+ * Демо-набора больше нет — раньше SSR рисовал фейковую неделю из хеша слага,
+ * а клиент её заменял только при удачном ответе AniList (что на Vercel почти
+ * всегда заканчивалось 429).
  */
 export function ScheduleClient({
   mode,
   fallback,
+  source,
 }: {
   mode: 'week' | 'today';
   fallback: ScheduleEntry[];
+  source: ScheduleSource;
+  freshAt?: number | null;
 }) {
   const [entries, setEntries] = useState(fallback);
-  const [live, setLive] = useState(false);
+  const [origin, setOrigin] = useState<ScheduleSource>(source);
 
   useEffect(() => {
     let cancelled = false;
     fetch('/api/schedule')
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
-        if (cancelled || !json) return;
-        if (json.live && Array.isArray(json.entries) && json.entries.length) {
-          setEntries(json.entries);
-          setLive(true);
-        }
+        if (cancelled || !json || !Array.isArray(json.entries)) return;
+        setEntries(json.entries);
+        if (json.source === 'db' || json.source === 'catalog') setOrigin(json.source);
       })
       .catch(() => {});
     return () => {
@@ -35,5 +40,5 @@ export function ScheduleClient({
     };
   }, []);
 
-  return mode === 'week' ? <ScheduleBoard entries={entries} live={live} /> : <TodayList entries={entries} live={live} />;
+  return mode === 'week' ? <ScheduleBoard entries={entries} source={origin} /> : <TodayList entries={entries} source={origin} />;
 }

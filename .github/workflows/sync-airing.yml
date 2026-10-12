@@ -1,0 +1,46 @@
+name: Sync airing schedule (AniList → Supabase)
+
+# Аудит 2026-10 (ТЗ 1.1): расписание опрашивается из GitHub Actions, а не из рантайма
+# Vercel. Причина: AniList даёт 90 запросов/мин по IP, а IP у Vercel общие —
+# /schedule стабильно ловил 429 и показывал демо-неделю.
+on:
+  schedule:
+    - cron: "*/30 * * * *" # каждые 30 минут: окно −2…+8 дней
+  workflow_dispatch: # ручной прогон после деплоя/миграции
+
+# Два параллельных прогона писали бы одни и те же строки — сериализуем.
+concurrency:
+  group: aninova-sync-airing
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Каталог нужен только чтобы в логе было покрытие по нашим тайтлам;
+          # глубина 1 — не тянем историю с 28 МБ titles.json.
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: sync airing window
+        env:
+          # Секреты задаются в Settings → Secrets and variables → Actions:
+          #   SUPABASE_URL (или NEXT_PUBLIC_SUPABASE_URL) + SUPABASE_SERVICE_KEY
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SHIKIMORI_USER_AGENT: ${{ secrets.SHIKIMORI_USER_AGENT }}
+        run: node scripts/sync-airing.mjs
+
+      - name: warn if secrets are missing
+        if: failure()
+        run: |
+          echo "::warning::sync-airing завершился с ошибкой. Если в логе «SUPABASE_URL/SUPABASE_SERVICE_KEY не заданы» — добавьте секреты NEXT_PUBLIC_SUPABASE_URL и SUPABASE_SERVICE_KEY (см. docs/DEPLOY.md)."
