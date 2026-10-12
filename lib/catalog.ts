@@ -172,6 +172,18 @@ export function catalogSourceInfo(): { source: 'db' | 'file'; configured: 'db' |
   return { source: RAW_FROM_DB ? 'db' : 'file', configured: catalogSource(), count: RAW?.titles.length ?? 0 };
 }
 
+/* Самострахование после инцидента 2026-10-13: хук instrumentation жил в файле
+   instrumentation.node.ts, который Next 16 не распознаёт (детектор требует имя
+   `instrumentation.{ts,tsx,js,jsx}`), — прайм молча не запускался, и каждый
+   холодный процесс парсил 28 МБ titles.json вместо кэша из БД. Теперь прайм
+   стартует ЕЩЁ и при первой загрузке модуля в nodejs-рантайме (повторный вызов
+   безопасен: primeCatalogFromDb возвращает тот же промис). В edge-бандлы модуль
+   не попадает: proxy.ts импортирует только edge-safe lib/genre-redirect; guard
+   по NEXT_RUNTIME оставлен как вторая линия защиты. */
+if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
+  void primeCatalogFromDb().catch(() => {});
+}
+
 export function loadTitles(includeHidden = false): Title[] {
   const titles = rawTitles();
   return includeHidden ? titles : titles.filter((t) => !t.hidden);

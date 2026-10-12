@@ -2,7 +2,13 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { LIMITS, rateLimit } from '@/lib/rateLimit';
 import { clientIp } from '@/lib/ip';
-import { genreRedirectTarget } from '@/lib/genre-pages';
+/* ИНЦИДЕНТ 2026-10-13: раньше genreRedirectTarget импортировался из
+   '@/lib/genre-pages', который транзитивно тянет lib/catalog (node:fs,
+   statSync в module-scope). Edge Runtime не имеет node:fs — middleware падал
+   на module-scope и весь matcher (/api/*, /genre/*) отвечал голым 500.
+   Правило редиректа вынесено в edge-safe '@/lib/genre-redirect' (только
+   lib/labels); регрессия закрыта тестом tests/edge-import-guard.test.ts. */
+import { genreRedirectTarget } from '@/lib/genre-redirect';
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
