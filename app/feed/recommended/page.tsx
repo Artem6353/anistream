@@ -1,46 +1,27 @@
-'use client';
+/* Аудит 2026-10 (ТЗ 1.5/1.7.4): страница была клиентским компонентом, а в App Router
+ * клиентский компонент НЕ МОЖЕТ экспортировать metadata. В результате страница
+ * наследовала title/og главной («AniNova — каталог аниме: онгоинги, расписание и плеер»),
+ * не имела собственного canonical и og:url и не могла быть закрыта от индексации.
+ * Проверка на проде 12.10.2026: /feed, /clubs, /forum, /quiz, /messages и
+ * /profile/settings отдавали title главной и пустой canonical.
+ * Теперь это серверная обёртка с metadata, а прежний компонент живёт в components/pages/. */
+import type { Metadata } from 'next';
+import { sectionRobots } from '@/lib/section-index';
+import RecommendedFeedPageClient from '@/components/pages/RecommendedFeedPageClient';
 
-import { useEffect, useState } from 'react';
-import type { Title } from '@/lib/types';
-import { useLibrary } from '@/lib/library';
-import { PosterCard } from '@/components/anime/PosterCard';
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Рекомендации сообщества',
+    description: 'Что смотрят на AniNova прямо сейчас: рекомендации участников сообщества и популярные серии недели.',
+    alternates: { canonical: '/feed/recommended' },
+  /* ТЗ 1.7.4: раздел индексируется, когда в нём появился контент (порог — записей).
+     Пока пусто — noindex: тонкие страницы тянут качество хоста вниз.
+     Индексация вернётся автоматически, правка кода не потребуется. */
+  robots: await sectionRobots('reviews'),
+    openGraph: { type: 'website', url: '/feed/recommended', locale: 'ru_RU', siteName: 'AniNova' },
+  };
+}
 
-/** Персональная лента рекомендаций (ТЗ блок 21): гибрид контентной и коллаборативной фильтрации,
-    не повторяет просмотренное. */
 export default function RecommendedPage() {
-  const { history, lists, bookmarks } = useLibrary();
-  const [items, setItems] = useState<Title[]>([]);
-  const slugs = [...new Set([...history.map((h) => h.slug), ...Object.keys(lists), ...bookmarks])];
-
-  useEffect(() => {
-    if (!slugs.length) return;
-    let cancelled = false;
-    fetch(`/api/reco?slugs=${encodeURIComponent(slugs.join(','))}&limit=24`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => !cancelled && setItems(j?.items ?? []))
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slugs.join(',')]);
-
-  return (
-    <div className="container">
-      <h1>Для вас</h1>
-      <p className="stats__empty">Гибрид рекомендаций: ваши жанры + вкусы похожих пользователей. Просмотренное исключено.</p>
-      {slugs.length ? (
-        <div className="poster-grid">
-          {items.map((t) => (
-            <PosterCard key={t.slug} title={t} />
-          ))}
-        </div>
-      ) : (
-        <div className="empty-state">
-          <h2>Пока нет данных</h2>
-          <p>Посмотрите пару серий или добавьте тайтлы в список — лента подстроится под вас.</p>
-        </div>
-      )}
-    </div>
-  );
+  return <RecommendedFeedPageClient />;
 }

@@ -6,6 +6,8 @@
    - чистит BBCode/HTML из описаний, нормализует URL кадров.
    Запуск: npm run enrich   (можно прерывать и продолжать) */
 import { readFileSync, writeFileSync } from 'node:fs';
+/* ТЗ 1.4: описания режем по границе предложения, а не посреди слова. */
+import { clampToSentence } from './lib/text.mjs';
 
 const ARGS = process.argv.slice(2);
 const P = 'lib/data/titles.json';
@@ -118,7 +120,7 @@ async function worker() {
     if (!t.shikimori && t.malId) {
       const direct = await getJson(`/api/animes/${t.malId}`);
       if (direct?.id) {
-        const desc = clean(direct.description)?.slice(0, 900);
+        const desc = clampToSentence(clean(direct.description) ?? '', 900);
         t.shikimori = {
           id: direct.id,
           ru: direct.russian || null,
@@ -143,7 +145,7 @@ async function worker() {
         found.find((f) => target.startsWith(norm(f.name).slice(0, 12))) ??
         found[0];
       const full = await getJson(`/api/animes/${best.id}`);
-      const desc = clean(full?.description)?.slice(0, 900);
+      const desc = clampToSentence(clean(full?.description) ?? '', 900);
       t.shikimori = {
         id: best.id,
         ru: full?.russian || best.russian || null,

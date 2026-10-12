@@ -21,6 +21,7 @@
    Запуск: node scripts/expand-catalog.mjs [PAGES=100] [--report] [--deep]
    Env: DEEP=1|true, MAX_NEW=<число> */
 import { readFileSync, writeFileSync } from 'node:fs';
+import { clampToSentence } from './lib/text.mjs';
 
 const ARGS = process.argv.slice(2);
 const REPORT = ARGS.includes('--report');
@@ -169,12 +170,21 @@ for (const m of uniq.values()) {
     // self-heal: постер/баннер/описание добираются следующими прогонами
     if (!t.poster && m.coverImage?.large) { t.poster = m.coverImage.large; touched = true; }
     if (!t.banner && m.bannerImage) { t.banner = m.bannerImage; touched = true; }
-    if (!t.description && m.description) { t.description = cleanText(m.description).slice(0, 400); touched = true; }
+    /* ТЗ 1.4: было .slice(0, 400) — обрыв посреди слова. Режем по предложению. */
+    if (!t.description && m.description) { t.description = clampToSentence(cleanText(m.description), 400); touched = true; }
     if (touched) updated++; else skipped++;
     continue;
   }
   if (MAX_NEW && added.length >= MAX_NEW) { capped++; continue; }
-  const eps = m.episodes || (m.format === 'MOVIE' ? 1 : m.status === 'RELEASING' ? 24 : 12);
+  /* ТЗ 1.2 — КОРЕНЬ ПРОБЛЕМЫ «24 серии у Ван-Пис».
+     Было: m.episodes || (MOVIE ? 1 : RELEASING ? 24 : 12). AniList отдаёт
+     episodes=null у онгоингов без объявленного итога и у анонсов, а заглушка
+     превращала «неизвестно» в конкретное ложное число: 24 у «Ван-Пис» (вышло 1134),
+     12 у анонсов 2027 года. Дальше это число шло в список серий, в валидацию
+     /anime/[slug]/[episode] (серия 25 → 404) и в JSON-LD numberOfEpisodes.
+     Теперь: null = «итог не объявлен», UI показывает «1134+ серий» по данным
+     графика эфира (lib/episodes.ts). */
+  const eps = m.episodes || (m.format === 'MOVIE' ? 1 : null);
   const t = {
     anilistId: m.id,
     slug: (m.title.romaji || `anime-${m.id}`).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `anime-${m.id}`,
@@ -186,6 +196,7 @@ for (const m of uniq.values()) {
     season: (m.season || '').toLowerCase() || null,
     status: ({ RELEASING: 'ongoing', FINISHED: 'finished', NOT_YET_RELEASED: 'upcoming', HIATUS: 'ongoing', CANCELLED: 'finished' })[m.status] ?? 'finished',
     episodes: eps,
+    episodesReleased: null,
     score: Math.round((m.averageScore || 0) / 10 * 10) / 10,
     favourites: m.favourites || 0,
     genres: (m.genres || []).map((g) => g.toLowerCase().replace(/ /g, '-')),
@@ -193,7 +204,7 @@ for (const m of uniq.values()) {
     banner: m.bannerImage,
     trailer: m.trailer?.site === 'youtube' ? m.trailer.id : null,
     malId: m.idMal,
-    description: cleanText(m.description || '').slice(0, 400),
+    description: clampToSentence(cleanText(m.description || ''), 400),
     shikimori: null,
     relations: (m.relations?.edges ?? []).filter((e) => REL_KEEP.has(e.relationType)).map((e) => ({ id: e.node.id, type: e.relationType })),
     characters: (m.characters?.edges ?? []).map((e) => ({ name: e.node.name.full, img: e.node.image?.large ?? null, role: e.role })),

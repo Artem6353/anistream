@@ -5,6 +5,7 @@ import { TYPE_LABELS } from '@/lib/labels';
 import { PosterArt } from '@/components/anime/PosterArt';
 import { JsonLd, breadcrumbsLd, itemListLd } from '@/components/system/JsonLd';
 import { getProvidersConfig } from '@/lib/config/providers.config';
+import { clampToSentence } from '@/lib/text';
 
 export const revalidate = 3600;
 export const metadata: Metadata = {
@@ -48,7 +49,8 @@ export default function TopPage() {
                   <span>{TYPE_LABELS[t.type]}</span>
                   <span>{t.year}</span>
                 </p>
-                {t.description ? <p className="row__desc">{t.description.slice(0, 180)}…</p> : null}
+                {/* ТЗ 1.4: было .slice(0, 180) + «…» — обрыв посреди слова. */}
+                {t.description ? <p className="row__desc">{clampToSentence(t.description, 180)}</p> : null}
               </div>
             </li>
           ))}

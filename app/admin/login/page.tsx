@@ -1,32 +1,21 @@
-'use client';
+/* Аудит 2026-10 (ТЗ 1.5/1.7.4): страница была клиентским компонентом, а в App Router
+ * клиентский компонент НЕ МОЖЕТ экспортировать metadata. В результате страница
+ * наследовала title/og главной («AniNova — каталог аниме: онгоинги, расписание и плеер»),
+ * не имела собственного canonical и og:url и не могла быть закрыта от индексации.
+ * Проверка на проде 12.10.2026: /feed, /clubs, /forum, /quiz, /messages и
+ * /profile/settings отдавали title главной и пустой canonical.
+ * Теперь это серверная обёртка с metadata, а прежний компонент живёт в components/pages/. */
+import type { Metadata } from 'next';
+import AdminLoginPageClient from '@/components/pages/AdminLoginPageClient';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+export const metadata: Metadata = {
+  title: 'Вход в панель модерации',
+  description: 'Служебная страница входа в панель модерации AniNova.',
+  alternates: { canonical: '/admin/login' },
+  robots: { index: false, follow: true },
+  openGraph: { type: 'website', url: '/admin/login', locale: 'ru_RU', siteName: 'AniNova' },
+};
 
 export default function AdminLoginPage() {
-  const [token, setToken] = useState('');
-  const [err, setErr] = useState('');
-  const router = useRouter();
-  return (
-    <div className="container" style={{ paddingTop: 48 }}>
-      <form
-        className="panel"
-        style={{ maxWidth: 420, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}
-        onSubmit={async (e) => {
-          e.preventDefault();
-          const r = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
-          if (r.ok) router.push('/admin');
-          else setErr((await r.json()).error ?? 'ошибка');
-        }}
-      >
-        <h1 className="section-title">Вход в админ-панель</h1>
-        <input className="input" type="password" value={token} onChange={(e) => setToken(e.target.value)} placeholder="ADMIN_TOKEN" autoComplete="off" />
-        {err ? <p className="panel__note" style={{ color: 'var(--danger)' }}>{err}</p> : null}
-        <button className="btn btn--primary btn--md" type="submit">
-          Войти
-        </button>
-        <p className="panel__note">Токен задаётся в env (ADMIN_TOKEN); после входа хранится в httpOnly-cookie, в URL не светится.</p>
-      </form>
-    </div>
-  );
+  return <AdminLoginPageClient />;
 }

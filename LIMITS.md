@@ -14,9 +14,19 @@
 
 ## Git-хранилище каталога (аудит 30.09)
 
-`lib/data/titles.json` — 28 МБ, и sync-catalog/push-daily коммитят его каждые 6 ч:
-каждая версия добавляет ~2–3 МБ в pack-файл НАВСЕГДА (сейчас ~15 МБ pack, темп
-роста ~250–350 МБ/год). Оценка вариантов:
+`lib/data/titles.json` — 28 МБ, `.cache/providers-resolve-cache.json` — 98 МБ (трекается
+намеренно как seed-кэш), и sync-catalog/push-daily коммитят их каждые 6 ч:
+каждая версия добавляет ~2–3 МБ в pack-файл НАВСЕГДА (темп роста ~250–350 МБ/год).
+
+**Статус на 12.10.2026 (аудит):** подготовлен перенос каталога в Supabase —
+миграция `20261012_titles.sql`, импорт `scripts/import-titles-to-db.mjs`, чтение
+через `CATALOG_SOURCE=db` с праймом в `instrumentation.ts`, файл остался fallback'ом.
+Шаг 4 (убрать коммиты titles.json из workflows и `git rm -r --cached .cache`)
+намеренно НЕ выполнен: его можно делать только после того, как импорт отработал
+на проде и `npm run smoke` прошёл против БД (иначе прод останется без каталога).
+Порядок включения — в docs/REPORT.md, раздел «Ручные действия владельца».
+
+Оценка вариантов:
 
 | Вариант | Вердикт |
 |---|---|
@@ -39,6 +49,17 @@
 /api/health (лёгкий self-monitor; злоупотребление бессмысленно), /api/random
 (307-редирект), /api/metrics (закрыт admin-cookie до любых лимитов).
 Решение пересматривать при появлении write-поверхности или тяжёлых вычислений в этих роутах.
+
+## Аудит 2026-10: добавленные пороги и замеры
+
+| Что | Замер | Порог / действие |
+|---|---|---|
+| Страница жанра без пагинации | `/genre/comedy` — **19 677 КБ HTML, 3,5–4,2 с, `cache-control: private, no-store`, `x-vercel-cache: MISS`** (3495 карточек) | Разбито на 60 карточек + сегменты пути `/genre/[slug]/pop-2`; стало **384 КБ** и `s-maxage=1800`. Порог: >1 МБ HTML на страницу или >1 с TTFB — уменьшать `GENRE_PER_PAGE` |
+| ISR на тайтлах/сериях | `revalidate = 3600` НЕ действовал: маршрут был динамическим (нет `generateStaticParams`), каждый просмотр = вызов функции + парсинг 28 МБ JSON | Добавлены `generateStaticParams` + `dynamicParams`; on-demand страница после первого запроса отдаётся за ~16 мс из кэша |
+| Предрендер на сборке | 120 страниц тайтлов собираются в 1 ГБ RAM/heap 700 МБ (801 страница, 2,2 мин). **10 страниц серий уже роняют сборку** в «Reached heap limit» (страница тянет PlayerShell + hls.js) | `STATIC_TITLE_LIMIT=120`, `STATIC_EPISODE_TITLE_LIMIT=0`. На билд-машине Vercel памяти больше — можно поднимать через env |
+| Статический sitemap | 4 файла по ~4000 URL роняли сборку по памяти; `generateSitemaps()` + `force-dynamic` в Next 16.3.8 не создаёт индекс `/sitemap.xml` вовсе и отдаёт пустые urlset | Sitemap — явные route-хендлеры (`lib/sitemap.ts`, `app/sitemap.xml/route.ts`, `app/sitemap/[id]/route.ts`), `dynamic` + `s-maxage=3600` |
+| `.cache/providers-resolve-cache.json` (98 МБ) | Чтение файла на каждый тайтл роняло процесс в «FATAL ERROR: Reached heap limit» (обход 500 тайтлов в sitemap) | Ветка sitemap с сериями работает только при настроенной БД. **Риск прода**: функция Vercel = 1024 МБ, один резолв поднимает ~100 МБ JSON в память. Действие: перевести кэш на Upstash (`scripts/migrate-provider-cache-to-upstash.mjs`) или убрать файл из рантайма после наполнения `episode_sources` |
+| Память сборки | `--max-old-space-size=700` в `scripts/build.mjs` | При OOM на Vercel поднять до 1024+; порог — 8017 тайтлов уже впритык на 1 ГБ машине |
 
 ## Ключевые риски
 1. **Upstash quota — обновлено 11.10.2026**: актуальный Free plan указывает 500k команд/мес.,

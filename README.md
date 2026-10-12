@@ -1,9 +1,19 @@
 # AniStream 2.0
 
-Каталог и плеер аниме на **Next.js 16.3.5 (App Router, RSC/ISR) + TypeScript (strict)**:
-**7962 тайтла** (AniList + Shikimori-обогащение), многослойный реестр источников видео,
+Каталог и плеер аниме на **Next.js 16.3.8 (App Router, RSC/ISR) + TypeScript (strict)**:
+**8017 тайтлов** (AniList + Shikimori-обогащение), реестр источников видео в Supabase,
 плеер v3 с озвучками и графиком серий, социалка, админка модерации. Пересборка проекта
 `сайт_для_аниме` (AniStream) с упором на надёжность, скорость и дизайн.
+
+Прод: **https://aninova-catalog.vercel.app** (единственный живой домен; `anistream.vercel.app`
+отошёл третьему лицу, `anistream-catalog.vercel.app` отдаёт 404).
+
+> Числа в этом файле сверены с `lib/data/titles.json` на 12.10.2026 аудитом.
+> Чтобы они не протухали, `npm run check:readme` сравнивает заявленное количество
+> тайтлов с фактическим (шаг `readme numbers` в CI). Фактический состав:
+> 7509 завершённых · 226 онгоингов · 282 анонса; 7724 с Shikimori-id, 7180 с русским
+> описанием, 7469 с точными датами серий, 18 жанров, 238 тайтлов с `episodes: null`
+> (итог не объявлен — это корректное значение, а не пропуск).
 
 > Нейминг: репозиторий/package — `anistream` (историческое имя), пользовательский
 > бренд сайта — **AniNova** (OG/Метрика/футер). Ключи localStorage/cookie — `anistream:*`. Анализ исходного
@@ -156,12 +166,18 @@ npx playwright install chromium # один раз: браузер для E2E
 npx playwright test             # E2E — 5 сценариев (E2E_BASE=http://localhost:3100 при своём порту)
 npm run warm | hydrate | enrich # наполнение кэша источников и RU-данных
 npm run check:kodik             # диагностика Kodik-цепочки с вашей машины (токен → search → VideoLinks)
-npm run check:posters           # HEAD-проверка всех 5002 постеров (.cache/broken-posters.json)
+npm run check:posters           # HEAD-проверка всех постеров каталога (.cache/broken-posters.json)
+npm run check:readme            # сверка заявленных в README/LIMITS чисел с каталогом
 npm run clean:titles            # отчёт по артефактам каталога (fix — чистка с бэкапом)
 npm run loadtest                # 100 параллельных резолвов: p50/p95/ошибки (LOADTEST_URL/CONC;
                                 #   BRIDGE_URL=http://127.0.0.1:8765 — нагрузка прямо на bridge)
 npm run measure:vitals          # LCP/CLS/FCP холод/тепло по 4 страницам (Chromium CDP)
 npm run backup                  # снапшот titles.json в backups/ (+ GH Actions еженедельно)
+npm run repair -- --report      # диагностика качества данных каталога (см. ниже)
+npm run import:titles           # одноразовый перенос titles.json → Supabase public.titles
+node scripts/sync-airing.mjs    # расписание: AniList → airing_schedule (нужен SUPABASE_SERVICE_KEY)
+node scripts/sync-episodes.mjs --mode ongoing   # серии: номера/даты → episodes
+node scripts/sync-sources.mjs --mode bulk       # озвучки: Kodik → episode_sources (нужен KODIK_TOKEN)
 node scripts/fetch-episode-dates.mjs [--report]   # точные даты серий finished-тайтлов (resumable)
 docker compose up --build       # весь стек: web + 2 bridge
 ```
@@ -194,14 +210,26 @@ Oracle Always Free VPS, Cloudflare Pages) и рекомендациям по Б�
   из обогащённого датасета, `VideoLinks.getLinks` для прямых m3u8, `parseSkipButtons` для кнопки
   «Пропустить опенинг» с реальными таймингами. Если прямые ссылки недоступны — фолбэк в embed-плеер Kodik.
 - **HLS** воспроизводится лениво подгружаемым `hls.js` (MP4 — нативно), качество переключается в меню плеера.
-- **Каталог 5002 тайтла** (`lib/data/titles.json`): метаданные AniList (постеры, баннеры, трейлеры,
-  MAL-id, связи франшиз, персонажи) + RU-названия/описания Shikimori (покрытие 4998/5002);
+- **Каталог 8017 тайтлов**: основной источник — таблица Supabase `public.titles`
+  (`CATALOG_SOURCE=db`, прайм один раз на процесс из `instrumentation.ts`),
+  `lib/data/titles.json` — fallback и вход для одноразового импорта
+  (`node scripts/import-titles-to-db.mjs`). Метаданные AniList (постеры, баннеры, трейлеры,
+  MAL-id, связи франшиз, персонажи) + RU-названия/описания Shikimori (7180 из 8017);
   точные даты выхода серий (`epdates`) — `node scripts/fetch-episode-dates.mjs` (resumable);
   дообогащение: `npm run enrich` (resumable, пишет по мере прогресса).
-- **Все серии работают без bridge**: синтез episode-URL из кэш-шаблонов (номер серии — часть URL
-  у CVH/AniBoom), gap-fill пулом глобальных озвучек CVH по shikimoriId, индикация доступности
-  серий на странице тайтла (`/api/availability/[slug]`: зелёная точка — кэш/синтез, жёлтая — подбор,
-  серая — тест-поток) и честное уведомление в плеере, когда источников нет.
+- **Число серий** считает одна функция `lib/episodes.ts` (ТЗ-правило: фильм → 1,
+  онгоинг → сколько вышло + «1134+ серий» без объявленного итога, анонс → числа нет).
+  Заглушки импортера (24 для онгоингов, 12 для остальных) удалены из `scripts/expand-catalog.mjs`
+  и вычищены из данных `scripts/repair-catalog.mjs`.
+- **Источники видео — из БД, а не из bridge**: таблицы `episode_sources` (озвучка тайтла)
+  и `episode_source_urls` (ссылка конкретной серии; у Kodik hash уникален для серии).
+  Наполняет воркер `scripts/sync-sources.mjs` ВНЕ Vercel (GitHub Actions/VPS): на Vercel нет
+  локальных bridge, а Kodik с дата-центр IP отвечает 401.
+  Синтез URL по шаблону и «подбор пулом озвучек» на проде выключены
+  (`PROVIDER_UNVERIFIED_FALLBACK`), демо-поток тоже (`DEMO_PROVIDER_ENABLED`) —
+  вместо них плеер честно показывает «Источников пока нет».
+  Индикация доступности (`/api/availability/[slug]`): зелёная точка — только реальный ответ
+  провайдера, жёлтая — непроверенный синтез/подбор, серая — источников нет.
 - **Shikimori (.io)** — второй источник метаданных: `scripts/refresh-shikimori.mjs` обогащает
   `lib/data/titles.json` (id, русское имя, RU-описание); на детальной странице описание дублируется
   блоком «Описание по данным Shikimori» со ссылкой на первоисточник.
@@ -213,10 +241,10 @@ Oracle Always Free VPS, Cloudflare Pages) и рекомендациям по Б�
 | --- | --- | --- |
 | Главная | `/` | Герой-карусель, лента «Продолжить просмотр», подборки, блок «Сегодня выходит», жанры |
 | Каталог | `/catalog` | Серверные фильтры (жанр/тип/статус/год/сортировка/пагинация) через URL-параметры |
-| Жанры | `/genres`, `/genre/[slug]` | Серверные подборки с сортировками |
+| Жанры | `/genres`, `/genre/[slug]`, `/genre/[slug]/[page]` | 60 тайтлов на страницу, сортировка и пагинация в пути (не в query) — иначе маршрут становится динамическим и Vercel отдаёт его без кэша |
 | Тайтл | `/anime/[slug]` | Бэкдроп, метаданные, описание, серии с прогрессом, трейлер, похожие тайтлы, OG-карточка |
 | Плеер | `/anime/[slug]/[episode]` | Кастомный UI: прогресс, скорость, PiP, полноэкранный, пропуск опенинга, автопереход, горячие клавиши |
-| Расписание | `/schedule` | Живая неделя AniList (`/api/schedule`, кэш 10 мин) + офлайн-фолбэк |
+| Расписание | `/schedule` | Сетка из таблицы `airing_schedule` (воркер каждые 30 мин), ISR 600 с; пусто → нормальное пустое состояние |
 | Поиск | `/search`, `/api/search` | Ранжированный поиск по RU/ромадзи/EN/жанрам |
 | Профиль | `/profile/*` | Закладки, история с прогрессом, настройки (акцент, автопереход) — localStorage |
 | Служебное | `/sitemap.xml`, `/robots.txt`, `404`, `error` | SEO и граничные состояния |
@@ -233,14 +261,18 @@ components/   anime · layout · player · profile · schedule · system · ui
 lib/          types · catalog (датасет и запросы) · schedule (live+fallback) ·
               library (локальный профиль) · providers/ (реестр + kodik-резолвер) ·
               shikimori (второй источник) · tv (D-pad навигация) · art (генеративные постеры)
-lib/data/     titles.json — снапшот каталога: 5002 тайтла (AniList + Shikimori), manual-sources.json
+lib/data/     titles.json — снапшот каталога (8017 тайтлов; fallback при CATALOG_SOURCE=file),
+              manual-sources.json
+supabase/     migrations/ — схема (в т.ч. titles, airing_schedule, episodes, episode_sources),
+              functions/submit-review
 ```
 
 Принципы:
 
 - **Сервер-first**: каталог, фильтры и жанры рендерятся RSC без клиентского JS; главная и расписание — ISR (`revalidate = 3600`).
 - **Офлайн-надёжность**: у каждого постера детерминированный генеративный SVG-фолбэк (`lib/art.ts`);
-  расписание при недоступности AniList показывает демо-неделю и сама апгрейдится в браузере через `/api/schedule`.
+  расписание читает таблицу `airing_schedule`, а при её недоступности — реальный график из каталога
+  (демо-неделя из хеша слага удалена: на проде она показывала «One Piece серия 5» с пометкой «демо»).
 - **Локальный профиль**: закладки/история/настройки в localStorage через `useSyncExternalStore` — без регистрации и БД.
 - **Реестр провайдеров**: `lib/providers/registry.ts` — порядок manual → cache → live-bridge
   (Kodik/CVH/AniBoom) → synthesize → guess-пул озвучек → demo; health-gate bridge 1.5 с,
@@ -250,7 +282,50 @@ lib/data/     titles.json — снапшот каталога: 5002 тайтла
 
 - Метаданные, постеры, баннеры и расписание — [AniList GraphQL](https://docs.anilist.co/).
 - Русские названия и описания — редакция каталога (снапшот `lib/data/titles.json`).
-- Видео демо-плеера — публичные тестовые ролики Google (gtv-videos-bucket). Права на тайтлы принадлежат правообладателям.
+- Видео демо-плеера — публичные тестовые ролики Google (gtv-videos-bucket). **На проде демо-поток
+  выключен** (`DEMO_PROVIDER_ENABLED` по умолчанию действует только в dev): показывать Big Buck Bunny
+  вместо аниме хуже, чем честно написать «Источников пока нет». Права на тайтлы принадлежат правообладателям.
+
+## Схема данных Supabase и воркеры (аудит 2026-10)
+
+Раньше весь каталог, расписание и источники видео жили в git-файлах
+(`lib/data/titles.json` 28 МБ и `.cache/providers-resolve-cache.json` 98 МБ), которые
+коммитились кронами каждые 6 часов. Теперь производные данные — в Supabase, а git-файлы
+остались fallback'ом и входом для одноразового импорта.
+
+| Таблица | Назначение | Кто пишет | Кто читает |
+| --- | --- | --- | --- |
+| `titles` | каталог: названия, год, формат, статус, `episodes_total`, `episodes_released`, жанры, постеры, описания | `scripts/import-titles-to-db.mjs` | `lib/catalog.ts` (прайм на старте процесса, `CATALOG_SOURCE=db`) |
+| `title_relations`, `title_characters` | связи франшизы и персонажи | тот же импорт | страница тайтла |
+| `airing_schedule` | сетка выхода серий (окно −2…+8 дней) | `scripts/sync-airing.mjs` | `lib/schedule.ts` → `/schedule`, `/api/schedule`, блок «Новые эпизоды» на главной |
+| `episodes` | номера, даты и названия серий | `scripts/sync-episodes.mjs` | `lib/episode-data.ts` → «График выхода серий» и «Выход серий» на странице тайтла |
+| `episode_sources` | озвучка тайтла (провайдер, translation, embed, статус ok/dead) | `scripts/sync-sources.mjs` | `lib/episode-sources.ts` → `/api/providers`, robots/index страниц серий, зелёная точка |
+| `episode_source_urls` | ссылка конкретной серии (нужно для Kodik: hash уникален для серии) | тот же воркер | там же |
+
+RLS у всех таблиц одинаковый: публичное чтение, запись только `service_role`.
+Миграции идемпотентные (`create table if not exists`, `drop policy if exists`):
+`supabase/migrations/20261012_{titles,airing_schedule,episodes,episode_sources}.sql`.
+
+### Воркеры и cron
+
+| Workflow | Расписание | Что делает | Секреты |
+| --- | --- | --- | --- |
+| `sync-airing.yml` | каждые 30 минут | AniList `airingSchedules` → `airing_schedule` | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_KEY` |
+| `sync-episodes.yml` | 6 часов (онгоинги) + сутки (полный проход) | номера/даты серий, `episodes_aired` Shikimori, опционально названия через Jikan | те же |
+| `sync-sources.yml` | сутки (онгоинги) + неделя (bulk) | Kodik `/list` или `/search` → `episode_sources` + `episode_source_urls` | те же + `KODIK_TOKEN` |
+| `sync-catalog.yml` | 6 часов | как прежде: новые тайтлы из AniList/Jikan в `titles.json` | — |
+
+Все воркеры: resumable-чекпоинт в `.cache/`, экспоненциальная задержка, уважение
+`Retry-After` при 429, лимиты из LIMITS.md (AniList 90 запросов/мин, Shikimori ~1/с
+и не более 3 воркеров, Kodik ~1/с). Без секретов воркер выходит с кодом 2 и ничего не ломает.
+
+### Почему воркеры не на Vercel
+
+Функция Vercel Hobby живёт ≤10 с и не имеет постоянных процессов, а Kodik с IP
+дата-центров отвечает 401 (LIMITS.md, проверено 23.09.2026). Поэтому обход внешних API
+вынесен в GitHub Actions, а рантайм читает только БД. Локальные Python-bridge
+(`bridges/*.py`, порты 8765/8766) остались для разработки и self-hosted-варианта:
+`lib/config/providers.config.ts` обнуляет loopback-адреса при `env.VERCEL`.
 
 
 ## Исправление срока хранения старого кэша источников
