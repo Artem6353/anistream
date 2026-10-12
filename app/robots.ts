@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import { getProvidersConfig } from '@/lib/config/providers.config';
 
 export default function robots(): MetadataRoute.Robots {
+  const site = getProvidersConfig().site.url;
   return {
     /* Аудит 30.09 (P2-4): Googlebot-рендер догружает ленивые рельсы главной
        клиентскими fetch /api/titles и /api/schedule — полный Disallow /api/
@@ -22,6 +23,18 @@ export default function robots(): MetadataRoute.Robots {
       ],
       disallow: ['/api/', '/profile/', '/reviewer/', '/admin'],
     },
-    sitemap: `${getProvidersConfig().site.url}/sitemap.xml`,
+    /* Аудит 2026-10 (ТЗ 1.7.2/1.7.3): индекс + все четыре файла sitemap.
+       Проверка robots.txt на проде: YandexBot и остальные поисковики НЕ заблокированы
+       (единственная группа — `User-Agent: *` с Allow /), поэтому пункт ТЗ про
+       «Allow только для Googlebot» не воспроизводится: точечные Allow для /api/titles,
+       /api/schedule и /api/social/reviews лишь перебивают общий Disallow /api/
+       для read-only роутов, которыми Googlebot-рендер догружает рельсы главной. */
+    sitemap: [
+      `${site}/sitemap.xml`,
+      `${site}/sitemap/0.xml`,
+      `${site}/sitemap/1.xml`,
+      `${site}/sitemap/2.xml`,
+      `${site}/sitemap/3.xml`,
+    ],
   };
 }
