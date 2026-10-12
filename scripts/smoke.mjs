@@ -72,6 +72,40 @@ for (const [path, expected] of routes) {
   console.log(`${ok ? 'PASS' : 'FAIL'} ${res.status} (want ${Array.isArray(expected) ? expected.join('|') : expected}) ${path}`);
 }
 
+/* Задача 3 аудита: старые query-URL жанров должны редиректить (308) на сегменты пути
+   и в итоге отдавать 200 с кэшем. Проверяем и редирект, и конечную страницу. */
+console.log('\n--- редиректы жанров ---');
+const REDIRECTS = [
+  ['/genre/mecha?sort=pop&page=2', '/genre/mecha/pop-2'],
+  ['/genre/mecha?sort=score', '/genre/mecha/score-1'],
+  ['/genre/mecha?page=1', '/genre/mecha'],
+  ['/genre/mecha?sort=bad', '/genre/mecha'],
+  ['/genre/mecha?page=abc', '/genre/mecha'],
+  ['/genre/mecha?page=0', '/genre/mecha'],
+  ['/genre/mecha?sort=az&page=2&utm_source=smoke', '/genre/mecha/az-2'],
+];
+for (const [from, expected] of REDIRECTS) {
+  const first = await fetch(base + from, { redirect: 'manual' });
+  const location = (first.headers.get('location') || '').replace(base, '');
+  const okStatus = first.status === 308 || first.status === 301;
+  const okLocation = location === expected;
+  const final = await fetch(base + from, { redirect: 'follow' });
+  const cc = final.headers.get('cache-control') || '';
+  const okFinal = final.status === 200 && cc.includes('s-maxage');
+  const ok = okStatus && okLocation && okFinal;
+  if (!ok) failed++;
+  console.log(
+    `${ok ? 'PASS' : 'FAIL'} ${from}\n       ${first.status} → ${location || '(нет location)'} (жду ${expected}), итог ${final.status}, cache-control «${cc.slice(0, 40)}»`,
+  );
+}
+/* Чистый URL редиректиться не должен — иначе получим цепочку. */
+{
+  const clean = await fetch(base + '/genre/mecha', { redirect: 'manual' });
+  const ok = clean.status === 200 && !clean.headers.get('location');
+  if (!ok) failed++;
+  console.log(`${ok ? 'PASS' : 'FAIL'} /genre/mecha без query → ${clean.status}, location=${clean.headers.get('location') || 'нет'}`);
+}
+
 console.log('\n--- meta-теги ---');
 for (const check of META_CHECKS) {
   const res = await fetch(base + check.path);
