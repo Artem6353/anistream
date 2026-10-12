@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { clampToSentence } from './lib/text.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const path = join(here, '../lib/data/titles.json');
@@ -56,7 +57,8 @@ for (const t of titles) {
       found.find((f) => target.startsWith(norm(f.name).slice(0, 12))) ??
       found[0];
     const full = await getJson(`/api/animes/${best.id}`);
-    const desc = htmlToText(full?.description).slice(0, 900);
+    /* ТЗ 1.4: было .slice(0, 900) — описание обрывалось на полуслове. */
+    const desc = clampToSentence(htmlToText(full?.description), 900);
     t.shikimori = {
       id: best.id,
       ru: full?.russian || best.russian || null,

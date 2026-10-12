@@ -44,6 +44,10 @@ jobs:
           RETENTION_DAYS: ${{ inputs.retention_days }}
         run: |
           set -euo pipefail
+          # Аудит 2026-10 (задача 4): скрипт устарел, --apply требует подтверждения.
+          # Предпочтительный путь — scripts/import-provider-cache-to-db.mjs (Supabase),
+          # Redis остаётся горячим кэшем. Workflow сохранён для совместимости.
+          export ALLOW_LEGACY_UPSTASH_SEED=1
           report="$(node scripts/migrate-provider-cache-to-upstash.mjs \
             --file .cache/providers-resolve-cache.json \
             --retention-days "$RETENTION_DAYS" \
@@ -135,7 +139,8 @@ jobs:
           # is safe and idempotent even when the temporary checkpoint is lost.
           for pass in $(seq 1 "$max_passes"); do
             echo "Migration pass $pass/$max_passes"
-            node scripts/migrate-provider-cache-to-upstash.mjs \
+            # Подтверждение легаси-сида (см. banner в скрипте); export выше по job.
+            ALLOW_LEGACY_UPSTASH_SEED=1 node scripts/migrate-provider-cache-to-upstash.mjs \
               --file .cache/providers-resolve-cache.json \
               --progress-file "$progress_file" \
               --batch-size 100 \

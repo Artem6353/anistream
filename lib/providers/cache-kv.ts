@@ -1,10 +1,23 @@
 /**
  * KV-адаптер кэша источников (ТЗ 2.1): если заданы UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN —
  * cache живёт в Upstash Redis (serverless-friendly, TTL 7 дней), иначе файловый кэш.
+ *
+ * Задача 4 аудита: Redis здесь — ТОЛЬКО горячий кэш, а не хранилище сида.
+ * У подключённой базы отдельный db_memory_threshold=64 MiB (LIMITS.md), а весь
+ * providers-resolve-cache.json в компактном виде — 37,9 МБ на 79 426 ключей:
+ * один сид оставил бы от порога меньше половины и съел бы треть месячных 500k команд.
+ * Поэтому: обязательный TTL на каждую запись и потолок размера значения.
  */
 const URL = process.env.UPSTASH_REDIS_REST_URL ?? '';
 const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN ?? '';
 export const kvEnabled = () => Boolean(URL && TOKEN);
+
+/** Потолок размера одного значения: озвучки тайтла в среднем занимают ~500 Б,
+ *  64 КБ — это уже аномалия (сотни источников у одной серии). */
+const MAX_VALUE_BYTES = Number(process.env.UPSTASH_MAX_VALUE_BYTES ?? 65_536);
+
+/** TTL по умолчанию 24 ч (KODIK_CACHE_TTL_MS в config = 86 400 000 мс). */
+const DEFAULT_TTL_SECONDS = 86_400;
 
 async function cmd(body: unknown[], timeoutMs?: number): Promise<unknown> {
   const init: RequestInit = {
@@ -39,9 +52,14 @@ export async function kvMget(keys: string[]): Promise<(string | null)[]> {
   return value.map((item) => item == null ? null : typeof item === 'string' ? item : String(item));
 }
 
-export async function kvSet(key: string, value: string, ttlSeconds = 7 * 86400): Promise<void> {
+export async function kvSet(key: string, value: string, ttlSeconds = DEFAULT_TTL_SECONDS): Promise<void> {
+  /* TTL обязателен: запись без срока осталась бы в базе навсегда и постепенно
+     съела бы db_memory_threshold. Неположительный TTL нормализуем к 24 ч. */
+  const ttl = Number.isFinite(ttlSeconds) && ttlSeconds > 0 ? Math.round(ttlSeconds) : DEFAULT_TTL_SECONDS;
+  const bytes = Buffer.byteLength(value, 'utf8');
+  if (bytes > MAX_VALUE_BYTES) return; // защита от переполнения: аномально большое значение не кэшируем
   try {
-    await cmd(['SET', key, value, 'EX', ttlSeconds]);
+    await cmd(['SET', key, value, 'EX', ttl]);
   } catch {}
 }
 

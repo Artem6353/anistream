@@ -3,6 +3,8 @@ import type { Title } from '@/lib/types';
 import { TYPE_LABELS, genreLabel } from '@/lib/labels';
 import { PosterArt } from './PosterArt';
 import { BookmarkButton } from './BookmarkButton';
+import { episodeCountLabel } from '@/lib/episodes';
+import { clampToSentence } from '@/lib/text';
 
 /** Строка-карточка списка каталога (вид «списком», как на AnimeGO). */
 export function PosterRow({ title }: { title: Title }) {
@@ -20,10 +22,16 @@ export function PosterRow({ title }: { title: Title }) {
           <span>{TYPE_LABELS[title.type]}</span>
           <span>{title.year}</span>
           {title.score > 0 ? <span className="row__score">★ {title.score.toFixed(1)}</span> : null}
-          <span>{title.episodes} сер.</span>
-          <span className="row__genres">{title.genres.slice(0, 4).map((g) => genreLabel(g)).join(', ')}</span>
+          <span>{episodeCountLabel(title) ?? 'серии не объявлены'}</span>
+          <span className="row__genres">
+            {title.genres
+              .slice(0, 4)
+              .map((g) => genreLabel(g))
+              .join(', ')}
+          </span>
         </p>
-        {title.description ? <p className="row__desc">{title.description.slice(0, 220)}…</p> : null}
+        {/* ТЗ 1.4: описание режем по границе предложения, а не посреди слова */}
+        {title.description ? <p className="row__desc">{clampToSentence(title.description, 220)}</p> : null}
       </div>
       <BookmarkButton slug={title.slug} className="row__bookmark" />
     </article>

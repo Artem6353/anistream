@@ -8,6 +8,8 @@ import type { EpisodeSource } from '@/lib/providers/types';
 import { library, useLibrary } from '@/lib/library';
 import { trackEvent } from '@/lib/achievements';
 import { formatTime } from '@/lib/format';
+import { episodeCount, episodeInfo } from '@/lib/episodes';
+import { availabilityHint } from '@/lib/source-hints';
 import { Switch } from '@/components/ui/Switch';
 import { ReportForm } from './ReportForm';
 import { SourcesPanel, type SourceGroup } from './SourcesPanel';
@@ -116,7 +118,10 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   const isEmbed = selected?.kind === 'embed';
   const files = selected?.files ?? EMPTY_FILES;
   const file = useMemo(() => files.find((f) => f.quality === quality) ?? files[0], [files, quality]);
-  const nextEpisode = episode < title.episodes ? episode + 1 : null;
+  /* ТЗ 1.2: автопереход — по числу ВЫШЕДШИХ серий, а не по заглушке в `episodes`. */
+  const totalEpisodes = episodeCount(title) ?? 0;
+  const { totalUnknown } = episodeInfo(title);
+  const nextEpisode = episode < totalEpisodes ? episode + 1 : null;
 
   /* источники + доступность серий */
   useEffect(() => {
@@ -424,8 +429,8 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
 
   /* Чанк серий общий с боковой панелью (EpisodesPanel получает его пропсами). */
   const [chunk, setChunk] = useState(0);
-  const chunks = Math.max(1, Math.ceil(title.episodes / EPISODES_CHUNK));
-  const episodes = Array.from({ length: title.episodes }, (_, i) => i + 1).slice(chunk * EPISODES_CHUNK, (chunk + 1) * EPISODES_CHUNK);
+  const chunks = Math.max(1, Math.ceil(totalEpisodes / EPISODES_CHUNK));
+  const episodes = Array.from({ length: totalEpisodes }, (_, i) => i + 1).slice(chunk * EPISODES_CHUNK, (chunk + 1) * EPISODES_CHUNK);
 
   return (
     <div className="player-layout">
@@ -436,9 +441,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
           </Link>
           <div className="player-bar__title">
             <strong>{title.ru}</strong>
-            <span>
-              серия {episode} из {title.episodes}
-            </span>
+            <span>серия {episode}{totalEpisodes ? ` из ${totalEpisodes}${totalUnknown ? '+' : ''}` : ''}</span>
           </div>
           <div className="player-bar__meta">
             {dataStatus === 'ready' && sources.length ? (
@@ -767,10 +770,10 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
                 data-active={ep === episode}
                 className={`epbar__item ${ep === episode ? 'is-active' : ''}`}
                 href={`/anime/${title.slug}/${ep}`}
-                title={kind === 'demo' ? 'Только тест-поток' : kind === 'guess' ? 'Источник подобран' : 'Источник в кэше'}
+                title={availabilityHint(kind).label}
               >
                 {ep}
-                <span className={`epbar__dot epbar__dot--${kind ?? 'demo'}`} />
+                <span className={`epbar__dot epbar__dot--${availabilityHint(kind).tone}`} />
               </Link>
             );
           })}
@@ -791,7 +794,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
             Озвучки · {sources.length}
           </button>
           <button type="button" id="pside-tab-episodes" role="tab" aria-selected={sideTab === 'episodes'} aria-controls="pside-panel" className={sideTab === 'episodes' ? 'is-active' : ''} onClick={() => setSideTab('episodes')}>
-            Серии · {title.episodes}
+            {`Серии · ${totalEpisodes}${totalUnknown ? '+' : ''}`}
           </button>
         </div>
 
@@ -806,7 +809,7 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
         ) : (
           <EpisodesPanel
             slug={title.slug}
-            totalEpisodes={title.episodes}
+            totalEpisodes={totalEpisodes}
             episodes={episodes}
             currentEpisode={episode}
             availability={availability}

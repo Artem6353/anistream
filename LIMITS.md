@@ -5,7 +5,7 @@
 | Vercel Hobby | 100 ГБ трафика/мес, serverless-invocations ~100k/мес, функция ≤10 с (Hobby) | 80 ГБ / 80k | статика → Cloudflare Pages/R2; тяжёлые задачи → VPS cron |
 | Supabase Free | 500 МБ БД, 5 ГБ egress, 50k MAU auth, 500k edge-вызовов | 400 МБ / 4 ГБ | R2 для изображений; Neon/Turso для таблиц |
 | Neon Free | 0.5 ГБ хранилища, 191 ч compute/мес | 0.4 ГБ | Supabase/PlanetScale |
-| Upstash Redis Free | 500k команд/мес., 256 МБ данных, 10 ГБ bandwidth/мес. (проверено 11.10.2026) | 400k команд/мес. / 8 ГБ bandwidth/мес.; для текущей базы отдельный guard по фактическому лимиту памяти | Cloudflare KV или FS-кэш на VPS при устойчивом приближении к месячным порогам |
+| Upstash Redis Free | 500k команд/мес., 256 МБ данных, 10 ГБ bandwidth/мес. (проверено 11.10.2026); у подключённой базы отдельный `db_memory_threshold=64 MiB` | 400k команд/мес. / 8 ГБ bandwidth/мес. / 45 МБ данных | **Только горячий кэш с TTL.** Сид всего кэша источников (37,9 МБ / 85 900 команд) сюда не помещается по смыслу тарифа — постоянное хранилище в Supabase |
 | Oracle Always Free VPS | 4 ARM CPU / 24 ГБ RAM / 200 ГБ диск, 10 ТБ egress | — | сам хостит всё |
 | Kodik API | ~1 req/s на токен (практика); с датацентр-IP — 401 (проверено 23.09.2026) | — | пул токенов в bridge; хостинг bridge — residential/VPS, см. DEPLOY.md §A0.1 |
 | Shikimori API | rate-limit по IP, ~1 rps | — | воркеры ≤3 + паузы |
@@ -14,9 +14,19 @@
 
 ## Git-хранилище каталога (аудит 30.09)
 
-`lib/data/titles.json` — 28 МБ, и sync-catalog/push-daily коммитят его каждые 6 ч:
-каждая версия добавляет ~2–3 МБ в pack-файл НАВСЕГДА (сейчас ~15 МБ pack, темп
-роста ~250–350 МБ/год). Оценка вариантов:
+`lib/data/titles.json` — 28 МБ, `.cache/providers-resolve-cache.json` — 98 МБ (трекается
+намеренно как seed-кэш), и sync-catalog/push-daily коммитят их каждые 6 ч:
+каждая версия добавляет ~2–3 МБ в pack-файл НАВСЕГДА (темп роста ~250–350 МБ/год).
+
+**Статус на 12.10.2026 (аудит):** подготовлен перенос каталога в Supabase —
+миграция `20261012_titles.sql`, импорт `scripts/import-titles-to-db.mjs`, чтение
+через `CATALOG_SOURCE=db` с праймом в `instrumentation.ts`, файл остался fallback'ом.
+Шаг 4 (убрать коммиты titles.json из workflows и `git rm -r --cached .cache`)
+намеренно НЕ выполнен: его можно делать только после того, как импорт отработал
+на проде и `npm run smoke` прошёл против БД (иначе прод останется без каталога).
+Порядок включения — в docs/REPORT.md, раздел «Ручные действия владельца».
+
+Оценка вариантов:
 
 | Вариант | Вердикт |
 |---|---|
@@ -39,6 +49,19 @@
 /api/health (лёгкий self-monitor; злоупотребление бессмысленно), /api/random
 (307-редирект), /api/metrics (закрыт admin-cookie до любых лимитов).
 Решение пересматривать при появлении write-поверхности или тяжёлых вычислений в этих роутах.
+
+## Аудит 2026-10: добавленные пороги и замеры
+
+| Что | Замер | Порог / действие |
+|---|---|---|
+| Страница жанра без пагинации | `/genre/comedy` — **19 677 КБ HTML, 3,5–4,2 с, `cache-control: private, no-store`, `x-vercel-cache: MISS`** (3495 карточек) | Разбито на 60 карточек + сегменты пути `/genre/[slug]/pop-2`; стало **384 КБ** и `s-maxage=1800`. Порог: >1 МБ HTML на страницу или >1 с TTFB — уменьшать `GENRE_PER_PAGE` |
+| ISR на тайтлах/сериях | `revalidate = 3600` НЕ действовал: маршрут был динамическим (нет `generateStaticParams`), каждый просмотр = вызов функции + парсинг 28 МБ JSON | Добавлены `generateStaticParams` + `dynamicParams`; on-demand страница после первого запроса отдаётся за ~16 мс из кэша |
+| Предрендер на сборке | 120 страниц тайтлов собираются в 1 ГБ RAM/heap 700 МБ (801 страница, 2,2 мин). **10 страниц серий уже роняют сборку** в «Reached heap limit» (страница тянет PlayerShell + hls.js) | `STATIC_TITLE_LIMIT=120`, `STATIC_EPISODE_TITLE_LIMIT=0`. На билд-машине Vercel памяти больше — можно поднимать через env |
+| Статический sitemap | 4 файла по ~4000 URL роняли сборку по памяти; `generateSitemaps()` + `force-dynamic` в Next 16.3.8 не создаёт индекс `/sitemap.xml` вовсе и отдаёт пустые urlset | Sitemap — явные route-хендлеры (`lib/sitemap.ts`, `app/sitemap.xml/route.ts`, `app/sitemap/[id]/route.ts`), `dynamic` + `s-maxage=3600` |
+| `.cache/providers-resolve-cache.json` (97,6 МБ) | **Замер 12.10.2026:** чтение 675 мс + `JSON.parse` 1038 мс → RSS 370 МБ / heapUsed 318 МБ на процесс. Обход 500 тайтлов в sitemap ронял сервер в «FATAL ERROR: Reached heap limit» | **Закрыто (задача 4):** в production файловый бэкенд отключён (`cache.fileBackend`), файл не пакуется в функции (`outputFileTracingIncludes`). Изолированный замер 20 итераций рантайм-пути: **497 МБ → 123 МБ RSS** (heapUsed 409 → 80 МБ). Перенос данных: `scripts/import-provider-cache-to-db.mjs` |
+| Upstash как хранилище сида | Весь кэш в компактном виде — **37,9 МБ на 79 426 ключей** (среднее значение 500 Б), dry-run легаси-миграции оценивал **85 900 команд** | Не влезает в логику тарифа: `db_memory_threshold=64 MiB` (сид съедает 59 %) и 17 % месячных 500k команд за один прогон. Поэтому Redis — ТОЛЬКО горячий кэш: TTL обязателен (`kvSet` нормализует TTL к 24 ч), потолок значения `UPSTASH_MAX_VALUE_BYTES=65536`, массовый сид запрещён (`migrate-provider-cache-to-upstash.mjs --apply` требует `--i-understand-redis-threshold`) |
+| Supabase как хранилище источников | Перенос только ПРЯМЫХ записей: 29 548 строк `episode_sources` (≈4,4 МБ) + 336 181 строка `episode_source_urls` (≈36,8 МБ JSON, ~38,5 МБ в Postgres + индексы) | Итого ≈45–80 МБ из 500 МБ Free (9–16 %). `MAX_EPISODE_URLS=1200` последних серий на озвучку удерживает рост; порог пересмотра — 300 МБ |
+| Память сборки | `--max-old-space-size=700` в `scripts/build.mjs` | При OOM на Vercel поднять до 1024+; порог — 8017 тайтлов уже впритык на 1 ГБ машине |
 
 ## Ключевые риски
 1. **Upstash quota — обновлено 11.10.2026**: актуальный Free plan указывает 500k команд/мес.,

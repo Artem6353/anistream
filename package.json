@@ -32,7 +32,14 @@
     "loadtest": "node scripts/loadtest.mjs",
     "backup": "node scripts/backup-titles.mjs",
     "measure:vitals": "node scripts/measure-web-vitals.mjs",
-    "audit:episodes": "node scripts/audit-episode-coverage.mjs"
+    "audit:episodes": "node scripts/audit-episode-coverage.mjs",
+    "check:readme": "node scripts/check-readme.mjs",
+    "check:catalog": "node scripts/check-catalog-quality.mjs --gate",
+    "report:catalog": "node scripts/check-catalog-quality.mjs",
+    "repair:offline": "node scripts/repair-catalog.mjs --fix-episodes --fix-desc --fix-dupes --fix-studios --apply",
+    "repair": "node scripts/repair-catalog.mjs",
+    "import:titles": "node scripts/import-titles-to-db.mjs",
+    "report:seasons": "node scripts/report-season-slug-mismatch.mjs"
   },
   "dependencies": {
     "@sentry/browser": "^11.0.0",

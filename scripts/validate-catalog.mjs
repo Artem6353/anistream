@@ -88,8 +88,19 @@ for (let index = 0; index < titles.length; index += 1) {
   if (!Number.isSafeInteger(title.year) || title.year < 0 || title.year > 2200) {
     addError(index, slug, 'year must be an integer between 0 and 2200');
   }
-  if (!Number.isSafeInteger(title.episodes) || title.episodes < 0) {
-    addError(index, slug, 'episodes must be a non-negative integer');
+  /* Аудит 2026-10 (ТЗ 1.2): episodes может быть null — это «итог не объявлен»
+     (онгоинг без анонсированного числа серий или анонс). Прежняя проверка требовала
+     целое число, поэтому после перевода заглушек 12/24 в null валидатор падал бы
+     на 238 записях и блокировал CI и все кроны sync-catalog. */
+  if (title.episodes !== null && (!Number.isSafeInteger(title.episodes) || title.episodes < 0)) {
+    addError(index, slug, 'episodes must be a non-negative integer or null');
+  }
+  if (
+    title.episodesReleased !== undefined &&
+    title.episodesReleased !== null &&
+    (!Number.isSafeInteger(title.episodesReleased) || title.episodesReleased < 0)
+  ) {
+    addError(index, slug, 'episodesReleased must be a non-negative integer, null or absent');
   }
   if (!isFiniteNumber(title.score) || title.score < 0 || title.score > 10) {
     addError(index, slug, 'score must be a finite number between 0 and 10');

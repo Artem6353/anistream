@@ -28,6 +28,14 @@ jobs:
       - run: npm ci
       - name: validate catalog integrity
         run: node scripts/validate-catalog.mjs
+      # Аудит 2026-10 (ТЗ 2.4): README заявлял «7962 тайтла», тот же README ниже —
+      # «Каталог 5002 тайтла», LIMITS.md — «около восьми тысяч», а в каталоге 8017.
+      - name: readme numbers match the catalog
+        run: node scripts/check-readme.mjs
+      # Аудит 2026-10 (задача 2): качество данных каталога. В CI — как предохранитель
+      # (exit 1 при превышении порога), в sync-catalog — перед коммитом.
+      - name: catalog quality gate
+        run: node scripts/check-catalog-quality.mjs --gate
       # Аудит 30.09 (LIMITS.md «Git-хранилище»): titles.json коммитится кронами —
       # контролируем рост pack-файла; порог миграции на внешнее хранилище — 300 МБ.
       - name: repo size watch

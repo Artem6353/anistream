@@ -7,6 +7,7 @@ import { resolveCvh } from './providers/cvh';
 import { resolveAniboom } from './providers/aniboom';
 import { demoSources, DEMO_SKIP } from './providers/demo';
 import { synthesizeEpisode } from './synthesize';
+import { dbEpisodeSources } from '@/lib/episode-sources';
 import { metrics, metricLatency, metricErrorBump, sendTgAlert } from '@/lib/metrics';
 import { promises as fs } from 'node:fs';
 import { log } from '@/lib/logger';
@@ -193,8 +194,12 @@ export async function resolveEpisodeSources(
   const manual = manualSources(ctx.slug, ctx.episode);
   if (manual.length) return withDemo({ sources: manual, sourcesUsed: ['manual'], fromCache: false }, ctx);
 
-  /* 1) Читаем кэш; в liveOnly режиме пропускаем его полностью. */
   const t0 = Date.now();
+
+  /* 1) Горячий кэш (Upstash Redis). В liveOnly режиме пропускаем его полностью.
+     Задача 4 аудита: в production это ЕДИНСТВЕННЫЙ кэш — файловая ветка отключена
+     в lib/providers/cache.ts, поэтому cacheGet() там возвращает null, если Redis
+     не настроен, и резолв идёт дальше в БД, а не в чтение 97,6 МБ JSON. */
   const cached = options.liveOnly ? null : await cacheGet(key);
   const cachedHasFiles = Boolean(
     cached?.sources.some((s) => s.kind === 'file' && (s.files?.length ?? 0) > 0),
@@ -207,6 +212,23 @@ export async function resolveEpisodeSources(
 
   if (base) metrics.cacheHit++;
   else metrics.cacheMiss++;
+
+  /* 1.5) Реестр источников из БД (ТЗ 1.6.2, задача 4): порядок по ТЗ —
+     Redis hot-cache → Supabase → честное «источников нет». На Vercel нет bridge,
+     а прямой резолв Kodik с дата-центр IP отвечает 401, поэтому достоверные данные
+     только те, что заранее собрал воркер scripts/sync-sources.mjs.
+     liveOnly (bulk-backfill) БД намеренно пропускает: ему нужны живые ответы. */
+  if (!base && !options.liveOnly && ctx.animeId) {
+    const fromDb = await dbEpisodeSources(ctx.animeId, ctx.episode);
+    if (fromDb?.sources.length) {
+      /* Прогреваем горячий кэш, чтобы повторные запросы не ходили в БД.
+         cacheSet сам решает, куда писать: в проде — только Redis (TTL),
+         файловый бэкенд там отключён. Ошибку глотаем: кэш не должен ронять резолв. */
+      void cacheSet(key, fromDb).catch(() => {});
+      metricLatency(Date.now() - t0);
+      return withDemo({ ...fromDb, fromCache: true, cachedAt: Date.now() }, ctx);
+    }
+  }
 
   /* 2) Резолверы запускаются одновременно. Наличие Kodik в кэше не отключает CVH/AniBoom. */
   const enabledIds = enabledProviderIds();
@@ -274,8 +296,11 @@ export async function resolveEpisodeSources(
   }
   metricLatency(Date.now() - t0);
 
-  /* 3) Если новых прямых источников нет, сохраняем безопасный синтез как fallback. */
-  if (!merged.length && !options.liveOnly) {
+  /* 3) Если новых прямых источников нет — синтез/подбор как последний fallback.
+     ТЗ 1.6.4: это НЕ источник (URL собран по шаблону или подобран пулом озвучек и
+     никогда не проверялся), поэтому на проде по умолчанию выключен: плеер честно
+     показывает «Источников пока нет» вместо десятка нерабочих кнопок. */
+  if (!merged.length && !options.liveOnly && getProvidersConfig().unverifiedFallback) {
     const synth = await synthesizeEpisode(ctx);
     if (synth?.sources.length) {
       if (synth.sources.some((source) => source.guessed)) metrics.guess++;
@@ -303,10 +328,15 @@ function dedupe(sources: EpisodeSource[]): EpisodeSource[] {
   });
 }
 
-/** Demo-источник всегда в конце списка — офлайн-база и фолбэк плеера. */
+/** Demo-источник в конце списка — фолбэк плеера, но ТОЛЬКО если демо включено.
+ *
+ *  Аудит 2026-10 (ТЗ 1.6.3): прежняя проверка `!cfg.demo.listed && result.sources.length`
+ *  означала, что при пустом списке источников демо-поток добавлялся всегда — даже с
+ *  DEMO_PROVIDER_ENABLED=0. На проде пользователь нажимал «Смотреть» и получал
+ *  Big Buck Bunny вместо аниме. Теперь флаг выключает демо полностью. */
 function withDemo(result: EpisodeSources, ctx: ProviderContext): EpisodeSources {
   const cfg = getProvidersConfig();
-  if (!cfg.demo.listed && result.sources.length) return result;
+  if (!cfg.demo.listed) return result;
   if (result.sources.some((s) => s.providerId === 'demo')) return result;
   return {
     ...result,
@@ -325,23 +355,26 @@ export function contextFromTitle(
     romaji: string;
     year: number;
     type: string;
-    episodes: number;
+    episodes: number | null;
   },
   episode: number,
 ): ProviderContext {
   return {
     slug: title.slug,
     anilistId: title.anilistId,
+    animeId: title.anilistId,
     malId: title.malId,
     shikimoriId: title.shikimori?.id,
     title: title.ru,
     originalTitle: title.romaji,
     year: title.year,
     format: title.type,
-    episodesCount: title.episodes,
+    /* ТЗ 1.2: episodes может быть null (итог не объявлен) — провайдеру достаточно 0,
+       поиск идёт по id/названию, а не по числу серий. */
+    episodesCount: title.episodes ?? 0,
     isAdult: false,
     episode,
-    totalEpisodes: title.episodes,
+    totalEpisodes: title.episodes ?? 0,
   };
 }
 

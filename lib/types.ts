@@ -15,9 +15,15 @@ export interface Title {
   year: number;
   season?: Season | null;
   status: TitleStatus;
-  episodes: number;
+  /** Итоговое число серий. null — источник его не подтвердил (онгоинг/анонс).
+      НИКОГДА не подставлять заглушку: см. lib/episodes.ts (аудит 2026-10, ТЗ 1.2). */
+  episodes: number | null;
+  /** Сколько серий уже вышло (для онгоингов — из airing/epdates). */
+  episodesReleased?: number | null;
   /** Рейтинг 0–10. */
   score: number;
+  /** Число оценок (не «избранных»!) — нужно для честного aggregateRating (ТЗ 3.2.1). */
+  ratingCount?: number | null;
   favourites: number;
   /** Слаги жанров (см. lib/labels.ts). */
   genres: string[];
@@ -44,6 +50,9 @@ export interface Title {
   epdatesSource?: 'startDate';
   /** График выхода серий для онгоингов (AniList airingSchedule). */
   airing?: { ep: number; at: number }[];
+  /** Названия серий по номерам (scripts/sync-episodes.mjs → таблица `episodes`).
+      Пусто → в UI показываем «Серия N», а не «Episode N» (ТЗ 1.3). */
+  episodeNames?: Record<string, string>;
   /** Скрыт модерацией (DMCA). */
   hidden?: boolean;
   /** Источник метаданных (ТЗ Jikan, блок 5): anilist (дефолт) | jikan.
@@ -53,6 +62,8 @@ export interface Title {
   malId?: number | null;
   /** Второй источник метаданных: Shikimori (.io). */
   shikimori?: { id: number; ru: string | null; description: string | null; score: number } | null;
+  /** Официальные сервисы просмотра (блок «Где смотреть легально», LEGAL_WATCH_ENABLED). */
+  legalWatch?: { name: string; url: string; note?: string | null }[];
 }
 
 /** S2.2 (аудит 28.09): проекция тайтла для карточек PosterCard. Полный Title (~2.7 КБ JSON:
@@ -60,7 +71,7 @@ export interface Title {
     весила 1081 КБ. Карточке нужны только эти поля; /api/titles отдаёт совместимую форму. */
 export type CardTitle = Pick<
   Title,
-  'slug' | 'ru' | 'romaji' | 'type' | 'year' | 'status' | 'episodes' | 'score' | 'genres' | 'poster'
+  'slug' | 'ru' | 'romaji' | 'type' | 'year' | 'status' | 'episodes' | 'episodesReleased' | 'score' | 'genres' | 'poster'
 >;
 
 export type SortKey = 'pop' | 'score' | 'new' | 'az';
@@ -97,7 +108,9 @@ export interface ScheduleEntry {
   ru?: string;
   romaji: string;
   poster: string;
-  source: 'live' | 'demo';
+  /** 'db' — таблица airing_schedule (воркер), 'catalog' — реальный график из каталога.
+      Значения 'demo' больше нет: фейковая неделя удалена (ТЗ 1.1). */
+  source: 'db' | 'catalog';
 }
 
 export interface HistoryEntry {

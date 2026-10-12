@@ -7,6 +7,7 @@ import { library } from '@/lib/library';
 import { timeAgo, formatTime } from '@/lib/format';
 import type { HistoryEntry } from '@/lib/types';
 import { PosterArt } from '@/components/anime/PosterArt';
+import { isMultiEpisode } from '@/lib/episodes';
 import { IconClock, IconPlay, IconTrash } from '@/components/ui/icons';
 
 /**
@@ -64,8 +65,8 @@ export function HistoryList() {
                 {hasProgress ? (
                   <>
                     <span className="history__meta">
-                      {t.episodes > 1 ? `Последняя серия: ${h.episode}` : 'Просмотрено'} ·{' '}
-                      {formatTime(h.position)} / {formatTime(h.duration)} · {timeAgo(h.updatedAt)}
+                      {isMultiEpisode(t) ? `Последняя серия: ${h.episode}` : 'Просмотрено'} · {formatTime(h.position)} /{' '}
+                      {formatTime(h.duration)} · {timeAgo(h.updatedAt)}
                     </span>
                     <span className="history__bar">
                       <span style={{ width: `${pct}%` }} />
@@ -76,7 +77,7 @@ export function HistoryList() {
                   </>
                 ) : (
                   <span className="history__meta">
-                    {t.episodes > 1 ? `Последняя серия: ${h.episode} · ` : ''}Смотрел {timeAgo(h.updatedAt)}
+                    {isMultiEpisode(t) ? `Последняя серия: ${h.episode} · ` : ''}Смотрел {timeAgo(h.updatedAt)}
                   </span>
                 )}
               </span>

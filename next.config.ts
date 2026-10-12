@@ -66,8 +66,15 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['sharp'],
   outputFileTracingIncludes: {
     '/**': ['./lib/data/titles.json'],
-    '/api/providers/*/*': ['./.cache/providers-resolve-cache.json'],
-    '/api/availability/*': ['./.cache/providers-resolve-cache.json'],
+    // Аудит 2026-10 (задача 4): кэш источников на 97,6 МБ больше НЕ пакуется в функции.
+    // В production файловый бэкенд отключён (lib/config/providers.config.ts:
+    // cache.fileBackend), поэтому файл в бандле только увеличивал деплой и холодный старт.
+    // Источник правды — Supabase episode_sources/episode_source_urls, горячий кэш — Upstash.
+    // Для self-hosted с PROVIDER_CACHE_FILE_BACKEND=1 верните две записи:
+    //   '/api/providers/[slug]/[episode]' и '/api/availability/[slug]'
+    //   со значением ['./.cache/providers-resolve-cache.json'].
+    // (Блочный комментарий здесь нельзя: последовательность звёздочек в пути
+    //  '/api/providers/*/*' закрывает его раньше времени и ломает синтаксис.)
   },
   images: {
     remotePatterns: [

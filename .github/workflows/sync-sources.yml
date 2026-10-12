@@ -1,0 +1,90 @@
+name: Sync video sources (Kodik → Supabase)
+
+# Аудит 2026-10 (ТЗ 1.6.5): источники видео собирает воркер ВНЕ Vercel
+# (GitHub Actions с секретом или VPS). На Vercel локальных bridge нет, а Kodik
+# с дата-центр IP отвечает 401 — поэтому рантайм читает только таблицу episode_sources.
+on:
+  schedule:
+    # Онгоинги — раз в день (в день выхода серии источник должен появиться быстро).
+    - cron: "25 4 * * *"
+    # Остальной каталог — раз в неделю bulk-проходом по /list (дешевле, чем 8000 /search).
+    - cron: "30 5 * * 0"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "bulk = проход по каталогу Kodik, title = точечный поиск по shikimori_id"
+        type: choice
+        default: title
+        options: [bulk, title]
+      scope:
+        description: "scope=ongoing — только онгоинги (быстрее)"
+        type: string
+        default: ongoing
+      slug:
+        description: "Один тайтл (для режима title), пусто = по scope"
+        type: string
+        default: ""
+      limit:
+        description: "Лимит тайтлов/страниц за прогон (0 = без лимита)"
+        type: string
+        default: "300"
+
+concurrency:
+  group: aninova-sync-sources
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/cache@v4
+        with:
+          path: .cache/sync-sources-checkpoint.json
+          key: sync-sources-${{ github.run_id }}
+          restore-keys: sync-sources-
+
+      - name: sync sources
+        env:
+          # Секреты: KODIK_TOKEN (собственный токен разработчика Kodik),
+          # NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_KEY.
+          KODIK_TOKEN: ${{ secrets.KODIK_TOKEN }}
+          KODIK_API_BASE_URL: ${{ secrets.KODIK_API_BASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || '' }}
+          SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'ongoing' }}
+          SLUG_ARG: ${{ github.event_name == 'workflow_dispatch' && inputs.slug || '' }}
+          LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.limit || '0' }}
+        run: |
+          set -uo pipefail
+          # cron «25 4» → онгоинги точечно; cron «30 5 * * 0» → bulk по всему каталогу.
+          if [ -n "$MODE" ]; then mode="$MODE"; elif [ "$(date -u +%u)" = "7" ] && [ "$(date -u +%-H)" = "5" ]; then mode="bulk"; else mode="title"; fi
+          ARGS="--mode $mode"
+          [ -n "$SCOPE" ] && export SCOPE
+          [ -n "$SLUG_ARG" ] && ARGS="$ARGS --slug $SLUG_ARG"
+          [ "${LIMIT:-0}" != "0" ] && ARGS="$ARGS --limit $LIMIT"
+          echo "режим: $mode scope=${SCOPE:-all} $ARGS"
+          node scripts/sync-sources.mjs $ARGS
+          code=$?
+          # 2 = «нет токена/БД» — не авария, а не сконфигурировано.
+          if [ "$code" = "2" ]; then
+            echo "::warning::KODIK_TOKEN или SUPABASE_SERVICE_KEY не заданы — источники не синхронизированы."
+            exit 0
+          fi
+          exit $code
+
+      - name: report
+        if: always()
+        run: node scripts/sync-sources.mjs --report || true

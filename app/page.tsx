@@ -5,8 +5,6 @@ import { Rail } from '@/components/anime/Rail';
 import { PosterCard } from '@/components/anime/PosterCard';
 import { GenreChips } from '@/components/anime/GenreChips';
 import { homeRails, genreStats, heroSlides, toCardTitle } from '@/lib/catalog';
-import { demoWeek } from '@/lib/schedule';
-import { HomeSchedule } from '@/components/schedule/HomeSchedule';
 import { ContinueBanner } from '@/components/home/ContinueBanner';
 import { LatestEpisodes } from '@/components/home/LatestEpisodes';
 import { LazyRail } from '@/components/home/LazyRail';
@@ -27,7 +25,17 @@ export const metadata: Metadata = {
   /* Next мержит metadata поверхностно: page-level openGraph полностью заменяет
      layout-объект, поэтому type/locale/siteName дублируем здесь явно.
      og:title/og:description Next подставляет сам из резолвленного title/description. */
-  openGraph: { type: 'website', url: '/', locale: 'ru_RU', siteName: 'AniNova' },
+  /* og:title/og:description задаём явно: иначе Next подставляет в них полный <title>
+     («AniNova — каталог аниме: онгоинги, расписание и плеер»), и карточка в соцсетях
+     выглядит как заголовок вкладки, а не как подпись сайта (ТЗ 1.5). */
+  openGraph: {
+    type: 'website',
+    url: '/',
+    locale: 'ru_RU',
+    siteName: 'AniNova',
+    title: 'AniNova — каталог аниме',
+    description: 'Подборки, жанры, расписание выхода серий и плеер с автопереходом. Метаданные AniList, русские описания.',
+  },
 };
 
 export default async function HomePage() {
@@ -63,6 +71,9 @@ export default async function HomePage() {
       {/* Hero — full-bleed, на всю ширину экрана (ТЗ 4.1, задача 1.3) */}
       <Hero slides={heroSlides()} />
 
+      {/* ТЗ 1.1: единственный блок про выходящие серии — данные из БД (воркер sync-airing).
+          Ниже по странице больше нет «Расписание аниме» / «Обновления аниме»: они дублировали
+          этот блок и показывали демо-неделю. */}
       <div className="container">
         <LatestEpisodes />
       </div>
@@ -94,11 +105,21 @@ export default async function HomePage() {
               ))}
             </Rail>
 
+            {/* ТЗ 3.1.5: новинки — только реально вышедшее; анонсы вынесены в свою рельсу,
+                иначе блок целиком состоял из тайтлов 2027 года со статусом «анонс». */}
             <Rail title="Новинки последних лет" action={{ href: '/catalog?sort=new', label: 'Все новинки' }}>
               {rails.fresh.map((t) => (
                 <PosterCard key={t.slug} title={toCardTitle(t)} />
               ))}
             </Rail>
+
+            {rails.upcoming.length ? (
+              <Rail title="Анонсы: скоро выходят" action={{ href: '/catalog?status=upcoming', label: 'Все анонсы' }}>
+                {rails.upcoming.map((t) => (
+                  <PosterCard key={t.slug} title={toCardTitle(t)} />
+                ))}
+              </Rail>
+            ) : null}
 
             <DeferredHomeRail kind="top" week={weekTopSlugs} all={allTopSlugs} />
 
@@ -130,12 +151,6 @@ export default async function HomePage() {
               skeleton={Math.min(8, rails.movies.length)}
             />
 
-            <section className="page-section" aria-label="Расписание и обновления">
-              <div className="container">
-                <HomeSchedule fallback={demoWeek()} />
-              </div>
-            </section>
-
             <section className="page-section" aria-label="Жанры">
               <div className="rail-head">
                 <h2 className="section-title">Подборки по жанрам</h2>
@@ -161,7 +176,7 @@ export default async function HomePage() {
                   <li>Серверные компоненты и ISR: страницы каталога отдаются без клиентского JS.</li>
                   <li>Командная палитра Ctrl+K: тайтлы, жанры и действия в одном поиске.</li>
                   <li>Плеер с автопереходом, прогрессом, пропуском опенинга и горячими клавишами.</li>
-                  <li>Реестр провайдеров: демо-поток из коробки, Kodik/Aniboom — через токены.</li>
+                  <li>Реестр провайдеров: озвучки и субтитры подключаются по мере появления источников.</li>
                 </ul>
                 <div className="btn-row">
                   <Link className="btn btn--primary btn--md" href="/catalog">

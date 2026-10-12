@@ -8,6 +8,7 @@ import { WEEKDAYS, WEEKDAYS_SHORT } from '@/lib/labels';
 import { formatClock, formatDate, plural } from '@/lib/format';
 import { PosterArt } from '@/components/anime/PosterArt';
 import { mskDayIndex, todayIndex } from '@/lib/schedule-core';
+import type { ScheduleSource } from '@/lib/schedule';
 import { IconCalendar } from '@/components/ui/icons';
 
 /**
@@ -15,7 +16,7 @@ import { IconCalendar } from '@/components/ui/icons';
  * крупная секция «Сегодня», компактные колонки остальных дней,
  * пустые дни — одной строкой.
  */
-export function ScheduleBoard({ entries, live }: { entries: ScheduleEntry[]; live: boolean }) {
+export function ScheduleBoard({ entries, source }: { entries: ScheduleEntry[]; source: ScheduleSource }) {
   /* Аудит 30.09 (react-hooks/purity): Date.now() в рендере → useNow. */
   const nowTs = useNow(60_000);
   const today = todayIndex();
@@ -28,11 +29,17 @@ export function ScheduleBoard({ entries, live }: { entries: ScheduleEntry[]; liv
 
   return (
     <div className="schedule schedule--v2">
-      <p className={`schedule__note ${live ? 'schedule__note--live' : ''}`}>
-        {live
-          ? 'Неделя выхода серий по данным AniList. Время — московское (МСК).'
-          : 'AniList недоступен — показана неделя из кэша (демо). Живые данные подгрузятся автоматически.'}
-      </p>
+      {/* ТЗ 1.1.4: пометка «демо» удалена вместе с демо-неделей. При пустой таблице
+          показываем нормальное пустое состояние, а не фейковые серии. */}
+      {entries.length ? (
+        <p className={`schedule__note ${source === 'db' ? 'schedule__note--live' : ''}`}>
+          {source === 'db'
+            ? 'Неделя выхода серий обновляется автоматически каждые 30 минут. Время — московское (МСК).'
+            : 'Показаны серии из графика выхода каталога: полная сетка появится после следующего обновления расписания.'}
+        </p>
+      ) : (
+        <p className="schedule__note">На этой неделе данных пока нет — расписание обновляется автоматически.</p>
+      )}
 
       <section className="schedule__today" aria-label={`Сегодня: ${WEEKDAYS[today]}`}>
         <header className="schedule__today-head">
@@ -98,7 +105,7 @@ export function ScheduleBoard({ entries, live }: { entries: ScheduleEntry[]; liv
 }
 
 /** Блок «Сегодня выходит» для главной. */
-export function TodayList({ entries, live }: { entries: ScheduleEntry[]; live: boolean }) {
+export function TodayList({ entries, source }: { entries: ScheduleEntry[]; source: ScheduleSource }) {
   const today = todayIndex();
   const list = entries.filter((e) => mskDayIndex(e.at) === today).slice(0, 9);
   return (
@@ -112,7 +119,9 @@ export function TodayList({ entries, live }: { entries: ScheduleEntry[]; live: b
       ) : (
         <p className="schedule__empty">Сегодня эфиров нет — загляните в недельное расписание.</p>
       )}
-      {!live ? <p className="schedule__note">Данные из кэша (демо-неделя): живые данные AniList подгрузятся автоматически.</p> : null}
+      {source === 'catalog' ? (
+        <p className="schedule__note">Показаны серии из графика выхода каталога: полная сетка появится после обновления расписания.</p>
+      ) : null}
     </div>
   );
 }
@@ -131,7 +140,7 @@ function EntryRow({ entry, big, compact }: { entry: ScheduleEntry; big?: boolean
       <span className="schedule__info">
         <span className="schedule__title">{entry.ru ?? entry.romaji}</span>
         <span className="schedule__meta">
-          {entry.episode} серия{entry.source === 'demo' ? ' · демо' : ''}
+          {entry.episode} серия
         </span>
       </span>
     </>

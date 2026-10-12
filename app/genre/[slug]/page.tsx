@@ -1,73 +1,61 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-export const revalidate = 1800;
-import { titlesByGenre } from '@/lib/catalog';
-import { GENRE_LABELS } from '@/lib/labels';
-import { PosterCard } from '@/components/anime/PosterCard';
+import { GENRE_SORT_LABELS, genrePage, genreStaticParams } from '@/lib/genre-pages';
+import { GenreView } from '@/components/anime/GenreView';
 import { JsonLd, breadcrumbsLd, itemListLd } from '@/components/system/JsonLd';
 import { getProvidersConfig } from '@/lib/config/providers.config';
 
+export const revalidate = 1800;
+
+/* Аудит 2026-10 (ТЗ 2.2): добавлен generateStaticParams — без него маршрут
+ * оставался динамическим (ƒ) и Vercel отдавал его с cache-control: private, no-store. */
+export function generateStaticParams() {
+  return genreStaticParams();
+}
+
 interface Props {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ sort?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  if (!GENRE_LABELS[slug]) notFound();
-  /* S3.2: суффикс «— AniNova» добавляет title.template — убран дубль */
+  const data = genrePage(slug);
+  if (!data) notFound();
+  /* ТЗ 3.2.5: уникальный title/description с реальным числом тайтлов,
+     а не общий шаблон на все страницы жанров. */
+  const title = `Аниме жанра ${data.label} — ${GENRE_SORT_LABELS[data.sort]} (${data.total})`;
+  const description =
+    `${data.total} аниме жанра ${data.label}: онгоинги и завершённые тайтлы с рейтингом, ` +
+    `числом серий и расписанием выхода. Список обновляется автоматически. Смотреть онлайн на AniNova.`;
   return {
-    title: `Аниме жанра ${GENRE_LABELS[slug]} — список тайтлов`,
-    description: `Все аниме жанра ${GENRE_LABELS[slug]}: онгоинги и завершённые тайтлы с рейтингом, описанием и расписанием выхода серий.`,
+    title,
+    description,
     alternates: { canonical: `/genre/${slug}` },
-    openGraph: { type: 'website', url: `/genre/${slug}`, locale: 'ru_RU', siteName: 'AniNova', images: '/opengraph-image' },
+    openGraph: {
+      type: 'website',
+      url: `/genre/${slug}`,
+      locale: 'ru_RU',
+      siteName: 'AniNova',
+      title,
+      description,
+      images: '/opengraph-image',
+    },
+    twitter: { card: 'summary_large_image', title, description, images: '/opengraph-image' },
   };
 }
 
-export default async function GenrePage({ params, searchParams }: Props) {
+export default async function GenreIndexPage({ params }: Props) {
   const { slug } = await params;
-  const { sort } = await searchParams;
-  if (!GENRE_LABELS[slug]) notFound();
-  const items = titlesByGenre(slug, (sort as 'pop' | 'score' | 'new' | 'az') ?? 'pop');
+  const data = genrePage(slug);
+  if (!data) notFound();
   const base = getProvidersConfig().site.url;
 
   return (
     <>
-      {/* SEO-9: хаб-разметка жанра: крошки + ItemList первых 60 тайтлов */}
-      <JsonLd data={breadcrumbsLd(base, [{ name: 'Жанры', href: '/genres' }, { name: GENRE_LABELS[slug] }])} />
-      <JsonLd data={itemListLd(items.slice(0, 60).map((t) => ({ href: `/anime/${t.slug}`, name: t.ru })), base)} />
-    <div className="container">
-      <nav className="crumbs" aria-label="Хлебные крошки">
-        <Link href="/genres">Жанры</Link>
-        <span>/</span>
-        <span>{GENRE_LABELS[slug]}</span>
-      </nav>
-      <header className="page-head">
-        <h1>{GENRE_LABELS[slug]}</h1>
-        <p>{items.length} тайтлов в подборке.</p>
-        <div className="chips">
-          {(
-            [
-              ['pop', 'Популярные'],
-              ['score', 'Высокий рейтинг'],
-              ['new', 'Новые'],
-              ['az', 'А–Я'],
-            ] as const
-          ).map(([key, label]) => (
-            <Link key={key} className={`chip ${sort === key || (!sort && key === 'pop') ? 'is-active' : ''}`} href={`/genre/${slug}${key === 'pop' ? '' : `?sort=${key}`}`}>
-              {label}
-            </Link>
-          ))}
-        </div>
-      </header>
-      <div className="poster-grid">
-        {items.map((t) => (
-          <PosterCard key={t.slug} title={t} />
-        ))}
-      </div>
-    </div>
+      <JsonLd data={breadcrumbsLd(base, [{ name: 'Жанры', href: '/genres' }, { name: data.label }])} />
+      <JsonLd data={itemListLd(data.items.map((t) => ({ href: `/anime/${t.slug}`, name: t.ru })), base)} />
+      <GenreView {...data} />
     </>
   );
 }

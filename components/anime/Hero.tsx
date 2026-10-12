@@ -7,6 +7,8 @@ import type { Title } from '@/lib/types';
 import { artUri } from '@/lib/art';
 import { imgLoader, isProxiable } from '@/lib/img';
 import { TYPE_LABELS } from '@/lib/labels';
+import { episodeCountLabel, isMultiEpisode } from '@/lib/episodes';
+import { clampToSentence } from '@/lib/text';
 import { IconChevronLeft, IconChevronRight, IconPlay, IconSparkles } from '@/components/ui/icons';
 
 /** Герой-карусель: автопрокрутка, клавиатура, уважение к reduce-motion.
@@ -72,9 +74,7 @@ export function Hero({ slides }: { slides: Title[] }) {
             sizes="100vw"
             quality={44}
             priority={index === 0}
-            {...(index === 0
-              ? { fetchPriority: 'high' as const }
-              : { loading: 'eager' as const, fetchPriority: 'auto' as const })}
+            {...(index === 0 ? { fetchPriority: 'high' as const } : { loading: 'eager' as const, fetchPriority: 'auto' as const })}
             decoding="async"
             onError={() => setFailed((f) => ({ ...f, [active.slug]: true }))}
           />
@@ -100,7 +100,7 @@ export function Hero({ slides }: { slides: Title[] }) {
             {[
               active.year ? String(active.year) : '',
               TYPE_LABELS[active.type],
-              active.episodes > 1 ? `${active.episodes} сер.` : '',
+              episodeCountLabel(active) ?? '',
               active.score > 0 ? `★ ${active.score.toFixed(1)}` : '',
             ]
               .filter(Boolean)
@@ -108,9 +108,11 @@ export function Hero({ slides }: { slides: Title[] }) {
           </p>
           {/* S3.1: h1→h2 — единственный H1 страницы теперь page-level (sr-only в app/page.tsx) */}
           <h2 className="hero__title">{active.ru}</h2>
-          <p className="hero__desc">{active.description}</p>
+          {/* ТЗ 1.4: hero резал описание CSS-лайскампом посреди слова («…куда тебя»).
+              Обрезаем по границе предложения до видимого объёма. */}
+          <p className="hero__desc">{clampToSentence(active.description, 260)}</p>
           <div className="hero__actions">
-            <Link className="btn btn--primary btn--lg" href={`/anime/${active.slug}/${active.episodes > 1 ? 1 : ''}`.replace(/\/$/, '')}>
+            <Link className="btn btn--primary btn--lg" href={`/anime/${active.slug}/${isMultiEpisode(active) ? 1 : ''}`.replace(/\/$/, '')}>
               <IconPlay size={16} />
               Смотреть
             </Link>

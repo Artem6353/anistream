@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/catalog', () => ({
   allTitles: mocks.allTitles,
+  /* Аудит 2026-10 (ТЗ 2.1): /api/health показывает, откуда прочитан каталог. */
+  catalogSourceInfo: () => ({ source: 'file', configured: 'file', count: mocks.allTitles().length }),
 }));
 
 vi.mock('@/lib/providers/registry-meta', () => ({

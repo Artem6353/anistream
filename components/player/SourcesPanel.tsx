@@ -1,6 +1,7 @@
 'use client';
 
 import type { EpisodeSource } from '@/lib/providers/types';
+import { NO_SOURCES_LABEL } from '@/lib/source-hints';
 
 export interface SourceGroup {
   pid: string;
@@ -28,7 +29,14 @@ export function SourcesPanel({
 }) {
   return (
     <div className="sources-panel" id="pside-panel" role="tabpanel" aria-labelledby="pside-tab-sources">
-      {status === 'loading' ? <p className="settings__note">Загружаем озвучки…</p> : null}
+      {/* ТЗ 3.3.4: скелетон вместо голого текста — не jumping-контент при догрузке */}
+      {status === 'loading' ? (
+        <div className="sources-skeleton" aria-busy="true" aria-label="Загружаем озвучки">
+          {[0, 1, 2].map((i) => (
+            <span key={i} className="sources-skeleton__row" />
+          ))}
+        </div>
+      ) : null}
       {grouped.map((g) => (
         <section key={g.pid} className="sources-group">
           <h4 className="sources-group__head">{g.name}</h4>
@@ -36,7 +44,12 @@ export function SourcesPanel({
             <>
               <p className="sources-group__kind">Многоголосый / дубляж</p>
               {g.voices.map((s) => (
-                <button key={s.id} type="button" className={`source-row ${selectedId === s.id ? 'is-active' : ''}`} onClick={() => onChoose(s.id)}>
+                <button
+                  key={s.id}
+                  type="button"
+                  className={`source-row ${selectedId === s.id ? 'is-active' : ''}`}
+                  onClick={() => onChoose(s.id)}
+                >
                   <span className="source-row__label">{s.label}</span>
                   {s.guessed ? <span className="source-row__guess">подбор</span> : null}
                 </button>
@@ -47,7 +60,12 @@ export function SourcesPanel({
             <>
               <p className="sources-group__kind">Субтитры</p>
               {g.subs.map((s) => (
-                <button key={s.id} type="button" className={`source-row ${selectedId === s.id ? 'is-active' : ''}`} onClick={() => onChoose(s.id)}>
+                <button
+                  key={s.id}
+                  type="button"
+                  className={`source-row ${selectedId === s.id ? 'is-active' : ''}`}
+                  onClick={() => onChoose(s.id)}
+                >
                   <span className="source-row__label">{s.label}</span>
                 </button>
               ))}
@@ -56,7 +74,10 @@ export function SourcesPanel({
         </section>
       ))}
       {status === 'ready' && !sourcesCount ? (
-        <p className="settings__note">Источники не найдены. Попробуйте другую серию или включите bridge.</p>
+        <p className="settings__note">
+          {NO_SOURCES_LABEL} для этой серии. Попробуйте соседнюю серию — список озвучек пополняется автоматически, как только источник
+          появляется у провайдера.
+        </p>
       ) : null}
     </div>
   );

@@ -40,6 +40,17 @@ export function HomeJsonLd({ popular }: { popular: { slug: string; ru: string }[
     },
   };
 
+  /* ТЗ 3.2.1: Organization не было — у сайта не было сущности-владельца в разметке. */
+  const organization = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'AniNova',
+    alternateName: 'AniNova — каталог аниме',
+    url: `${site}/`,
+    description,
+    ...(process.env.NEXT_PUBLIC_SITE_LOGO ? { logo: `${site}${process.env.NEXT_PUBLIC_SITE_LOGO}` } : {}),
+  };
+
   const collection = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
@@ -75,6 +86,7 @@ export function HomeJsonLd({ popular }: { popular: { slug: string; ru: string }[
   return (
     <>
       <JsonLd data={website} />
+      <JsonLd data={organization} />
       <JsonLd data={collection} />
       <JsonLd data={faq} />
     </>

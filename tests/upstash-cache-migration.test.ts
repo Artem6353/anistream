@@ -43,9 +43,12 @@ function writeCache(value: unknown) {
 
 function runCli(args: string[], extraEnv: Record<string, string> = {}) {
   return new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve, reject) => {
+    /* Аудит 2026-10 (задача 4): --apply теперь требует явного подтверждения, чтобы
+       владелец случайно не залил 97,6 МБ сида в Redis. Тесты легаси-путь проверяют,
+       поэтому подтверждают его переменной окружения. */
     const child = spawn(process.execPath, [scriptPath, ...args], {
       cwd: process.cwd(),
-      env: { ...process.env, ...extraEnv },
+      env: { ...process.env, ALLOW_LEGACY_UPSTASH_SEED: '1', ...extraEnv },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let stdout = '';

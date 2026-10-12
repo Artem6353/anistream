@@ -1,0 +1,89 @@
+name: Repair catalog descriptions (network, manual only)
+
+# Аудит 2026-10 (задача 2): сетевой ремонт описаний НЕ входит в cron sync-catalog.
+# Причины:
+#   * 1698 тайтлов × ~1 req/s к Shikimori — это 30–40 минут внешней нагрузки;
+#   * офлайн-ремонт не может восстановить обрезанный текст: хвост предложения
+#     физически отброшен при импорте (`slice(0, 900)`), поэтому нужен повторный запрос.
+# Офлайн-часть (--fix-episodes/--fix-desc/--fix-dupes/--fix-studios) уже встроена
+# в sync-catalog.yml обязательным шагом перед коммитом.
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Сколько тайтлов обработать за прогон (0 = все помеченные)"
+        type: string
+        default: "300"
+      fixes:
+        description: "Какие сетевые починки включать (descriptions — описания из Shikimori, shiki-episodes — episodes_aired, characters — русские имена персонажей)"
+        type: choice
+        default: descriptions
+        options: [descriptions, shiki-episodes, characters, all]
+
+concurrency:
+  group: aninova-repair-catalog
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci --omit=dev || true
+
+      - name: repair over the network
+        env:
+          # Shikimori требует User-Agent с контактом; секреты — только из env.
+          SHIKIMORI_USER_AGENT: ${{ secrets.SHIKIMORI_USER_AGENT }}
+          LIMIT: ${{ inputs.limit }}
+          FIXES: ${{ inputs.fixes }}
+        run: |
+          set -euo pipefail
+          FLAGS=""
+          case "$FIXES" in
+            descriptions)   FLAGS="--fix-desc-net" ;;
+            shiki-episodes) FLAGS="--fix-shiki-eps" ;;
+            characters)     FLAGS="--fix-characters" ;;
+            all)            FLAGS="--fix-desc-net --fix-shiki-eps --fix-characters" ;;
+          esac
+          ARGS="$FLAGS --apply"
+          if [ "${LIMIT:-0}" != "0" ]; then ARGS="$ARGS --limit $LIMIT"; fi
+          echo "запуск: node scripts/repair-catalog.mjs $ARGS"
+          node scripts/repair-catalog.mjs $ARGS
+          LEFT=$(node -e 'const a=require("./lib/data/titles.json");console.log(a.filter(t=>t.needsDescriptionRefresh&&t.shikimori?.id).length)')
+          echo "осталось перечитать описаний: $LEFT"
+          if [ "$LEFT" != "0" ]; then
+            echo "::notice::Обработана порция. Для следующего батча запустите workflow ещё раз — помеченные тайтлы (needsDescriptionRefresh) сами образуют очередь."
+          fi
+
+      # Ремонт не должен протаскивать дефекты: тот же gate, что в sync-catalog и CI.
+      - name: catalog quality gate
+        run: node scripts/check-catalog-quality.mjs --gate
+
+      - name: validate catalog integrity
+        run: node scripts/validate-catalog.mjs
+
+      - name: commit if changed
+        run: |
+          set -euo pipefail
+          git config user.name "anistream-bot"
+          git config user.email "bot@anistream.local"
+          git add lib/data/titles.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(catalog): repair descriptions/episodes/characters ($(date -u +%F))"
+            bash scripts/push-catalog-commit.sh
+          else
+            echo "изменений нет — коммит пропускаем"
+          fi

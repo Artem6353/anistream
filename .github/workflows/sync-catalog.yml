@@ -100,6 +100,18 @@ jobs:
             fi
             echo "dates batch $i done"
           done
+      # Аудит 2026-10 (задача 2): офлайн-ремонт ОБЯЗАТЕЛЕН между генерацией и коммитом.
+      # Новые тайтлы приходят из AniList/Jikan сырыми, а enrich-shikimori ставит t.ru из
+      # Shikimori — без этого шага в каталог постепенно вернулись бы заглушки числа серий,
+      # описания оборванные посреди слова, лицензиары в студиях и дубли названий.
+      # Скрипт идемпотентен: проверено двойным прогоном (второй даёт 0 изменений).
+      # Сетевой --fix-desc-net сюда намеренно НЕ входит (35+ минут и нагрузка на Shikimori) —
+      # он в отдельном workflow repair-catalog-descriptions.yml по workflow_dispatch.
+      - name: repair catalog data (offline, idempotent)
+        run: node scripts/repair-catalog.mjs --fix-episodes --fix-desc --fix-dupes --fix-studios --apply
+      # Предохранитель: не коммитим, если каталог похудел или дефектов больше порога.
+      - name: catalog quality gate (blocks the commit)
+        run: node scripts/check-catalog-quality.mjs --gate
       - name: commit if changed
         run: |
           set -euo pipefail

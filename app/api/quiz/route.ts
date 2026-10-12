@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { loadTitles } from '@/lib/catalog';
 import type { Title } from '@/lib/types';
+import { episodeCount } from '@/lib/episodes';
 
 export const revalidate = 600;
 
@@ -24,19 +25,24 @@ const MOOD_GENRES: Record<string, string[]> = {
 export async function POST(request: Request) {
   const a = (await request.json().catch(() => ({}))) as Answers;
   let pool: Title[] = loadTitles().filter((t) => t.score >= 6.5 && t.status !== 'upcoming');
-  if (a.time === 'one') pool = pool.filter((t) => t.episodes === 1);
-  if (a.time === 'short') pool = pool.filter((t) => t.episodes >= 2 && t.episodes <= 12);
-  if (a.time === 'long') pool = pool.filter((t) => t.episodes >= 24);
+  /* ТЗ 1.2: episodes может быть null (итог не объявлен) — в фильтрах по длине
+     такие тайтлы не участвуют, иначе `null <= 12` молча пропускал их в «короткие». */
+  if (a.time === 'one') pool = pool.filter((t) => episodeCount(t) === 1);
+  if (a.time === 'short') pool = pool.filter((t) => (episodeCount(t) ?? 0) >= 2 && (episodeCount(t) ?? 0) <= 12);
+  if (a.time === 'long') pool = pool.filter((t) => (episodeCount(t) ?? 0) >= 24);
   if (a.time === 'movie') pool = pool.filter((t) => t.type === 'movie');
-  const mood = a.mood ? MOOD_GENRES[a.mood] ?? [] : [];
+  const mood = a.mood ? (MOOD_GENRES[a.mood] ?? []) : [];
   if (mood.length) pool = pool.filter((t) => t.genres.some((g) => mood.includes(g)));
   if (a.genres?.length) pool = pool.filter((t) => t.genres.some((g) => a.genres!.includes(g)));
-  if (a.length === 'lt12') pool = pool.filter((t) => t.episodes <= 12);
-  if (a.length === 'mid') pool = pool.filter((t) => t.episodes > 12 && t.episodes <= 50);
-  if (a.length === 'gt50') pool = pool.filter((t) => t.episodes > 50);
+  if (a.length === 'lt12') pool = pool.filter((t) => (episodeCount(t) ?? 0) <= 12 && episodeCount(t) !== null);
+  if (a.length === 'mid') pool = pool.filter((t) => (episodeCount(t) ?? 0) > 12 && (episodeCount(t) ?? 0) <= 50);
+  if (a.length === 'gt50') pool = pool.filter((t) => (episodeCount(t) ?? 0) > 50);
   if (a.year === 'new') pool = pool.filter((t) => t.year >= 2023);
   if (a.year === 'old') pool = pool.filter((t) => t.year > 0 && t.year < 2010);
-  if (!pool.length) pool = loadTitles().filter((t) => t.score >= 8).slice(0, 40);
+  if (!pool.length)
+    pool = loadTitles()
+      .filter((t) => t.score >= 8)
+      .slice(0, 40);
   /* Аудит 30.09 (P2-22): sort(() => Math.random() - 0.5) — смещённая перестановка;
      Fisher–Yates даёт равномерную выборку. */
   const shuffled = [...pool];

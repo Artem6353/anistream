@@ -34,9 +34,14 @@ export const metadata: Metadata = {
      (сайт только RU), параметр ?lang=en сервером не обрабатывался:
      англо-альтернатива с русским контентом — ложный сигнал для Google. */
   alternates: { canonical: '/' },
-  /* S6: верификация Google Search Console (URL-prefix property, 28.09.2026). */
+  /* S6: верификация Google Search Console (URL-prefix property, 28.09.2026).
+     ТЗ 3.2.2: верификация Яндекс.Вебмастера — через env, чтобы не коммитить код
+     подтверждения и не менять сборку при смене проекта. Пустое значение = тег не выводится. */
   verification: {
     google: 'FbxT2iDTb-eCOQJXhFdnEyZqMjqKHzIqiX2cebRVDfU',
+    ...(process.env.NEXT_PUBLIC_YANDEX_VERIFICATION
+      ? { yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION }
+      : {}),
   },
   openGraph: {
     type: 'website',
@@ -46,11 +51,17 @@ export const metadata: Metadata = {
     title: 'AniNova — каталог аниме',
     description: 'Подборки, жанры, расписание и плеер. Метаданные AniList, локальный профиль без регистрации.',
   },
-  /* Аудит 30.09 (SEO): twitter-card не было — карточки в X/Twitter рендерились без large-image. */
+  /* Аудит 30.09 (SEO): twitter-card не было — карточки в X/Twitter рендерились без large-image.
+     Аудит 2026-10 (ТЗ 1.5): title/description отсюда УБРАНЫ намеренно. Next мержит
+     metadata поверхностно, но twitter.title/twitter.description — литералы: они не
+     проходили через title.template и поэтому 22 страницы (расписание, каталог, топ,
+     жанры, сезоны, подборки, лента, клубы, форум, квиз…) отдавали в X/Twitter
+     «AniNova — каталог аниме» вместо своего заголовка. Без явного значения Next
+     подставляет в twitter:title/twitter:description резолвленные title/description
+     страницы — то есть то же, что видит Google. card и images остаются общими. */
   twitter: {
     card: 'summary_large_image',
-    title: 'AniNova — каталог аниме',
-    description: 'Подборки, жанры, расписание и плеер. Метаданные AniList, локальный профиль без регистрации.',
+    images: '/opengraph-image',
   },
 };
 

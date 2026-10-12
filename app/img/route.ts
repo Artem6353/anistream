@@ -11,6 +11,11 @@ const ALLOWED = ['s4.anilist.co', 'img2.shikimori.io', 'shikimori.io', 'kodiksto
 const DIR = process.env.VERCEL ? '/tmp/aninova-img' : path.join(process.cwd(), '.cache', 'img');
 const MIN_W = 16;
 const MAX_W = 3840;
+/* Аудит 2026-10 (ТЗ 2.2.2): проверка Content-Type и потолок размера ответа.
+   Раньше прокси транскодировал ЛЮБОЙ ответ разрешённого хоста: HTML-страница
+   ошибки или огромный архив с s4.anilist.co попали бы в sharp и в /tmp-кэш. */
+const MAX_UPSTREAM_BYTES = Number(process.env.IMG_PROXY_MAX_BYTES ?? 12 * 1024 * 1024);
+const ALLOWED_UPSTREAM_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif', 'image/apng'];
 
 export const runtime = 'nodejs';
 
@@ -78,8 +83,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'upstream timeout' }, { status: 504 });
   }
   if (!up.ok) return NextResponse.json({ error: 'upstream ' + up.status }, { status: 502 });
+  const upstreamType = (up.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase() || guessMime(parsed.pathname);
+  /* Только изображения: иначе 400 (не 502) — клиент понял, что запросил не картинку. */
+  if (!upstreamType.startsWith('image/') || !ALLOWED_UPSTREAM_TYPES.includes(upstreamType)) {
+    return NextResponse.json({ error: 'not an image' }, { status: 415 });
+  }
+  const declared = Number(up.headers.get('content-length'));
+  if (Number.isFinite(declared) && declared > MAX_UPSTREAM_BYTES) {
+    return NextResponse.json({ error: 'image too large' }, { status: 413 });
+  }
   const buf = Buffer.from(await up.arrayBuffer());
-  const upstreamType = (up.headers.get('content-type') ?? '').split(';')[0].trim() || guessMime(parsed.pathname);
+  if (buf.length > MAX_UPSTREAM_BYTES) {
+    return NextResponse.json({ error: 'image too large' }, { status: 413 });
+  }
 
   let outBuf = buf;
   let outType = upstreamType;

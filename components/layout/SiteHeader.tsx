@@ -17,14 +17,15 @@ import { DmIcon } from './DmIcon';
 import { IconBookmark, IconCommand, IconSearch, IconSettings, IconMoon, IconSun, IconMonitor } from '@/components/ui/icons';
 import { useI18n } from '@/lib/i18n'; // LanguageSwitcher убран (ТЗ блок 7): сайт только RU; код i18n оставлен на будущее
 
+/* Аудит 2026-10 (ТЗ 3.3.2): «Лента», «Клубы» и «Форум» убраны из основной навигации —
+   на проде в них нет контента (страницы закрыты noindex через lib/section-index.ts,
+   пока записей меньше SECTION_INDEX_THRESHOLD). Пункты возвращаются в массив, когда
+   разделы наполнятся; сами страницы и ссылки из профиля не удалены. */
 const NAV = [
   { href: '/catalog', key: 'catalog' },
   { href: '/top', key: 'top' },
   { href: '/genres', key: 'genres' },
   { href: '/schedule', key: 'schedule' },
-  { href: '/feed', key: 'feed' },
-  { href: '/clubs', key: 'clubs' },
-  { href: '/forum', key: 'forum' },
 ] as const;
 
 export function SiteHeader() {

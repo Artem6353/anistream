@@ -16,6 +16,7 @@
      9) слаги из ромадзи, коллизии → суффикс -mal{id}; существующие слаги не трогаются.
    Запуск: node scripts/fetch-jikan.mjs [--limit N] [--reset] */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { clampToSentence } from './lib/text.mjs';
 
 const BASE = process.env.JIKAN_BASE || 'https://api.jikan.moe/v4'; // JIKAN_BASE — для офлайн-тестов на моке
 const P = 'lib/data/titles.json';
@@ -142,15 +143,22 @@ outer: for (let gi = resume.gi; gi < genres.length; gi++) {
           year: yearM,
           season: null,
           status: ({ 'Currently Airing': 'ongoing', 'Finished Airing': 'finished', 'Not yet aired': 'upcoming', 'On Hiatus': 'ongoing', Cancelled: 'finished' })[m.status] ?? 'finished',
-          episodes: m.episodes || (type === 'movie' ? 1 : 12),
+          /* ТЗ 1.2: заглушку вместо неизвестного числа серий не подставляем.
+             Было `m.episodes || (type === 'movie' ? 1 : 12)` — отсюда «12 серий»
+             у анонсов 2027 года. null означает «итог не объявлен». */
+          episodes: m.episodes || (type === 'movie' ? 1 : null),
           score: Math.round((m.score ?? 0) * 10) / 10,
           favourites: Math.round((m.members ?? 0) / 20), // members MAL → шкала favourites AniList (~1:20)
           genres: (m.genres ?? []).map((x) => String(x.name).toLowerCase().replace(/ /g, '-')).filter((x) => !BAD_GENRES.has(x)),
           poster: m.images?.jpg?.large_image_url ?? m.images?.jpg?.image_url ?? null,
           banner: null,
           trailer: m.trailer?.youtube_id ?? null,
-          description: clean(m.synopsis).slice(0, 400),
+          description: clampToSentence(clean(m.synopsis), 400),
+          /* ТЗ 3.1.3: только анимационные студии. Jikan отдаёт всех участников
+             производства, из-за чего у «Ван-Пис» в студиях были Funimation и Viz Media
+             (лицензиары), а у «Тетради смерти» — VAP и Konami. */
           studios: (m.studios ?? []).map((s) => s.name),
+          licensors: (m.licensors ?? []).map((s) => s.name),
           metaSource: 'jikan',
           shikimori: null,
           relations: [],

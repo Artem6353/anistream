@@ -11,15 +11,20 @@ jobs:
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://aninova-catalog.vercel.app' }}
         run: |
           ok=0
           for i in 1 2; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 https://anistream-catalog.vercel.app/api/health || true)
-            body=$(curl -s --max-time 20 https://anistream-catalog.vercel.app/api/health || true)
+            # Аудит 2026-10 (ТЗ 2.3): монитор пинговал anistream-catalog.vercel.app —
+            # этот домен отдаёт 404 (прод живёт на aninova-catalog.vercel.app), поэтому
+            # uptime-проверка годами не имела смысла. Домен — из env, чтобы не хардкодить.
+            URL="${PRODUCTION_URL%/}/api/health"
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$URL" || true)
+            body=$(curl -s --max-time 20 "$URL" || true)
             if [ "$code" = "200" ] && echo "$body" | grep -q '"ok":true'; then ok=1; break; fi
             sleep 20
           done
-          if [ "$ok" = "1" ]; then echo "health OK"; exit 0; fi
+          if [ "$ok" = "1" ]; then echo "health OK ($URL)"; exit 0; fi
           echo "health FAIL (2 попытки)"
           if [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
             curl -s -X POST "https://api.telegram.org/bot$TG_BOT_TOKEN/sendMessage" \

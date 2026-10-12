@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { availabilityHint } from '@/lib/source-hints';
 
 export const EPISODES_CHUNK = 60;
 
@@ -45,7 +46,7 @@ export function EpisodesPanel({
           <Link key={ep} className={`episode-row ${ep === currentEpisode ? 'is-active' : ''}`} href={`/anime/${slug}/${ep}`}>
             <span className="episode-row__num">{ep}</span>
             <span className="episode-row__label">Серия {ep}</span>
-            <span className={`epbar__dot epbar__dot--${kind ?? 'demo'}`} title={kind} />
+            <span className={`epbar__dot epbar__dot--${availabilityHint(kind).tone}`} title={availabilityHint(kind).label} />
           </Link>
         );
       })}

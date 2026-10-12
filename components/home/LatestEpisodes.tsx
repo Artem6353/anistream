@@ -1,80 +1,134 @@
 import Link from 'next/link';
-import { loadTitles } from '@/lib/catalog';
+import { getSchedule, scheduleWindow } from '@/lib/schedule';
 import { mskDayIndex } from '@/lib/schedule-core';
 import { formatClock } from '@/lib/format';
+import type { ScheduleEntry } from '@/lib/types';
 import { PosterArt } from '@/components/anime/PosterArt';
 
-/** «Новые эпизоды» (паттерн AniLibria/AnimeGO): ленты Вчера/Сегодня/Завтра с номерами
-    серий и временем МСК — из airing-данных онгоингов. RSC, без клиентского JS. */
-export function LatestEpisodes() {
-  /* RSC: Date.now() фиксируется на ISR-ревалидацию — штатный паттерн. */
+/**
+ * «Новые эпизоды» — ЕДИНСТВЕННЫЙ блок главной про выходящие серии (аудит 2026-10, ТЗ 1.1.5).
+ *
+ * Раньше на главной было четыре пересекающихся блока с РАЗНЫМИ источниками:
+ * «Новые эпизоды» (реальный airing из titles.json), «Расписание аниме» и
+ * «Обновления аниме» (HomeSchedule → демо-неделя из хеша слага), «Сегодня в эфире МСК»
+ * (сайдбар). В итоге один блок показывал реальные серии, второй — «One Piece серия 5»
+ * с пометкой «демо», третий — «эфиров нет». Теперь источник один (lib/schedule.ts:
+ * таблица airing_schedule → fallback реального графика каталога), а блоки
+ * HomeSchedule и «Сегодня в эфире МСК» удалены.
+ *
+ * Вкладки «Вчера / Сегодня / Завтра» — на CSS :checked, без клиентского JS и гидратации.
+ */
+
+type DayKey = 'yesterday' | 'today' | 'tomorrow';
+
+const DAYS: { key: DayKey; label: string; offset: number }[] = [
+  { key: 'yesterday', label: 'Вчера', offset: -1 },
+  { key: 'today', label: 'Сегодня', offset: 0 },
+  { key: 'tomorrow', label: 'Завтра', offset: 1 },
+];
+
+/** Сколько строк во вкладке: «Сегодня» — основная, остальные короче. */
+const PER_TAB: Record<DayKey, number> = { yesterday: 8, today: 12, tomorrow: 8 };
+
+function Row({ e }: { e: ScheduleEntry }) {
+  const href = e.slug ? `/anime/${e.slug}/${e.episode}` : '/schedule';
+  return (
+    <li>
+      <Link className="latest-eps__item" href={href}>
+        <span className="latest-eps__poster">
+          <PosterArt src={e.poster} seed={String(e.anilistId)} initials={e.romaji} alt="" width={44} />
+        </span>
+        <span className="latest-eps__info">
+          <span className="latest-eps__title">{e.ru ?? e.romaji}</span>
+          <span className="latest-eps__meta">
+            Серия {e.episode} · {formatClock(e.at)} МСК
+          </span>
+        </span>
+        <span className="latest-eps__ep">EP {e.episode}</span>
+      </Link>
+    </li>
+  );
+}
+
+export async function LatestEpisodes() {
+  /* RSC: время фиксируется на момент ISR-ревалидации (revalidate 3600 на главной). */
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
-  const from = now - 48 * 3600_000;
-  const to = now + 48 * 3600_000;
-  const rows: { at: number; ep: number; slug: string; ru: string; poster: string | null; romaji: string }[] = [];
-  for (const t of loadTitles()) {
-    for (const a of t.airing ?? []) {
-      if (a.at >= from && a.at <= to) rows.push({ at: a.at, ep: a.ep, slug: t.slug, ru: t.ru, poster: t.poster, romaji: t.romaji });
-    }
+  const { entries, source } = await getSchedule(now);
+  const { startMs, endMs } = scheduleWindow(now);
+
+  const byDay = new Map<DayKey, ScheduleEntry[]>();
+  for (const { key, offset } of DAYS) {
+    const target = mskDayIndex(now + offset * 86_400_000);
+    const list = entries
+      .filter((e) => mskDayIndex(e.at) === target && e.at >= startMs && e.at <= endMs)
+      .sort((a, b) => a.at - b.at);
+    if (list.length) byDay.set(key, list);
   }
-  rows.sort((a, b) => a.at - b.at);
-  if (!rows.length) return null;
-  const today = mskDayIndex(now);
-  const label = (at: number) => {
-    const d = mskDayIndex(at);
-    if (d === today) return 'Сегодня';
-    if (d === (today + 6) % 7) return 'Вчера';
-    if (d === (today + 1) % 7) return 'Завтра';
-    return '';
-  };
-  // S2.1: весь блок — не более 8 строк (было до 4 групп × 8 = 32): Вчера 3 + Сегодня 3 +
-  // Завтра 2; остальное — на /schedule (ссылка «Всё расписание» в шапке блока).
-  const GROUP_CAPS: [string, number][] = [
-    ['Вчера', 3],
-    ['Сегодня', 3],
-    ['Завтра', 2],
-  ];
-  const groups = new Map<string, typeof rows>();
-  for (const r of rows) {
-    const l = label(r.at);
-    if (!l) continue;
-    if (!groups.has(l)) groups.set(l, []);
-    groups.get(l)!.push(r);
+
+  /* Пустое состояние вместо скрытого блока: пользователь не должен гадать,
+     почему расписания нет (ТЗ 1.1.4). */
+  if (!byDay.size) {
+    return (
+      <section className="page-section" aria-label="Новые эпизоды">
+        <div className="rail-head">
+          <h2 className="section-title">Новые эпизоды</h2>
+          <Link className="rail-head__more" href="/schedule">
+            Всё расписание →
+          </Link>
+        </div>
+        <p className="panel__note">
+          На этой неделе данных пока нет: расписание обновляется автоматически, как только
+          источники публикуют сетку выхода серий.
+        </p>
+      </section>
+    );
   }
+
+  const tabs = DAYS.filter((d) => byDay.has(d.key));
+  const activeKey = tabs.some((t) => t.key === 'today') ? 'today' : tabs[0].key;
+
   return (
-    <section className="page-section" aria-label="Новые эпизоды">
+    <section className="page-section latest" aria-label="Новые эпизоды">
       <div className="rail-head">
         <h2 className="section-title">Новые эпизоды</h2>
         <Link className="rail-head__more" href="/schedule">
           Всё расписание →
         </Link>
       </div>
-      <div className="latest-eps">
-        {GROUP_CAPS.filter(([g]) => groups.has(g)).map(([g, cap]) => (
-          <div className="latest-eps__group" key={g}>
-            <h3 className="latest-eps__day">{g}</h3>
-            <ul className="latest-eps__list">
-              {groups.get(g)!.slice(0, cap).map((r) => (
-                  <li key={`${r.slug}-${r.ep}`}>
-                    <Link className="latest-eps__item" href={`/anime/${r.slug}/${r.ep}`}>
-                      <span className="latest-eps__poster">
-                        <PosterArt src={r.poster} seed={r.slug} initials={r.romaji} alt="" width={44} />
-                      </span>
-                      <span className="latest-eps__info">
-                        <span className="latest-eps__title">{r.ru}</span>
-                        <span className="latest-eps__meta">
-                          Серия {r.ep} · {formatClock(r.at)} МСК
-                        </span>
-                      </span>
-                      <span className="latest-eps__ep">EP {r.ep}</span>
-                    </Link>
-                  </li>
-              ))}
+
+      {/* CSS-вкладки: radio + соседние label/ul в одной grid-ячейке, без JS и гидратации */}
+      <div className="latest__tabs">
+        {tabs.map((d) => (
+          <div className="latest__tab" key={d.key}>
+            <input
+              className="sr-only latest__radio"
+              type="radio"
+              name="latest-day"
+              id={`latest-day-${d.key}`}
+              defaultChecked={d.key === activeKey}
+            />
+            <label className="latest__tab-label" htmlFor={`latest-day-${d.key}`}>
+              {d.label}
+              <span className="latest__tab-count">{byDay.get(d.key)!.length}</span>
+            </label>
+            <ul className="latest-eps__list latest__panel">
+              {byDay
+                .get(d.key)!
+                .slice(0, PER_TAB[d.key])
+                .map((e) => (
+                  <Row key={`${e.anilistId}-${e.episode}-${e.at}`} e={e} />
+                ))}
             </ul>
           </div>
         ))}
       </div>
+
+      <p className="latest__note">
+        {source === 'db'
+          ? 'Сетка выхода серий обновляется автоматически. Время — московское (МСК).'
+          : 'Показаны серии из графика выхода каталога; полная сетка подтянется после обновления расписания.'}
+      </p>
     </section>
   );
 }
