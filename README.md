@@ -1,7 +1,7 @@
 # AniStream 2.0
 
 Каталог и плеер аниме на **Next.js 16.3.8 (App Router, RSC/ISR) + TypeScript (strict)**:
-**8017 тайтлов** (AniList + Shikimori-обогащение), реестр источников видео в Supabase,
+**8018 тайтлов** (AniList + Shikimori-обогащение), реестр источников видео в Supabase,
 плеер v3 с озвучками и графиком серий, социалка, админка модерации. Пересборка проекта
 `сайт_для_аниме` (AniStream) с упором на надёжность, скорость и дизайн.
 
@@ -213,7 +213,7 @@ Oracle Always Free VPS, Cloudflare Pages) и рекомендациям по Б�
   из обогащённого датасета, `VideoLinks.getLinks` для прямых m3u8, `parseSkipButtons` для кнопки
   «Пропустить опенинг» с реальными таймингами. Если прямые ссылки недоступны — фолбэк в embed-плеер Kodik.
 - **HLS** воспроизводится лениво подгружаемым `hls.js` (MP4 — нативно), качество переключается в меню плеера.
-- **Каталог 8017 тайтлов**: основной источник — таблица Supabase `public.titles`
+- **Каталог 8018 тайтлов**: основной источник — таблица Supabase `public.titles`
   (`CATALOG_SOURCE=db`, прайм один раз на процесс из `instrumentation.ts`),
   `lib/data/titles.json` — fallback и вход для одноразового импорта
   (`node scripts/import-titles-to-db.mjs`). Метаданные AniList (постеры, баннеры, трейлеры,
@@ -264,7 +264,7 @@ components/   anime · layout · player · profile · schedule · system · ui
 lib/          types · catalog (датасет и запросы) · schedule (live+fallback) ·
               library (локальный профиль) · providers/ (реестр + kodik-резолвер) ·
               shikimori (второй источник) · tv (D-pad навигация) · art (генеративные постеры)
-lib/data/     titles.json — снапшот каталога (8017 тайтлов; fallback при CATALOG_SOURCE=file),
+lib/data/     titles.json — снапшот каталога (8018 тайтлов; fallback при CATALOG_SOURCE=file),
               manual-sources.json
 supabase/     migrations/ — схема (в т.ч. titles, airing_schedule, episodes, episode_sources),
               functions/submit-review
