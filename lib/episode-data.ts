@@ -122,17 +122,28 @@ const dbConfigured = () => Boolean(SUPA_URL && (SUPA_ANON || SUPA_SERVICE));
    20261012_set_episodes_released.sql), а не в query-строке: PostgREST не умеет
    GROUP BY, а тянуть десятки тысяч строк на каждый старт процесса нельзя. */
 
-async function fetchJson<T>(path: string): Promise<T[] | null> {
+async function fetchJson<T>(path: string, opts: { noStore?: boolean } = {}): Promise<T[] | null> {
   if (!dbConfigured()) return null;
   const key = SUPA_SERVICE || SUPA_ANON;
+  /* ИНЦИДЕНТ 2026-10-13 (500 FUNCTION_INVOCATION_FAILED на всех онгоингах):
+     releasedFromDb() зовётся из рендера СТАТИЧЕСКИХ ISR-страниц
+     (/anime/[slug], /anime/[slug]/[episode], revalidate 3600) через
+     releasedCountFor(). Стоявший здесь cache:'no-store' превращал страницу
+     «из статической в динамическую» прямо в рантайме, а Next 16 в проде
+     делает это жёсткой ошибкой «Page changed from static to dynamic at
+     runtime» → /500 на каждом онгоинге (one-piece, conan, sazae-san…).
+     Теперь по умолчанию запрос идёт в data-кэш Next (revalidate 300 с —
+     «сколько серий вышло» может отстать на 5 минут, это цена живых ISR-страниц),
+     а no-store разрешён ТОЛЬКО вне рендера: прайм при старте процесса
+     (module-scope / instrumentation) передаёт { noStore: true }. */
+  const cacheInit = opts.noStore
+    ? { cache: 'no-store' as const }
+    : { next: { revalidate: Number(process.env.EPISODES_DB_REVALIDATE_SEC ?? 300) } };
   try {
     const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
       signal: AbortSignal.timeout(15_000),
-      /* Кэш Next: прайм случается раз на процесс, но ревалидация ISR не должна
-         дёргать БД повторно. no-store здесь означал бы dynamic-роут — его не будет,
-         потому что запрос идёт из instrumentation, а не из рендера. */
-      cache: 'no-store',
+      ...cacheInit,
     });
     if (!res.ok) return null;
     const rows = (await res.json()) as T[];
@@ -162,10 +173,13 @@ export async function primeEpisodeData(): Promise<PrimeResult> {
   if (!dbConfigured()) return { updated: 0, from: [], configured: false };
 
   const [episodes, airing, titles] = await Promise.all([
-    fetchJson<{ anime_id: number; max_number: number }>(`episode_progress?select=anime_id,max_number`),
-    fetchJson<{ anime_id: number; max_episode: number }>(`airing_progress?select=anime_id,max_episode`),
+    /* noStore безопасен: прайм выполняется ВНЕ рендера (module-scope /
+       instrumentation), статические страницы его не видят. */
+    fetchJson<{ anime_id: number; max_number: number }>(`episode_progress?select=anime_id,max_number`, { noStore: true }),
+    fetchJson<{ anime_id: number; max_episode: number }>(`airing_progress?select=anime_id,max_episode`, { noStore: true }),
     fetchJson<{ id: number; episodes_released: number | null }>(
       `titles?select=id,episodes_released&episodes_released=not.is.null&limit=20000`,
+      { noStore: true },
     ),
   ]);
 
