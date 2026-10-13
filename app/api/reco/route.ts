@@ -21,7 +21,10 @@ export async function GET(request: Request) {
   const limit = Number.isFinite(rawLimit) ? Math.min(24, Math.max(1, rawLimit)) : 12;
 
   if (genre) {
-    return NextResponse.json({ items: topByGenre(genre, slugs, limit) }, { headers: { 'Cache-Control': 'public, s-maxage=3600' } });
+    return NextResponse.json(
+      { items: topByGenre(genre, slugs, limit) },
+      { headers: { 'Cache-Control': 'public, s-maxage=3600', 'Netlify-Vary': 'query' } },
+    );
   }
 
   let collab = new Map<string, number>();
