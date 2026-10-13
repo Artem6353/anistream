@@ -234,3 +234,31 @@ describe('прежние правила не сломаны', () => {
     expect(maxKnownEpisode({ airing: airing(3, 7) })).toBe(7); // без id — только каталог
   });
 });
+
+describe('инцидент 2026-10-13: fetch границы серий из рендера cache-safe (ISR)', () => {
+  it('releasedFromDb НЕ шлёт cache: no-store (иначе Next 16: static→dynamic = 500)', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://isr-test.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon-test-key';
+    const calls: Array<RequestInit & { next?: { revalidate?: number } }> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit & { next?: { revalidate?: number } }) => {
+        calls.push(init ?? {});
+        return Response.json([{ episodes_released: 42, max_number: 42, max_episode: 42 }]);
+      }),
+    );
+    vi.resetModules();
+    const mod = await import('@/lib/episode-data');
+    const n = await mod.releasedFromDb(21);
+    expect(n).toBe(42);
+    expect(calls.length).toBeGreaterThan(0);
+    for (const init of calls) {
+      expect(init.cache).not.toBe('no-store');
+      expect(init.next?.revalidate).toBeGreaterThan(0);
+    }
+    vi.unstubAllGlobals();
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    vi.resetModules();
+  });
+});
