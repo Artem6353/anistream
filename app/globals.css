@@ -4150,7 +4150,10 @@ html[data-tv='true'] .mobile-nav { display: none; }
 .latest__tab { display: contents; }
 .latest__radio { position: absolute; opacity: 0; pointer-events: none; }
 .latest__tab-label {
-  grid-area: 1 / 1;
+  /* ИНЦИДЕНТ 2026-10-13 (стиль): раньше все label стояли в ОДНОЙ ячейке 1/1 и
+     перекрывали друг друга — из-под активной таблетки торчала дуга соседней.
+     Теперь label раскладывает auto-placement по колонкам строки 1. */
+  grid-row: 1;
   z-index: 2;
   justify-self: start;
   display: inline-flex;
@@ -4185,7 +4188,7 @@ html[data-tv='true'] .mobile-nav { display: none; }
   text-align: center;
 }
 /* Панели: все в одной ячейке, видна только соседняя с выбранным radio */
-.latest__panel { grid-area: 2 / 1; z-index: 1; visibility: hidden; opacity: 0; transition: opacity 0.15s ease; }
+.latest__panel { grid-area: 2 / 1 / 3 / -1; z-index: 1; visibility: hidden; opacity: 0; transition: opacity 0.15s ease; }
 .latest__radio:checked + .latest__tab-label + .latest__panel { visibility: visible; opacity: 1; }
 .latest__panel .latest-eps__item { margin-bottom: 8px; }
 .latest__note { margin: 12px 0 0; color: var(--muted-2); font-size: 12.5px; }
