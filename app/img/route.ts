@@ -139,6 +139,11 @@ function respond(body: Buffer, contentType: string, vary: boolean): Response {
   const headers: Record<string, string> = {
     'Content-Type': contentType,
     'Cache-Control': 'public, max-age=31536000, immutable',
+    /* Netlify: рантайм Next.js по умолчанию строит ключ CDN-кэша только по пути
+       (из query учитываются лишь _rsc/__nextDataReq), и все /img?url=… получали
+       первую закэшированную картинку — у каждого тайтла был постер «Ван-Пис».
+       Ответ зависит от url/w/q/fmt, поэтому кэш варьируем по всему query. */
+    'Netlify-Vary': 'query',
   };
   if (vary) headers['Vary'] = 'Accept'; // fmt=auto: край должен различать Accept-варианты
   // Uint8Array-обёртка: Buffer<ArrayBufferLike> из @types/node 22 не матчится с BodyInit напрямую

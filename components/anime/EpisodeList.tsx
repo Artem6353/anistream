@@ -10,7 +10,7 @@ import { useLibrary } from '@/lib/library';
 import { IconCheck, IconPlay } from '@/components/ui/icons';
 
 /** Список серий с отметками о просмотре и текущей позицией. */
-export function EpisodeList({ title }: { title: Title }) {
+export function EpisodeList({ title, count }: { title: Title; count?: number | null }) {
   const { history } = useLibrary();
   const pathname = usePathname();
   const router = useRouter();
@@ -31,7 +31,9 @@ export function EpisodeList({ title }: { title: Title }) {
   /* ТЗ 1.2: список строим от числа ВЫШЕДШИХ серий. Раньше брали поле `episodes`,
      где у онгоингов лежала заглушка импортера 24: у «Ван-Пис» рисовалось 24 кнопки
      вместо 1134, а серия 25 отдавала 404. */
-  const total = episodeCount(title) ?? 0;
+  /* count — число со страницы (releasedCountFor: каталог + БД у онгоингов); на клиенте
+     overrides из БД недоступны, поэтому без него список у онгоингов обрывался раньше. */
+  const total = (count !== undefined ? count : episodeCount(title)) ?? 0;
   const { totalUnknown } = episodeInfo(title);
   const CHUNK = 60;
   const [chunk, setChunk] = useState(0);
@@ -60,26 +62,28 @@ export function EpisodeList({ title }: { title: Title }) {
           {totalUnknown ? '+' : ''} шт.
         </span>
       </div>
-      <form
-        className="episodes__jump"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const n = Number(jump);
-          if (Number.isInteger(n) && n >= 1 && n <= total) {
-            router.push(`/anime/${title.slug}/${n}`);
-            setJump('');
-          }
-        }}
-      >
-        <input
-          className="input episodes__jump-input"
-          inputMode="numeric"
-          placeholder={`Перейти к серии (1–${total})`}
-          value={jump}
-          onChange={(e) => setJump(e.target.value.replace(/\D/g, '').slice(0, 4))}
-          aria-label="Перейти к серии"
-        />
-      </form>
+      {total > 1 ? (
+        <form
+          className="episodes__jump"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const n = Number(jump);
+            if (Number.isInteger(n) && n >= 1 && n <= total) {
+              router.push(`/anime/${title.slug}/${n}`);
+              setJump('');
+            }
+          }}
+        >
+          <input
+            className="input episodes__jump-input"
+            inputMode="numeric"
+            placeholder={`Перейти к серии (1–${total})`}
+            value={jump}
+            onChange={(e) => setJump(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            aria-label="Перейти к серии"
+          />
+        </form>
+      ) : null}
       {chunks > 1 ? (
         <div className="chips" style={{ marginBottom: 10 }}>
           {Array.from({ length: chunks }, (_, i) => (

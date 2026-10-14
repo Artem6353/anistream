@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { imgProxyUrl } from '@/lib/img';
 
 /** Галерея кадров с лайтбоксом (клавиши: Esc, ←/→). */
 export function GalleryLightbox({ images, title }: { images: string[]; title: string }) {
@@ -22,13 +23,13 @@ export function GalleryLightbox({ images, title }: { images: string[]; title: st
       {images.map((src, i) => (
         <button key={src} type="button" className="gallery__item" onClick={() => setOpen(i)} aria-label={`Кадр ${i + 1}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/img?url=${encodeURIComponent(src)}`} alt={`Кадр из аниме ${title}, ${i + 1}`} loading="lazy" />
+          <img src={imgProxyUrl(src) ?? src} alt={`Кадр из аниме ${title}, ${i + 1}`} loading="lazy" />
         </button>
       ))}
       {open !== null ? (
         <div className="lightbox" role="dialog" aria-modal="true" onClick={() => setOpen(null)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/img?url=${encodeURIComponent(images[open])}`} alt={`Кадр из аниме ${title}`} onClick={(e) => e.stopPropagation()} />
+          <img src={imgProxyUrl(images[open]) ?? images[open]} alt={`Кадр из аниме ${title}`} onClick={(e) => e.stopPropagation()} />
           <div className="lightbox__nav" onClick={(e) => e.stopPropagation()}>
             <button type="button" className="icon-btn" onClick={() => setOpen((open - 1 + images.length) % images.length)} aria-label="Предыдущий кадр">
               ←

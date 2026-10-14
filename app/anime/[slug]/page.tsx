@@ -324,11 +324,11 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
               а названия серий отсутствовали вовсе. */}
           {epData.rows.length ? <EpisodeDatesBlock slug={title.slug} rows={epData.rows} total={epsCount} /> : null}
 
-          {epsCount !== null && epsCount > 1 ? (
-            <section aria-label="Серии">
-              <EpisodeList title={title} />
-            </section>
-          ) : null}
+          {/* Блок «Серии» есть у каждого тайтла: раньше он скрывался при одной серии,
+              и у фильмов/OVA/спешлов (и у анонсов) не было ни списка, ни пояснения. */}
+          <section aria-label="Серии">
+            <EpisodeList title={title} count={epsCount} />
+          </section>
         </div>
 
         <div className="detail-extra">

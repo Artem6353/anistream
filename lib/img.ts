@@ -6,6 +6,11 @@ import type { ImageLoaderProps } from 'next/image';
  */
 export const IMG_PROXY = process.env.NEXT_PUBLIC_IMG_PROXY !== '0';
 
+/** Версия URL прокси. Ответы /img кэшируются браузером на год (immutable), а на Netlify
+ *  край раньше отдавал одну и ту же картинку («Ван-Пис») на любой ?url= — браузеры
+ *  запомнили её под адресами всех постеров. Новый v даёт новые адреса и сбрасывает кэш. */
+const IMG_VERSION = '2';
+
 /** Можно ли проксировать/оптимизировать src (http(s), ещё не прокси, не data/blob). */
 export function isProxiable(src: string | null | undefined): src is string {
   if (!src || !IMG_PROXY) return false;
@@ -16,7 +21,7 @@ export function isProxiable(src: string | null | undefined): src is string {
 /** Кастомный loader для next/image: /img?url=…&w=…&q=…&fmt=auto (ресайз + транскод на сервере). */
 export function imgLoader({ src, width, quality }: ImageLoaderProps): string {
   if (!isProxiable(src)) return src;
-  const p = new URLSearchParams({ url: src, w: String(width), fmt: 'auto' });
+  const p = new URLSearchParams({ url: src, w: String(width), fmt: 'auto', v: IMG_VERSION });
   if (quality) p.set('q', String(quality));
   return `/img?${p.toString()}`;
 }
@@ -25,7 +30,7 @@ export function imgLoader({ src, width, quality }: ImageLoaderProps): string {
 export function imgProxyUrl(src: string | null | undefined, w?: number, q?: number): string | null {
   if (!src) return null;
   if (!isProxiable(src)) return src;
-  const p = new URLSearchParams({ url: src, fmt: 'auto' });
+  const p = new URLSearchParams({ url: src, fmt: 'auto', v: IMG_VERSION });
   if (w) p.set('w', String(w));
   if (q) p.set('q', String(q));
   return `/img?${p.toString()}`;

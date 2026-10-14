@@ -25,6 +25,8 @@ export async function GET(request: Request) {
   /* Аудит 01.10, итерация 2: роут читает searchParams → это dynamic-FUNCTION,
      revalidate=600 на таких не работает (зонд: x-vercel-cache MISS на повторах),
      а край уважает s-maxage в ответе функции. Поэтому: без revalidate, с явным
-     s-maxage+SWR — CDN кэширует по полному URL (ключ = набор слагов). */
-  return NextResponse.json({ items }, { headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=60' } });
+     s-maxage+SWR — CDN кэширует по полному URL (ключ = набор слагов).
+     Netlify-Vary: query — иначе Netlify-край игнорирует ?slugs= и все рельсы
+     получают один и тот же ответ. */
+  return NextResponse.json({ items }, { headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=60', 'Netlify-Vary': 'query' } });
 }
