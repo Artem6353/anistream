@@ -1,7 +1,7 @@
 # AniStream 2.0
 
 Каталог и плеер аниме на **Next.js 16.3.8 (App Router, RSC/ISR) + TypeScript (strict)**:
-**8018 тайтлов** (AniList + Shikimori-обогащение), реестр источников видео в Supabase,
+**8020 тайтлов** (AniList + Shikimori-обогащение), реестр источников видео в Supabase,
 плеер v3 с озвучками и графиком серий, социалка, админка модерации. Пересборка проекта
 `сайт_для_аниме` (AniStream) с упором на надёжность, скорость и дизайн.
 
@@ -191,6 +191,36 @@ docker compose up --build       # весь стек: web + 2 bridge
 Oracle Always Free VPS, Cloudflare Pages) и рекомендациям по БД (сейчас БД не нужна;
 при аккаунтах — Supabase/Neon; кэш на serverless — Upstash/KV) — в [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
+## Деплой: Vercel (основной) и Netlify (зеркало/резерв)
+
+Проект одинаково собирается на обеих платформах; различия сведены в таблицу.
+
+| Аспект | Vercel | Netlify |
+| --- | --- | --- |
+| Рантайм Next | сборка `npm run build` (`next build --webpack`), функции Node | встроенный OpenNext-адаптер (zero-config), функции Node |
+| Middleware `proxy.ts` | Edge Functions | Edge Functions (требования те же: edge-safe граф импортов, страж `tests/edge-import-guard.test.ts`) |
+| ISR / revalidate | Full Route Cache | Full Route Cache + Data Cache, on-demand revalidate поддержан |
+| `lib/data/titles.json` в рантайме | `outputFileTracingIncludes` в `next.config.ts` | `included_files` в `netlify.toml` |
+| Заголовки кэша в логах | `x-vercel-cache` | `netlify-cdn-cache`, `age` |
+| Защита от skew-ассетов | платформа | `NETLIFY_NEXT_SKEW_PROTECTION=true` (в `netlify.toml`) |
+| Лимиты free/hobby | CPU 4 ч/мес, Fast Origin 10 ГБ | 100 ГБ CDN, 125k функций, 300 мин сборок |
+
+Правила для обеих платформ (выстраданы инцидентами 2026-10):
+
+1. `proxy.ts` (middleware) не имеет права транзитивно импортировать `node:*`
+   и `lib/catalog` — проверяется тестом `tests/edge-import-guard.test.ts`.
+2. Fetch из рендера статических страниц (`revalidate > 0`) не имеет права быть
+   `cache: 'no-store'` — иначе прод-ошибка «static → dynamic at runtime» (500);
+   страж: `tests/episode-released.test.ts`.
+3. Прайм каталога/серий стартует самостартом в module-scope `lib/catalog.ts` и
+   `lib/episode-data.ts` под guard'ом `NEXT_RUNTIME === 'nodejs'`; хук
+   `instrumentation.*` в проекте не используется намеренно.
+4. `scripts/smoke.mjs` проверяет только HTTP-статусы и намеренно не привязан к
+   заголовкам кэша платформы: `SMOKE_URL=https://<host> npm run smoke` работает
+   и на Vercel, и на Netlify, и локально.
+
+План полного переезда с переключением DNS без простоя: `docs/NETLIFY-MIGRATION.md`.
+
 ## Чек-лист публикации в сеть
 
 1. `npm install && npm run check:env` — скрипт покажет, какие группы переменных не заполнены.
@@ -213,7 +243,7 @@ Oracle Always Free VPS, Cloudflare Pages) и рекомендациям по Б�
   из обогащённого датасета, `VideoLinks.getLinks` для прямых m3u8, `parseSkipButtons` для кнопки
   «Пропустить опенинг» с реальными таймингами. Если прямые ссылки недоступны — фолбэк в embed-плеер Kodik.
 - **HLS** воспроизводится лениво подгружаемым `hls.js` (MP4 — нативно), качество переключается в меню плеера.
-- **Каталог 8018 тайтлов**: основной источник — таблица Supabase `public.titles`
+- **Каталог 8020 тайтлов**: основной источник — таблица Supabase `public.titles`
   (`CATALOG_SOURCE=db`, прайм один раз на процесс из `instrumentation.ts`),
   `lib/data/titles.json` — fallback и вход для одноразового импорта
   (`node scripts/import-titles-to-db.mjs`). Метаданные AniList (постеры, баннеры, трейлеры,
@@ -264,7 +294,7 @@ components/   anime · layout · player · profile · schedule · system · ui
 lib/          types · catalog (датасет и запросы) · schedule (live+fallback) ·
               library (локальный профиль) · providers/ (реестр + kodik-резолвер) ·
               shikimori (второй источник) · tv (D-pad навигация) · art (генеративные постеры)
-lib/data/     titles.json — снапшот каталога (8018 тайтлов; fallback при CATALOG_SOURCE=file),
+lib/data/     titles.json — снапшот каталога (8020 тайтлов; fallback при CATALOG_SOURCE=file),
               manual-sources.json
 supabase/     migrations/ — схема (в т.ч. titles, airing_schedule, episodes, episode_sources),
               functions/submit-review

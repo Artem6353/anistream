@@ -1,0 +1,39 @@
+# Netlify configuration for AniNova (Next.js 16 App Router, ISR, edge-middleware).
+#
+# Актуальная архитектура Netlify (2026): Next.js выполняется встроенным
+# OpenNext-адаптером (opennextjs-netlify) с ZERO-CONFIG. Плагин
+# [[plugins]] package = "@netlify/plugin-nextjs" НЕ добавлять: это legacy-путь
+# (Essential Next.js), его ставят только для отката на старый рантайм.
+# Адаптер обновляется автоматически на каждой сборке; Next 16 поддержан
+# (changelog Netlify 2025-10-21), пины не нужны.
+#
+# Что адаптер делает сам: SSR/ISR/Route Handlers/Server Actions → Netlify
+# Functions; middleware (наш proxy.ts) → Edge Functions; Full Route Cache +
+# Data Cache с time-based и on-demand revalidate; next/image → Netlify Image CDN.
+
+[build]
+  # scripts/build.mjs = next build --webpack с heap-лимитом 700 МБ;
+  # на билд-машинах Netlify памяти больше — оставляем единый entrypoint.
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+  # Skew protection (opt-in): визитёры во время деплоя не ловят 404 старых
+  # чанков — клиентские запросы идут в тот же деплой, что и первая страница.
+  NETLIFY_NEXT_SKEW_PROTECTION = "true"
+
+[functions]
+  # КРИТИЧНО (инцидент-аналог Vercel outputFileTracingIncludes): lib/catalog
+  # читает lib/data/titles.json (28 МБ) в рантайме через process.cwd().
+  # Без included_files функции поймают statSync ENOENT → голые 500.
+  included_files = ["lib/data/titles.json"]
+  # Парсинг 28 МБ JSON + прайм каталога на холодном старте: держим 1 ГБ.
+  memory = 1024
+  # Холодный старт с праймом Supabase-каталога укладывается в 30 с.
+  timeout = 30
+
+[dev]
+  command = "npm run dev"
+  port = 3000
