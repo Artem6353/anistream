@@ -29,10 +29,10 @@
   # читает lib/data/titles.json (28 МБ) в рантайме через process.cwd().
   # Без included_files функции поймают statSync ENOENT → голые 500.
   included_files = ["lib/data/titles.json"]
-  # Парсинг 28 МБ JSON + прайм каталога на холодном старте: держим 1 ГБ.
-  memory = 1024
-  # Холодный старт с праймом Supabase-каталога укладывается в 30 с.
-  timeout = 30
+  # memory и timeout НЕ задаём: дефолт Netlify уже 1024 МБ, а лимит
+  # синхронного выполнения 60 с не конфигурируется (docs: Configuration
+  # for functions). Скалярные functions.timeout/memory ломают парсинг
+  # netlify.toml («must be an object») — деплой падал на Initializing.
 
 [dev]
   command = "npm run dev"
