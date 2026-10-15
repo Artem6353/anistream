@@ -28,14 +28,17 @@ export function PosterArt({
   /** Качество транскода (дефолт маршрута: avif 62, webp/jpeg 75). */
   quality?: number;
 }) {
-  const [failed, setFailed] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const [directSrc, setDirectSrc] = useState<string | null>(null);
+  const failed = !!src && failedSrc === src;
+  const direct = !!src && directSrc === src;
   const fallback = artUri(seed, initials);
   // Tiny poster slots (episode rows, mini lists) should request 1x/2x assets for
   // their actual CSS width instead of inheriting the full-card 44vw hint.
   const responsiveSizes = width <= 96
     ? `${width}px`
     : '(max-width: 640px) 44vw, (max-width: 1080px) 20vw, (min-width: 1600px) 210px, 180px';
-  if (!failed && isProxiable(src)) {
+  if (!failed && !direct && isProxiable(src)) {
     return (
       <Image
         className="poster-art"
@@ -48,7 +51,7 @@ export function PosterArt({
         quality={quality}
         priority={!!eager}
         {...(eager ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const, fetchPriority: 'low' as const })}
-        onError={() => setFailed(true)}
+        onError={() => setDirectSrc(src)}
         draggable={false}
       />
     );
@@ -62,7 +65,7 @@ export function PosterArt({
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"
       fetchPriority={eager ? 'high' : 'auto'}
-      onError={() => setFailed(true)}
+      onError={() => { if (src && !failed) setFailedSrc(src); }}
       draggable={false}
     />
   );

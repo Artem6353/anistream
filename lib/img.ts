@@ -18,7 +18,7 @@ export function imgLoader({ src, width, quality }: ImageLoaderProps): string {
   if (!isProxiable(src)) return src;
   const p = new URLSearchParams({ url: src, w: String(width), fmt: 'auto' });
   if (quality) p.set('q', String(quality));
-  return `/img?${p.toString()}`;
+  return `/img/v2?${p.toString()}`;
 }
 
 /** URL прокси для plain <img> (RSC/декоративные слоты): w — физ. ширина, q — качество. */
@@ -28,5 +28,5 @@ export function imgProxyUrl(src: string | null | undefined, w?: number, q?: numb
   const p = new URLSearchParams({ url: src, fmt: 'auto' });
   if (w) p.set('w', String(w));
   if (q) p.set('q', String(q));
-  return `/img?${p.toString()}`;
+  return `/img/v2?${p.toString()}`;
 }

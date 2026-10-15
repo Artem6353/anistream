@@ -4151,7 +4151,7 @@ html[data-tv='true'] .mobile-nav { display: none; }
    продолжали занимать строку — дыра на пол-экрана под «Новыми эпизодами».
    Переезжаем на inline-flow: label — inline-flex в ряд, панели — block,
    неактивные display:none (место не занимают). */
-.latest__tabs { display: block; }
+.latest__tabs { display: grid; grid-template-columns: repeat(3, max-content) minmax(0, 1fr); gap: 12px 8px; }
 .latest__tab { display: contents; }
 .latest__radio { position: absolute; opacity: 0; pointer-events: none; }
 .latest__tab-label {
@@ -4161,7 +4161,8 @@ html[data-tv='true'] .mobile-nav { display: none; }
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  margin: 0 6px 12px 0;
+  grid-row: 1;
+  margin: 0;
   padding: 7px 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -4196,7 +4197,8 @@ html[data-tv='true'] .mobile-nav { display: none; }
    Порядок правил в файле больше не важен. */
 .latest__tabs .latest-eps__list.latest__panel { display: none; }
 .latest__tabs .latest__radio:checked + .latest__tab-label + .latest-eps__list.latest__panel { display: flex; }
-.latest__panel .latest-eps__item { margin-bottom: 8px; }
+.latest__panel { grid-row: 2; grid-column: 1 / -1; min-width: 0; }
+.latest__panel .latest-eps__item { margin-bottom: 0; }
 .latest__note { margin: 12px 0 0; color: var(--muted-2); font-size: 12.5px; }
 
 /* Аудит 2026-10 (ТЗ 3.2.3): «Выход серий» — уникальный блок страницы тайтла. */
@@ -4918,4 +4920,25 @@ html[data-tv='true'] .rail:not(.rail--grid) .card {
   text-decoration-thickness: 1px;
   text-underline-offset: 0.16em;
   font-weight: 650;
+}
+
+/* Catalogue polish: give artwork space and keep section edges aligned. */
+.container > .page-section > .rail-head,
+.container > .latest > .rail-head { width: 100%; margin-inline: 0; }
+.card__media { border-radius: 12px; }
+.card__title { min-height: 2.76em; }
+.card__meta { flex-wrap: wrap; row-gap: 2px; }
+.card__media:focus-visible .card__play { opacity: 1; }
+.latest-eps__info { flex: 1; }
+.latest-eps__item { padding: 10px 12px; }
+.latest__tabs .latest__radio:checked + .latest__tab-label + .latest-eps__list.latest__panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 700px) {
+  .latest__tabs .latest__radio:checked + .latest__tab-label + .latest-eps__list.latest__panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .latest__tab-label { padding: 7px 10px; font-size: 13px; }
 }
