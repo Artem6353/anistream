@@ -4190,8 +4190,12 @@ html[data-tv='true'] .mobile-nav { display: none; }
   text-align: center;
 }
 /* Панели: все в одной ячейке, видна только соседняя с выбранным radio */
-.latest__panel { display: none; }
-.latest__radio:checked + .latest__tab-label + .latest__panel { display: block; }
+/* Специфичность ВЫШЕ, чем у .latest-eps__list{display:flex} (это правило идёт
+   позже в файле и при равной специфичности (0,1,0) перебивало display:none —
+   на проде одновременно торчали все три списка дней, инцидент 2026-10-15 ч.3).
+   Порядок правил в файле больше не важен. */
+.latest__tabs .latest-eps__list.latest__panel { display: none; }
+.latest__tabs .latest__radio:checked + .latest__tab-label + .latest-eps__list.latest__panel { display: flex; }
 .latest__panel .latest-eps__item { margin-bottom: 8px; }
 .latest__note { margin: 12px 0 0; color: var(--muted-2); font-size: 12.5px; }
 
