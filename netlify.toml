@@ -29,6 +29,10 @@
   # читает lib/data/titles.json (28 МБ) в рантайме через process.cwd().
   # Без included_files функции поймают statSync ENOENT → голые 500.
   included_files = ["lib/data/titles.json"]
+  # sharp — нативный пакет (image-прокси /img): без external_node_modules
+  # функция ловит 502 на import sharp, и все постеры падают в фолбэк
+  # (инцидент 2026-10-15). Дублируется graceful-302 в app/img/route.ts.
+  external_node_modules = ["sharp"]
   # memory и timeout НЕ задаём: дефолт Netlify уже 1024 МБ, а лимит
   # синхронного выполнения 60 с не конфигурируется (docs: Configuration
   # for functions). Скалярные functions.timeout/memory ломают парсинг

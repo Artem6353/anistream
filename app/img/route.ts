@@ -2,13 +2,35 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import sharp from 'sharp';
+
+/* ИНЦИДЕНТ 2026-10-15 (Netlify): статический `import sharp` ронял ВСЮ функцию
+   /img на платформах, где нативный binary не попал в бандл (Netlify OpenNext:
+   502 {"error":...}), и все постеры/кадры/персонажи падали в фолбэки (арт
+   Ван-Писа / «шахматка»). Теперь sharp грузится лениво: нет бинаря — маршрут
+   отвечает 302 на исходный URL CDN (CSP img-src https: это разрешает),
+   картинки живут везде, просто без ресайза/webp. На Vercel/self-hosted, где
+   sharp есть, поведение прежнее (транскод + кэш). */
+let sharpMod: typeof import('sharp').default | null | undefined;
+async function loadSharp(): Promise<typeof import('sharp').default | null> {
+  if (sharpMod !== undefined) return sharpMod;
+  try {
+    sharpMod = (await import('sharp')).default;
+  } catch {
+    sharpMod = null;
+  }
+  return sharpMod;
+}
 
 const ALLOWED = ['s4.anilist.co', 'img2.shikimori.io', 'shikimori.io', 'kodikstorage.com', 'cdn.myanimelist.net'];
 /* S1.1 (аудит 28.09): на serverless кэш вариантов живёт в /tmp (единственная writable-директория
    Vercel), на self-hosted — как раньше в .cache/img. Кэш — best-effort: край Vercel всё равно держит
    immutable-ответ, транскод выполняется ~1 раз на вариант на регион. */
-const DIR = process.env.VERCEL ? '/tmp/aninova-img' : path.join(process.cwd(), '.cache', 'img');
+/* /tmp — единственная writable-директория serverless (Vercel И Netlify-функции
+   Lambda); на self-hosted — как раньше .cache/img. */
+const DIR =
+  process.env.VERCEL || process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME
+    ? '/tmp/aninova-img'
+    : path.join(process.cwd(), '.cache', 'img');
 const MIN_W = 16;
 const MAX_W = 3840;
 /* Аудит 2026-10 (ТЗ 2.2.2): проверка Content-Type и потолок размера ответа.
@@ -42,6 +64,16 @@ export async function GET(request: Request) {
   }
   if ((parsed.protocol !== 'https:' && parsed.protocol !== 'http:') || !ALLOWED.includes(parsed.hostname)) {
     return NextResponse.json({ error: 'host not allowed' }, { status: 403 });
+  }
+
+  /* Нет sharp (Netlify без external_node_modules и т.п.) — не ломаем картинку:
+     302 на исходный URL разрешённого CDN. fmt=orig sharp не требует. */
+  const fmtWanted = (sp.get('fmt') ?? 'auto').toLowerCase();
+  if (fmtWanted !== 'orig' && !(await loadSharp())) {
+    return NextResponse.redirect(parsed, {
+      status: 302,
+      headers: { 'Cache-Control': 'public, max-age=3600' },
+    });
   }
 
   const w = clampInt(sp.get('w'), MIN_W, MAX_W, 0);
@@ -101,7 +133,7 @@ export async function GET(request: Request) {
   let outType = upstreamType;
   if (fmt !== 'orig' && buf.length > 0) {
     try {
-      const img = sharp(buf, { failOn: 'none' });
+      const img = (await loadSharp())!(buf, { failOn: 'none' });
       const meta = await img.metadata();
       const animated = (meta.pages ?? 1) > 1; // gif/анимированный webp — passthrough
       if (!animated) {
