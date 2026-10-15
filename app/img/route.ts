@@ -21,7 +21,7 @@ async function loadSharp(): Promise<typeof import('sharp').default | null> {
   return sharpMod;
 }
 
-const ALLOWED = ['s4.anilist.co', 'img2.shikimori.io', 'shikimori.io', 'kodikstorage.com', 'cdn.myanimelist.net'];
+const ALLOWED = ['s4.anilist.co', 'shikimori.one', 'img2.shikimori.io', 'shikimori.io', 'kodikstorage.com', 'cdn.myanimelist.net'];
 /* S1.1 (аудит 28.09): на serverless кэш вариантов живёт в /tmp (единственная writable-директория
    Vercel), на self-hosted — как раньше в .cache/img. Кэш — best-effort: край Vercel всё равно держит
    immutable-ответ, транскод выполняется ~1 раз на вариант на регион. */
@@ -53,6 +53,14 @@ type Fmt = 'avif' | 'webp' | 'jpeg' | 'orig';
  * (фикс бага «jpeg-байты в .webp-файле с чужим MIME»).
  */
 export async function GET(request: Request) {
+  const response = await getImage(request);
+  // Netlify's default Next.js cache key omits custom query parameters.
+  // Every source and transform must have its own CDN entry, including redirects.
+  response.headers.set('Netlify-Vary', 'query=url|w|q|fmt,header=Accept');
+  return response;
+}
+
+async function getImage(request: Request) {
   const sp = new URL(request.url).searchParams;
   const url = sp.get('url');
   if (!url) return NextResponse.json({ error: 'url required' }, { status: 400 });

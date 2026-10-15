@@ -19,6 +19,7 @@ describe('/img без sharp (деградация платформы)', () => {
       new Request('http://localhost/img?url=https%3A%2F%2Fs4.anilist.co%2Ffile%2Fanilistcdn%2Fmedia%2Fanime%2Fcover%2Fmedium%2Fbx21.jpg&w=96&fmt=auto'),
     );
     expect(res.status).toBe(302);
+    expect(res.headers.get('netlify-vary')).toBe('query=url|w|q|fmt,header=Accept');
     expect(res.headers.get('location')).toBe(
       'https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx21.jpg',
     );
@@ -35,6 +36,7 @@ describe('/img без sharp (деградация платформы)', () => {
       new Request('http://localhost/img?url=https%3A%2F%2Fs4.anilist.co%2Ffile%2Fx.jpg&fmt=orig'),
     );
     expect(res.status).toBe(200);
+    expect(res.headers.get('netlify-vary')).toBe('query=url|w|q|fmt,header=Accept');
     expect(res.headers.get('content-type')).toBe('image/jpeg');
     vi.unstubAllGlobals();
   });
