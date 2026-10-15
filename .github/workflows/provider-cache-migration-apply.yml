@@ -63,7 +63,7 @@ jobs:
       - name: Verify production can read compressed cache values
         if: ${{ inputs.apply }}
         env:
-          PRODUCTION_URL: https://aninova-catalog.vercel.app
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://aninova-cataloge.netlify.app' }}
         run: |
           set -euo pipefail
           response_file="$(mktemp)"

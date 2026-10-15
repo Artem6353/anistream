@@ -11,7 +11,7 @@ jobs:
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://aninova-catalog.vercel.app' }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://aninova-cataloge.netlify.app' }}
         run: |
           ok=0
           for i in 1 2; do

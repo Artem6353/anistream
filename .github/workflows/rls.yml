@@ -20,7 +20,7 @@ jobs:
         with: { node-version: 20, cache: npm }
       - run: npm ci
       - name: read-only RLS oracles vs prod
-        run: SMOKE_URL=https://aninova-catalog.vercel.app npm run check:rls
+        run: SMOKE_URL=${{ vars.PRODUCTION_URL || 'https://aninova-cataloge.netlify.app' }} npm run check:rls
 
   local-contracts:
     runs-on: ubuntu-latest
