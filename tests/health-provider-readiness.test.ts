@@ -57,7 +57,7 @@ describe('provider configuration in health endpoint', () => {
   });
 
   it('reports which providers are configured without exposing URLs or credentials', async () => {
-    const response = await GET();
+    const response = await GET(new Request("http://localhost/api/health"));
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -90,7 +90,7 @@ describe('provider configuration in health endpoint', () => {
   it('reports the configured cache backend without exposing Redis credentials', async () => {
     mocks.kvEnabled.mockReturnValue(true);
 
-    const response = await GET();
+    const response = await GET(new Request("http://localhost/api/health"));
     const body = await response.json();
 
     expect(body.providerCache).toEqual({
@@ -113,7 +113,7 @@ describe('provider configuration in health endpoint', () => {
       },
     });
 
-    const response = await GET();
+    const response = await GET(new Request("http://localhost/api/health"));
     const body = await response.json();
 
     expect(body.providerCache).toEqual({
@@ -135,7 +135,7 @@ describe('provider configuration in health endpoint', () => {
     });
     mocks.bridgeHealth.mockResolvedValue({ ok: false, reason: 'bridge offline' });
 
-    const response = await GET();
+    const response = await GET(new Request("http://localhost/api/health"));
     const body = await response.json();
 
     expect(body.bridges).toEqual({
@@ -149,7 +149,7 @@ describe('provider configuration in health endpoint', () => {
     mocks.kvEnabled.mockReturnValue(true);
     mocks.kvPing.mockResolvedValue(false);
 
-    const response = await GET();
+    const response = await GET(new Request("http://localhost/api/health"));
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -171,7 +171,7 @@ describe('provider configuration in health endpoint', () => {
       { id: 'aniboom', label: 'AniBoom', available: false },
     ]);
 
-    const response = await GET();
+    const response = await GET(new Request("http://localhost/api/health"));
     const body = await response.json();
 
     expect(body.ok).toBe(true);
