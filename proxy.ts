@@ -13,6 +13,18 @@ import { genreRedirectTarget } from '@/lib/genre-redirect';
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
+  /* Каноникализация хоста при переезде (SEO-микс Vercel+Netlify): если задан
+     CANONICAL_HOST и запрос пришёл на другой хост — 301 на тот же путь.
+     Ставится на СТАРОМ хосте (Vercel): вес выдачи переезжает без дублей.
+     Edge-safe: только URL-API, без импортов каталога. */
+  const canonical = (process.env.CANONICAL_HOST ?? '').trim().toLowerCase();
+  if (canonical && request.nextUrl.hostname.toLowerCase() !== canonical) {
+    const url = request.nextUrl.clone();
+    url.host = canonical;
+    url.protocol = 'https:';
+    return NextResponse.redirect(url, 301);
+  }
+
   /* Аудит 2026-10 (задача 3): старые URL жанров с query → новые сегменты пути.
      Сортировка и пагинация переехали на /genre/<slug>/<sort>-<page>, а ссылки вида
      /genre/comedy?sort=score&page=2 остались в индексе Google и во внешних ссылках.
