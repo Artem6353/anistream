@@ -165,19 +165,21 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
     alternateName: title.romaji,
     description: title.description || title.shikimori?.description || '',
     image: title.poster,
-    /* ТЗ 3.2.1: aggregateRating — только при реальной оценке. ratingCount раньше
-       подставлялся из `favourites` (избранные ≠ число оценок): у «Ван-Пис» в разметке
-       было ratingCount 109202 при том, что это счётчик избранного. Пока настоящего
-       числа оценок в каталоге нет, поле не отдаём вовсе — Google допускает
-       ratingValue без ratingCount, а ложное число ломает доверие к разметке. */
-    ...(title.score > 0
+    /* ТЗ 3.2.1 + инцидент GSC 2026-10-17 («Проверка кода»: 21 невалидный элемент,
+       «Укажите ratingCount или reviewCount»): Google больше не принимает
+       aggregateRating без счётчика оценок. ratingValue без ratingCount теперь
+       = критичная ошибка rich-results, поэтому aggregateRating публикуется
+       ТОЛЬКО при реальном ratingCount (число оценок, не «избранных»); иначе
+       блок не публикуется вовсе — лучше без звёзд, чем невалидная разметка.
+       Ложное число из favourites запрещено прежним решением ТЗ 3.2.1. */
+    ...(title.score > 0 && (title.ratingCount ?? 0) > 0
       ? {
           aggregateRating: {
             '@type': 'AggregateRating',
             ratingValue: title.score,
             bestRating: 10,
             worstRating: 1,
-            ...(title.ratingCount ? { ratingCount: title.ratingCount } : {}),
+            ratingCount: title.ratingCount,
           },
         }
       : {}),
