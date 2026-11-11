@@ -189,10 +189,6 @@ export function loadTitles(includeHidden = false): Title[] {
   return includeHidden ? titles : titles.filter((t) => !t.hidden);
 }
 
-/** @deprecated Используйте loadTitles(): константа не инвалидируется после записи
- *  titles.json (скрытие из админки). Сохранена для совместимости импортов. */
-export const TITLES: Title[] = loadTitles();
-
 export const PER_PAGE = 24;
 
 /* Объявлены до primeCatalogFromDb (сбрасываются при подмене кэша). */

@@ -42,7 +42,7 @@ export interface ProvidersConfig {
 }
 
 const bool = (v: string | undefined, fallback: boolean) =>
-  v === undefined ? fallback : ['1', 'true', 'yes', 'on'].includes(v.toLowerCase());
+  v === undefined || v.trim() === '' ? fallback : ['1', 'true', 'yes', 'on'].includes(v.toLowerCase());
 
 const num = (v: string | undefined, fallback: number) => {
   const n = Number(v);
@@ -60,20 +60,20 @@ const num = (v: string | undefined, fallback: number) => {
  */
 function resolveCacheFileBackend(env: NodeJS.ProcessEnv): boolean {
   const raw = env.PROVIDER_CACHE_FILE_BACKEND;
-  if (raw !== undefined) return bool(raw, true);
+  if (raw !== undefined && raw.trim() !== '') return bool(raw, true);
   return !(env.NODE_ENV === 'production' || Boolean(env.VERCEL));
 }
 
 /** Синтез/подбор URL — только явно (dev или PROVIDER_UNVERIFIED_FALLBACK=1), ТЗ 1.6.4. */
 function resolveUnverifiedFallback(env: NodeJS.ProcessEnv): boolean {
   const raw = env.PROVIDER_UNVERIFIED_FALLBACK;
-  if (raw !== undefined) return bool(raw, false);
+  if (raw !== undefined && raw.trim() !== '') return bool(raw, false);
   return env.NODE_ENV !== 'production';
 }
 
 function resolveDemoListed(env: NodeJS.ProcessEnv): boolean {
   const raw = env.DEMO_PROVIDER_ENABLED ?? env.DEMO_ENABLED;
-  if (raw !== undefined) return bool(raw, false);
+  if (raw !== undefined && raw.trim() !== '') return bool(raw, false);
   return env.NODE_ENV !== 'production';
 }
 
@@ -112,17 +112,20 @@ function resolveSiteUrl(env: NodeJS.ProcessEnv): string {
   return vercelProd || 'http://localhost:3000';
 }
 
-/** В Vercel 127.0.0.1 указывает на сам serverless-контейнер, а не на локальный Python bridge. */
+/** На serverless (Vercel/Netlify/Lambda) 127.0.0.1 — сам контейнер, а не Python bridge.
+ *  Аудит 2026-11-12: guard был только на VERCEL — на Netlify loopback-дефолты
+ *  считались «включёнными», и каждый резолв долбился в мёртвый 127.0.0.1:8765. */
 function resolveBridgeUrl(
   env: NodeJS.ProcessEnv,
   urlKey: string,
   portKey: string,
   fallbackPort: number,
 ): string {
+  const serverless = Boolean(env.VERCEL || env.NETLIFY || env.AWS_LAMBDA_FUNCTION_NAME);
   const configured = env[urlKey];
   const value = configured !== undefined
     ? configured
-    : env.VERCEL
+    : serverless
       ? ''
       : env[portKey]
         ? `http://127.0.0.1:${env[portKey]}`
@@ -130,7 +133,7 @@ function resolveBridgeUrl(
   if (!value.trim()) return '';
   try {
     const host = new URL(value).hostname.toLowerCase();
-    if (env.VERCEL && ['localhost', '127.0.0.1', '::1'].includes(host)) return '';
+    if (serverless && ['localhost', '127.0.0.1', '::1'].includes(host)) return '';
   } catch {
     /* Валидность URL окончательно проверит fetch; здесь не падаем при загрузке конфига. */
   }

@@ -9,6 +9,7 @@ import { clientIp } from '@/lib/ip';
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllEnvs();
 });
 
 describe('rateLimit', () => {
@@ -47,7 +48,22 @@ describe('clientIp (XFF-подделка закрыта)', () => {
     expect(clientIp(req({ 'x-forwarded-for': 'spoofed, real-client-ip' }))).toBe('real-client-ip');
   });
 
-  it('x-real-ip приоритетнее XFF', () => {
+  /* Аудит 2026-11-12: x-real-ip доверяем только за доверенным прокси.
+     Netlify его НЕ перезаписывает — клиент подделывал заголовок и обнулял лимиты. */
+  it('x-real-ip БЕЗ доверенного прокси игнорируется (Netlify/прямой доступ)', () => {
+    vi.stubEnv('VERCEL', '');
+    vi.stubEnv('TRUST_PROXY_HEADERS', '');
+    expect(clientIp(req({ 'x-real-ip': '9.9.9.9', 'x-forwarded-for': '1.1.1.1' }))).toBe('1.1.1.1');
+  });
+
+  it('x-real-ip приоритетнее XFF на Vercel (платформа перезаписывает заголовок)', () => {
+    vi.stubEnv('VERCEL', '1');
+    expect(clientIp(req({ 'x-real-ip': '9.9.9.9', 'x-forwarded-for': '1.1.1.1' }))).toBe('9.9.9.9');
+  });
+
+  it('TRUST_PROXY_HEADERS=1 включает доверие x-real-ip (self-hosted за Caddy)', () => {
+    vi.stubEnv('VERCEL', '');
+    vi.stubEnv('TRUST_PROXY_HEADERS', '1');
     expect(clientIp(req({ 'x-real-ip': '9.9.9.9', 'x-forwarded-for': '1.1.1.1' }))).toBe('9.9.9.9');
   });
 

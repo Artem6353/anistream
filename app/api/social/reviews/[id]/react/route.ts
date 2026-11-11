@@ -59,9 +59,11 @@ export async function POST(
   //    reviews.likes / reviews.dislikes НЕ трогаем — их пересчитывает триггер.
   //    Колонки id в таблице нет: PK составной (review_id, user_id).
   if (prev === null) {
-    const ins = await supaFetch('review_reactions', {
+    /* Аудит 2026-11-12: upsert по (review_id,user_id) — параллельные клики
+       больше не дают PK-violation → 502. Счётчики по-прежнему считает триггер. */
+    const ins = await supaFetch('review_reactions?on_conflict=review_id,user_id', {
       method: 'POST',
-      headers: { Prefer: 'return=minimal' },
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
       body: JSON.stringify({ review_id: reviewId, user_id: userId, kind }),
     });
     if (!ins.ok) return NextResponse.json({ error: 'supabase error' }, { status: 502 });

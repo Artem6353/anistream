@@ -224,7 +224,7 @@ export async function pushLocal(lists: Record<string, string>, history: HistoryE
     episode: h.episode,
     position: h.position,
     duration: h.duration,
-    updated_at: new Date(h.updatedAt).toISOString(),
+    updated_at: new Date(Number.isFinite(h.updatedAt) ? h.updatedAt : Date.now()).toISOString(),
   }));
 
   let saved = 0;

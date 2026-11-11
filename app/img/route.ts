@@ -170,7 +170,7 @@ async function getImage(request: Request) {
     }
   }
 
-  const storeExt = outType === 'image/avif' ? '.avif' : outType === 'image/webp' ? '.webp' : outType === 'image/png' ? '.png' : '.jpg';
+  const storeExt = outType === 'image/avif' ? '.avif' : outType === 'image/webp' ? '.webp' : outType === 'image/png' ? '.png' : outType === 'image/gif' ? '.gif' : '.jpg';
   void persist(path.join(DIR, key + storeExt), outBuf);
   return respond(outBuf, outType, fmtParam === 'auto' || !sp.has('fmt'));
 }
@@ -210,13 +210,14 @@ function mimeForExt(ext: string): string {
   if (ext === '.avif') return 'image/avif';
   if (ext === '.webp') return 'image/webp';
   if (ext === '.png') return 'image/png';
+  if (ext === '.gif') return 'image/gif';
   return 'image/jpeg';
 }
 
 /** Поиск кэша по ключу: расширение файла определяется тем, что РЕАЛЬНО записали
  *  (транскод мог откатиться на оригинал) — перебираем варианты. */
 async function readCache(key: string): Promise<{ buf: Buffer; ext: string } | null> {
-  for (const ext of ['.webp', '.avif', '.jpg', '.png']) {
+  for (const ext of ['.webp', '.avif', '.jpg', '.png', '.gif']) {
     try {
       return { buf: await fs.readFile(path.join(DIR, key + ext)), ext };
     } catch {}

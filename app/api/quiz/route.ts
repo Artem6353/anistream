@@ -3,8 +3,6 @@ import { loadTitles } from '@/lib/catalog';
 import type { Title } from '@/lib/types';
 import { episodeCount } from '@/lib/episodes';
 
-export const revalidate = 600;
-
 interface Answers {
   time?: 'one' | 'short' | 'long' | 'movie';
   mood?: 'laugh' | 'cry' | 'think' | 'action' | 'relax';

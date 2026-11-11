@@ -23,6 +23,11 @@
   # Skew protection (opt-in): визитёры во время деплоя не ловят 404 старых
   # чанков — клиентские запросы идут в тот же деплой, что и первая страница.
   NETLIFY_NEXT_SKEW_PROTECTION = "true"
+  # Issue #39: сканер секретов флагует НЕ-секретные конфиг-значения (таймауты,
+  # лимиты, флаги), которые встречаются в коде и .env.example. Исключаем только
+  # их; сканирование реальных credentials остаётся включённым. При новых false
+  # positive добавляй ключ сюда, не отключай сканер.
+  SECRETS_SCAN_OMIT_KEYS = "KODIK_TIMEOUT_MS,KODIK_BRIDGE_TIMEOUT_MS,MULTIPLAYER_BRIDGE_TIMEOUT_MS,PROVIDER_TIMEOUT_MS,KODIK_CACHE_TTL_MS,PROVIDER_CACHE_WRITE_DEBOUNCE_MS,KODIK_EPISODE_SEARCH_LIMIT,CATALOG_DB_MIN_ROWS,STATIC_TITLE_LIMIT,STATIC_EPISODE_TITLE_LIMIT,SECTION_INDEX_THRESHOLD,SITEMAP_EPISODE_TITLES,GENRE_MAX_REDIRECT_PAGE,UPSTASH_MAX_VALUE_BYTES,KODIK_ENABLED,ANIBOOM_ENABLED,SHIKIMORI_ENABLED,ANISKIP_ENABLED,PROVIDER_CACHE_ENABLED,PROVIDER_CACHE_WRITE,NEXT_PUBLIC_SITE_NAME,NEXT_PUBLIC_IMG_PROXY,LEGAL_WATCH_ENABLED"
 
 [functions]
   # КРИТИЧНО (инцидент-аналог Vercel outputFileTracingIncludes): lib/catalog
