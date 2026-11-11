@@ -45,6 +45,9 @@ const json = (obj: unknown, status: number) =>
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   if (req.method !== 'POST') return json({ error: 'method' }, 405);
+  /* Аудит 2026-11-12: без Turnstile функция — открытый канал записи через
+     service-key (без капчи и проверки slug). Fail-closed, как /api в production. */
+  if (!TURNSTILE) return json({ error: 'submit-review disabled: TURNSTILE_SECRET is not set' }, 503);
 
   const ip = req.headers.get('x-forwarded-for')?.split(',').pop()?.trim() ?? 'unknown';
   if (!rateOk(ip)) return json({ error: 'too many requests' }, 429);

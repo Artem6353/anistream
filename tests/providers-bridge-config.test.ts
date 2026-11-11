@@ -61,3 +61,38 @@ describe('bridge URL configuration', () => {
     expect(config.site.name).toBe('AniNova');
   });
 });
+
+describe('serverless guards (аудит 2026-11-12)', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('disables loopback bridge defaults on Netlify (not just Vercel)', () => {
+    vi.stubEnv('VERCEL', '');
+    vi.stubEnv('NETLIFY', 'true');
+    vi.stubEnv('KODIK_BRIDGE_URL', undefined);
+    vi.stubEnv('KODIK_BRIDGE_PORT', undefined);
+    vi.stubEnv('MULTIPLAYER_BRIDGE_URL', undefined);
+    vi.stubEnv('MULTIPLAYER_BRIDGE_PORT', undefined);
+
+    const config = getProvidersConfig();
+    expect(config.bridges.kodik.url).toBe('');
+    expect(config.bridges.multiplayer.url).toBe('');
+  });
+
+  it('rejects explicit loopback URLs on Netlify', () => {
+    vi.stubEnv('NETLIFY', 'true');
+    vi.stubEnv('KODIK_BRIDGE_URL', 'http://127.0.0.1:8765');
+
+    const config = getProvidersConfig();
+    expect(config.bridges.kodik.url).toBe('');
+  });
+
+  it('empty env values keep dev defaults (copying .env.example must not disable demo/synth)', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('DEMO_PROVIDER_ENABLED', '');
+    vi.stubEnv('PROVIDER_UNVERIFIED_FALLBACK', '');
+
+    const config = getProvidersConfig();
+    expect(config.demo.listed).toBe(true);
+    expect(config.unverifiedFallback).toBe(true);
+  });
+});

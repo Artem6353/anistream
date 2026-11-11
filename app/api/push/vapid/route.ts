@@ -12,10 +12,16 @@ export async function GET() {
     try {
       keys = JSON.parse(await fs.readFile(FILE, 'utf8'));
     } catch {
+      /* Аудит 2026-11-12: на serverless эфемерные ключи = сломанные подписки —
+         браузер подписывался ключом инстанса A, рассылка (send-push.mjs) уходит
+         env-ключами → VAPID mismatch, все пуши отбиваются. В проде fail-closed. */
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json(
+          { error: 'push not configured: задай VAPID_PUBLIC и VAPID_PRIVATE (node scripts/send-push.mjs --gen-vapid)' },
+          { status: 503 },
+        );
+      }
       keys = webpush.generateVAPIDKeys();
-      /* Аудит 30.09 (P1-12): на read-only ФС (serverless) запись невозможна —
-         не роняем роут, ключи живут до конца инстанса. Проду рекомендуется
-         задать VAPID_PUBLIC/VAPID_PRIVATE явно (scripts/send-push.mjs --gen-vapid). */
       try {
         await fs.mkdir('data', { recursive: true });
         await fs.writeFile(FILE, JSON.stringify(keys));

@@ -2,7 +2,7 @@
   "name": "anistream",
   "version": "2.0.0",
   "private": true,
-  "description": "AniNova вЂ” РєР°С‚Р°Р»РѕРі Рё РїР»РµРµСЂ Р°РЅРёРјРµ: Next.js App Router, RSC, РѕС„Р»Р°Р№РЅ-РєР°С‚Р°Р»РѕРі + Р¶РёРІС‹Рµ РїСЂРѕРІР°Р№РґРµСЂС‹",
+  "description": "AniNova — каталог и плеер аниме: Next.js App Router, RSC, офлайн-каталог + живые провайдеры",
   "scripts": {
     "predev": "node scripts/check-deps.mjs",
     "dev": "next dev",
