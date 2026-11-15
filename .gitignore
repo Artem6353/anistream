@@ -8,12 +8,12 @@ next-env.d.ts
 backups/
 test-results/
 playwright-report/
-# Аудит 30.09: рантайм-артефакты не должны жить в git (раньше web-vitals,
-# provider-errors и data/*.json коммитились и шумели в диффах).
-# ВНИМАНИЕ: .cache/providers-resolve-cache.json остаётся tracked — это
-# намеренный seed-кэш легаси-резолвов (docs/REPORT.md W12), его не трогаем.
-.cache/*
-!.cache/providers-resolve-cache.json
+# Аудит 30.09: рантайм-артефакты не должны жить в git.
+# Аудит 2026-11-12: providers-resolve-cache.json (97,6 MiB) ВЫНЕСЕН из git —
+# он упирался в лимит GitHub 100 MiB и раздувал историю каждые 6 часов.
+# Источник правды — Supabase episode_sources (scripts/import-provider-cache-to-db.mjs),
+# горячий кэш — Upstash. Seed при необходимости — из git-истории до этого коммита.
+.cache/
 data/reports.json
 data/dmca.json
 data/vapid.json

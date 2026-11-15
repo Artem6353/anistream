@@ -119,10 +119,9 @@ jobs:
           git config user.name "anistream-bot"
           git config user.email "bot@anistream.local"
           git add lib/data/titles.json
-          # кэши — по одному с || true: git add с несуществующим pathspec падает (fatal: pathspec
-          # did not match any files, exit 128), а bridge в GH Actions не запускается, поэтому
-          # providers-resolve-cache.json на раннере может отсутствовать. .cache/img/ не добавляем.
-          git add .cache/providers-resolve-cache.json 2>/dev/null || true
+          # Аудит 2026-11-12: providers-resolve-cache.json (97,6 MiB) больше НЕ коммитим —
+          # лимит GitHub 100 MiB на файл + бесконечный рост истории каждые 6 часов.
+          # Источник правды — Supabase episode_sources; кэш живёт в Upstash/на раннере.
           git add .cache/episode-dates-report.json 2>/dev/null || true
           # ВАЖНО (фикс прогона #11): проверять staged-изменения ДО коммита. Прежняя схема
           # «... || git commit; ... || git push» никогда не пушила: после коммита индекс чист,
