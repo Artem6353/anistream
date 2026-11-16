@@ -1,13 +1,40 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { getTitle } from '@/lib/catalog';
 import { maxEpisodeNumberDb } from '@/lib/episode-route';
 import { resolveEpisodeSources, contextFromTitle, providersWithAvailability } from '@/lib/providers';
 import { providerResponseCacheControl } from '@/lib/providers/response-cache';
+import { adminCookieName, timingSafeEqualString, verifyAdminCookie } from '@/lib/admin-auth';
 
 export const revalidate = 0;
 
 interface Props {
   params: Promise<{ slug: string; episode: string }>;
+}
+
+/**
+ * Можно ли этому запросу обходить кэш (`?live=1`).
+ *
+ * Аудит (P2-9): раньше `?live=1` принимался от кого угодно — любой аноним мог
+ * выключить Redis/Supabase-кэш и шаблонный синтез и заставить сервер дёргать
+ * внешние бриджи/API на каждый запрос (усиление нагрузки на апстримы).
+ * Теперь live-режим доступен только:
+ *   • админу с httpOnly-cookie (модерация из браузера), или
+ *   • воркеру с сервисным заголовком/параметром `BACKFILL_TOKEN`
+ *     (scripts/hydrate-embeds.mjs) — сравнение константное по времени.
+ */
+async function liveAllowed(request: Request): Promise<boolean> {
+  try {
+    const store = await cookies();
+    if (verifyAdminCookie(store.get(adminCookieName())?.value)) return true;
+  } catch {
+    /* вне request-scope (тест/скрипт) — проверяем токен ниже */
+  }
+  const expected = process.env.BACKFILL_TOKEN ?? '';
+  if (!expected) return false;
+  const url = new URL(request.url);
+  const provided = url.searchParams.get('token') ?? request.headers.get('x-backfill-token') ?? '';
+  return timingSafeEqualString(provided, expected);
 }
 
 /** A8.1: in-flight dedupe — N одновременных GET одной серии = ОДИН resolve.
@@ -85,8 +112,14 @@ export async function GET(request: Request, { params }: Props) {
   try {
     const searchParams = new URL(request.url).searchParams;
     const preferFiles = searchParams.get('files') === '1';
-    // Bulk backfill can bypass existing cache and URL-template synthesis.
-    const liveOnly = searchParams.get('live') === '1';
+    /* Bulk backfill может обходить кэш и шаблонный синтез — только для воркера/админа
+       (см. liveAllowed). Без прав `?live=1` — 403, а не тихое кэш-значение: иначе
+       hydrate-воркер молча наполнит каталог устаревшими ссылками. */
+    const wantsLive = searchParams.get('live') === '1';
+    if (wantsLive && !(await liveAllowed(request))) {
+      return NextResponse.json({ error: 'live mode requires admin or BACKFILL_TOKEN' }, { status: 403 });
+    }
+    const liveOnly = wantsLive;
     const ctx = { ...contextFromTitle(title, episode), preferFiles };
     const resolveKey = `${slug}:${episode}${preferFiles ? ':files' : ''}${liveOnly ? ':live' : ''}`;
     const sources = await resolveOnce(resolveKey, ctx, { liveOnly });

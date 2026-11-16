@@ -103,28 +103,12 @@ export async function addReview(
   return { item: full };
 }
 
-export async function voteReview(slug: string, id: string, dir: 1 | -1): Promise<void> {
-  if (SOCIAL_MODE === 'supabase') {
-    try {
-      const cur = await loadReviews(slug);
-      const item = cur.find((x) => x.id === id);
-      if (!item) return;
-      const patch = dir === 1 ? { likes: item.likes + 1 } : { dislikes: item.dislikes + 1 };
-      await fetch(`${SUPA_URL}/rest/v1/reviews?id=eq.${id}`, {
-        method: 'PATCH',
-        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch),
-      });
-      return;
-    } catch {}
-  }
-  const items = lsLoad(slug);
-  const item = items.find((x) => x.id === id);
-  if (!item) return;
-  if (dir === 1) item.likes += 1;
-  else item.dislikes += 1;
-  lsSave(slug, items);
-}
+/* Аудит (P2-13): удалён `voteReview()` — мёртвый код (нигде не вызывался), который
+   патчил reviews.likes напрямую anon-ключом из браузера. По RLS (010, reviews_update)
+   UPDATE разрешён только автору отзыва, т.е. функция молча ничего не делала, а если
+   бы её «оживили» — обходила бы серверный пересчёт реакций и накрутку счётчиков.
+   Единственный правильный путь — POST /api/social/reviews/[id]/react (service-ключ
+   + триггер). */
 
 export async function reactToReview(
   reviewId: string,

@@ -19,13 +19,18 @@ const MAX_VALUE_BYTES = Number(process.env.UPSTASH_MAX_VALUE_BYTES ?? 65_536);
 /** TTL по умолчанию 24 ч (KODIK_CACHE_TTL_MS в config = 86 400 000 мс). */
 const DEFAULT_TTL_SECONDS = 86_400;
 
+/** Таймаут одного REST-запроса к Upstash (аудит: без него зависший Redis держал
+ *  запрос до TCP-таймаута на горячем пути /api/providers). */
+const REQUEST_TIMEOUT_MS = Number(process.env.UPSTASH_TIMEOUT_MS ?? 4000);
+
 async function cmd(body: unknown[], timeoutMs?: number): Promise<unknown> {
   const init: RequestInit = {
     method: 'POST',
     headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+    /* Таймаут — ВСЕГДА, а не только у ping: кэш не имеет права подвесить рендер. */
+    signal: AbortSignal.timeout(timeoutMs ?? REQUEST_TIMEOUT_MS),
   };
-  if (timeoutMs) init.signal = AbortSignal.timeout(timeoutMs);
   const r = await fetch(`${URL}/`, init);
   if (!r.ok) throw new Error(`Upstash request failed with HTTP ${r.status}`);
   const j = (await r.json()) as { result?: unknown; error?: string };

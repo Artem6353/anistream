@@ -17,8 +17,6 @@ playwright-report/
 data/reports.json
 data/dmca.json
 data/vapid.json
-
-data/vapid.json
 .cache/img/
 
 screenshots/

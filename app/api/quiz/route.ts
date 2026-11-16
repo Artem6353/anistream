@@ -3,7 +3,8 @@ import { loadTitles } from '@/lib/catalog';
 import type { Title } from '@/lib/types';
 import { episodeCount } from '@/lib/episodes';
 
-export const revalidate = 600;
+/* Аудит (P3): `export const revalidate` на POST-роуте не действует — POST никогда
+   не кэшируется. Контракт кэша — явные заголовки ответа. */
 
 interface Answers {
   time?: 'one' | 'short' | 'long' | 'movie';

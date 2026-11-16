@@ -22,8 +22,10 @@ async function supaFetch(path: string, init: RequestInit = {}) {
 }
 
 export async function POST(request: Request) {
-  const sub = (await request.json()) as { endpoint?: string; keys?: unknown };
-  if (!sub.endpoint) {
+  /* Аудит: без .catch() битый JSON в теле давал голый 500 вместо 400. */
+  const sub = (await request.json().catch(() => ({}))) as { endpoint?: unknown; keys?: unknown };
+  const endpoint = typeof sub.endpoint === 'string' ? sub.endpoint.trim().slice(0, 2000) : '';
+  if (!endpoint) {
     return NextResponse.json({ error: 'bad subscription' }, { status: 400 });
   }
 
@@ -36,7 +38,7 @@ export async function POST(request: Request) {
 
   // Удаляем старую запись с этим endpoint (если была) — получаем upsert по endpoint
   const del = await supaFetch(
-    `push_subs?endpoint=eq.${encodeURIComponent(sub.endpoint)}`,
+    `push_subs?endpoint=eq.${encodeURIComponent(endpoint)}`,
     { method: 'DELETE' },
   );
   if (!del.ok) {
@@ -49,7 +51,7 @@ export async function POST(request: Request) {
     headers: { Prefer: 'return=minimal' },
     body: JSON.stringify({
       id: crypto.randomUUID(),
-      endpoint: sub.endpoint,
+      endpoint,
       keys: sub.keys ?? null,
     }),
   });

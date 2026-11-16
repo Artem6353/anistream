@@ -144,13 +144,25 @@ export async function POST(request: Request) {
   };
   const turnstileSecret = process.env.TURNSTILE_SECRET;
   if (turnstileSecret) {
-    const cf = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ secret: turnstileSecret, response: body.turnstile }),
-    });
-    const cj = (await cf.json()) as { success?: boolean };
-    if (!cj.success) return NextResponse.json({ error: 'капча не пройдена' }, { status: 403 });
+    /* Аудит (P2): проверка Turnstile обязана быть fail-closed и не бросать.
+       Раньше не было таймаута и try/catch: зависший/недоступный Cloudflare
+       давал голый 500 (и ретрай клиента без шанса пройти), а неявный `!cj.success`
+       при невалидном JSON — TypeError. Теперь любой сбой = 403/503 с JSON. */
+    let passed = false;
+    try {
+      const cf = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret: turnstileSecret, response: body.turnstile }),
+        signal: AbortSignal.timeout(5000),
+        cache: 'no-store',
+      });
+      const cj = (await cf.json().catch(() => null)) as { success?: boolean } | null;
+      passed = cj?.success === true;
+    } catch {
+      passed = false;
+    }
+    if (!passed) return NextResponse.json({ error: 'капча не пройдена' }, { status: 403 });
   } else if (!verifyCaptcha(body.captcha?.token, body.captcha?.answer)) {
     return NextResponse.json({ error: 'капча неверна или устарела' }, { status: 400 });
   }
