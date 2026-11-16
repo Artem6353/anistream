@@ -41,8 +41,28 @@ export class PartySocket {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
     if (!url || !key) return;
-    const wsUrl = url.replace('https://', 'wss://') + `/realtime/v1/websocket?apikey=${key}&vsn=1.0.0`;
-    this.ws = new WebSocket(wsUrl);
+    /* Аудит: `url.replace('https://','wss://')` оставлял `http://…` при локальном
+       Supabase (127.0.0.1:54321) — new WebSocket('http://…') бросает SyntaxError,
+       и Watch Party в dev не работала. Теперь протокол выбирается через URL. */
+    let wsUrl: string;
+    try {
+      const parsed = new URL('/realtime/v1/websocket', url);
+      parsed.protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+      parsed.searchParams.set('apikey', key);
+      parsed.searchParams.set('vsn', '1.0.0');
+      wsUrl = parsed.toString();
+    } catch {
+      return;
+    }
+    try {
+      this.ws = new WebSocket(wsUrl);
+    } catch {
+      return; // неподдерживаемая среда/URL — комната просто не синхронизируется
+    }
+    this.ws.onerror = () => {
+      /* Ошибка соединения не должна всплывать в консоль как uncaught; реконнект
+         сделает onclose (сервер закрывает сокет при ошибке). */
+    };
     this.ws.onopen = () => {
       this.send(this.topic, 'phx_join', {});
       this.handlers.onJoin?.();

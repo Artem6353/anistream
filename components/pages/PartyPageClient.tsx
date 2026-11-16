@@ -221,25 +221,49 @@ export default function PartyPage({ params }: { params: Promise<{ id: string }> 
 }
 
 function PartyVideo({ url, videoRef, onEvent, isHost }: { url: string; videoRef: React.RefObject<HTMLVideoElement | null>; onEvent: () => void; isHost: boolean }) {
+  /* Аудит (P2-11): инстанс Hls раньше НЕ уничтожался — в cleanup ставился только
+     флаг destroyed. При смене источника/уходе со страницы старый hls продолжал
+     качать сегменты и держать буферы, а новый аттачился к тому же <video>
+     (двойное воспроизведение/утечка). Теперь: destroy() + отвязка src. */
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
     let destroyed = false;
+    let hls: { destroy: () => void } | null = null;
+
     if (url.includes('.m3u8')) {
-      (async () => {
-        const Hls = (await import('hls.js')).default;
-        if (destroyed || !Hls.isSupported()) return;
-        const hls = new Hls();
-        hls.loadSource(url);
-        hls.attachMedia(v);
+      void (async () => {
+        try {
+          const Hls = (await import('hls.js')).default;
+          if (destroyed) return;
+          /* Safari/iOS играет HLS нативно — hls.js там не нужен и не поддерживается. */
+          if (!Hls.isSupported()) {
+            v.src = url;
+            return;
+          }
+          const instance = new Hls({ capLevelToPlayerSize: true });
+          hls = instance;
+          instance.loadSource(url);
+          instance.attachMedia(v);
+        } catch {
+          if (!destroyed) v.src = url;
+        }
       })();
-      return () => {
-        destroyed = true;
-      };
+    } else {
+      v.src = url;
     }
-    v.src = url;
+
     return () => {
       destroyed = true;
+      hls?.destroy();
+      hls = null;
+      try {
+        v.pause();
+      } catch {
+        /* уже размонтирован */
+      }
+      v.removeAttribute('src');
+      v.load();
     };
   }, [url, videoRef]);
   return (
