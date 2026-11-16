@@ -51,7 +51,11 @@ export function ManualEditor() {
                 <button
                   className="review__vote"
                   onClick={async () => {
-                    void fetch(`/api/admin/manual?slug=${slug}&episode=${ep}&idx=${i}`, { method: 'DELETE' });
+                    /* Аудит: раньше `void fetch(DELETE)` + сразу load() — гонка,
+                       список показывал уже удалённую запись. */
+                    await fetch(`/api/admin/manual?slug=${encodeURIComponent(slug)}&episode=${encodeURIComponent(ep)}&idx=${i}`, {
+                      method: 'DELETE',
+                    }).catch(() => null);
                     load();
                   }}
                 >
