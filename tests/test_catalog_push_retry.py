@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -12,6 +13,29 @@ ROOT = Path(__file__).resolve().parents[1]
 HELPER = ROOT / "scripts" / "push-catalog-commit.sh"
 
 
+def _find_bash() -> str | None:
+    """Абсолютный путь к РАБОЧЕМУ bash (None — bash-а нет).
+
+    Кроссплатформенность (аудит, P0-3): на Windows без WSL/Git Bash в
+    `C:\\Windows\\System32\\bash.exe` лежит заглушка WSL, которая падает с
+    «Windows для Linux не имеет установленных дистрибутивов». CreateProcess ищет
+    её раньше, чем bash из PATH, поэтому запускаем по абсолютному пути из
+    shutil.which, предварительно проверив его реальным запуском.
+    """
+    bash = shutil.which("bash")
+    if not bash:
+        return None
+    try:
+        probe = subprocess.run([bash, "-c", "exit 0"], capture_output=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return bash if probe.returncode == 0 else None
+
+
+BASH = _find_bash()
+
+
+@unittest.skipUnless(BASH, "нужен рабочий bash (Linux/macOS/WSL/Git Bash): helper — shell-скрипт")
 class CatalogPushRetryTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="catalog-push-retry-")
@@ -21,25 +45,31 @@ class CatalogPushRetryTests(unittest.TestCase):
         self.bin_dir.mkdir()
         self.log_file = self.root / "git-commands.log"
         fake_git = self.bin_dir / "git"
+        # Портативность (P0-3): раньше фейк-git был Python-скриптом с
+        # `#!/usr/bin/env python3` — в Git Bash на Windows python3 нет (есть
+        # только Windows-Store-заглушка), шебанг падал, helper
+        # считал push ошибкой и тесты падали. Теперь — POSIX sh:
+        # работает везде, где есть bash/sh (а он уже проверен для helper'а).
         fake_git.write_text(
-            """#!/usr/bin/env python3
-import os
-import sys
-from pathlib import Path
-
-args = sys.argv[1:]
-log = Path(os.environ["FAKE_GIT_LOG"])
-with log.open("a", encoding="utf-8") as stream:
-    stream.write(" ".join(args) + "\\n")
-lines = log.read_text(encoding="utf-8").splitlines()
-if args and args[0] == "push" and os.environ.get("FAKE_FIRST_PUSH_FAIL") == "1":
-    if sum(line.startswith("push ") for line in lines) == 1:
-        raise SystemExit(1)
-if args[:2] == ["rebase", "origin/main"] and os.environ.get("FAKE_REBASE_FAIL") == "1":
-    raise SystemExit(1)
-raise SystemExit(0)
+            """#!/bin/sh
+# Fake git для теста helper'а: логирует аргументы и эмулирует отказы.
+args="$*"
+printf '%s\\n' "$args" >> "$FAKE_GIT_LOG"
+case "$args" in
+  "push origin HEAD:main")
+    if [ "${FAKE_FIRST_PUSH_FAIL:-0}" = "1" ]; then
+      pushes=$(grep -c '^push origin HEAD:main' "$FAKE_GIT_LOG" || true)
+      if [ "$pushes" -eq 1 ]; then exit 1; fi
+    fi
+    ;;
+  "rebase origin/main")
+    if [ "${FAKE_REBASE_FAIL:-0}" = "1" ]; then exit 1; fi
+    ;;
+esac
+exit 0
 """,
             encoding="utf-8",
+            newline="\n",
         )
         fake_git.chmod(0o755)
 
@@ -51,7 +81,7 @@ raise SystemExit(0)
             **overrides,
         }
         return subprocess.run(
-            ["bash", str(HELPER)],
+            [BASH, str(HELPER)],
             cwd=ROOT,
             env=env,
             text=True,

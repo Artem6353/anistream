@@ -39,7 +39,8 @@
     "repair:offline": "node scripts/repair-catalog.mjs --fix-episodes --fix-desc --fix-dupes --fix-studios --apply",
     "repair": "node scripts/repair-catalog.mjs",
     "import:titles": "node scripts/import-titles-to-db.mjs",
-    "report:seasons": "node scripts/report-season-slug-mismatch.mjs"
+    "report:seasons": "node scripts/report-season-slug-mismatch.mjs",
+    "validate:catalog": "node scripts/validate-catalog.mjs"
   },
   "dependencies": {
     "@sentry/browser": "^11.0.0",
