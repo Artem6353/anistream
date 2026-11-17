@@ -40,16 +40,18 @@
     "repair": "node scripts/repair-catalog.mjs",
     "import:titles": "node scripts/import-titles-to-db.mjs",
     "report:seasons": "node scripts/report-season-slug-mismatch.mjs",
-    "validate:catalog": "node scripts/validate-catalog.mjs"
+    "validate:catalog": "node scripts/validate-catalog.mjs",
+    "audit:episodes:db": "node scripts/audit-episode-coverage.mjs --source=db --summary .cache/episode-coverage-summary.txt",
+    "check:db-size": "node scripts/check-db-size.mjs"
   },
   "dependencies": {
     "@sentry/browser": "^11.0.0",
     "hls.js": "^1.7.3",
     "kodikwrapper": "^3.1.0",
-    "next": "16.3.8",
+    "next": "^16.4.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
@@ -63,5 +65,8 @@
     "prettier": "^3.9.9",
     "typescript": "^5.7.0",
     "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "source-map-js": "^1.2.2"
   }
 }
