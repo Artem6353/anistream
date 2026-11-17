@@ -184,17 +184,22 @@ jobs:
 
       # В сборку отдаём только публичный URL (он всё равно инлайнится в клиент).
       # Сервисный ключ и BACKFILL_TOKEN нужны рантайму `next start`, а не билду.
+      # В dry_run провайдеры не вызываются вовсе, поэтому приложение не нужно:
+      # без этих шагов прогон-план занимает секунды вместо минут.
       - name: Build app
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
         run: npm run build
 
       - name: Start app
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
         run: |
           set -euo pipefail
           nohup npm run start > .cache/app.log 2>&1 &
 
       - name: Wait for app health
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
         run: |
           set -euo pipefail
           for i in $(seq 1 60); do

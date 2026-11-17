@@ -232,7 +232,8 @@ function retryDelayMs(response, attempt) {
   return Math.min(max, base * (2 ** attempt)) + Math.floor(Math.random() * 250);
 }
 
-async function fetchJson(url, timeoutMs, extraHeaders) {
+async function fetchJson(url, timeoutMs, extraHeaders, options = {}) {
+  const { tolerateNonJson = false } = options;
   let lastError = 'unknown error';
   let lastStatus = 0;
   const maxAttempts = 5;
@@ -248,6 +249,15 @@ async function fetchJson(url, timeoutMs, extraHeaders) {
         try {
           return { ok: true, status: response.status, body: await response.json(), error: null };
         } catch (error) {
+          /* Readiness-проверка не должна зависеть от разбора тела: `next start`
+             отдаёт часть JSON-маршрутов предсжатым статическим телом, и
+             `response.json()` падает на gzip-байтах («Unexpected token ''»).
+             Инцидент 2026-11-17: из-за этого hydrate падал на шаге «Hydrate
+             episodes» при полностью живом приложении. Для реальных запросов к
+             API терпимость к не-JSON НЕ включаем. */
+          if (tolerateNonJson) {
+            return { ok: true, status: response.status, body: null, error: 'non-JSON body (readiness ok)' };
+          }
           lastError = 'invalid JSON: ' + String(error);
         }
       } else {
@@ -265,7 +275,20 @@ async function fetchJson(url, timeoutMs, extraHeaders) {
   return { ok: false, status: lastStatus, body: null, error: lastError };
 }
 
-const health = await fetchJson(BASE + '/api/schedule', 5000);
+/* Готовность приложения: сначала дешёвый динамический /api/ping (его нет в старых
+   деплоях — тогда откатываемся на /api/health). Раньше здесь был /api/schedule:
+   маршрут кэшируемый, `next start` отдавал предсжатое тело, и парсинг JSON падал
+   при живом приложении — hydrate не стартовал вовсе. */
+const READINESS_PATHS = ['/api/ping', '/api/health'];
+let health = { ok: false, status: 0, body: null, error: 'not attempted' };
+for (const path of READINESS_PATHS) {
+  health = await fetchJson(BASE + path, 5000, undefined, { tolerateNonJson: true });
+  if (health.ok) {
+    if (health.error) console.warn('readiness: ' + health.error);
+    break;
+  }
+  if (health.status !== 404) break;
+}
 if (!health.ok) {
   console.error('Next.js is not responding at ' + BASE + ': ' + health.error);
   console.error('Start npm run dev (or npm run start) and retry. No provider calls were made.');

@@ -96,13 +96,39 @@ QA_ALLOW_WRITES=1 node scripts/qa-e2e.mjs   # + round-trip флага hidden (н
 | Refresh Kodik episode cache | failure (16:07) | импорт падал при отсутствующем файле кэша | ждёт пуш/ручной запуск (фикс в `main`) |
 | Supabase storage monitor | never | новый workflow, cron ещё не срабатывал | **success** (первый прогон) |
 | Episode coverage weekly | never | то же | выполняется |
-| Hydrate missing episodes | never | то же | dry-run выполнен, резолвы без bridge ожидаемо пустые |
+| Hydrate missing episodes | never → **failure** | реальный баг: readiness-гейт падал на gzip-теле `/api/schedule` | **FIXED** — см. §3.1 |
 | Daily episode push / Sync episodes / Sync airing / RLS / Backup / CI / E2E / CodeQL | success | — | **success** |
 
 Вывод: все падения относятся к периоду **до** мержа фиксов (#48–#51, #56–#61) и
 перепрогоном не воспроизводятся. Отдельно отмечу, что `sync-sources` теперь не «краснеет»
 из-за отсутствия `KODIK_TOKEN`, а честно пишет предупреждение — это и есть корректная
 деградация для выключенных мостов.
+
+### 3.1 Найденный баг: hydrate падал на живом приложении (FIXED)
+
+Первый же ручной прогон `Hydrate` дал `failure` на шаге «Hydrate episodes» с сообщением:
+
+```
+Next.js is not responding at http://127.0.0.1:3000: invalid JSON: SyntaxError: Unexpected token '', "�..."
+```
+
+Приложение при этом было живо. Причина: readiness-гейт `scripts/hydrate-embeds.mjs` ходил
+в `/api/schedule` и парсил тело как JSON. Маршрут кэшируемый, `next start` отдаёт его
+предсжатым статическим телом, а `response.json()` на gzip-байтах падает — то есть workflow
+не мог позеленеть в принципе.
+
+Что исправлено:
+
+1. готовность проверяется дешёвым динамическим `/api/ping` (с откатом на `/api/health`,
+   если деплой старый и `/api/ping` ещё нет);
+2. `fetchJson` получил опцию `tolerateNonJson` — **только** для readiness: 200 со
+   неразобранным телом считается «жив», реальные запросы к API по-прежнему строгие;
+3. в `hydrate.yml` шаги `Build app` / `Start app` / `Wait for app health` пропускаются при
+   `dry_run: true` — план не делает вызовов провайдеров, приложение ему не нужно
+   (прогон-план теперь занимает секунды вместо минут).
+
+Проверено локально: `next start` на :3100 → `BASE=http://127.0.0.1:3100 DRY_RUN=1 LIMIT=2
+node scripts/hydrate-embeds.mjs` → план построен (2 тайтла / 1143 серии), `exit 0`.
 
 ---
 
@@ -186,3 +212,4 @@ QA_ALLOW_WRITES=1 node scripts/qa-e2e.mjs   # + round-trip флага hidden (н
 | --- | --- | --- |
 | 2026-11-17 | API + кэш (локально) | 11 OK, 0 FAIL, 1 SKIP (нет ключа Supabase) |
 | 2026-11-17 | Supabase + Actions (CI) | данные чистые, падения Actions воспроизводятся только на старом коде |
+| 2026-11-17 | Ручные прогоны Actions | `Uptime`, `Production health`, `Sync sources`, `Storage monitor`, `Coverage weekly` — success; `Hydrate` нашёл баг readiness-гейта → исправлен (§3.1) |
