@@ -44,6 +44,11 @@ jobs:
             --output .cache/episode-coverage-report.json
       - name: Add concise summary to workflow
         run: |
+          set -euo pipefail
+          if [ ! -f .cache/episode-coverage-report.json ]; then
+            echo "Отчёт не сформирован: файлового кэша нет (feat/db-cache: покрытие живёт в Supabase)." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           node <<'NODE'
           const fs = require('node:fs');
           const report = JSON.parse(fs.readFileSync('.cache/episode-coverage-report.json', 'utf8'));
