@@ -42,7 +42,8 @@
     "report:seasons": "node scripts/report-season-slug-mismatch.mjs",
     "validate:catalog": "node scripts/validate-catalog.mjs",
     "audit:episodes:db": "node scripts/audit-episode-coverage.mjs --source=db --summary .cache/episode-coverage-summary.txt",
-    "check:db-size": "node scripts/check-db-size.mjs"
+    "check:db-size": "node scripts/check-db-size.mjs",
+    "qa:e2e": "node scripts/qa-e2e.mjs"
   },
   "dependencies": {
     "@sentry/browser": "^11.0.0",
