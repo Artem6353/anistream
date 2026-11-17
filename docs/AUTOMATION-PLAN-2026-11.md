@@ -90,6 +90,14 @@ KODIK_TOKEN не задан — провайдер остаётся пустым
 после мерджа. Это стоит времени при каждом аудите и раздувает список в интерфейсе.
 
 ### 2.9 Нет контроля объёма БД — ✅ **закрыто** (P1-2, `db-size.yml`)
+
+### 2.13 `episode_sources` пуст при `status=ok` (найдено боевым прогоном P1-1)
+Отчёт покрытия видит 346 032 строки в `episode_source_urls`, но **0 строк** в
+`episode_sources` с `status=ok`. Значит либо шапки озвучек не пишутся воркерами
+(`sync-sources.mjs`/`import-provider-cache-to-db.mjs`), либо у них другой статус.
+Последствие: провайдеры «один embed на тайтл» (AniBoom `?episode=N`, CVH cdn-iframe)
+не видны ни отчёту, ни рантайму `lib/episode-sources.ts`. Проверить запросом
+`select status, count(*) from episode_sources group by 1`.
 Supabase Free — 500 МБ. Таблица `episode_source_urls` растёт от каждой гидрации
 (≈90–150 байт на серию, до 1200 серий на озвучку). Ни один воркфлоу не смотрит на размер
 и не предупредит за месяц до отказа записи.
@@ -127,7 +135,7 @@ Supabase Free — 500 МБ. Таблица `episode_source_urls` растёт о
 
 | # | Что | Как | Оценка | Приёмка |
 |---|---|---|---|---|
-| P1-1 | Отчёт покрытия из БД | ✅ **сделано**: `--source=db|file|auto` в `audit-episode-coverage.mjs` (+ `scripts/lib/coverage-db.mjs`, пагинация, single-embed через `episode_sources`), `.github/workflows/episode-coverage-weekly.yml` (пн 06:00 UTC) с TG и артефактом | — | ✅ отчёт строится без файлового кэша (проверено на моке PostgREST) |
+| P1-1 | Отчёт покрытия из БД | ✅ **сделано**: `--source=db|file|auto` в `audit-episode-coverage.mjs` (+ `scripts/lib/coverage-db.mjs`, пагинация, single-embed через `episode_sources`), `.github/workflows/episode-coverage-weekly.yml` (пн 06:00 UTC) с TG и артефактом. **Первый боевой прогон**: 346 032 ссылки в `episode_source_urls`, покрыто 79 939 серий из 118 537 (67,44%), без источника 38 598, устарело >24 ч 329 900; `episode_sources` вернул 0 строк при `status=ok` — проверить, пишут ли воркеры шапки | — | ✅ отчёт строится из живой БД |
 | P1-2 | Контроль объёма БД | ✅ **сделано**: `scripts/check-db-size.mjs` (RPC `db_storage_report` из миграции `20261118_db_storage_report.sql`, fallback на оценку по строкам), `.github/workflows/db-size.yml` (ежедневно 05:30 UTC, алерт ≥80%, критично ≥95%) | — | ✅ отчёт с числами, вердикты 0/3/1 проверены тестами |
 | P1-3 | Дрейф миграций | Хеши `supabase/migrations/*.sql` в таблицу `schema_migrations_fingerprint`, сверка в CI (fail при расхождении) | 2 ч | Добавление миграции без применения → красный CI |
 | P1-4 | Сброс edge-кэша после данных | Webhook Netlify purge (build hook / API) в конце `sync-episodes`/`hydrate` | 1 ч | `?live=1` не отдаёт старый ответ после прогона |
