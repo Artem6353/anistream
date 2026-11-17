@@ -93,9 +93,11 @@ jobs:
             expiredDirectRecords: s.expiredDirectCacheRecordsIgnored,
           }));
           NODE
+      # if-no-files-found: error падал на feat/db-cache, где отчёт не строится без файла кэша.
       - uses: actions/upload-artifact@v4
+        if: hashFiles('.cache/episode-coverage-report.json') != ''
         with:
           name: episode-coverage-report
           path: .cache/episode-coverage-report.json
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 14
