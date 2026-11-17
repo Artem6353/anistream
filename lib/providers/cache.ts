@@ -99,7 +99,15 @@ async function loadFromDb(): Promise<CacheShape> {
     const { loadTitles } = await import('@/lib/catalog');
     const slugById = new Map<number, string>();
     for (const title of loadTitles(true)) slugById.set(title.anilistId, title.slug);
-    const entries = await dbLoadCache(slugById);
+    /* Бюджет по умолчанию скромный: на serverless полный кэш (346k строк) не
+       окупается — холодный старт важнее полноты, а промахи добираются провайдерами.
+       Прод 17.11: без ограничения инстанс вообще не начинал обслуживать запросы. */
+    const maxRows = Number(process.env.PROVIDER_CACHE_PRELOAD_MAX_ROWS ?? 60_000);
+    const budgetMs = Number(process.env.PROVIDER_CACHE_PRELOAD_BUDGET_MS ?? 20_000);
+    const entries = await dbLoadCache(slugById, {
+      maxRows: Number.isFinite(maxRows) && maxRows > 0 ? maxRows : 60_000,
+      budgetMs: Number.isFinite(budgetMs) && budgetMs > 0 ? budgetMs : 20_000,
+    });
     const store: CacheShape = {};
     for (const entry of entries) {
       store[entry.key] = { at: entry.at, ttlMs: cfg.ttlMs, sources: entry.sources };
