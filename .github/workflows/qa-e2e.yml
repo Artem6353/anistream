@@ -1,0 +1,93 @@
+name: QA end-to-end (prod)
+
+# Финальный аудит (docs/FINAL-QA-REPORT.md): один прогон проверяет прод целиком —
+# API-маршруты, CDN-кэш картинок, горячий кэш и целостность Supabase.
+#
+# Почему в CI, а не локально: блок `data` требует SUPABASE_SERVICE_KEY, который не
+# должен лежать на машине разработчика вне .env.local. Здесь он приходит из секретов.
+#
+# По умолчанию прогон ТОЛЬКО читает. Запись в прод-БД (round-trip флага hidden)
+# включается вручную через `allow_writes: true` и всегда откатывается.
+
+on:
+  workflow_dispatch:
+    inputs:
+      allow_writes:
+        description: 'Разрешить round-trip hidden в прод-БД (запись + откат)'
+        type: boolean
+        default: false
+      base_url:
+        description: 'Домен для проверки (пусто = vars.PRODUCTION_URL или прод Vercel)'
+        type: string
+        default: ''
+  schedule:
+    # Понедельник 07:00 UTC — после недельной гидрации и перед отчётом по покрытию.
+    - cron: '0 7 * * 1'
+
+concurrency:
+  group: aninova-qa-e2e
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    name: qa
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: End-to-end QA
+        id: qa
+        env:
+          QA_BASE_URL: ${{ inputs.base_url || vars.PRODUCTION_URL || 'https://aninova-catalog.vercel.app' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          QA_ALLOW_WRITES: ${{ inputs.allow_writes && '1' || '' }}
+        run: |
+          set -uo pipefail
+          mkdir -p .cache
+          code=0
+          node scripts/qa-e2e.mjs --json .cache/qa-e2e.json || code=$?
+          echo "exit_code=${code}" >> "$GITHUB_OUTPUT"
+          exit $code
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-e2e-report
+          path: .cache/qa-e2e.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Notify Telegram
+        if: always() && (failure() || cancelled())
+        env:
+          TG_TOKEN: ${{ secrets.TG_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TG_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+          BASE: ${{ inputs.base_url || vars.PRODUCTION_URL || 'https://aninova-catalog.vercel.app' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -uo pipefail
+          if [ -z "${TG_TOKEN:-}" ] || [ -z "${TG_CHAT:-}" ]; then
+            echo "::notice::Telegram не настроен (TG_BOT_TOKEN/TG_CHAT_ID) — уведомление пропущено."
+            exit 0
+          fi
+          text="🔴 E2E QA упал: ${BASE}
+${RUN_URL}"
+          curl -sS --max-time 20 -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+            -d "chat_id=${TG_CHAT}" --data-urlencode "text=${text}" > /dev/null \
+            || echo "::warning::Telegram notify failed"
