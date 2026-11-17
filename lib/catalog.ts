@@ -129,14 +129,27 @@ export function primeCatalogFromDb(): Promise<number> {
   if (priming) return priming;
   priming = (async () => {
     if (catalogSource() !== 'db' || !SUPA_URL || !SUPA_KEY) return 0;
+    /* Бюджет на весь прайм (инцидент 2026-11-17): раньше каждый батч имел свой
+       таймаут 20 с, поэтому при медленной БД прайм на 9 батчей занимал до трёх
+       минут и висел фоном в serverless-инстансе, из-за чего /api/health и страницы
+       иногда не отвечали вовсе. Теперь общий дедлайн: не успели — остаёмся на
+       файловом каталоге (он уже в памяти), а не тормозим весь процесс. */
+    const budgetMs = Math.max(1000, Number(process.env.CATALOG_DB_PRIME_BUDGET_MS ?? 8000) || 8000);
+    const deadline = Date.now() + budgetMs;
     try {
       const out: (Title & { hidden?: boolean })[] = [];
       for (let from = 0; ; from += DB_PAGE) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) {
+          console.warn(`[catalog] прайм из БД не уложился в ${budgetMs} мс — остаёмся на файловом каталоге`);
+          return 0;
+        }
         const res = await fetch(
           `${SUPA_URL}/rest/v1/titles?select=*&order=id.asc&limit=${DB_PAGE}&offset=${from}`,
           {
             headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` },
-            signal: AbortSignal.timeout(20_000),
+            // Не больше остатка общего бюджета: один медленный батч не съедает весь лимит.
+            signal: AbortSignal.timeout(Math.max(1000, Math.min(20_000, remaining))),
           },
         );
         if (!res.ok) return 0; // таблица ещё не создана/нет прав — остаёмся на файле
