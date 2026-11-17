@@ -87,6 +87,45 @@ function isDirectSource(source) {
     !/:s\d+$/.test(String(source.id ?? ''));
 }
 
+/* Число ВЫШЕДШИХ серий — зеркало lib/episodes.ts (episodeInfo().released).
+ *
+ * Баг до правки: граница цикла бралась из `title.episodes` (итог сезона), поэтому у
+ * 244 тайтлов с `episodes: null` проверялась только серия 1 — у «Ван-Пис»
+ * (episodes: null, episodesReleased: 1134) 1133 вышедшие серии в план не попадали,
+ * и dry-run рапортовал «пробелов нет». Плюс заглушки импортера (12/24) принимались
+ * за реальный итог и обрезали список у онгоингов.
+ * Правило то же, что в UI/валидации: онгоинг → max(airing, epdates, episodesReleased),
+ * завершённый → объявленный итог, фильм → 1, анонс → итог, если он подтверждён. */
+const IMPORT_STUBS = new Set([12, 24]);
+
+function maxCatalogEpisode(title) {
+  let max = 0;
+  for (const airing of title.airing ?? []) if (Number(airing?.ep) > max) max = Number(airing.ep);
+  for (const key of Object.keys(title.epdates ?? {})) {
+    const n = Number(key);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+  return max;
+}
+
+function releasedEpisodes(title) {
+  const aired = maxCatalogEpisode(title);
+  const stated = title.episodes !== null && Number.isFinite(Number(title.episodes))
+    ? Number(title.episodes)
+    : null;
+  const stub = stated !== null && IMPORT_STUBS.has(stated);
+  const statedUsable = stated !== null && stated > 0 && !(stub && aired > stated);
+
+  if (title.status === 'upcoming') return statedUsable && !(stub && !aired) ? stated : null;
+  if (title.type === 'movie' && !aired) return 1;
+  if (title.status === 'ongoing') {
+    const fromCatalog = Number.isFinite(Number(title.episodesReleased)) ? Number(title.episodesReleased) : 0;
+    return Math.max(aired, fromCatalog) || (statedUsable ? stated : null);
+  }
+  const total = statedUsable ? stated : aired || null;
+  return total === null ? null : Math.max(aired, total);
+}
+
 function readLocalCacheInventory(titles) {
   const store = JSON.parse(readFileSync(cacheFile, 'utf8'));
   if (!store || typeof store !== 'object' || Array.isArray(store)) {
@@ -181,9 +220,11 @@ const eligibleTitles = allTitles
   .filter((title) => title?.slug && !title.hidden)
   .map((title) => ({
     ...title,
-    episodes: Math.max(1, Math.floor(Number(title.episodes) || 1)),
+    // Граница проверки = число ВЫШЕДШИХ серий (см. releasedEpisodes), а не `episodes`.
+    episodes: releasedEpisodes(title) ?? 0,
     favourites: Number(title.favourites) || 0,
   }))
+  .filter((title) => title.episodes > 0)
   .filter((title) => !(SKIP_UPCOMING && title.status === 'upcoming'))
   .filter((title) => !(SKIP_NO_SHIKIMORI && !title.shikimori?.id))
   .sort((a, b) => b.favourites - a.favourites || a.slug.localeCompare(b.slug));
