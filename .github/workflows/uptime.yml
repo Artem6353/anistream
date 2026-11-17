@@ -1,7 +1,7 @@
 name: Uptime monitor (аудит P2-2)
 on:
   schedule:
-    - cron: "*/30 * * * *"   # каждые 30 минут
+    - cron: "*/10 * * * *"   # каждые 10 минут: мониторинг + мягкий прогрев serverless-инстанса
   workflow_dispatch:
 jobs:
   ping:
@@ -19,10 +19,10 @@ jobs:
             # этот домен отдаёт 404 (прод живёт на aninova-catalog.vercel.app), поэтому
             # uptime-проверка годами не имела смысла. Домен — из env, чтобы не хардкодить.
             URL="${PRODUCTION_URL%/}/api/health"
-            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$URL" || true)
-            body=$(curl -s --max-time 20 "$URL" || true)
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$URL" || true)
+            body=$(curl -s --max-time 60 "$URL" || true)
             if [ "$code" = "200" ] && echo "$body" | grep -q '"ok":true'; then ok=1; break; fi
-            sleep 20
+            sleep 15
           done
           if [ "$ok" = "1" ]; then echo "health OK ($URL)"; exit 0; fi
           echo "health FAIL (2 попытки)"

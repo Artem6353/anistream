@@ -10,7 +10,9 @@ on:
       - 'lib/providers/registry-meta.ts'
       - 'lib/providers/cache-kv.ts'
   schedule:
-    - cron: '0 */6 * * *'
+    # Каждые 2 часа вместо 6: на тонком serverless-инстансе холодный старт занимает
+    # 5–17 с (замер 2026-11-17), и редкие прогоны почти всегда попадают в холодный путь.
+    - cron: '0 */2 * * *'
   workflow_dispatch: {}
 
 permissions:
@@ -32,8 +34,8 @@ jobs:
           response_file="$(mktemp)"
           trap 'rm -f "$response_file"' EXIT
           status="$(curl --silent --show-error --location \
-            --connect-timeout 10 --max-time 25 \
-            --retry 2 --retry-all-errors --retry-delay 2 \
+            --connect-timeout 10 --max-time 60 \
+            --retry 3 --retry-all-errors --retry-delay 5 \
             --output "$response_file" --write-out '%{http_code}' \
             "${PRODUCTION_URL}/api/health")"
           if [ "$status" != "200" ]; then
