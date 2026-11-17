@@ -467,3 +467,11 @@ export KODIK_BRIDGE_URLS=http://127.0.0.1:8765,http://127.0.0.1:8767,http://127.
 5. Результаты сохраняются в `.cache/hydrate-report.json` (там же `throughputEpsPerSec`); успешные прямые источники уходят **UPSERT'ом в Supabase** (`episode_sources` + `episode_source_urls`) либо в Upstash, если выбран KV-бэкенд. JSON-файл больше не пишется. Повторный запуск безопасен: уже заполненные серии пропускаются, неудачные не исключаются навсегда.
 
 Запускайте массовый процесс на компьютере/VPS, где есть постоянное файловое хранилище и работающие bridge. Не используйте Vercel без настроенного Upstash для массового заполнения: файловый кэш serverless-функции не является постоянным хранилищем.
+
+### Расписание в GitHub Actions
+
+`.github/workflows/hydrate.yml` запускает добор **каждые 6 часов** (`0 */6 * * *`, UTC = 03:00/09:00/15:00/21:00 МСК) и вручную через `workflow_dispatch`. Джоба сама поднимает Python-bridge'и (CVH/AniBoom всегда, Kodik — только по флагу и при наличии `KODIK_TOKEN`), собирает прод-сборку Next.js, ждёт `/api/health`, запускает `npm run hydrate` и складывает `.cache/hydrate-report.json` в артефакты. Источники пишутся в Supabase, resume-состояние переживает прогоны через `actions/cache`.
+
+Обязательные секреты: `BACKFILL_TOKEN`, `SUPABASE_SERVICE_KEY`, `NEXT_PUBLIC_SUPABASE_URL` (или `SUPABASE_URL`). Необязательные: `KODIK_TOKEN` (включает Kodik-bridge), `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`, `DISCORD_WEBHOOK_URL` (уведомление об успехе/ошибке).
+
+Kodik по расписанию собирает отдельный воркфлоу `sync-sources.yml` (у него свой checkpoint и другой бюджет времени), поэтому в `hydrate.yml` провайдер Kodik по умолчанию выключен (`KODIK_ENABLED=0`) — иначе оба воркера дублируют одну и ту же работу и делят rate-limit апстрима.
