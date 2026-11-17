@@ -229,8 +229,10 @@ jobs:
         run: |
           set -uo pipefail
           mkdir -p .cache
-          node scripts/hydrate-embeds.mjs
-          code=$?
+          # `|| code=$?` обязателен: GitHub запускает шаг как `bash -e`, поэтому
+          # голый вызов с exit 2/130 уронил бы шаг до разбора кода выхода.
+          code=0
+          node scripts/hydrate-embeds.mjs || code=$?
           # 2 = ни одного источника (bridge/upstream недоступны) — это не поломка кода,
           # 130 = прогон прерван по таймауту/сигналу. Не красим CI, но и не прячем.
           if [ "$code" = "2" ]; then

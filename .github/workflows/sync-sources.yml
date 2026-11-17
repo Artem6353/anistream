@@ -76,8 +76,11 @@ jobs:
           [ -n "$SLUG_ARG" ] && ARGS="$ARGS --slug $SLUG_ARG"
           [ "${LIMIT:-0}" != "0" ] && ARGS="$ARGS --limit $LIMIT"
           echo "режим: $mode scope=${SCOPE:-all} $ARGS"
-          node scripts/sync-sources.mjs $ARGS
-          code=$?
+          # `|| code=$?`: GitHub запускает шаг как `bash -e`, поэтому голый вызов
+          # ронял шаг на exit 2 (нет токена) — обработка ниже просто не выполнялась,
+          # и расписание каждый день было красным.
+          code=0
+          node scripts/sync-sources.mjs $ARGS || code=$?
           # 2 = «нет токена/БД» — не авария, а не сконфигурировано.
           if [ "$code" = "2" ]; then
             echo "::warning::KODIK_TOKEN или SUPABASE_SERVICE_KEY не заданы — источники не синхронизированы."
