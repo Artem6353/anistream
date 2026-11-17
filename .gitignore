@@ -2,6 +2,11 @@ node_modules
 .next
 out
 .env*.local
+# Аудит (security): `.env` и `.env.test` не были заигнорены вовсе — секреты в них
+# попадали в `git status` и могли уехать в коммит. Конвенция репозитория — `.env.local`.
+.env
+.env.*
+!.env.example
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts

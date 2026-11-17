@@ -19,8 +19,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const BASE = (process.env.BASE ?? 'http://localhost:3000').replace(/\/$/, '');
 /* Аудит (P2-9): `?live=1` (обход кэша) требует админ-cookie или сервисного
-   BACKFILL_TOKEN — передаём его заголовком (не светится в логах прокси/URL). */
-const BACKFILL_TOKEN = process.env.BACKFILL_TOKEN ?? '';
+   BACKFILL_TOKEN — передаём его заголовком (не светится в логах прокси/URL).
+   Значение берём через configValue(): plain node не читает .env.local сам,
+   а именно там лежит токен (см. локальный .env.local / env на хостинге). */
+const BACKFILL_TOKEN = () => configValue('BACKFILL_TOKEN') ?? '';
 const MODE = process.env.HYDRATE_MODE ?? 'gaps';
 const numberEnv = (name, fallback) => {
   const value = Number(process.env[name] ?? fallback);
@@ -429,7 +431,8 @@ if (DRY_RUN) {
 
   async function resolveTask(task) {
     const url = BASE + '/api/providers/' + encodeURIComponent(task.slug) + '/' + task.episode + '?live=1';
-    const result = await fetchJson(url, TIMEOUT_MS, BACKFILL_TOKEN ? { 'x-backfill-token': BACKFILL_TOKEN } : undefined);
+    const backfillToken = BACKFILL_TOKEN();
+    const result = await fetchJson(url, TIMEOUT_MS, backfillToken ? { 'x-backfill-token': backfillToken } : undefined);
     if (!result.ok || !result.body) {
       requestErrors++;
       if (failures.length < 1000) failures.push({
