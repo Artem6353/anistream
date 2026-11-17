@@ -176,6 +176,24 @@ UPSERT идемпотентен по AniList id и ничего не удаля�
 `QA end-to-end` с `allow_writes: true` → проверки «titles» и «round-trip hidden»
 становятся зелёными.
 
+### 4.2 Дефект: импорт каталога падал на дублях связей (FIXED)
+
+Первый же запуск нового workflow дал 500 от PostgREST:
+
+```
+title_relations 500: {"code":"21000","message":"ON CONFLICT DO UPDATE command
+cannot affect row a second time"}
+```
+
+Причина: в каталоге один и тот же связанный тайтл встречается дважды с разными типами
+связи (sequel + side story), а PK в `title_relations` — `(anime_id, related_id)`.
+Postgres не может дважды обновить одну строку внутри одного `INSERT ... ON CONFLICT`.
+
+Исправлено: `scripts/lib/dedupe-rows.mjs` (`dedupeByKeys`) — дедупликация пачки по
+конфликтному ключу перед отправкой, порядок и первая строка сохраняются; подключено в
+`upsert()` импортёра, поэтому защита покрывает все таблицы (`titles`,
+`title_relations`, `title_characters`), а не только упавшую. 4 unit-теста.
+
 ---
 
 ## 5. Мёртвый код и мосты в рантайме
