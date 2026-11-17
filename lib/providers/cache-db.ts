@@ -100,20 +100,24 @@ export function sourceUrlOf(source: EpisodeSource): string | null {
  */
 export async function dbLoadCache(
   slugById: Map<number, string>,
-  options: { maxRows?: number; timeoutMs?: number } = {},
+  options: { maxRows?: number; timeoutMs?: number; budgetMs?: number } = {},
 ): Promise<DbCacheEntry[]> {
   if (!dbCacheConfigured()) return [];
   const maxRows = options.maxRows ?? 2_000_000;
   const timeoutMs = options.timeoutMs ?? 60_000;
+  /* Дедлайн на ВСЮ загрузку, а не на страницу. Инцидент 2026-11-17: 346k строк =
+     346 последовательных запросов, у каждого свой таймаут 60 с; на холодном
+     serverless-инстансе это минуты и полный отказ в обслуживании. */
+  const deadlineAt = Date.now() + (options.budgetMs ?? 60_000);
 
   const [urlRows, sourceRows] = await Promise.all([
     fetchPaged<UrlRow>(
       'episode_source_urls?status=eq.ok&select=anime_id,provider,translation_id,episode,kind,embed_url,checked_at',
-      { maxRows, timeoutMs, order: 'anime_id.asc,episode.asc' },
+      { maxRows, timeoutMs, deadlineAt, order: 'anime_id.asc,episode.asc' },
     ),
     fetchPaged<SourceRow>(
       'episode_sources?status=eq.ok&select=anime_id,provider,translation_id,translation_title,translation_type',
-      { maxRows: 200_000, timeoutMs, order: 'anime_id.asc' },
+      { maxRows: 200_000, timeoutMs, deadlineAt, order: 'anime_id.asc' },
     ),
   ]);
 
@@ -162,32 +166,82 @@ export async function dbLoadCache(
   return out;
 }
 
+/** Сколько страниц тянем одновременно. Последовательные 346 запросов на холодном
+ *  старте — это минуты; четыре параллельных — секунды при том же объёме. */
+const PAGE_CONCURRENCY = 4;
+
+async function fetchPage<T>(
+  path: string,
+  offset: number,
+  limit: number,
+  options: { timeoutMs: number; order: string },
+): Promise<T[] | null> {
+  const end = offset + limit - 1;
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/${path}&order=${options.order}`, {
+      headers: headers({ Range: `${offset}-${end}`, 'Range-Unit': 'items' }),
+      signal: AbortSignal.timeout(options.timeoutMs),
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const page = (await res.json()) as T[];
+    return Array.isArray(page) ? page : null;
+  } catch (e) {
+    /* Частичная загрузка лучше падения процесса: работаем на том, что успели.
+       Вызывающий код (cache.ts) видит неполный кэш и просто чаще идёт в провайдеры. */
+    console.warn('[providers] cache-db: страница не загрузилась', path.split('?')[0], String(e));
+    return null;
+  }
+}
+
 async function fetchPaged<T>(
   path: string,
-  options: { maxRows: number; timeoutMs: number; order: string },
+  options: { maxRows: number; timeoutMs: number; deadlineAt: number; order: string },
 ): Promise<T[]> {
   const rows: T[] = [];
-  for (let offset = 0; offset < options.maxRows; offset += PAGE_SIZE) {
-    const end = Math.min(offset + PAGE_SIZE, options.maxRows) - 1;
-    let page: T[] | null;
-    try {
-      const res = await fetch(`${SUPA_URL}/rest/v1/${path}&order=${options.order}`, {
-        headers: headers({ Range: `${offset}-${end}`, 'Range-Unit': 'items' }),
-        signal: AbortSignal.timeout(options.timeoutMs),
-        cache: 'no-store',
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      page = (await res.json()) as T[];
-    } catch (e) {
-      /* Частичная загрузка лучше падения процесса: работаем на том, что успели.
-         Вызывающий код (cache.ts) видит неполный кэш и просто чаще идёт в провайдеры. */
-      console.warn('[providers] cache-db: страница не загрузилась', path.split('?')[0], String(e));
+  let offset = 0;
+
+  while (offset < options.maxRows) {
+    if (Date.now() >= options.deadlineAt) {
+      console.warn(
+        '[providers] cache-db: бюджет загрузки исчерпан, работаем на частичном кэше',
+        path.split('?')[0],
+        `${rows.length} строк`,
+      );
       break;
     }
-    if (!Array.isArray(page) || !page.length) break;
-    rows.push(...page);
-    if (page.length < end - offset + 1) break;
+
+    const offsets: number[] = [];
+    for (let i = 0; i < PAGE_CONCURRENCY; i++) {
+      const next = offset + i * PAGE_SIZE;
+      if (next >= options.maxRows) break;
+      offsets.push(next);
+    }
+
+    /* Порядок результата важен для дедупликации по ключу: страницы складываем
+       в том же порядке, в котором запрашивали. */
+    const pages = await Promise.all(
+      offsets.map((start) => fetchPage<T>(path, start, Math.min(PAGE_SIZE, options.maxRows - start), options)),
+    );
+
+    let stop = false;
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      if (!page || !page.length) {
+        stop = true;
+        break;
+      }
+      rows.push(...page);
+      const requested = Math.min(PAGE_SIZE, options.maxRows - offsets[i]);
+      if (page.length < requested) {
+        stop = true;
+        break;
+      }
+    }
+    if (stop) break;
+    offset += offsets.length * PAGE_SIZE;
   }
+
   return rows;
 }
 
