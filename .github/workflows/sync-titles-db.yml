@@ -1,0 +1,87 @@
+name: Sync titles to Supabase (каталог в БД)
+
+# Дефект, найденный финальным аудитом (docs/FINAL-QA-REPORT.md §4.1):
+# `public.titles` оказался ПУСТЫМ (0 строк) при 346k ссылок в episode_source_urls.
+# Скрипт `scripts/import-titles-to-db.mjs` существовал как «одноразовый ручной»,
+# поэтому после пересоздания проекта Supabase каталог в БД так и не появился:
+# сайт продолжал работать на файловом `lib/data/titles.json`, но всё, что живёт в
+# БД (флаг hidden, CATALOG_SOURCE=db, SQL-отчёты), молча деградировало.
+#
+# UPSERT идемпотентен (по AniList id), ничего не удаляет — поэтому безопасен и в
+# ручном режиме, и по расписанию: файл каталога остаётся источником правды,
+# БД догоняет.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Только показать, что будет записано (ничего не менять)'
+        type: boolean
+        default: false
+      limit:
+        description: 'Ограничить число тайтлов (0 = весь каталог)'
+        type: string
+        default: '0'
+  schedule:
+    # Воскресенье 04:40 UTC — после ночных синков, до недельных отчётов.
+    - cron: '40 4 * * 0'
+
+concurrency:
+  group: aninova-titles-db
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    name: import-titles
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Import catalog to Supabase
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+          LIMIT: ${{ inputs.limit || '0' }}
+        run: |
+          set -uo pipefail
+          if [ -z "${NEXT_PUBLIC_SUPABASE_URL:-}" ] || [ -z "${SUPABASE_SERVICE_KEY:-}" ]; then
+            echo "::warning::Supabase не настроен — импорт каталога пропущен."
+            exit 0
+          fi
+          args=""
+          if [ "${DRY_RUN}" = "1" ]; then args="--dry-run"; fi
+          if [ "${LIMIT}" != "0" ]; then args="${args} --limit=${LIMIT}"; fi
+          node scripts/import-titles-to-db.mjs ${args}
+          # Сверка: сколько строк реально лежит в БД после импорта.
+          node scripts/import-titles-to-db.mjs --verify
+
+      - name: Notify Telegram on failure
+        if: failure()
+        env:
+          TG_TOKEN: ${{ secrets.TG_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TG_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -uo pipefail
+          if [ -z "${TG_TOKEN:-}" ] || [ -z "${TG_CHAT:-}" ]; then
+            echo "::notice::Telegram не настроен — уведомление пропущено."
+            exit 0
+          fi
+          text="🔴 Импорт каталога в Supabase упал: ${RUN_URL}"
+          curl -sS --max-time 20 -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+            -d "chat_id=${TG_CHAT}" --data-urlencode "text=${text}" > /dev/null \
+            || echo "::warning::Telegram notify failed"
