@@ -26,7 +26,7 @@ jobs:
         env:
           # 2026-10-15: аккаунт Vercel заблокирован (HTTP 402), прод живёт на Netlify.
           # Переопределяется repository variable PRODUCTION_URL.
-          PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://aninova-cataloge.netlify.app' }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://aninova-catalog.vercel.app' }}
         run: |
           set -euo pipefail
           response_file="$(mktemp)"
@@ -56,6 +56,15 @@ jobs:
           if (!Number.isSafeInteger(health?.titles) || health.titles < 1) {
             errors.push('titles must be a positive integer');
           }
+          // Прод может быть «здоровым» (ok:true, titles>0) и при этом без клиентского
+          // Supabase: тогда отзывы/списки/авторизация молча не работают, потому что
+          // NEXT_PUBLIC_* инлайнятся в бандл на билде. Инцидент 2026-11-17 (пересоздание
+          // проекта Vercel) — health.supabase=false при зелёном здоровье.
+          if (health?.supabase === false) {
+            console.warn('::warning::health.supabase=false — в прод-окружении нет NEXT_PUBLIC_SUPABASE_URL/' +
+              'NEXT_PUBLIC_SUPABASE_ANON_KEY; браузерные функции Supabase недоступны (нужен redeploy).');
+          }
+
           const bridges = health?.bridges;
           if (!bridges) {
             console.warn('::warning::Production health endpoint does not yet report bridge probes; verify after deployment.');
