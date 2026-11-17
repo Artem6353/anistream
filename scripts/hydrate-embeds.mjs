@@ -281,7 +281,11 @@ async function fetchJson(url, timeoutMs, extraHeaders, options = {}) {
    при живом приложении — hydrate не стартовал вовсе. */
 const READINESS_PATHS = ['/api/ping', '/api/health'];
 let health = { ok: false, status: 0, body: null, error: 'not attempted' };
-for (const path of READINESS_PATHS) {
+/* В dry_run приложение не нужно: план строится по инвентарю, провайдеры не
+   вызываются, а workflow намеренно не собирает и не запускает next start.
+   Живой сервер требуется только когда инвентарь берётся из API. */
+const NEEDS_APP = !DRY_RUN || INVENTORY_SOURCE === 'api';
+for (const path of NEEDS_APP ? READINESS_PATHS : []) {
   health = await fetchJson(BASE + path, 5000, undefined, { tolerateNonJson: true });
   if (health.ok) {
     if (health.error) console.warn('readiness: ' + health.error);
@@ -289,7 +293,7 @@ for (const path of READINESS_PATHS) {
   }
   if (health.status !== 404) break;
 }
-if (!health.ok) {
+if (NEEDS_APP && !health.ok) {
   console.error('Next.js is not responding at ' + BASE + ': ' + health.error);
   console.error('Start npm run dev (or npm run start) and retry. No provider calls were made.');
   process.exit(1);
