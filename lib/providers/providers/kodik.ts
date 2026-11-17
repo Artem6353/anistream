@@ -16,7 +16,7 @@ export async function resolveKodik(ctx: ProviderContext): Promise<ResolveOutcome
   let bridgeError: string | undefined;
   if (cfg.bridges.kodik.url) {
     const res = await bridgeResolve(
-      { baseUrl: cfg.bridges.kodik.url, timeoutMs: cfg.bridges.kodik.timeoutMs },
+      { baseUrl: cfg.bridges.kodik.url, baseUrls: cfg.bridges.kodik.urls, timeoutMs: cfg.bridges.kodik.timeoutMs },
       'kodik',
       ctx,
     );

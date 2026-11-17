@@ -49,11 +49,49 @@ export function proxy(request: NextRequest) {
     /* Аудит 30.09 (P1-6): первый элемент XFF подделывался клиентом (обход лимита);
        берём последний (его дописывает доверенный прокси) через общий clientIp(). */
     const ip = clientIp(request);
+    /* Гидрация (perf/fast-hydration): воркеру нужно 128k запросов за часы, а публичный
+       лимит 60/мин даёт ~35 часов только на ожидание окна и постоянные 429.
+       Поэтому сервисный запрос с верным x-backfill-token идёт в отдельный бакет с
+       BACKFILL_RATE_LIMIT (по умолчанию 3600/мин = 60 rps). Анонимные запросы
+       по-прежнему ограничены штатным правилом — потолок, который защищает апстримы,
+       всё равно живёт в самом bridge (BRIDGE_UPSTREAM_CONC). */
+    const backfill = backfillRateLimit();
+    if (backfill && serviceTokenValid(request)) {
+      if (!rateLimit(`${ip}:${rule.prefix}:backfill`, backfill)) {
+        return NextResponse.json(
+          { error: 'слишком много запросов, подождите' },
+          { status: 429, headers: { 'Retry-After': '10' } },
+        );
+      }
+      return NextResponse.next();
+    }
     if (!rateLimit(`${ip}:${rule.prefix}`, rule.limit)) {
       return NextResponse.json({ error: 'слишком много запросов, подождите' }, { status: 429, headers: { 'Retry-After': '60' } });
     }
   }
   return NextResponse.next();
+}
+
+/** Сервисный лимит гидрации: 0 — фича выключена (тогда все идут штатным правилом). */
+function backfillRateLimit(): number {
+  const value = Number(process.env.BACKFILL_RATE_LIMIT ?? 3600);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+}
+
+/** Сравнение токена без раннего выхода (edge-safe: без node:crypto). */
+function constantTimeEqual(a: string, b: string): boolean {
+  if (!a.length || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+/** Верный сервисный токен гидрации в заголовке (см. scripts/hydrate-embeds.mjs). */
+function serviceTokenValid(request: NextRequest): boolean {
+  const expected = (process.env.BACKFILL_TOKEN ?? '').trim();
+  if (!expected) return false;
+  const provided = request.headers.get('x-backfill-token') ?? '';
+  return constantTimeEqual(provided, expected);
 }
 
 export const config = { matcher: ['/api/:path*', '/genre/:path*'] };

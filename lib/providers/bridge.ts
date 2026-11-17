@@ -15,7 +15,48 @@ import type { EpisodeSource, ProviderContext } from './types';
 
 export interface BridgeOptions {
   baseUrl: string;
+  /** Пул инстансов (KODIK_BRIDGE_URLS / MULTIPLAYER_BRIDGE_URLS). Пусто → [baseUrl]. */
+  baseUrls?: string[];
   timeoutMs: number;
+}
+
+/** Кандидаты на запрос: пул из конфига или одиночный baseUrl (back-compat). */
+function bridgeCandidates(opts: BridgeOptions): string[] {
+  const list = (opts.baseUrls ?? []).filter(Boolean);
+  if (list.length) return list;
+  return opts.baseUrl ? [opts.baseUrl] : [];
+}
+
+/* Round-robin по пулу: гидрация размазывается по N процессам bridge линейно
+   (у каждого свой BRIDGE_UPSTREAM_CONC и своя очередь GIL).
+   Выбор липкий на ОДИН запрос — никаких куки/сессий между резолвами нет
+   (bridge stateless: каждый POST /resolve самодостаточен), поэтому залипание
+   на инстанс не требуется и не мешает rate-limit'ам апстрима. */
+const rrCursor = new Map<string, number>();
+
+function nextCandidate(opts: BridgeOptions): string {
+  const list = bridgeCandidates(opts);
+  if (list.length <= 1) return list[0] ?? '';
+  const key = list.join('|');
+  const start = rrCursor.get(key) ?? 0;
+  rrCursor.set(key, (start + 1) % list.length);
+  return list[start % list.length];
+}
+
+/** Первый живой инстанс из пула (с учётом кэша health), иначе следующий по кругу. */
+async function pickBridge(opts: BridgeOptions): Promise<string> {
+  const list = bridgeCandidates(opts);
+  if (list.length <= 1) return list[0] ?? '';
+  for (let i = 0; i < list.length; i++) {
+    const candidate = nextCandidate(opts);
+    if (await bridgeUp({ baseUrl: candidate, timeoutMs: opts.timeoutMs })) return candidate;
+  }
+  return nextCandidate(opts);
+}
+
+/** Текущий пул URL (для /api/health и диагностики). */
+export function bridgePool(opts: BridgeOptions): string[] {
+  return bridgeCandidates(opts);
 }
 
 /** Bearer-токен для bridge за реверс-прокси (deploy/Caddyfile: Authorization "Bearer $BRIDGE_TOKEN").
@@ -37,22 +78,32 @@ export async function bridgeHealth(opts: BridgeOptions): Promise<{ ok: boolean; 
 }
 
 /* Аудит P3-4: health-gate с кэшем (ok 60с / down 300с) и таймаутом 1.2с:
-   упавший bridge не съедает 3× PROVIDER_TIMEOUT, а сразу уводит в fallback. */
+   упавший bridge не съедает 3× PROVIDER_TIMEOUT, а сразу уводит в fallback.
+   Кэш — ПОИНСТАНСНО (по URL): в пуле один упавший сосед не глушит остальные. */
 const healthCache = new Map<string, { at: number; ok: boolean }>();
-export async function bridgeUp(opts: BridgeOptions): Promise<boolean> {
-  const hit = healthCache.get(opts.baseUrl);
+
+async function healthOf(url: string): Promise<boolean> {
+  const hit = healthCache.get(url);
   const ttl = hit?.ok ? 60_000 : 300_000;
   if (hit && Date.now() - hit.at < ttl) return hit.ok;
   try {
-    const res = await fetch(`${opts.baseUrl}/health`, { headers: authHeaders(), signal: AbortSignal.timeout(1200) });
+    const res = await fetch(`${url}/health`, { headers: authHeaders(), signal: AbortSignal.timeout(1200) });
     const json = res.ok ? ((await res.json()) as { ok?: boolean }) : { ok: false };
     const ok = res.ok && json.ok !== false;
-    healthCache.set(opts.baseUrl, { at: Date.now(), ok });
+    healthCache.set(url, { at: Date.now(), ok });
     return ok;
   } catch {
-    healthCache.set(opts.baseUrl, { at: Date.now(), ok: false });
+    healthCache.set(url, { at: Date.now(), ok: false });
     return false;
   }
+}
+
+export async function bridgeUp(opts: BridgeOptions): Promise<boolean> {
+  const list = bridgeCandidates(opts);
+  if (!list.length) return false;
+  /* В пуле достаточно ОДНОГО живого инстанса: остальные отсеет pickBridge. */
+  const results = await Promise.all(list.map((url) => healthOf(url)));
+  return results.some(Boolean);
 }
 
 export async function bridgeResolve(
@@ -62,10 +113,11 @@ export async function bridgeResolve(
 ): Promise<{ sources: EpisodeSource[]; error?: string }> {
   // health-gate: bridge недоступен → мгновенный fallback вместо таймаута
   if (!(await bridgeUp(opts))) return { sources: [], error: 'bridge offline (health-gate)' };
+  const target = await pickBridge(opts);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs);
   try {
-    const res = await fetch(`${opts.baseUrl}/resolve`, {
+    const res = await fetch(`${target}/resolve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ provider, context: ctx }),

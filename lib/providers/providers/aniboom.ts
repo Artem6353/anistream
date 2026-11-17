@@ -10,7 +10,7 @@ export async function resolveAniboom(ctx: ProviderContext): Promise<ResolveOutco
   const cfg = getProvidersConfig();
   if (!cfg.bridges.multiplayer.url) return { sources: [], error: 'multi-player bridge не настроен' };
   const res = await bridgeResolve(
-    { baseUrl: cfg.bridges.multiplayer.url, timeoutMs: cfg.bridges.multiplayer.timeoutMs },
+    { baseUrl: cfg.bridges.multiplayer.url, baseUrls: cfg.bridges.multiplayer.urls, timeoutMs: cfg.bridges.multiplayer.timeoutMs },
     'aniboom',
     ctx,
   );
