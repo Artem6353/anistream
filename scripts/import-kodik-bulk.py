@@ -548,7 +548,17 @@ def main() -> int:
     if not TITLES_PATH.exists():
         raise RuntimeError(f"Catalog not found: {TITLES_PATH}")
     if not CACHE_PATH.exists():
-        raise RuntimeError(f"Provider cache not found: {CACHE_PATH}. Run from a synchronized repository first.")
+        # feat/db-cache: JSON-кэш убран из git (93 МБ при лимите GitHub 100 МБ) и живёт
+        # в Supabase. Для полного прохода (--restart --apply) файл-приёмник не нужен:
+        # начинаем с пустого, заливаем ход, а импорт в БД делает отдельный шаг.
+        if not (apply and args.restart):
+            raise RuntimeError(
+                f"Provider cache not found: {CACHE_PATH}. "
+                "Run with --restart --apply to build it from scratch, or sync the file first."
+            )
+        CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        write_json_atomic(CACHE_PATH, {})
+        print(f"Provider cache absent — создан пустой {CACHE_PATH} (--restart, кэш живёт в Supabase).")
 
     by_id, eligible_count, ambiguous_ids = eligible_title_map()
     print(f"Eligible catalog titles: {eligible_count}; Shikimori IDs indexed: {len(by_id)}; ambiguous IDs skipped: {ambiguous_ids}")
