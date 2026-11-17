@@ -33,6 +33,17 @@ const record = (block, name, status, detail) => {
   console.log(`${icon} [${block}] ${name}${detail ? ` — ${detail}` : ''}`);
 };
 
+/** Экранирование ячейки markdown-таблицы.
+ *
+ *  Порядок операций принципиален: сначала экранируем обратные слэши, потом
+ *  вертикальные черты — иначе CodeQL справедливо помечает неполную санитизацию
+ *  (js/incomplete-sanitization), и таблица ломается на значении с обратным слэшем.
+ */
+function escapeCell(value) {
+  const text = String(value ?? '');
+  return text.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+}
+
 /** Один HTTP-запрос с таймаутом; сетевые ошибки возвращаются как { networkError }, а не бросают. */
 async function probe(path, init = {}) {
   const started = Date.now();
@@ -332,7 +343,7 @@ function markdown() {
     '',
     '| Блок | Проверка | Статус | Детали |',
     '| --- | --- | --- | --- |',
-    ...results.map((r) => `| ${r.block} | ${r.name} | ${r.status} | ${String(r.detail ?? '').replace(/\|/g, '\\|')} |`),
+    ...results.map((r) => `| ${r.block} | ${r.name} | ${r.status} | ${escapeCell(r.detail)} |`),
   ];
   const counts = summary();
   lines.push('', `Итого: **${counts.OK} OK**, **${counts.FAIL} FAIL**, ${counts.SKIP} SKIP`, '');
