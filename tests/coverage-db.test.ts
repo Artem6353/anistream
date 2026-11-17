@@ -66,6 +66,23 @@ describe('coverage-db: сборка стора из строк Supabase', () => 
     expect(stats.headerOnlyTitles).toBe(0);
   });
 
+  it('помечает устаревшие строки отдельным счётчиком, но не выбрасывает их', () => {
+    const { store, stats } = buildCoverageStore({
+      titles,
+      urlRows: [
+        urlRow(21, 1, 'kodik', '2026-01-01T00:00:00Z'),
+        urlRow(21, 2, 'kodik', '2026-11-17T10:00:00Z'),
+      ],
+      ttlMs: Number.MAX_SAFE_INTEGER,
+      stalenessMs: 86_400_000,
+      now: Date.parse('2026-11-17T12:00:00Z'),
+    });
+
+    expect(Object.keys(store)).toHaveLength(2);
+    expect(stats.staleEpisodes).toBe(1);
+    expect(stats.newestCheckedAt).toBe('2026-11-17T10:00:00.000Z');
+  });
+
   it('не создаёт записей для тайтлов без anilistId и без строк в БД', () => {
     const { store, stats } = buildCoverageStore({
       titles,

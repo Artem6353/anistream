@@ -115,7 +115,16 @@ try {
   let cacheStore;
   let dbStats = null;
   if (source === 'db') {
-    const result = await readCoverageFromDb({ baseUrl: supaUrl, key: supaKey, titles, ttlMs: defaultTtlMs });
+    /* В БД срок жизни записи — не признак валидности: status=ok уже означает
+       «источник рабочий», а checked_at — «когда проверяли». Поэтому покрытием
+       считаем все строки, а устаревшие отдельно (stalenessMs = настроенный TTL). */
+    const result = await readCoverageFromDb({
+      baseUrl: supaUrl,
+      key: supaKey,
+      titles,
+      ttlMs: Number.MAX_SAFE_INTEGER,
+      stalenessMs: defaultTtlMs,
+    });
     cacheStore = result.store;
     dbStats = result.stats;
     console.log(
@@ -137,7 +146,7 @@ try {
   }
 
   const report = buildEpisodeCoverageReport(titles, cacheStore, {
-    defaultTtlMs,
+    defaultTtlMs: source === 'db' ? Number.MAX_SAFE_INTEGER : defaultTtlMs,
     includeUpcoming: options.includeUpcoming,
     includeHidden: options.includeHidden,
   });
@@ -182,11 +191,17 @@ try {
     'Без источника серий: ' + summary.missingEpisodes,
     'Тайтлов без источников вообще: ' + summary.noDirectSourceTitles,
     'Полностью покрыты: ' + summary.fullyCoveredTitles + ' · частично: ' + summary.partiallyCoveredTitles,
-    'Когда-либо были источники: ' + summary.historicalDirectCoveredEpisodes +
-      ' серий (' + summary.historicalDirectEpisodeCoveragePercent + '%)',
-    'Гидрация намерила: ' + summary.missingEpisodes + ' серий к добору',
+    'Серий к добору гидратором (нет источника): ' + summary.missingEpisodes,
   ];
-  if (dbStats) text.push('В БД: ' + dbStats.perEpisodeRows + ' ссылок на серии, single-embed тайтлов: ' + dbStats.headerOnlyTitles);
+  if (dbStats) {
+    if (dbStats.staleEpisodes > 0) {
+      text.push('Устарело (проверить заново): ' + dbStats.staleEpisodes + ' серий');
+    }
+    text.push(
+      'В БД: ' + dbStats.perEpisodeRows + ' ссылок на серии' +
+        (dbStats.headerOnlyTitles ? ', single-embed тайтлов: ' + dbStats.headerOnlyTitles : ''),
+    );
+  }
   text.push('Подробно: .cache/episode-coverage-report.json');
   const summaryText = text.join(NL);
   console.log(summaryText);

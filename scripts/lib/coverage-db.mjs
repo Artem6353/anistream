@@ -15,6 +15,13 @@
  *     `episodes_count` — иначе отчёт показывал бы ложные нули.
  *
  * Ключи стора — те же, что у файлового кэша: `ep:<slug>:<episode>`.
+ *
+ * Про TTL: в файловом кэше срок жизни — признак валидности записи, в БД так
+ * нельзя. `episode_source_urls.status` уже отражает состояние источника (его
+ * поддерживают воркеры), а `checked_at` — это «когда проверяли», а не «когда
+ * протухнет». Поэтому в db-режиме аудит считает покрытием все строки status=ok,
+ * а свежесть отдаёт отдельным счётчиком `staleEpisodes`, чтобы 346k старых, но
+ * рабочих ссылок не выглядели как «покрытие 3%».
  */
 
 export const DB_COVERAGE_PAGE = 1000;
@@ -78,6 +85,7 @@ export function buildCoverageStore(options) {
     urlRows = [],
     headerRows = [],
     ttlMs = 86_400_000,
+    stalenessMs = null,
     now = Date.now(),
   } = options;
   if (!Array.isArray(titles)) throw new TypeError('titles must be an array');
@@ -101,6 +109,11 @@ export function buildCoverageStore(options) {
   let malformedUrlRows = 0;
   let perEpisodeRows = 0;
   let headerRowsCounted = 0;
+  let staleEpisodes = 0;
+  let newestCheckedAt = 0;
+  const staleBefore = Number.isFinite(Number(stalenessMs)) && Number(stalenessMs) > 0
+    ? now - Number(stalenessMs)
+    : null;
 
   for (const row of urlRows) {
     if (!isObject(row)) { malformedUrlRows += 1; continue; }
@@ -115,6 +128,8 @@ export function buildCoverageStore(options) {
     const provider = String(row.provider || 'unknown');
     const at = Date.parse(row.checked_at ?? '') || now;
     providers.set(provider, Math.max(providers.get(provider) ?? 0, at));
+    if (at > newestCheckedAt) newestCheckedAt = at;
+    if (staleBefore !== null && at < staleBefore) staleEpisodes += 1;
     perEpisodeRows += 1;
   }
 
@@ -184,6 +199,9 @@ export function buildCoverageStore(options) {
       headerOnlyTitles: headerOnly.size,
       orphanUrlRows,
       malformedUrlRows,
+      staleEpisodes,
+      newestCheckedAt: newestCheckedAt > 0 ? new Date(newestCheckedAt).toISOString() : null,
+      stalenessMs: staleBefore === null ? null : Number(stalenessMs),
       titlesWithAnilistId: slugByAnimeId.size,
     },
   };
@@ -196,6 +214,7 @@ export async function readCoverageFromDb(options) {
     key,
     titles,
     ttlMs = 86_400_000,
+    stalenessMs = null,
     now = Date.now(),
     page = DB_COVERAGE_PAGE,
     fetchImpl = fetch,
@@ -219,5 +238,5 @@ export async function readCoverageFromDb(options) {
       order: 'anime_id.asc',
     }),
   ]);
-  return buildCoverageStore({ titles, urlRows, headerRows, ttlMs, now });
+  return buildCoverageStore({ titles, urlRows, headerRows, ttlMs, stalenessMs, now });
 }

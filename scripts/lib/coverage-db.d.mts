@@ -26,6 +26,10 @@ export interface CoverageStats {
   headerOnlyTitles: number;
   orphanUrlRows: number;
   malformedUrlRows: number;
+  /** Строки status=ok, проверенные раньше `stalenessMs` (в db-режиме они всё равно считаются покрытием). */
+  staleEpisodes: number;
+  newestCheckedAt: string | null;
+  stalenessMs: number | null;
   titlesWithAnilistId: number;
 }
 
@@ -42,6 +46,8 @@ export interface BuildCoverageStoreOptions {
   urlRows?: CoverageDbRow[];
   headerRows?: CoverageDbRow[];
   ttlMs?: number;
+  /** Возраст, после которого серия считается устаревшей (только счётчик, не фильтр). */
+  stalenessMs?: number | null;
   now?: number;
 }
 
@@ -63,6 +69,7 @@ export interface ReadCoverageFromDbOptions {
   key: string;
   titles: CoverageTitle[];
   ttlMs?: number;
+  stalenessMs?: number | null;
   now?: number;
   page?: number;
   fetchImpl?: typeof fetch;
