@@ -15,6 +15,7 @@
  *   node scripts/import-titles-to-db.mjs --verify       # сверка числа строк и выборки
  */
 import { readFileSync } from 'node:fs';
+import { dedupeByKeys } from './lib/dedupe-rows.mjs';
 
 const FILE = process.env.TITLES_FILE ?? 'lib/data/titles.json';
 const SUPA_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').replace(/\/$/, '');
@@ -75,6 +76,13 @@ function maxKnown(t) {
 
 async function upsert(table, rows, conflict) {
   if (DRY_RUN) return rows.length;
+  /* Postgres отвечает 500 `21000: ON CONFLICT DO UPDATE command cannot affect row a
+     second time`, если в одной пачке дважды встречается конфликтный ключ.
+     В каталоге это реально: один и тот же связанный тайтл приходит с разными типами
+     связи (sequel + side story), а PK в title_relations — (anime_id, related_id).
+     Инцидент 2026-11-17: импорт падал именно на title_relations. */
+  const { rows: unique, dropped } = dedupeByKeys(rows, String(conflict).split(',').map((c) => c.trim()));
+  if (dropped > 0) console.log(`  ${table}: отброшено дублей по ключу (${conflict}) — ${dropped}`);
   const res = await fetch(`${SUPA_URL}/rest/v1/${table}?on_conflict=${conflict}`, {
     method: 'POST',
     headers: {
@@ -83,11 +91,11 @@ async function upsert(table, rows, conflict) {
       'Content-Type': 'application/json',
       Prefer: 'resolution=merge-duplicates,return=minimal',
     },
-    body: JSON.stringify(rows),
+    body: JSON.stringify(unique),
     signal: AbortSignal.timeout(60_000),
   });
   if (!res.ok) throw new Error(`${table} ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  return rows.length;
+  return unique.length;
 }
 
 if (!SUPA_URL || !SUPA_KEY) {
