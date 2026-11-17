@@ -116,6 +116,27 @@ Supabase Free — 500 МБ. Таблица `episode_source_urls` растёт о
 
 ---
 
+### 2.14 Прод-хостинг: Vercel жив, Netlify мёртв (2026-11-17)
+
+Проект Vercel удалили и пересоздали; ключи восстановлены не полностью. Факты с живых
+доменов (17.11, 19:15 UTC):
+
+| Домен | Статус |
+|---|---|
+| `aninova-catalog.vercel.app` | **200**, `/api/health` → `ok:true`, 8033 тайтла, фиксы аудита на месте (`?live=1` аноним → 403, `/genre/comedy/pop-999` → 404) |
+| `aninova-catalog.netlify.app` | **502** на всех путях, включая `/robots.txt` и `/sitemap.xml` — сломан не код, а сам сайт/деплой |
+| `aninova-cataloge.netlify.app` (опечатка) | **502** |
+
+Что не настроено в новом проекте Vercel: `NEXT_PUBLIC_SUPABASE_ANON_KEY` —
+`health.supabase=false`, при этом `health.supabaseProbe` = 200/200, то есть **серверный**
+доступ к Supabase (service key) работает, а браузерные отзывы/списки/авторизация нет.
+`NEXT_PUBLIC_*` инлайнятся на этапе сборки, поэтому после добавления переменной нужен
+**redeploy**, простого рестарта недостаточно.
+
+Автоматика: дефолт `PRODUCTION_URL` в `uptime.yml`, `production-health.yml`,
+`rls.yml`, `provider-cache-migration-apply.yml` переведён на живой Vercel-домен,
+а `production-health.yml` теперь пишет `::warning::` при `supabase:false`.
+
 ## 3. План автоматизации
 
 Оценки — моё чистое время, без ожидания CI. Порядок = порядок выполнения.
