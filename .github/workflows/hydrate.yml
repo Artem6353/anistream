@@ -316,8 +316,9 @@ jobs:
       - name: Notify Telegram / Discord
         if: always()
         env:
-          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # Имена как в uptime.yml (TG_BOT_TOKEN/TG_CHAT_ID); TELEGRAM_* — алиасы.
+          TG_TOKEN: ${{ secrets.TG_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TG_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
           JOB_STATUS: ${{ job.status }}
         run: |
@@ -342,5 +343,5 @@ jobs:
               || echo "::warning::Discord notify failed"
           fi
           if [ -z "${TG_TOKEN:-}" ] && [ -z "${DISCORD_WEBHOOK:-}" ]; then
-            echo "Уведомления не настроены (TELEGRAM_BOT_TOKEN/DISCORD_WEBHOOK_URL) — пропуск."
+            echo "Уведомления не настроены (TG_BOT_TOKEN+TG_CHAT_ID / DISCORD_WEBHOOK_URL) — пропуск."
           fi
