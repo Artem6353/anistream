@@ -1,0 +1,349 @@
+name: Hydrate missing episodes (scheduled)
+
+# Автодобор источников серий каждые 6 часов (ТЗ: расписание + ручной запуск).
+#
+# Что делает прогон:
+#   1. поднимает Python-bridge'и (CVH/AniBoom, при наличии секрета — Kodik) на 127.0.0.1;
+#   2. собирает прод-сборку Next.js и стартует её (bridge доступен только из того же
+#      процесса/хоста, поэтому hydrate идёт по http://127.0.0.1:3000);
+#   3. запускает `npm run hydrate` — он ищет серии без источника и пишет найденное
+#      через кэш-слой сервера;
+#   4. складывает отчёты в артефакты, уведомляет в Telegram/Discord (если заданы секреты).
+#
+# Куда пишутся источники (важно):
+#   Основной бэкенд — Supabase (`episode_sources` + `episode_source_urls`), включается
+#   автоматически при NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_KEY. Шаг «коммит
+#   файлового кэша» оставлен для совместимости, но работает только если
+#   `.cache/providers-resolve-cache.json` ещё ТРЕКАЕТСЯ в git, и никогда не пушит файл
+#   больше 50 МБ (GitHub блокирует объекты >100 МБ; файл на 93 МБ из main удалён).
+#
+# Проверка, что всё работает:
+#   • Actions → «Hydrate missing episodes (scheduled)» → Run workflow (workflow_dispatch),
+#     поставьте dry_run=true и limit=5 — прогон завершится за пару минут;
+#   • логи: тот же экран → выберите запуск → job `hydrate` → шаги
+#     «Preflight», «Start bridges», «Wait for app», «Hydrate episodes»;
+#   • итоговые цифры печатаются строкой `Hydrator finished: direct=…/…` в шаге
+#     «Hydrate episodes», полный отчёт — в артефакте `hydrate-report-<run_id>`;
+#   • расписание: `gh run list --workflow=hydrate.yml --limit 5` (или вкладка Actions).
+
+on:
+  schedule:
+    # UTC. 00:00, 06:00, 12:00, 18:00 UTC = 03:00, 09:00, 15:00, 21:00 по Москве.
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Только построить план, без резолвов провайдеров'
+        type: boolean
+        default: false
+      limit:
+        description: 'Сколько тайтлов взять (0 = все с пробелами)'
+        type: string
+        default: '0'
+      max_episodes:
+        description: 'Потолок серий за прогон (0 = без потолка)'
+        type: string
+        default: '0'
+      concurrency:
+        description: 'Параллельных резолвов, 1..32'
+        type: string
+        default: '10'
+      skip_episodes_greater_than:
+        description: 'Пропустить тайтлы с числом серий больше N (0 = не пропускать)'
+        type: string
+        default: '0'
+      inventory_source:
+        description: 'Откуда брать покрытие: auto | db | file | api'
+        type: choice
+        default: auto
+        options: [auto, db, file, api]
+      include_kodik:
+        description: 'Поднимать Kodik-bridge (нужен секрет KODIK_TOKEN)'
+        type: boolean
+        default: false
+
+# Один прогон за раз: hydrate читает состояние .cache/hydrate-state.json и пишет в БД.
+concurrency:
+  group: aninova-hydrate
+  cancel-in-progress: false
+
+# contents: write — только для шага коммита ЛЕГАСИ-файлового кэша (см. заголовок).
+permissions:
+  contents: write
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+  # Без этого флага Next подхватывает .env.production и может уйти в CATALOG_SOURCE=db,
+  # где план гидрации не совпадёт с lib/data/titles.json (там 8000+ тайтлов).
+  CATALOG_SOURCE: file
+  BASE: http://127.0.0.1:3000
+  APP_PORT: '3000'
+
+jobs:
+  hydrate:
+    name: hydrate
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Preflight (секреты и зависимости)
+        env:
+          BACKFILL_TOKEN: ${{ secrets.BACKFILL_TOKEN }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
+        run: |
+          set -euo pipefail
+          # .cache не трекается (gitignore), а логи/состояние пишутся именно туда.
+          mkdir -p .cache
+          node --version && python --version
+          # Токен нужен для `?live=1` (P2-9): анонимный live-режим отдаёт 403.
+          if [ -z "${BACKFILL_TOKEN}" ]; then
+            echo "::error::Нет секрета BACKFILL_TOKEN — hydrate не сможет обходить кэш (403)."
+            echo "Добавьте Settings → Secrets and variables → Actions → New repository secret: BACKFILL_TOKEN"
+            exit 1
+          fi
+          # Без Supabase прогон бессмысленен: кэш резолвов живёт в episode_source_urls,
+          # файловый бэкенд на раннере умирает вместе с runner'ом.
+          if [ -z "${SUPABASE_SERVICE_KEY}" ] || [ -z "${NEXT_PUBLIC_SUPABASE_URL}" ]; then
+            echo "::error::Нужны секреты NEXT_PUBLIC_SUPABASE_URL (или SUPABASE_URL) и SUPABASE_SERVICE_KEY."
+            exit 1
+          fi
+
+      - name: Install Node dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Install bridge dependencies (anime-parsers-ru)
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          # Тот же пакет, что в refresh-kodik-episode-cache.yml и sync-sources.yml.
+          python -m pip install https://github.com/YaNesyTortiK/AnimeParsers/archive/refs/heads/main.zip
+          python -m py_compile bridges/kodik_bridge.py bridges/multi_player_bridge.py
+
+      - name: Restore hydrate resume state
+        uses: actions/cache@v4
+        with:
+          path: .cache/hydrate-state.json
+          key: hydrate-state-${{ github.run_id }}
+          restore-keys: |
+            hydrate-state-
+
+      - name: Start bridges
+        env:
+          KODIK_TOKEN: ${{ secrets.KODIK_TOKEN }}
+          INCLUDE_KODIK: ${{ github.event_name == 'workflow_dispatch' && inputs.include_kodik || 'false' }}
+        run: |
+          set -euo pipefail
+          # Эфемерный BRIDGE_TOKEN: bridge'и слушают 127.0.0.1, но токен всё равно
+          # генерируем, чтобы конфиг совпадал с боевым (BRIDGE_TOKEN включён).
+          BRIDGE_TOKEN="$(openssl rand -hex 16)"
+          echo "::add-mask::${BRIDGE_TOKEN}"
+          {
+            echo "BRIDGE_TOKEN=${BRIDGE_TOKEN}"
+            echo "MULTIPLAYER_BRIDGE_URL=http://127.0.0.1:8766"
+          } >> "$GITHUB_ENV"
+
+          # CVH/AniBoom — основной путь гидрации: этих провайдеров нет в sync-sources.yml.
+          MULTIPLAYER_BRIDGE_PORT=8766 nohup python bridges/multi_player_bridge.py > .cache/bridge-multiplayer.log 2>&1 &
+
+          if [ "${INCLUDE_KODIK}" = "true" ] && [ -n "${KODIK_TOKEN}" ]; then
+            echo "KODIK_BRIDGE_URL=http://127.0.0.1:8765" >> "$GITHUB_ENV"
+            KODIK_BRIDGE_PORT=8765 KODIK_TOKEN="${KODIK_TOKEN}" \
+              nohup python bridges/kodik_bridge.py > .cache/bridge-kodik.log 2>&1 &
+          else
+            # Kodik на раннере GitHub отдаёт 401 (дата-центр IP, LIMITS.md), а штатный
+            # сборщик Kodik — отдельный воркфлоу sync-sources.yml. Здесь он выключен.
+            echo "KODIK_ENABLED=0" >> "$GITHUB_ENV"
+          fi
+
+          for i in $(seq 1 30); do
+            ok=0
+            curl -fsS --max-time 2 http://127.0.0.1:8766/health >/dev/null && ok=$((ok+1))
+            if [ -n "${KODIK_BRIDGE_URL:-}" ]; then
+              curl -fsS --max-time 2 http://127.0.0.1:8765/health >/dev/null && ok=$((ok+1))
+            else
+              ok=$((ok+1))
+            fi
+            if [ "$ok" = "2" ]; then echo "bridges up"; exit 0; fi
+            sleep 2
+          done
+          echo "::warning::Bridge не ответил на /health за 60 с — hydrate, скорее всего, не найдёт источников."
+          tail -20 .cache/bridge-multiplayer.log || true
+
+      # В сборку отдаём только публичный URL (он всё равно инлайнится в клиент).
+      # Сервисный ключ и BACKFILL_TOKEN нужны рантайму `next start`, а не билду.
+      - name: Build app
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
+        run: npm run build
+
+      - name: Start app
+        run: |
+          set -euo pipefail
+          nohup npm run start > .cache/app.log 2>&1 &
+
+      - name: Wait for app health
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            if curl -fsS --max-time 3 "${BASE}/api/health" > .cache/health.json; then
+              echo "app up:"; cat .cache/health.json | head -c 600; echo
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Приложение не поднялось за 120 с"; tail -50 .cache/app.log; exit 1
+
+      - name: Hydrate episodes
+        env:
+          BACKFILL_TOKEN: ${{ secrets.BACKFILL_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          # Запись резолвов — в Supabase (feat/db-cache), файл не трогаем.
+          PROVIDER_CACHE_BACKEND: db
+          PROVIDER_CACHE_ENABLED: 'true'
+          PROVIDER_CACHE_WRITE: 'true'
+          # Прогрев всего кэша в память на раннере не нужен: hydrate идёт в свежий процесс.
+          PROVIDER_CACHE_PRELOAD: '0'
+          HYDRATE_INVENTORY_SOURCE: ${{ github.event_name == 'workflow_dispatch' && inputs.inventory_source || 'auto' }}
+          HYDRATE_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && inputs.concurrency || '10' }}
+          # 0 мс: троттлинг живёт в bridge (BRIDGE_UPSTREAM_CONC + single-flight).
+          HYDRATE_DELAY_MS: '0'
+          HYDRATE_RETRY_MINUTES: '360'
+          LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.limit || '0' }}
+          MAX_EPISODES: ${{ github.event_name == 'workflow_dispatch' && inputs.max_episodes || '0' }}
+          SKIP_EPISODES_GREATER_THAN: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_episodes_greater_than || '0' }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
+        run: |
+          set -uo pipefail
+          mkdir -p .cache
+          # `|| code=$?` обязателен: GitHub запускает шаг как `bash -e`, поэтому
+          # голый вызов с exit 2/130 уронил бы шаг до разбора кода выхода.
+          code=0
+          node scripts/hydrate-embeds.mjs || code=$?
+          # 2 = ни одного источника (bridge/upstream недоступны) — это не поломка кода,
+          # 130 = прогон прерван по таймауту/сигналу. Не красим CI, но и не прячем.
+          if [ "$code" = "2" ]; then
+            echo "::warning::Hydrate не нашёл ни одного источника (bridge/upstream). См. .cache/bridge-*.log"
+            exit 0
+          fi
+          if [ "$code" = "130" ]; then
+            echo "::warning::Hydrate прерван (состояние сохранено, следующий прогон продолжит)."
+            exit 0
+          fi
+          exit "$code"
+
+      - name: Summarize run
+        if: always()
+        run: |
+          {
+            echo "## Hydrate run"
+            echo ""
+            if [ -f .cache/hydrate-report.json ]; then
+              node -e '
+                const r = require("./.cache/hydrate-report.json");
+                console.log("| metric | value |");
+                console.log("|---|---|");
+                for (const k of ["catalogTitles","plannedEpisodes","completedEpisodes","resolvedEpisodes","unresolvedEpisodes","requestErrors","durationSeconds","throughputEpsPerSec","inventorySource"]) {
+                  if (r[k] !== undefined) console.log(`| ${k} | ${r[k]} |`);
+                }
+                if (r.providerCounts) console.log(`| providers | ${JSON.stringify(r.providerCounts)} |`);
+              '
+            else
+              echo "_Отчёт не сформирован — hydrate не дошёл до конца._"
+            fi
+            echo ""
+            echo "Логи: \`.cache/app.log\`, \`.cache/bridge-*.log\` (в артефактах ниже)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydrate-report-${{ github.run_id }}
+          path: |
+            .cache/hydrate-report.json
+            .cache/hydrate-plan.json
+            .cache/health.json
+            .cache/app.log
+            .cache/bridge-multiplayer.log
+            .cache/bridge-kodik.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # Легаси-совместимость с исходным ТЗ: коммит .cache/providers-resolve-cache.json.
+      # В текущей схеме кэш живёт в Supabase, файл из git удалён и в .gitignore, поэтому
+      # шаг — no-op. Если в форке файл ещё трекается, коммитим только реальные изменения
+      # и только если файл меньше 50 МБ (лимит GitHub на объект — 100 МБ).
+      - name: Commit provider cache (legacy file backend only)
+        if: always() && github.ref == 'refs/heads/main' && github.event_name == 'schedule'
+        run: |
+          set -euo pipefail
+          CACHE=.cache/providers-resolve-cache.json
+          if ! git ls-files --error-unmatch "$CACHE" >/dev/null 2>&1; then
+            echo "$CACHE не трекается (feat/db-cache: кэш в Supabase) — коммит не нужен."
+            exit 0
+          fi
+          if [ ! -f "$CACHE" ]; then
+            echo "$CACHE отсутствует на раннере — коммитить нечего."
+            exit 0
+          fi
+          size=$(stat -c %s "$CACHE")
+          if [ "$size" -gt 52428800 ]; then
+            echo "::error::$CACHE весит $size байт (>50 МБ) — не коммитим."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$CACHE"
+          if git diff --cached --quiet; then
+            echo "Кэш не изменился — коммит не нужен."
+            exit 0
+          fi
+          git commit -m "chore(cache): hydrate $(date -u +%Y-%m-%dT%H:%MZ)"
+          bash scripts/push-catalog-commit.sh
+
+      - name: Notify Telegram / Discord
+        if: always()
+        env:
+          # Имена как в uptime.yml (TG_BOT_TOKEN/TG_CHAT_ID); TELEGRAM_* — алиасы.
+          TG_TOKEN: ${{ secrets.TG_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TG_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          set -uo pipefail
+          summary="hydrate: ${JOB_STATUS}"
+          if [ -f .cache/hydrate-report.json ]; then
+            summary="$summary · direct=$(node -e 'console.log(require("./.cache/hydrate-report.json").resolvedEpisodes ?? "?")')/$(node -e 'console.log(require("./.cache/hydrate-report.json").completedEpisodes ?? "?")') · $(node -e 'console.log(require("./.cache/hydrate-report.json").throughputEpsPerSec ?? 0)') eps/s"
+          fi
+          url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          text="AniStream ${summary} — ${url}"
+
+          if [ -n "${TG_TOKEN:-}" ] && [ -n "${TG_CHAT:-}" ]; then
+            curl -fsS --max-time 15 -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+              -d "chat_id=${TG_CHAT}" -d "disable_web_page_preview=true" \
+              --data-urlencode "text=${text}" >/dev/null \
+              || echo "::warning::Telegram notify failed"
+          fi
+          if [ -n "${DISCORD_WEBHOOK:-}" ]; then
+            curl -fsS --max-time 15 -X POST "$DISCORD_WEBHOOK" \
+              -H 'Content-Type: application/json' \
+              -d "{\"content\":\"${text}\"}" >/dev/null \
+              || echo "::warning::Discord notify failed"
+          fi
+          if [ -z "${TG_TOKEN:-}" ] && [ -z "${DISCORD_WEBHOOK:-}" ]; then
+            echo "Уведомления не настроены (TG_BOT_TOKEN+TG_CHAT_ID / DISCORD_WEBHOOK_URL) — пропуск."
+          fi
