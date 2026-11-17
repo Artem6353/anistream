@@ -80,7 +80,7 @@ async function getImage(request: Request) {
   if (fmtWanted !== 'orig' && !(await loadSharp())) {
     return NextResponse.redirect(parsed, {
       status: 302,
-      headers: { 'Cache-Control': 'public, max-age=3600' },
+      headers: { 'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=600' },
     });
   }
 
@@ -178,7 +178,14 @@ async function getImage(request: Request) {
 function respond(body: Buffer, contentType: string, vary: boolean): Response {
   const headers: Record<string, string> = {
     'Content-Type': contentType,
-    'Cache-Control': 'public, max-age=31536000, immutable',
+    /* Инцидент 2026-11-17: без `s-maxage` CDN ответ не кэширует вообще
+       (наблюдали `X-Vercel-Cache: MISS`, `Age: 0` на каждом постере), поэтому
+       каждая картинка — это вызов serverless-функции: 0,3 с на тёплом инстансе и
+       6–15 с на холодном. Двадцать постеров на странице = двадцать холодных
+       стартов при первом заходе, отсюда «картинки не грузятся».
+       `s-maxage` + `stale-while-revalidate` отдают их из кэша края, а функция
+       трогается только при промахе. */
+    'Cache-Control': 'public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=86400, immutable',
   };
   if (vary) headers['Vary'] = 'Accept'; // fmt=auto: край должен различать Accept-варианты
   // Uint8Array-обёртка: Buffer<ArrayBufferLike> из @types/node 22 не матчится с BodyInit напрямую

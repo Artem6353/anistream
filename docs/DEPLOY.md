@@ -221,6 +221,25 @@ create table profile_lists (user_id uuid references auth.users, slug text, statu
 | 011 | 01.10.2026 | владелец, SQL Editor | зонды dmca/reports anon → 401 |
 | 012 | 01.10.2026 | владелец, SQL Editor | призрачные политики удалены; в pg_policies ровно 4 политики реакций; reviews_update.qual = user_id = (auth.uid())::text |
 
+### Частые ошибки при вводе ключей (инцидент 17.11.2026)
+
+Пересоздание проекта на Vercel → переменные ввели заново, и три имени разошлись с кодом.
+Сайт при этом грузится, но фичи молча отключены:
+
+| Введено в Vercel | Что читает код | Симптом |
+| --- | --- | --- |
+| `TURNSTILE_SITE_KEY` | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | виджет капчи не появляется |
+| `TURNSTILE_SECRET_KEY` | `TURNSTILE_SECRET` | отзывы возвращают 403 (fail-closed) |
+| — | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | отзывы/списки/авторизация в браузере не работают |
+
+Правила, которые из этого следуют:
+
+1. **Копируйте имена из `.env.example`**, а не по памяти; сверка — `npm run check:env`.
+2 **`NEXT_PUBLIC_*` инлайнятся в билд.** Добавили/исправили такую переменную — нужен
+   **Redeploy**, «Restart» не поможет.
+3. Диагностика прямо в проде: `GET /api/health` → блок `config.flags` (только «задана/нет»,
+   без значений) + `config.warnings` с человекочитаемой причиной.
+
 ## Чек-лист env Vercel (аудит P2-6)
 
 | Переменная | Зачем | Без неё не работает |

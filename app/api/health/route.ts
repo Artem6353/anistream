@@ -4,6 +4,7 @@ import { providersWithAvailability } from '@/lib/providers/registry-meta';
 import { getProvidersConfig } from '@/lib/config/providers.config';
 import { kvEnabled, kvPing } from '@/lib/providers/cache-kv';
 import { bridgeHealth } from '@/lib/providers/bridge';
+import { configDiagnostics } from '@/lib/env-diagnostics';
 import { uptime as osUptime } from 'node:os';
 import { performance } from 'node:perf_hooks';
 
@@ -81,6 +82,10 @@ export async function GET(request: Request) {
       catalogMs: Math.round(performance.now() - t0),
       supabase: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
       supabaseProbe,
+      /* Диагностика переменных окружения (только «задана/нет», без значений):
+         ловит опечатки в именах вроде TURNSTILE_SITE_KEY вместо
+         NEXT_PUBLIC_TURNSTILE_SITE_KEY, после которых фичи молча отключаются. */
+      config: configDiagnostics(),
       configuredProviders,
       bridges,
       providerCache,
