@@ -1,5 +1,5 @@
 import type { CardTitle, CatalogQuery, CatalogResult, Title } from './types';
-import { readFileSync, statSync } from 'node:fs';
+import { promises as fsp, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { genreLabel, LENGTH_BUCKETS } from './labels';
 import { episodeCount } from './episodes';
@@ -189,9 +189,16 @@ export function loadTitles(includeHidden = false): Title[] {
   return includeHidden ? titles : titles.filter((t) => !t.hidden);
 }
 
-/** @deprecated Используйте loadTitles(): константа не инвалидируется после записи
- *  titles.json (скрытие из админки). Сохранена для совместимости импортов. */
-export const TITLES: Title[] = loadTitles();
+/** Сброс slug/id-карт: после мутации hidden списки видимых тайтлов меняются. */
+function invalidateLookup(): void {
+  slugMapCache = null;
+  idMapCache = null;
+}
+
+/** @deprecated Удалено (аудит, P1-8): `export const TITLES = loadTitles()` выполнялся
+ *  на импорте модуля и парсил 20,8 МБ titles.json в КАЖДОМ процессе — даже при
+ *  CATALOG_SOURCE=db, где файл не нужен (замер: 137 мс чтения + 108 мс JSON.parse).
+ *  Ни один модуль константу не импортировал. Используйте loadTitles(). */
 
 export const PER_PAGE = 24;
 
@@ -225,6 +232,67 @@ export const getTitle = (slug: string) => bySlugMap().get(slug);
 
 export function allTitles(): Title[] {
   return loadTitles();
+}
+
+/** Таймаут записи в Supabase (модерация не должна подвешивать админку). */
+const HIDE_WRITE_TIMEOUT_MS = 8000;
+
+/**
+ * Скрыть / показать тайтл (модерация, DMCA).
+ *
+ * Аудит (P1-4): раньше `POST /api/admin/hide` писал флаг ТОЛЬКО в
+ * `lib/data/titles.json`. В DB-режиме (`CATALOG_SOURCE=db`, дефолт при заданных
+ * Supabase-переменных) каталог живёт в in-memory кэше из public.titles, файл
+ * вообще не читается (`rawTitles()` при RAW_FROM_DB) — поэтому тайтл не скрывался
+ * до перезапуска, а на serverless запись в ФС вообще падала с 500.
+ *
+ * Теперь: DB-режим → PATCH public.titles + правка in-memory кэша (без рестарта);
+ * файловый режим → прежняя атомарная запись (tmp+rename).
+ * `found: false` — такого slug нет (роут отвечает 404).
+ */
+export async function setTitleHidden(
+  slug: string,
+  hidden: boolean,
+): Promise<{ source: 'db' | 'file'; found: boolean }> {
+  if (catalogSource() === 'db' && SUPA_URL && SUPA_KEY) {
+    const res = await fetch(`${SUPA_URL}/rest/v1/titles?slug=eq.${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPA_KEY,
+        Authorization: `Bearer ${SUPA_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify({ hidden, updated_at: new Date().toISOString() }),
+      signal: AbortSignal.timeout(HIDE_WRITE_TIMEOUT_MS),
+      /* Модерация должна видеть результат сразу — data-кэш Next здесь не нужен. */
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error(`supabase PATCH titles: HTTP ${res.status}`);
+    const rows = (await res.json().catch(() => [])) as unknown[];
+    const found = Array.isArray(rows) && rows.length > 0;
+    if (found && RAW_FROM_DB) {
+      /* Кэш держит те же объекты — правим на месте и пересобираем карты,
+         иначе «скрытое» продолжит отдаваться до холодного старта. */
+      const cached = RAW?.titles.find((t) => t.slug === slug);
+      if (cached) cached.hidden = hidden;
+      invalidateLookup();
+    }
+    return { source: 'db', found };
+  }
+
+  const file = TITLES_FILE();
+  const titles = JSON.parse(await fsp.readFile(file, 'utf8')) as (Title & { hidden?: boolean })[];
+  const title = titles.find((t) => t.slug === slug);
+  if (!title) return { source: 'file', found: false };
+  title.hidden = hidden;
+  /* Аудит 30.09 (P1-12): атомарная запись (tmp+rename) — конкурентные скрытия
+     не затирают друг друга и читатели не видят половину файла. */
+  const tmp = `${file}.${process.pid}.tmp`;
+  await fsp.writeFile(tmp, JSON.stringify(titles));
+  await fsp.rename(tmp, file);
+  if (!RAW_FROM_DB) invalidateLookup();
+  return { source: 'file', found: true };
 }
 
 /** Домашние подборки. S2.1 (аудит 28.09): рельсы главной урезаны 14→10, онгоинги —
@@ -283,7 +351,6 @@ export function genreStats(): { slug: string; count: number }[] {
   for (const t of loadTitles()) for (const g of t.genres) map.set(g, (map.get(g) ?? 0) + 1);
   return [...map.entries()]
     .map(([slug, count]) => ({ slug, count }))
-    .filter((g) => genreLabel(g.slug) !== g.slug || g.count > 0)
     .sort((a, b) => b.count - a.count);
 }
 

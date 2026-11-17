@@ -73,7 +73,9 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const t = getTitle(slug);
-  if (!t) notFound();
+  /* Аудит: скрытый модерацией тайтл (DMCA) не должен отдавать metadata/canonical —
+     сама страница уже отдаёт 404 через notFound(). */
+  if (!t || t.hidden) notFound();
   const description = metaDescription(t);
   /* Год добавляем только если его ещё нет в названии: после разбора дублей
      (scripts/repair-catalog.mjs --fix-dupes) русское название уже содержит год,

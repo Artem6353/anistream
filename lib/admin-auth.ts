@@ -4,6 +4,19 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 const COOKIE = 'anistream_admin';
 const DAY = 86400_000;
 
+/**
+ * Сравнение секретов без утечки длины/префикса во времени (аудит P2-9).
+ * sha256 выравнивает длины, `timingSafeEqual` не выходит раньше на первом
+ * несовпадении. Пустые строки всегда false — «пустой токен» не должен совпадать
+ * с пустой настройкой env.
+ */
+export function timingSafeEqualString(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  const ha = createHmac('sha256', 'aninova-compare').update(a).digest();
+  const hb = createHmac('sha256', 'aninova-compare').update(b).digest();
+  return timingSafeEqual(ha, hb);
+}
+
 function secret(): string {
   return process.env.ADMIN_TOKEN ?? '';
 }

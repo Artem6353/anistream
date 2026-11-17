@@ -18,6 +18,11 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const BASE = (process.env.BASE ?? 'http://localhost:3000').replace(/\/$/, '');
+/* Аудит (P2-9): `?live=1` (обход кэша) требует админ-cookie или сервисного
+   BACKFILL_TOKEN — передаём его заголовком (не светится в логах прокси/URL).
+   Значение берём через configValue(): plain node не читает .env.local сам,
+   а именно там лежит токен (см. локальный .env.local / env на хостинге). */
+const BACKFILL_TOKEN = () => configValue('BACKFILL_TOKEN') ?? '';
 const MODE = process.env.HYDRATE_MODE ?? 'gaps';
 const numberEnv = (name, fallback) => {
   const value = Number(process.env[name] ?? fallback);
@@ -130,14 +135,17 @@ function retryDelayMs(response, attempt) {
   return Math.min(max, base * (2 ** attempt)) + Math.floor(Math.random() * 250);
 }
 
-async function fetchJson(url, timeoutMs) {
+async function fetchJson(url, timeoutMs, extraHeaders) {
   let lastError = 'unknown error';
   let lastStatus = 0;
   const maxAttempts = 5;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     let delayMs = Math.min(8000, 400 * (2 ** attempt));
     try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(timeoutMs),
+        ...(extraHeaders ? { headers: extraHeaders } : {}),
+      });
       lastStatus = response.status;
       if (response.ok) {
         try {
@@ -423,7 +431,8 @@ if (DRY_RUN) {
 
   async function resolveTask(task) {
     const url = BASE + '/api/providers/' + encodeURIComponent(task.slug) + '/' + task.episode + '?live=1';
-    const result = await fetchJson(url, TIMEOUT_MS);
+    const backfillToken = BACKFILL_TOKEN();
+    const result = await fetchJson(url, TIMEOUT_MS, backfillToken ? { 'x-backfill-token': backfillToken } : undefined);
     if (!result.ok || !result.body) {
       requestErrors++;
       if (failures.length < 1000) failures.push({

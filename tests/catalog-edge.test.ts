@@ -50,3 +50,21 @@ describe('similarTitles (P2-16)', () => {
     expect(sim.every((x) => x.slug !== t.slug)).toBe(true);
   });
 });
+
+describe('жанровая пагинация: номер страницы за пределами выдачи', () => {
+  it('страница с несуществующим номером → 404 (null), а не 200 с последней', async () => {
+    const { genrePage } = await import('@/lib/genre-pages');
+    const first = genrePage('action');
+    expect(first).not.toBeNull();
+    const pages = first!.pages;
+    expect(genrePage('action', `pop-${pages}`)).not.toBeNull();
+    expect(genrePage('action', `pop-${pages + 1}`)).toBeNull();
+    expect(genrePage('action', 'pop-99999')).toBeNull();
+  });
+
+  it('мусорный сегмент → 404', async () => {
+    const { genrePage } = await import('@/lib/genre-pages');
+    expect(genrePage('action', 'abc')).toBeNull();
+    expect(genrePage('action', 'pop-')).toBeNull();
+  });
+});

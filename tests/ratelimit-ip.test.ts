@@ -36,7 +36,7 @@ describe('rateLimit', () => {
   });
 });
 
-describe('clientIp (XFF-подделка закрыта)', () => {
+describe('clientIp (XFF-подделка закрыта, аудит P2-10)', () => {
   const req = (headers: Record<string, string>) => ({ headers: new Headers(headers) }) as Request;
 
   it('берёт ПОСЛЕДНИЙ элемент x-forwarded-for (его дописывает доверенный прокси)', () => {
@@ -47,8 +47,22 @@ describe('clientIp (XFF-подделка закрыта)', () => {
     expect(clientIp(req({ 'x-forwarded-for': 'spoofed, real-client-ip' }))).toBe('real-client-ip');
   });
 
-  it('x-real-ip приоритетнее XFF', () => {
-    expect(clientIp(req({ 'x-real-ip': '9.9.9.9', 'x-forwarded-for': '1.1.1.1' }))).toBe('9.9.9.9');
+  it('подделанный x-real-ip НЕ перебивает x-forwarded-for (обход всех лимитов закрыт)', () => {
+    expect(clientIp(req({ 'x-real-ip': '9.9.9.9', 'x-forwarded-for': '1.1.1.1' }))).toBe('1.1.1.1');
+  });
+
+  it('x-vercel-forwarded-for (ставит платформа) приоритетнее прочих', () => {
+    expect(
+      clientIp(req({ 'x-vercel-forwarded-for': '7.7.7.7', 'x-real-ip': '9.9.9.9', 'x-forwarded-for': '1.1.1.1' })),
+    ).toBe('7.7.7.7');
+  });
+
+  it('cf-connecting-ip (Cloudflare) приоритетнее XFF', () => {
+    expect(clientIp(req({ 'cf-connecting-ip': '8.8.8.8', 'x-forwarded-for': '1.1.1.1' }))).toBe('8.8.8.8');
+  });
+
+  it('x-real-ip используется только без XFF (конфигурация «один прокси»)', () => {
+    expect(clientIp(req({ 'x-real-ip': '3.3.3.3' }))).toBe('3.3.3.3');
   });
 
   it('без заголовков — local', () => {

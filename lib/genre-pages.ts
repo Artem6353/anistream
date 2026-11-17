@@ -60,6 +60,11 @@ export function genrePage(slug: string, segment?: string): GenrePageData | null 
   const { sort, page } = parseGenreSegment(segment);
   const all = titlesByGenre(slug, sort);
   const pages = Math.max(1, Math.ceil(all.length / GENRE_PER_PAGE));
+  /* Аудит (P2-18): раньше номер страницы клампился к последней — /genre/action/pop-999
+     отдавал 200 с тем же контентом, создавая бесконечное пространство URL для
+     краулера. Теперь невалидный сегмент или номер за пределами выдачи → 404
+     (канонические адреса живут в sitemap). */
+  if (segment !== undefined && (!/^(pop|score|new|az)-[0-9]+$/.test(segment) || page > pages)) return null;
   const current = Math.min(Math.max(1, page), pages);
   return {
     slug,

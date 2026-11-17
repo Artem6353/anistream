@@ -8,7 +8,6 @@ import type { EpisodeSource } from '@/lib/providers/types';
 import { library, useLibrary } from '@/lib/library';
 import { trackEvent } from '@/lib/achievements';
 import { formatTime } from '@/lib/format';
-import { episodeCount, episodeInfo } from '@/lib/episodes';
 import { availabilityHint } from '@/lib/source-hints';
 import { Switch } from '@/components/ui/Switch';
 import { ReportForm } from './ReportForm';
@@ -59,7 +58,22 @@ const EMPTY_FILES: NonNullable<EpisodeSource['files']> = [];
  *  - выбор озвучки табами с группировкой по провайдерам и типу (многоголосый/субтитры);
  *  - выбор источника сохраняется в localStorage для каждого тайтла.
  */
-export function PlayerShell({ title, episode }: { title: Title; episode: number }) {
+export function PlayerShell({
+  title,
+  episode,
+  totalEpisodes,
+  totalUnknown,
+}: {
+  title: Title;
+  episode: number;
+  /* Аудит (P2-19): число вышедших серий и признак «итог неизвестен» приходят
+     ПРОПСАМИ с сервера. Считались здесь — но клиент не видит overrides из БД
+     (lib/episode-overrides.ts живёт в процессе сервера), поэтому у онгоингов
+     SSR и гидратация расходились («из 1189+» против «из 1134+») — warning
+     hydration-mismatch и мигание счётчика. */
+  totalEpisodes: number;
+  totalUnknown: boolean;
+}) {
   const router = useRouter();
   const { settings } = useLibrary();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -118,9 +132,8 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   const isEmbed = selected?.kind === 'embed';
   const files = selected?.files ?? EMPTY_FILES;
   const file = useMemo(() => files.find((f) => f.quality === quality) ?? files[0], [files, quality]);
-  /* ТЗ 1.2: автопереход — по числу ВЫШЕДШИХ серий, а не по заглушке в `episodes`. */
-  const totalEpisodes = episodeCount(title) ?? 0;
-  const { totalUnknown } = episodeInfo(title);
+  /* ТЗ 1.2: автопереход — по числу ВЫШЕДШИХ серий, а не по заглушке в `episodes`.
+     Значение приходит с сервера (БД-осведомлённое), см. props выше. */
   const nextEpisode = episode < totalEpisodes ? episode + 1 : null;
 
   /* источники + доступность серий */
@@ -428,7 +441,15 @@ export function PlayerShell({ title, episode }: { title: Title; episode: number 
   })).filter((g) => g.voices.length || g.subs.length);
 
   /* Чанк серий общий с боковой панелью (EpisodesPanel получает его пропсами). */
-  const [chunk, setChunk] = useState(0);
+  /* Аудит (P2-17): чанк серий раньше жил в обычном state и НЕ сбрасывался при
+     смене серии: после /anime/x/500 → /anime/x/1 бар показывал диапазон 481–500,
+     а автоскролл к активной серии не находил её в DOM. Теперь выбор чанка
+     ключуется серией (тот же приём, что для data/status выше) — без setState в
+     эффекте: при смене эпизода автоматически возвращается чанк с текущей серией. */
+  const [chunkPick, setChunkPick] = useState<{ key: string; chunk: number } | null>(null);
+  const defaultChunk = Math.max(0, Math.floor((episode - 1) / EPISODES_CHUNK));
+  const chunk = chunkPick && chunkPick.key === dataKey ? chunkPick.chunk : defaultChunk;
+  const setChunk = (i: number) => setChunkPick({ key: dataKey, chunk: i });
   const chunks = Math.max(1, Math.ceil(totalEpisodes / EPISODES_CHUNK));
   const episodes = Array.from({ length: totalEpisodes }, (_, i) => i + 1).slice(chunk * EPISODES_CHUNK, (chunk + 1) * EPISODES_CHUNK);
 

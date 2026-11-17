@@ -1,6 +1,7 @@
 import { allTitles, genreStats } from '@/lib/catalog';
 import { COLLECTIONS } from '@/lib/collections';
 import { seasonCombos } from '@/lib/editorial';
+import { episodeCount } from '@/lib/episodes';
 import { GENRE_PER_PAGE, genreHref, genreSlugs } from '@/lib/genre-pages';
 import { episodeSourcesDbConfigured, titleHasSources } from '@/lib/episode-sources';
 
@@ -101,6 +102,10 @@ function titleEntries(base: string, titles: ReturnType<typeof visibleTitles>): S
   });
 }
 
+/** Сколько страниц серий тайтла кладём в sitemap: хвосты гигантов (One Piece)
+ *  Google и так обходит по пагинации, а 50 URL на тайтл — разумный потолок. */
+const SITEMAP_EPISODES_PER_TITLE = 50;
+
 async function episodeEntries(base: string): Promise<SitemapEntry[]> {
   if (!episodeSourcesDbConfigured()) return [];
   const limit = Number(process.env.SITEMAP_EPISODE_TITLES ?? 500);
@@ -114,7 +119,13 @@ async function episodeEntries(base: string): Promise<SitemapEntry[]> {
   for (let i = 0; i < candidates.length; i++) {
     if (!verdicts[i]) continue;
     const t = candidates[i];
-    const count = t.episodes && t.episodes > 0 ? Math.min(t.episodes, 50) : 0;
+    /* Аудит (P1-7): раньше границей было поле `episodes` (ИТОГ). У онгоингов
+       с необъявленным итогом оно null — в т.ч. у «Ван-Пис» (episodes: null,
+       episodesReleased: 1134), из-за чего у главного тайтла в карте сайта не
+       было НИ ОДНОЙ страницы серий. Теперь — единое правило lib/episodes.ts:
+       counts реально вышедшие серии (airing/epdates/episodesReleased/override БД). */
+    const released = episodeCount(t) ?? 0;
+    const count = Math.min(released, SITEMAP_EPISODES_PER_TITLE);
     for (let ep = 1; ep <= count; ep++) {
       out.push({ url: `${base}/anime/${t.slug}/${ep}`, changeFrequency: 'weekly', priority: 0.4 });
     }

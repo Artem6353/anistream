@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 
 export const revalidate = 3600;
 import { getTitle, loadTitles } from '@/lib/catalog';
-import { episodeCount } from '@/lib/episodes';
+import { episodeCount, episodeInfo } from '@/lib/episodes';
 import { maxEpisodeNumberDb, validEpisodeDb } from '@/lib/episode-route';
 import dynamic from 'next/dynamic';
 
@@ -90,6 +90,9 @@ export default async function PlayerPage({ params }: Props) {
   if (episode === null) notFound();
   const similar = similarTitles(title, 10);
   const total = await maxEpisodeNumberDb(title);
+  /* Признак «итог неизвестен» считаем на сервере: там доступны overrides из БД
+     (lib/episode-overrides.ts), которых нет на клиенте — иначе hydration-mismatch. */
+  const { totalUnknown } = episodeInfo(title);
   const base = getProvidersConfig().site.url;
 
   return (
@@ -102,7 +105,7 @@ export default async function PlayerPage({ params }: Props) {
           { name: `Серия ${episode}`, href: `/anime/${title.slug}/${episode}` },
         ])}
       />
-      <PlayerShell title={title} episode={episode} />
+      <PlayerShell title={title} episode={episode} totalEpisodes={total} totalUnknown={totalUnknown} />
       <div className="container" style={{ paddingTop: 18 }}>
         {/* Единственный h1 страницы серии: раньше его не было вовсе — документ
             начинался с h2 «Похожее» (ТЗ 3.3.4 / SEO). */}

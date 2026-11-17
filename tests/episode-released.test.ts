@@ -72,6 +72,20 @@ function mockSupabase(cfg: PrimeMocks) {
   return calls;
 }
 
+/* Аудит (P0-2): сценарий «БД недоступна» раньше НЕ мокал fetch — beforeEach
+   выставляет NEXT_PUBLIC_SUPABASE_URL, поэтому releasedFromDb() уходил в реальную
+   сеть (https://project.supabase.co) с таймаутом 15 с и тест падал по testTimeout
+   (5 с) на любой машине, где DNS/файрвол не отвечает мгновенно. Теперь сетевой
+   отказ эмулируется: тест не зависит от окружения и не ходит наружу. */
+function mockNetworkDown() {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => {
+      throw new Error('network down (mocked)');
+    }),
+  );
+}
+
 async function loadPrime() {
   vi.resetModules();
   return import('@/lib/episode-data');
@@ -171,6 +185,7 @@ describe('primeEpisodeData: максимум из БД перекрывает у
 
 describe('граница серий: 404 за пределами вышедшего, 200 на границе', () => {
   it('БД недоступна → граница из каталога: 1134 есть, 1135 — 404', async () => {
+    mockNetworkDown();
     const validEpisode = await loadValidEpisode();
     const title = onePieceCatalog();
     expect(await validEpisode(title, '1134')).toBe(1134);
@@ -198,6 +213,7 @@ describe('граница серий: 404 за пределами вышедше�
   });
 
   it('мусор в номере серии по-прежнему не проходит', async () => {
+    mockNetworkDown();
     const validEpisode = await loadValidEpisode();
     const title = onePieceCatalog();
     expect(await validEpisode(title, 'abc')).toBeNull();
