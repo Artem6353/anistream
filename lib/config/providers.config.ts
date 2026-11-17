@@ -28,8 +28,9 @@ export interface ProvidersConfig {
     fileBackend: boolean;
   };
   bridges: {
-    kodik: { url: string; timeoutMs: number };
-    multiplayer: { url: string; timeoutMs: number };
+    /** `url` — первый (совместимость с прежним кодом и логами), `urls` — пул инстансов. */
+    kodik: { url: string; urls: string[]; timeoutMs: number };
+    multiplayer: { url: string; urls: string[]; timeoutMs: number };
   };
   providerMode: 'merge';
   providerTimeoutMs: number;
@@ -137,6 +138,40 @@ function resolveBridgeUrl(
   return value.replace(/\/+$/, '');
 }
 
+/**
+ * Список URL одного типа bridge для горизонтального масштабирования гидрации.
+ *
+ * Зачем: `hydrate-embeds.mjs` упирается в `BRIDGE_UPSTREAM_CONC` (4 у Kodik) — один
+ * процесс bridge дальше не разгоняется, чтобы не ловить rate-limit апстрима. Второй
+ * и третий экземпляры на других портах дают линейный прирост без правки Python-кода:
+ *
+ *   KODIK_BRIDGE_URLS=http://127.0.0.1:8765,http://127.0.0.1:8767,http://127.0.0.1:8769
+ *
+ * Пусто → прежнее поведение (один URL из KODIK_BRIDGE_URL / порта).
+ */
+function resolveBridgeUrls(
+  env: NodeJS.ProcessEnv,
+  listKey: string,
+  urlKey: string,
+  portKey: string,
+  fallbackPort: number,
+): string[] {
+  const list = (env[listKey] ?? '')
+    .split(/[\s,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  if (!list.length) {
+    const single = resolveBridgeUrl(env, urlKey, portKey, fallbackPort);
+    return single ? [single] : [];
+  }
+  const urls: string[] = [];
+  for (const item of list) {
+    const normalized = resolveBridgeUrl({ ...env, [urlKey]: item }, urlKey, portKey, fallbackPort);
+    if (normalized && !urls.includes(normalized)) urls.push(normalized);
+  }
+  return urls;
+}
+
 export function getProvidersConfig(): ProvidersConfig {
   const env = process.env;
   return {
@@ -163,10 +198,12 @@ export function getProvidersConfig(): ProvidersConfig {
     bridges: {
       kodik: {
         url: resolveBridgeUrl(env, 'KODIK_BRIDGE_URL', 'KODIK_BRIDGE_PORT', 8765),
+        urls: resolveBridgeUrls(env, 'KODIK_BRIDGE_URLS', 'KODIK_BRIDGE_URL', 'KODIK_BRIDGE_PORT', 8765),
         timeoutMs: num(env.KODIK_BRIDGE_TIMEOUT_MS, 6000),
       },
       multiplayer: {
         url: resolveBridgeUrl(env, 'MULTIPLAYER_BRIDGE_URL', 'MULTIPLAYER_BRIDGE_PORT', 8766),
+        urls: resolveBridgeUrls(env, 'MULTIPLAYER_BRIDGE_URLS', 'MULTIPLAYER_BRIDGE_URL', 'MULTIPLAYER_BRIDGE_PORT', 8766),
         timeoutMs: num(env.MULTIPLAYER_BRIDGE_TIMEOUT_MS, 6000),
       },
     },

@@ -23,6 +23,9 @@ interface CacheShape {
 let memory: CacheShape | null = null;
 let writeTimer: ReturnType<typeof setTimeout> | null = null;
 let writing: Promise<void> = Promise.resolve();
+/* Отпечаток файла на момент последнего load/flush: нужен, чтобы заметить,
+   что файл переписал ДРУГОЙ процесс (второй hydrate/скрипт) и не затереть его ключи. */
+let loadedSignature = '';
 
 let fileDisabledWarned = false;
 
@@ -41,6 +44,15 @@ function fileBackendUsable(): boolean {
   return false;
 }
 
+async function readSignature(file: string): Promise<string> {
+  try {
+    const st = await fs.stat(file);
+    return `${Math.round(st.mtimeMs)}:${st.size}`;
+  } catch {
+    return 'absent';
+  }
+}
+
 async function load(file: string): Promise<CacheShape> {
   if (memory) return memory;
   if (!fileBackendUsable()) {
@@ -49,10 +61,44 @@ async function load(file: string): Promise<CacheShape> {
   }
   try {
     memory = JSON.parse(await fs.readFile(file, 'utf8')) as CacheShape;
+    loadedSignature = await readSignature(file);
   } catch {
     memory = {};
+    loadedSignature = await readSignature(file);
   }
   return memory;
+}
+
+/** Одна запись за раз (очередь `writing`) + атомарная подмена файла.
+ *
+ *  Зачем mutex: при HYDRATE_CONCURRENCY>1 в один процесс одновременно приходит
+ *  десяток резолвов. `memory` меняется синхронно (без гонок), но flush — асинхронный:
+ *  два параллельных `fs.writeFile` по одному пути могут дать обрезанный JSON на 98 МБ
+ *  (читатель в этот момент видит половину файла). Поэтому:
+ *   1) все flush'и сериализованы цепочкой `writing`;
+ *   2) файл пишется в `<file>.<pid>.tmp` и подменяется через rename (атомарно);
+ *   3) перед записью сверяемся с диском — если файл менял ДРУГОЙ процесс, сливаем его
+ *      ключи (наши свежие выигрывают), чтобы параллельные гидрации не теряли данные. */
+async function writeFileAtomic(file: string): Promise<void> {
+  const store = memory ?? {};
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  const signature = await readSignature(file);
+  let merged: CacheShape = store;
+  if (signature !== loadedSignature) {
+    try {
+      const disk = JSON.parse(await fs.readFile(file, 'utf8')) as CacheShape;
+      if (disk && typeof disk === 'object' && !Array.isArray(disk)) {
+        merged = { ...disk, ...store };
+        memory = merged;
+      }
+    } catch {
+      /* Чужой файл битый/недочитанный — пишем свой (он у нас в памяти целый). */
+    }
+  }
+  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(merged));
+  await fs.rename(tmp, file);
+  loadedSignature = await readSignature(file);
 }
 
 /** Дебаунс-запись: коалесцируем частые miss'ы в один flush (PROVIDER_CACHE_WRITE_DEBOUNCE_MS). */
@@ -63,12 +109,21 @@ function persist(file: string) {
   writeTimer = setTimeout(() => {
     writeTimer = null;
     writing = writing
-      .then(async () => {
-        await fs.mkdir(path.dirname(file), { recursive: true });
-        await fs.writeFile(file, JSON.stringify(memory ?? {}));
-      })
+      .then(() => writeFileAtomic(file))
       .catch(() => {});
   }, debounce);
+}
+
+/** Принудительный flush (гидрация/тесты/graceful shutdown): дожидается очереди. */
+export async function cacheFlush(): Promise<void> {
+  const cfg = getProvidersConfig().cache;
+  if (!cfg.enabled || !fileBackendUsable() || !memory) return;
+  if (writeTimer) {
+    clearTimeout(writeTimer);
+    writeTimer = null;
+  }
+  writing = writing.then(() => writeFileAtomic(cfg.file)).catch(() => {});
+  await writing;
 }
 
 export const cacheKey = (slug: string, episode: number) => `ep:${slug}:${episode}`;

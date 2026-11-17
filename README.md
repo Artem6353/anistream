@@ -428,13 +428,38 @@ npm run cache:migrate-ttl -- --apply
 
 1. Поднимите Next.js (`npm run dev`) и нужные bridge (`bridges/kodik_bridge.py`, `bridges/multi_player_bridge.py`) с доступными провайдерами.
 2. Сначала безопасно оцените объём через `npm run hydrate -- --dry-run`. План будет в `.cache/hydrate-plan.json`.
-3. Для тестового прогона в PowerShell: `$env:LIMIT='25'; $env:MAX_EPISODES='200'; $env:HYDRATE_CONCURRENCY='4'; npm run hydrate`.
-4. Для полного заполнения пропусков: `Remove-Item Env:LIMIT, Env:MAX_EPISODES -ErrorAction SilentlyContinue; $env:HYDRATE_MODE='gaps'; $env:HYDRATE_CONCURRENCY='4'; npm run hydrate`.
+3. Для тестового прогона в PowerShell: `$env:LIMIT='25'; $env:MAX_EPISODES='200'; $env:HYDRATE_CONCURRENCY='10'; $env:HYDRATE_DELAY_MS='0'; npm run hydrate`.
+4. Для полного заполнения пропусков: `Remove-Item Env:LIMIT, Env:MAX_EPISODES -ErrorAction SilentlyContinue; $env:HYDRATE_MODE='gaps'; $env:HYDRATE_CONCURRENCY='10'; $env:SKIP_EPISODES_GREATER_THAN='500'; npm run hydrate` (`SKIP_EPISODES_GREATER_THAN` откладывает «Сазаэ-сан» и «Ван-Пис» на отдельный прогон).
+
+### Скорость: конкурентность, пауза и resume
+
+| Переменная | По умолчанию | Что делает |
+|---|---|---|
+| `HYDRATE_CONCURRENCY` | `1` | Параллельных резолвов, `1…32`. Рекомендуется `10`: узкое место — уже не скрипт, а мосты (`BRIDGE_UPSTREAM_CONC`). |
+| `HYDRATE_DELAY_MS` | `0` | Пауза между задачами. Троттлинг уже живёт в bridge (семафор апстрима, single-flight, негативный кэш), лишняя пауза только растягивает прогон. |
+| `SKIP_EPISODES_GREATER_THAN` | `0` (выкл) | Пропустить тайтлы, где больше N вышедших серий (`500` — «гиганты» не блокируют первый проход). |
+| `HYDRATE_RETRY_MINUTES` | `360` | Сколько не повторять серию, по которой источник не нашёлся. `0` — повторять всегда. |
+| `HYDRATE_STATE_FILE` | `.cache/hydrate-state.json` | Файл прогресса для resume; `--reset-state` его очищает. |
+| `BACKFILL_RATE_LIMIT` | `3600` | Отдельный бакет лимитера для запросов с верным `x-backfill-token` (публичный лимит `/api/providers` — 60/мин). |
+
+**Resume.** Прогресс пишется в `.cache/hydrate-state.json` (атомарно, раз в 5 с). `Ctrl+C` останавливает выдачу новых задач, дожидается in-flight и сохраняет состояние — повторный запуск продолжает с того же места. Уже залитые серии отсекает кэш, свежие «пустые» — состояние (см. `HYDRATE_RETRY_MINUTES`). Счётчики `resumeSkippedResolved` / `resumeSkippedRecentFailure` попадают в `.cache/hydrate-plan.json`.
+
+**Несколько мостов на разных портах.** Один процесс bridge держит `BRIDGE_UPSTREAM_CONC` (4 у Kodik) одновременных походов в апстрим — это защита от rate-limit провайдера, а не баг. Чтобы масштабироваться, поднимите несколько экземпляров и перечислите их адреса в `KODIK_BRIDGE_URLS` / `MULTIPLAYER_BRIDGE_URLS` (клиент размазывает запросы по кругу и пропускает упавшие инстансы):
+
+```bash
+KODIK_BRIDGE_PORT=8765 python bridges/kodik_bridge.py &
+KODIK_BRIDGE_PORT=8767 python bridges/kodik_bridge.py &
+KODIK_BRIDGE_PORT=8769 python bridges/kodik_bridge.py &
+export KODIK_BRIDGE_URLS=http://127.0.0.1:8765,http://127.0.0.1:8767,http://127.0.0.1:8769
+# при желании: BRIDGE_MAX_HANDLERS (16), BRIDGE_UPSTREAM_CONC (4) на каждый инстанс
+```
+
+Мосты stateless: cookie/сессий между резолвами нет, поэтому запросы можно свободно раскидывать по инстансам. Потолок всё равно задаёт апстрим — Kodik нормально держит порядка единиц rps на токен, поэтому не поднимайте `BRIDGE_UPSTREAM_CONC` без нужды: баны прилетают именно за это.
 
 Инвентаризация по умолчанию (`HYDRATE_INVENTORY_SOURCE=auto`) читает локальный `.cache/providers-resolve-cache.json`, если включён файловый кэш и Upstash KV не настроен. Это быстро и не создаёт тысячи HTTP-запросов к собственному API. При активном Upstash используется API. Можно указать `HYDRATE_INVENTORY_SOURCE=api` для проверки через endpoint или `file` для принудительного чтения локального кэша (не работает с Upstash).
 
 При API-инвентаризации скрипт показывает прогресс и в последовательном режиме прекращает проверку, когда у достаточного количества разных тайтлов обнаружен хотя бы один пропуск. При заданном `MAX_EPISODES` задачи выбираются по кругу: сначала по одной недостающей серии у разных тайтлов, затем следующие пропуски этих тайтлов. Это не даёт длинным сериалам занять весь пакет. По умолчанию один запрос одновременно с паузой между тайтлами; при HTTP 429 уважается `Retry-After` и применяется экспоненциальная задержка. Если реальный запуск встретил ошибки инвентаризации, он останавливается до запросов к провайдерам, чтобы неизвестные серии не стали ложными пропусками.
 
-5. Результаты сохраняются в `.cache/hydrate-report.json`; успешные прямые источники — в `.cache/providers-resolve-cache.json` или Upstash, если он настроен. Повторный запуск безопасен: уже заполненные серии пропускаются, неудачные не исключаются навсегда.
+5. Результаты сохраняются в `.cache/hydrate-report.json` (там же `throughputEpsPerSec`); успешные прямые источники — в `.cache/providers-resolve-cache.json` или Upstash, если он настроен. Повторный запуск безопасен: уже заполненные серии пропускаются, неудачные не исключаются навсегда.
 
 Запускайте массовый процесс на компьютере/VPS, где есть постоянное файловое хранилище и работающие bridge. Не используйте Vercel без настроенного Upstash для массового заполнения: файловый кэш serverless-функции не является постоянным хранилищем.

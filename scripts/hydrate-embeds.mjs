@@ -1,4 +1,4 @@
-/* Hydrator v4: fills all catalog episodes without a direct provider result.
+/* Hydrator v5: fills all catalog episodes without a direct provider result.
  *
  * HYDRATE_MODE=gaps (default): query every episode not backed by a direct result in cache.
  * "synth" and "guess" availability states are gaps, not completed episodes.
@@ -6,16 +6,31 @@
  *
  * Safe controls:
  *   --dry-run                  inventory and save .cache/hydrate-plan.json; no provider resolves
+ *   --reset-state              забыть resume-состояние (повторить все ранее неудачные серии)
  *   LIMIT=25                   only the 25 most popular eligible titles
  *   MAX_EPISODES=200           cap a run to a fixed number of episodes
  *   SKIP_UPCOMING=1             skip not-yet-aired titles (default)
  *   SKIP_NO_SHIKIMORI=1         optionally skip titles without a Shikimori ID
- *   HYDRATE_CONCURRENCY=1       conservative default; stays below the API provider-route rate limit
+ *   SKIP_EPISODES_GREATER_THAN=500  пропустить длинные онгоинги (sazae-san, one-piece) в этом прогоне
+ *   HYDRATE_CONCURRENCY=10      параллельных резолвов (1..32; было 1)
+ *   HYDRATE_DELAY_MS=0          пауза между задачами (по умолчанию 0 — троттлит сам bridge)
+ *   HYDRATE_RETRY_MINUTES=360   сколько не повторять серию, по которой источник не нашёлся
+ *
+ * Resume: прогресс пишется в .cache/hydrate-state.json. Прерванный прогон (Ctrl+C)
+ * продолжается с того же места: уже залитые серии отсекает кэш, недавние «пустые» —
+ * состояние (см. HYDRATE_RETRY_MINUTES).
  *
  * Requires a running Next.js server and configured live bridge(s).
- * Re-running is safe: directly-resolved episodes are skipped, failed ones remain eligible.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import {
+  markTask,
+  parseState,
+  pruneState,
+  selectTitles,
+  shouldSkipTask,
+  taskKey,
+} from './lib/hydrate-plan.mjs';
 
 const BASE = (process.env.BASE ?? 'http://localhost:3000').replace(/\/$/, '');
 /* Аудит (P2-9): `?live=1` (обход кэша) требует админ-cookie или сервисного
@@ -28,21 +43,49 @@ const numberEnv = (name, fallback) => {
   const value = Number(process.env[name] ?? fallback);
   return Number.isFinite(value) ? value : fallback;
 };
-const CONCURRENCY = Math.max(1, Math.min(12, Math.floor(numberEnv('HYDRATE_CONCURRENCY', numberEnv('CONCURRENCY', 1)))));
-const INVENTORY_CONCURRENCY = Math.max(1, Math.min(4, Math.floor(numberEnv('HYDRATE_INVENTORY_CONCURRENCY', 1))));
-const INVENTORY_DELAY_MS = Math.max(0, numberEnv('HYDRATE_INVENTORY_DELAY_MS', 500));
+const CONCURRENCY = Math.max(1, Math.min(32, Math.floor(numberEnv('HYDRATE_CONCURRENCY', numberEnv('CONCURRENCY', 1)))));
+const INVENTORY_CONCURRENCY = Math.max(1, Math.min(8, Math.floor(numberEnv('HYDRATE_INVENTORY_CONCURRENCY', 1))));
+const INVENTORY_DELAY_MS = Math.max(0, numberEnv('HYDRATE_INVENTORY_DELAY_MS', 0));
 const ALLOW_PARTIAL_INVENTORY = process.env.HYDRATE_ALLOW_INVENTORY_ERRORS === '1';
 const INVENTORY_SOURCE = (process.env.HYDRATE_INVENTORY_SOURCE ?? 'auto').toLowerCase();
 const TIMEOUT_MS = Math.max(3000, numberEnv('HYDRATE_TIMEOUT_MS', 30000));
-const DELAY_MS = Math.max(0, numberEnv('HYDRATE_DELAY_MS', 1800));
+/* 1800 мс по умолчанию были страховкой от rate-limit, но throttle уже живёт в самом
+   bridge (BRIDGE_UPSTREAM_CONC + single-flight + негативный кэш), а лишняя пауза на
+   каждой из 128k серий стоила ~64 часов чистого ожидания. */
+const DELAY_MS = Math.max(0, numberEnv('HYDRATE_DELAY_MS', 0));
 const SETTLE_MS = Math.max(0, numberEnv('HYDRATE_SETTLE_MS', 6000));
 const SKIP_UPCOMING = (process.env.SKIP_UPCOMING ?? '1') !== '0';
 const SKIP_NO_SHIKIMORI = (process.env.SKIP_NO_SHIKIMORI ?? '0') !== '0';
+const SKIP_EPISODES_GREATER_THAN = Math.max(0, Math.floor(numberEnv('SKIP_EPISODES_GREATER_THAN', 0)));
+const RETRY_MINUTES = Math.max(0, numberEnv('HYDRATE_RETRY_MINUTES', 360));
 const LIMIT = Math.max(0, Math.floor(numberEnv('LIMIT', 0)));
 const MAX_EPISODES = Math.max(0, Math.floor(numberEnv('MAX_EPISODES', 0)));
 const DRY_RUN = process.argv.includes('--dry-run') || process.env.DRY_RUN === '1';
+const RESET_STATE = process.argv.includes('--reset-state');
+const STATE_FILE = process.env.HYDRATE_STATE_FILE || '.cache/hydrate-state.json';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Resume-состояние: читаем терпимо к отсутствию/битому файлу. */
+function readStateFile(file) {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+/** Запись состояния — атомарная (tmp+rename), чтобы Ctrl+C не оставил половину JSON. */
+function saveStateFile(file, value) {
+  try {
+    mkdirSync('.cache', { recursive: true });
+    const tmp = `${file}.${process.pid}.tmp`;
+    writeFileSync(tmp, JSON.stringify(value));
+    renameSync(tmp, file);
+  } catch {
+    /* состояние — подсказка для resume, не источник правды (истина — кэш) */
+  }
+}
 function readEnvFile(file) {
   if (!existsSync(file)) return {};
   const values = {};
@@ -177,34 +220,38 @@ if (!health.ok) {
 
 mkdirSync('.cache', { recursive: true });
 const allTitles = JSON.parse(readFileSync('lib/data/titles.json', 'utf8'));
-const eligibleTitles = allTitles
-  .filter((title) => title?.slug && !title.hidden)
-  .map((title) => ({
-    ...title,
-    episodes: Math.max(1, Math.floor(Number(title.episodes) || 1)),
-    favourites: Number(title.favourites) || 0,
-  }))
-  .filter((title) => !(SKIP_UPCOMING && title.status === 'upcoming'))
-  .filter((title) => !(SKIP_NO_SHIKIMORI && !title.shikimori?.id))
-  .sort((a, b) => b.favourites - a.favourites || a.slug.localeCompare(b.slug));
+/* Фильтры и граница серий — в scripts/lib/hydrate-plan.mjs (покрыто тестами).
+   Граница = число ВЫШЕДШИХ серий: у тайтлов с `episodes: null` (в т.ч. one-piece)
+   иначе проверялась бы только первая серия. */
+const { selected: eligibleTitles, skipped } = selectTitles(allTitles, {
+  skipUpcoming: SKIP_UPCOMING,
+  skipNoShikimori: SKIP_NO_SHIKIMORI,
+  skipEpisodesGreaterThan: SKIP_EPISODES_GREATER_THAN,
+});
 const selectedTitles = LIMIT ? eligibleTitles.slice(0, LIMIT) : eligibleTitles;
-const skippedUpcoming = allTitles.filter((title) => !title.hidden && SKIP_UPCOMING && title.status === 'upcoming').length;
-const skippedNoShikimori = SKIP_NO_SHIKIMORI
-  ? allTitles.filter((title) => !title.hidden && !(SKIP_UPCOMING && title.status === 'upcoming') && !title.shikimori?.id).length
-  : 0;
+const skippedUpcoming = skipped.upcoming;
+const skippedNoShikimori = skipped.noShikimori;
 
 console.log(
   'Mode: ' + MODE +
   ' · server: ' + BASE +
   ' · eligible titles: ' + selectedTitles.length +
   ' · concurrency: ' + CONCURRENCY +
+  ' · delay: ' + DELAY_MS + ' ms' +
   ' · inventory requested: ' + INVENTORY_SOURCE +
   ' · inventory concurrency: ' + INVENTORY_CONCURRENCY +
   ' · inventory delay: ' + INVENTORY_DELAY_MS + ' ms' +
   ' · timeout: ' + TIMEOUT_MS + ' ms' +
   ' · upcoming skipped: ' + skippedUpcoming +
-  ' · no-Shikimori skipped: ' + skippedNoShikimori,
+  ' · no-Shikimori skipped: ' + skippedNoShikimori +
+  ' · giants skipped (>' + SKIP_EPISODES_GREATER_THAN + ' eps): ' + skipped.giants +
+  ' · retry-failed after: ' + RETRY_MINUTES + ' min',
 );
+
+/* Resume-состояние: что уже отработано (ok) и что недавно не нашлось (none/err). */
+let state = RESET_STATE ? { version: 1, updatedAt: 0, tasks: {} } : parseState(readStateFile(STATE_FILE));
+if (RESET_STATE) console.log('Resume state reset: ' + STATE_FILE);
+const RETRY_MS = RETRY_MINUTES * 60_000;
 
 const availability = new Map();
 let inventoryErrors = 0;
@@ -341,6 +388,7 @@ if (MODE === 'gaps') {
 }
 
 const plan = [];
+const resumeSkipped = { resolved: 0, recentFailure: 0 };
 for (const title of selectedTitles) {
   const known = availability.get(title.slug);
   const episodes = [];
@@ -348,7 +396,20 @@ for (const title of selectedTitles) {
     const hasDirectCache = known?.[episode] === 'cache';
     // In gaps mode, any state except a direct cache record is a gap.
     // If inventory failed, attempt all episodes rather than silently omitting the title.
-    if (MODE === 'live' || !hasDirectCache) episodes.push(episode);
+    if (MODE === 'live' || !hasDirectCache) {
+      /* Resume: не повторяем то, что уже отработало в прошлых прогонах.
+         «ok» отсекает кэш (инвентарь), но если запись истекла по TTL — состояние
+         всё равно скажет, что серия уже заливалась; свежие «пустые» не долбим снова. */
+      if (MODE === 'gaps') {
+        const key = taskKey(title.slug, episode);
+        if (shouldSkipTask(state, key, Date.now(), RETRY_MS)) {
+          if (state.tasks[key]?.s === 'ok') resumeSkipped.resolved++;
+          else resumeSkipped.recentFailure++;
+          continue;
+        }
+      }
+      episodes.push(episode);
+    }
   }
   if (episodes.length) plan.push({ slug: title.slug, episodes, favourites: title.favourites });
 }
@@ -387,6 +448,12 @@ const planSummary = {
   concurrency: CONCURRENCY,
   skippedUpcoming,
   skippedNoShikimori,
+  skippedGiants: skipped.giants,
+  skippedUnknownEpisodes: skipped.unknownEpisodes,
+  resumeSkippedResolved: resumeSkipped.resolved,
+  resumeSkippedRecentFailure: resumeSkipped.recentFailure,
+  retryMinutes: RETRY_MINUTES,
+  delayMs: DELAY_MS,
   inventoryErrors,
   inventorySource: actualInventorySource,
   inventoryTitlesChecked,
@@ -428,13 +495,28 @@ if (DRY_RUN) {
   const failures = [];
   const queue = [...tasks];
   const startedAt = Date.now();
+  let stopping = false;
+  let lastStateSave = 0;
+
+  /* Ctrl+C: перестаём брать новые задачи, дожидаемся in-flight, сохраняем состояние.
+     Без этого прерванный на 40-й тысяче прогон терял бы всю информацию о «пустых»
+     сериях и следующий запуск начинал бы их заново. */
+  const onSignal = (signal) => {
+    if (stopping) process.exit(130);
+    stopping = true;
+    console.warn('\n' + signal + ': остановка после текущих запросов (повторное — выйти сразу)…');
+  };
+  process.on('SIGINT', () => onSignal('SIGINT'));
+  process.on('SIGTERM', () => onSignal('SIGTERM'));
 
   async function resolveTask(task) {
     const url = BASE + '/api/providers/' + encodeURIComponent(task.slug) + '/' + task.episode + '?live=1';
     const backfillToken = BACKFILL_TOKEN();
     const result = await fetchJson(url, TIMEOUT_MS, backfillToken ? { 'x-backfill-token': backfillToken } : undefined);
+    const key = taskKey(task.slug, task.episode);
     if (!result.ok || !result.body) {
       requestErrors++;
+      markTask(state, key, 'err', Date.now());
       if (failures.length < 1000) failures.push({
         slug: task.slug,
         episode: task.episode,
@@ -457,12 +539,14 @@ if (DRY_RUN) {
     if (directSources.length) {
       resolved++;
       sourcesFound += directSources.length;
+      markTask(state, key, 'ok', Date.now());
       for (const source of directSources) {
         const provider = String(source.providerId ?? 'unknown');
         providerCounts[provider] = (providerCounts[provider] ?? 0) + 1;
       }
     } else {
       noSource++;
+      markTask(state, key, 'none', Date.now());
       if (failures.length < 1000) failures.push({
         slug: task.slug,
         episode: task.episode,
@@ -473,7 +557,7 @@ if (DRY_RUN) {
   }
 
   const workers = Array.from({ length: Math.min(CONCURRENCY, Math.max(1, tasks.length)) }, async () => {
-    while (queue.length) {
+    while (queue.length && !stopping) {
       const task = queue.shift();
       if (!task) break;
       try {
@@ -488,15 +572,24 @@ if (DRY_RUN) {
         });
       }
       done++;
+      /* Состояние пишем не на каждую задачу (128k файловых записей), а раз в 5 с
+         и на каждом 50-м эпизоде — потери при жёстком kill минимальны. */
+      const now = Date.now();
+      if (now - lastStateSave > 5000) {
+        lastStateSave = now;
+        saveStateFile(STATE_FILE, state);
+      }
       if (DELAY_MS) await sleep(DELAY_MS);
       if (done % 50 === 0 || done === tasks.length) {
         const elapsed = (Date.now() - startedAt) / 1000;
-        const eta = done ? Math.round((elapsed / done) * (tasks.length - done)) : 0;
+        const rate = done ? done / elapsed : 0;
+        const eta = rate > 0 ? Math.round((tasks.length - done) / rate) : 0;
         process.stdout.write(
           '\r' + done + '/' + tasks.length +
           ' · direct=' + resolved +
           ' · no-source=' + noSource +
           ' · errors=' + requestErrors +
+          ' · ' + rate.toFixed(2) + ' eps/s' +
           ' · ETA ~' + eta + ' s   ',
         );
       }
@@ -504,33 +597,42 @@ if (DRY_RUN) {
   });
   await Promise.all(workers);
   console.log('');
+  saveStateFile(STATE_FILE, pruneState(state, Date.now()));
 
   if (resolved > 0 && SETTLE_MS) {
     console.log('Waiting ' + SETTLE_MS + ' ms for debounced file-cache writes…');
     await sleep(SETTLE_MS);
   }
 
+  const durationSeconds = Math.round((Date.now() - startedAt) / 1000);
   const report = {
     ...planSummary,
     generatedAt: new Date().toISOString(),
     dryRun: false,
+    interrupted: stopping || done < tasks.length,
     completedEpisodes: done,
+    plannedEpisodes: tasks.length,
     resolvedEpisodes: resolved,
     unresolvedEpisodes: noSource,
     requestErrors,
     directSourcesFound: sourcesFound,
     providerCounts,
-    durationSeconds: Math.round((Date.now() - startedAt) / 1000),
+    durationSeconds,
+    throughputEpsPerSec: durationSeconds > 0 ? Number((done / durationSeconds).toFixed(2)) : null,
     unresolvedSample: failures.slice(0, 100),
     unresolvedTruncated: Math.max(0, failures.length - 100),
   };
   writeFileSync('.cache/hydrate-report.json', JSON.stringify(report, null, 2));
-  console.log('Hydrator finished: direct=' + resolved + '/' + tasks.length +
-    ', no-source=' + noSource + ', request-errors=' + requestErrors);
+  console.log('Hydrator finished: direct=' + resolved + '/' + done +
+    ', no-source=' + noSource + ', request-errors=' + requestErrors +
+    (report.interrupted ? ' [прервано, осталось ' + (tasks.length - done) + ']' : ''));
   console.log('Providers: ' + JSON.stringify(providerCounts));
-  console.log('Report: .cache/hydrate-report.json');
+  console.log('Throughput: ' + (report.throughputEpsPerSec ?? 0) + ' eps/s · ' + durationSeconds + ' s');
+  console.log('Report: .cache/hydrate-report.json · state: ' + STATE_FILE);
 
-  if (tasks.length > 0 && resolved === 0) {
+  if (report.interrupted) {
+    process.exitCode = 130;
+  } else if (tasks.length > 0 && resolved === 0) {
     console.error('No direct source was found. Check bridge health, provider tokens and upstream access.');
     process.exitCode = 2;
   } else if (requestErrors > 0) {
