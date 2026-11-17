@@ -15,10 +15,10 @@ test-results/
 playwright-report/
 # Аудит 30.09: рантайм-артефакты не должны жить в git (раньше web-vitals,
 # provider-errors и data/*.json коммитились и шумели в диффах).
-# ВНИМАНИЕ: .cache/providers-resolve-cache.json остаётся tracked — это
-# намеренный seed-кэш легаси-резолвов (docs/REPORT.md W12), его не трогаем.
+# feat/db-cache: seed-кэш резолвов (.cache/providers-resolve-cache.json) вырос до 93 МБ
+# при лимите GitHub 100 МБ на файл и перенесён в Supabase (episode_sources /
+# episode_source_urls). Файл больше не трекается и не должен возвращаться в коммиты.
 .cache/*
-!.cache/providers-resolve-cache.json
 data/reports.json
 data/dmca.json
 data/vapid.json

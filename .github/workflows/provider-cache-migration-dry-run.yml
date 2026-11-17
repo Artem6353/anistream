@@ -29,6 +29,7 @@ jobs:
       - name: Calculate migration inventory without Redis writes
         run: |
           set -euo pipefail
+          if [ ! -f .cache/providers-resolve-cache.json ]; then echo "providers-resolve-cache.json отсутствует (feat/db-cache: кэш в Supabase) — шаг пропущен"; exit 0; fi
           node scripts/migrate-provider-cache-to-upstash.mjs \
             --file .cache/providers-resolve-cache.json \
             --dry-run

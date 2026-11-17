@@ -20,11 +20,16 @@ export interface ProvidersConfig {
     write: boolean;
     ttlMs: number;
     file: string;
+    /** Куда писать резолвы: supabase (по умолчанию, если есть service-ключ),
+        upstash KV или JSON-файл (self-hosted без БД). */
+    backend: 'db' | 'kv' | 'file';
     /** Файловый бэкенд кэша. На проде выключен (задача 4 аудита): рантайм не должен
         поднимать в память .cache/providers-resolve-cache.json на 97,6 МБ — замер дал
         675 мс чтения, 1038 мс JSON.parse и 370 МБ RSS на одном резолве при лимите
         функции Vercel 1024 МБ. В проде кэш только Redis (UPSTASH_*), а источник
-        правды — Supabase episode_sources. */
+        правды — Supabase episode_sources.
+        Аудит feat/db-cache: JSON-файл больше НЕ в git (лимит GitHub 100 МБ), поэтому
+        fileBackend теперь только явный self-hosted сценарий (PROVIDER_CACHE_BACKEND=file). */
     fileBackend: boolean;
   };
   bridges: {
@@ -63,6 +68,24 @@ function resolveCacheFileBackend(env: NodeJS.ProcessEnv): boolean {
   const raw = env.PROVIDER_CACHE_FILE_BACKEND;
   if (raw !== undefined) return bool(raw, true);
   return !(env.NODE_ENV === 'production' || Boolean(env.VERCEL));
+}
+
+/**
+ * Выбор хранилища резолвов.
+ *
+ * feats/db-cache: JSON-файл убран из git (93 МБ → лимит GitHub 100 МБ), так что
+ * дефолт — Supabase: там уже живут episode_sources / episode_source_urls, и запись
+ * идёт UPSERT'ом. Приоритет: явный PROVIDER_CACHE_BACKEND → Supabase (если есть
+ * service-ключ: запись закрыта RLS-политикой service_role) → Upstash → файл.
+ */
+function resolveCacheBackend(env: NodeJS.ProcessEnv): 'db' | 'kv' | 'file' {
+  const raw = (env.PROVIDER_CACHE_BACKEND ?? '').trim().toLowerCase();
+  if (raw === 'db' || raw === 'kv' || raw === 'file') return raw;
+  const supabaseUrl = (env.NEXT_PUBLIC_SUPABASE_URL ?? '').trim();
+  const serviceKey = (env.SUPABASE_SERVICE_KEY ?? '').trim();
+  if (supabaseUrl && serviceKey) return 'db';
+  if ((env.UPSTASH_REDIS_REST_URL ?? '').trim() && (env.UPSTASH_REDIS_REST_TOKEN ?? '').trim()) return 'kv';
+  return 'file';
 }
 
 /** Синтез/подбор URL — только явно (dev или PROVIDER_UNVERIFIED_FALLBACK=1), ТЗ 1.6.4. */
@@ -217,6 +240,7 @@ export function getProvidersConfig(): ProvidersConfig {
       /* PROVIDER_CACHE_FILE_BACKEND=1 включает файл даже в проде (self-hosted/VPS,
          где памяти больше и нет Supabase) — осознанно, не по умолчанию. */
       fileBackend: resolveCacheFileBackend(env),
+      backend: resolveCacheBackend(env),
       file: env.KODIK_CACHE_FILE ?? '.cache/providers-resolve-cache.json',
     },
     shikimori: {

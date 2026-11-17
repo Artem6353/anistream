@@ -79,7 +79,16 @@ try {
   const catalogPath = path.resolve(options.catalog);
   const outputPath = path.resolve(options.output);
   if (!existsSync(catalogPath)) throw new Error('Catalog file not found: ' + catalogPath);
-  if (!existsSync(cachePath)) throw new Error('Provider cache not found: ' + cachePath);
+  if (!existsSync(cachePath)) {
+    /* feat/db-cache: JSON-кэш убран из git (93 МБ → лимит GitHub 100 МБ), источник правды —
+       Supabase episode_sources/episode_source_urls. Отчёт покрытия по БД делает
+       `node scripts/audit-episode-coverage.mjs` только при локальном файле. */
+    throw new Error(
+      'Provider cache not found: ' + cachePath +
+        ' — файловый кэш больше не хранится в git (feat/db-cache). ' +
+        'Передайте локальный файл через --cache или используйте данные Supabase.',
+    );
+  }
 
   const titles = JSON.parse(readFileSync(catalogPath, 'utf8'));
   const cacheStore = JSON.parse(readFileSync(cachePath, 'utf8'));

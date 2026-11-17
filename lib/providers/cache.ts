@@ -3,6 +3,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { getProvidersConfig } from '@/lib/config/providers.config';
 import { kvDel, kvEnabled, kvGet, kvMget, kvSet } from './cache-kv';
+import { dbCacheConfigured, dbCacheCounts, dbLoadCache, dbUpsertEpisode } from './cache-db';
 import { decodeEpisodeCacheValue, encodeEpisodeCacheValue } from './cache-codec.mjs';
 
 /**
@@ -14,6 +15,14 @@ import { decodeEpisodeCacheValue, encodeEpisodeCacheValue } from './cache-codec.
  * нигде, т.е. при заданных UPSTASH_* кэш не работал вовсе (hit rate 0%) и
  * /api/availability всегда показывал demo. Теперь cacheSet пишет в KV, а
  * cacheEntriesForSlug ведёт в KV индекс эпизодов тайтла (epidx:<slug>).
+ *
+ * feat/db-cache: бэкендов теперь три (`cache.backend`):
+ *   db   — Supabase episode_sources/episode_source_urls (дефолт при service-ключе).
+ *          JSON-файл убран из git: 93 МБ при лимите GitHub 100 МБ. При старте
+ *          процесса кэш ОДИН раз грузится в память (dbLoadCache), дальше чтения
+ *          бесплатны, а запись идёт UPSERT'ом — без перезаписи гигантского файла.
+ *   kv   — Upstash (горячий TTL-кэш).
+ *   file — JSON-файл, только явно (self-hosted без БД).
  */
 
 interface CacheShape {
@@ -53,8 +62,17 @@ async function readSignature(file: string): Promise<string> {
   }
 }
 
+/** Текущий бэкенд из конфига (читаем каждый раз: env может меняться в тестах).
+ *  Фоллбэк на kvEnabled() — для частичных конфигов (моки/старые вызовы без `backend`). */
+function backend(): 'db' | 'kv' | 'file' {
+  const value = getProvidersConfig().cache.backend;
+  if (value === 'db' || value === 'kv' || value === 'file') return value;
+  return kvEnabled() ? 'kv' : 'file';
+}
+
 async function load(file: string): Promise<CacheShape> {
   if (memory) return memory;
+  if (backend() === 'db' && dbCacheConfigured()) return loadFromDb();
   if (!fileBackendUsable()) {
     memory = {};
     return memory;
@@ -67,6 +85,47 @@ async function load(file: string): Promise<CacheShape> {
     loadedSignature = await readSignature(file);
   }
   return memory;
+}
+
+/** Загрузка кэша из Supabase в память (один раз на процесс, с дедупликацией вызовов). */
+let loadingFromDb: Promise<CacheShape> | null = null;
+
+async function loadFromDb(): Promise<CacheShape> {
+  if (memory) return memory;
+  if (loadingFromDb) return loadingFromDb;
+  const cfg = getProvidersConfig().cache;
+  loadingFromDb = (async () => {
+    /* Динамический импорт: file/kv-бэкенды не тянут каталог (20,8 МБ titles.json). */
+    const { loadTitles } = await import('@/lib/catalog');
+    const slugById = new Map<number, string>();
+    for (const title of loadTitles(true)) slugById.set(title.anilistId, title.slug);
+    const entries = await dbLoadCache(slugById);
+    const store: CacheShape = {};
+    for (const entry of entries) {
+      store[entry.key] = { at: entry.at, ttlMs: cfg.ttlMs, sources: entry.sources };
+    }
+    memory = store;
+    return store;
+  })().finally(() => {
+    loadingFromDb = null;
+  });
+  return loadingFromDb;
+}
+
+/** Прогрев кэша на старте процесса (instrumentation.ts) — чтобы первый резолв
+ *  не ждал загрузки из Supabase. Никогда не бросает: сбой загрузки = пустой кэш.
+ *  Файловый бэкенд НЕ прогреваем: он и так грузится лениво, а файл на 93 МБ
+ *  в dev-старте только замедлит запуск. */
+export async function preloadProviderCache(): Promise<{ entries: number; backend: string }> {
+  const cfg = getProvidersConfig().cache;
+  if (!cfg.enabled) return { entries: 0, backend: 'disabled' };
+  if (backend() === 'file') return { entries: 0, backend: 'file' };
+  try {
+    const store = await load(cfg.file);
+    return { entries: Object.keys(store).length, backend: backend() };
+  } catch {
+    return { entries: 0, backend: backend() };
+  }
 }
 
 /** Одна запись за раз (очередь `writing`) + атомарная подмена файла.
@@ -112,18 +171,6 @@ function persist(file: string) {
       .then(() => writeFileAtomic(file))
       .catch(() => {});
   }, debounce);
-}
-
-/** Принудительный flush (гидрация/тесты/graceful shutdown): дожидается очереди. */
-export async function cacheFlush(): Promise<void> {
-  const cfg = getProvidersConfig().cache;
-  if (!cfg.enabled || !fileBackendUsable() || !memory) return;
-  if (writeTimer) {
-    clearTimeout(writeTimer);
-    writeTimer = null;
-  }
-  writing = writing.then(() => writeFileAtomic(cfg.file)).catch(() => {});
-  await writing;
 }
 
 export const cacheKey = (slug: string, episode: number) => `ep:${slug}:${episode}`;
@@ -177,7 +224,7 @@ export async function cacheEntriesForSlug(slug: string): Promise<{ episode: numb
   const cfg = getProvidersConfig().cache;
   if (!cfg.enabled) return [];
   const out: { episode: number; sources: EpisodeSources }[] = [];
-  if (kvEnabled()) {
+  if (backend() === 'kv' && kvEnabled()) {
     const indexKey = kvIdxKey(slug);
     let idxRaw: string | null;
     try {
@@ -276,7 +323,7 @@ export async function cacheEntriesForSlug(slug: string): Promise<{ episode: numb
 export async function cacheGet(key: string): Promise<EpisodeSources | null> {
   const cfg = getProvidersConfig().cache;
   if (!cfg.enabled) return null;
-  if (kvEnabled()) {
+  if (backend() === 'kv' && kvEnabled()) {
     let raw: string | null;
     try {
       raw = await kvGet(kvEpKey(key));
@@ -310,7 +357,23 @@ export async function cacheSet(key: string, sources: EpisodeSources): Promise<vo
     ttlMs: cfg.ttlMs,
     sources: { ...direct, fromCache: false },
   };
-  if (kvEnabled()) {
+  if (backend() === 'db' && dbCacheConfigured()) {
+    /* UPSERT в Supabase: одна строка на озвучку в episode_source_urls + шапка
+       в episode_sources. Файл НЕ пишем (он больше не в git), а память обновляем
+       сразу — следующий cacheGet уже видит серию без похода в БД. */
+    const m = key.match(/^ep:(.+):(\d+)$/);
+    if (!m) return;
+    const animeId = await animeIdOfSlug(m[1]);
+    if (!animeId) {
+      console.warn('[providers] cache-db: нет anime_id для slug', m[1]);
+      return;
+    }
+    await dbUpsertEpisode(animeId, Number(m[2]), direct.sources);
+    const store = await load(cfg.file);
+    store[key] = entry;
+    return;
+  }
+  if (backend() === 'kv' && kvEnabled()) {
     /* Аудит 30.09 (P0-5): KV-запись + индекс эпизодов тайтла. */
     await kvSet(kvEpKey(key), encodeEpisodeCacheValue(entry), Math.round(cfg.ttlMs / 1000));
     const m = key.match(/^ep:(.+):(\d+)$/);
@@ -322,8 +385,43 @@ export async function cacheSet(key: string, sources: EpisodeSources): Promise<vo
   persist(cfg.file);
 }
 
+/** slug → AniList id для UPSERT'а (каталог грузим лениво, один раз на процесс). */
+let slugToAnimeId: Map<string, number> | null = null;
+
+async function animeIdOfSlug(slug: string): Promise<number | null> {
+  if (!slugToAnimeId) {
+    const { loadTitles } = await import('@/lib/catalog');
+    slugToAnimeId = new Map(loadTitles(true).map((t) => [t.slug, t.anilistId]));
+  }
+  return slugToAnimeId.get(slug) ?? null;
+}
+
+/** Дождаться записи. Для db-бэкенда писать нечего: каждый cacheSet уже UPSERT'нул. */
+export async function cacheFlush(): Promise<void> {
+  const cfg = getProvidersConfig().cache;
+  if (backend() === 'db') {
+    await Promise.resolve();
+    return;
+  }
+  if (!cfg.enabled || !fileBackendUsable() || !memory) return;
+  if (writeTimer) {
+    clearTimeout(writeTimer);
+    writeTimer = null;
+  }
+  writing = writing.then(() => writeFileAtomic(cfg.file)).catch(() => {});
+  await writing;
+}
+
 export async function cacheStats(): Promise<{ entries: number; file: string }> {
   const cfg = getProvidersConfig().cache;
+  if (backend() === 'db') {
+    const store = await load(cfg.file);
+    const counts = await dbCacheCounts();
+    return {
+      entries: Object.keys(store).length,
+      file: counts.urls === null ? 'supabase' : `supabase (urls=${counts.urls}, headers=${counts.headers ?? '?'})`,
+    };
+  }
   const store = await load(cfg.file);
   return { entries: Object.keys(store).length, file: cfg.file };
 }

@@ -10,7 +10,6 @@ on:
       - 'scripts/episode-coverage-core.mjs'
       - 'tests/episode-coverage.test.ts'
       - 'lib/data/titles.json'
-      - '.cache/providers-resolve-cache.json'
   push:
     branches: [main]
     paths:
@@ -18,7 +17,6 @@ on:
       - 'scripts/audit-episode-coverage.mjs'
       - 'scripts/episode-coverage-core.mjs'
       - 'lib/data/titles.json'
-      - '.cache/providers-resolve-cache.json'
 
 permissions:
   contents: read
@@ -40,6 +38,7 @@ jobs:
       - name: Build coverage report (offline, read-only)
         run: |
           set -euo pipefail
+          if [ ! -f .cache/providers-resolve-cache.json ]; then echo "providers-resolve-cache.json отсутствует (feat/db-cache: кэш в Supabase) — шаг пропущен"; exit 0; fi
           node scripts/audit-episode-coverage.mjs \
             --include-hidden \
             --output .cache/episode-coverage-report.json

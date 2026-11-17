@@ -14,9 +14,13 @@
 
 ## Git-хранилище каталога (аудит 30.09)
 
-`lib/data/titles.json` — 28 МБ, `.cache/providers-resolve-cache.json` — 98 МБ (трекается
-намеренно как seed-кэш), и sync-catalog/push-daily коммитят их каждые 6 ч:
+`lib/data/titles.json` — 28 МБ, его sync-catalog/push-daily коммитят каждые 6 ч:
 каждая версия добавляет ~2–3 МБ в pack-файл НАВСЕГДА (темп роста ~250–350 МБ/год).
+
+`/.cache/providers-resolve-cache.json` (93 МБ) из git **убран** (feat/db-cache): GitHub
+блокирует файлы >100 МБ, Git LFS недоступен по квотам. Кэш резолвов живёт в Supabase
+(`episode_sources` + `episode_source_urls`), запись — UPSERT, чтение — прогрев в память
+при старте процесса.
 
 **Статус на 12.10.2026 (аудит):** подготовлен перенос каталога в Supabase —
 миграция `20261012_titles.sql`, импорт `scripts/import-titles-to-db.mjs`, чтение

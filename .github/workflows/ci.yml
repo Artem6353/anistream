@@ -48,6 +48,7 @@ jobs:
       - name: On-demand episode coverage audit
         if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'episode-coverage-audit')
         run: |
+          if [ ! -f .cache/providers-resolve-cache.json ]; then echo "providers-resolve-cache.json отсутствует (feat/db-cache: кэш в Supabase) — шаг пропущен"; exit 0; fi
           npm run audit:episodes
           node <<'NODE'
           const fs = require('node:fs');
@@ -69,6 +70,7 @@ jobs:
       - name: Estimate Upstash migration footprint (read-only)
         if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'episode-coverage-audit')
         run: |
+          if [ ! -f .cache/providers-resolve-cache.json ]; then echo "providers-resolve-cache.json отсутствует (feat/db-cache: кэш в Supabase) — шаг пропущен"; exit 0; fi
           node scripts/migrate-provider-cache-to-upstash.mjs \
             --file .cache/providers-resolve-cache.json \
             --dry-run
