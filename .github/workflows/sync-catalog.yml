@@ -68,19 +68,58 @@ jobs:
             fi
             echo "batch $i done"
           done
+      # P0-5: heal — это добор картинок/персонажей из Jikan, а не добавление тайтлов.
+      # Прогон 17.11 упал по таймауту 60 мин: 6 батчей × 500 тайтлов × ~2 с = ~100 мин,
+      # при этом Jikan отдавал пустые ответы (кадров+ 0, персонажей+ 0).
+      # Теперь: шаг не красит workflow в красный, есть проверка доступности Jikan,
+      # внутренний дедлайн и ретраи с бэкоффом.
       - name: heal screenshots+characters (batched, Jikan pictures)
-        timeout-minutes: 60
+        continue-on-error: true
+        timeout-minutes: 50
         run: |
-          set -euo pipefail
+          set -uo pipefail
           git config user.name "anistream-bot"
           git config user.email "bot@anistream.local"
-          for i in 1 2 3 4 5 6; do
-            node scripts/enrich-shikimori-resumable.mjs --heal --limit 500 || true
-            node scripts/validate-catalog.mjs || exit 1
+
+          # Внутренний дедлайн: шаг должен завершиться сам, а не быть убитым таймаутом
+          # (иначе прогон теряет commit/push уже собранного heal-батча).
+          deadline=$(( $(date +%s) + 40*60 ))
+
+          # Jikan — узкое место и главная причина «нулевых» батчей. Если он недоступен
+          # или блокирует раннер, 500 тайтлов по 2 секунды бессмысленны.
+          jikan_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+            "${JIKAN_BASE:-https://api.jikan.moe/v4}/anime/1/pictures" || true)
+          if [ "$jikan_code" != "200" ]; then
+            echo "::warning::Jikan недоступен (HTTP ${jikan_code}) — heal пропущен, каталог не меняем."
+            exit 0
+          fi
+          echo "Jikan OK (HTTP 200)"
+
+          for i in 1 2 3; do
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::warning::heal остановлен по внутреннему дедлайну на батче $i (остальное — следующим прогоном)."
+              break
+            fi
+            ok=0
+            for attempt in 1 2 3; do
+              if node scripts/enrich-shikimori-resumable.mjs --heal --limit 150; then ok=1; break; fi
+              echo "::warning::heal batch $i, попытка ${attempt}/3 не удалась — пауза $((attempt*30)) с"
+              sleep $((attempt * 30))
+            done
+            if [ "$ok" != "1" ]; then
+              echo "::warning::heal batch $i: 3 попытки не удались (Jikan), продолжаю со следующего батча"
+              continue
+            fi
+            # Провал валидации — это порча каталога, а не капризы Jikan: не коммитим.
+            if ! node scripts/validate-catalog.mjs; then
+              echo "::error::validate-catalog упал после heal — коммит батча $i отменён"
+              continue
+            fi
             git add lib/data/titles.json
             if ! git diff --cached --quiet; then
               git commit -m "chore(catalog): heal batch $i"
-              bash scripts/push-catalog-commit.sh
+              bash scripts/push-catalog-commit.sh \
+                || { echo "::error::не удалось запушить heal batch $i"; exit 1; }
             fi
             echo "heal batch $i done"
           done

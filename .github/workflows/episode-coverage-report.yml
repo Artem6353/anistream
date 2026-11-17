@@ -35,18 +35,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Build coverage report (offline, read-only)
+      # В PR/пуше отчёт строится из Supabase (feat/db-cache): файлового кэша в git нет.
+      # Без секретов (форк) скрипт упадёт с понятным сообщением — это ожидаемо.
+      - name: Build coverage report (read-only)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
           set -euo pipefail
-          if [ ! -f .cache/providers-resolve-cache.json ]; then echo "providers-resolve-cache.json отсутствует (feat/db-cache: кэш в Supabase) — шаг пропущен"; exit 0; fi
-          node scripts/audit-episode-coverage.mjs \
-            --include-hidden \
-            --output .cache/episode-coverage-report.json
+          mkdir -p .cache
+          node scripts/audit-episode-coverage.mjs --source=auto --include-hidden --output .cache/episode-coverage-report.json
       - name: Add concise summary to workflow
         run: |
           set -euo pipefail
           if [ ! -f .cache/episode-coverage-report.json ]; then
-            echo "Отчёт не сформирован: файлового кэша нет (feat/db-cache: покрытие живёт в Supabase)." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "Отчёт не сформирован: нет доступа к Supabase (секреты) или скрипт упал — см. лог выше." | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           node <<'NODE'

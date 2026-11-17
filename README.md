@@ -460,6 +460,8 @@ export KODIK_BRIDGE_URLS=http://127.0.0.1:8765,http://127.0.0.1:8767,http://127.
 
 Мосты stateless: cookie/сессий между резолвами нет, поэтому запросы можно свободно раскидывать по инстансам. Потолок всё равно задаёт апстрим — Kodik нормально держит порядка единиц rps на токен, поэтому не поднимайте `BRIDGE_UPSTREAM_CONC` без нужды: баны прилетают именно за это.
 
+Отчёт покрытия (`npm run audit:episodes`) берёт источник через `--source=auto|db|file`: `db` читает `episode_source_urls` + `episode_sources` из Supabase (пагинация по 1000 строк, single-embed тайтлы добиваются до `episodes_count`), `file` — локальный JSON-кэш. `npm run audit:episodes:db` дополнительно пишет короткий текст для Telegram. Монитор квоты БД — `npm run check:db-size` (порог 80% от `SUPABASE_DB_QUOTA_MB`, критический 95%, коды выхода 0/3/1).
+
 Инвентаризация по умолчанию (`HYDRATE_INVENTORY_SOURCE=auto`) читает покрытие из **Supabase** (`episode_source_urls`, пагинация по 1000 строк) — это быстро и не создаёт тысячи HTTP-запросов к собственному API. Если Supabase не настроен, скрипт падает на легаси-файл `.cache/providers-resolve-cache.json` (он больше не в git), затем на API. Можно указать `HYDRATE_INVENTORY_SOURCE=db|file|api` явно.
 
 При API-инвентаризации скрипт показывает прогресс и в последовательном режиме прекращает проверку, когда у достаточного количества разных тайтлов обнаружен хотя бы один пропуск. При заданном `MAX_EPISODES` задачи выбираются по кругу: сначала по одной недостающей серии у разных тайтлов, затем следующие пропуски этих тайтлов. Это не даёт длинным сериалам занять весь пакет. По умолчанию один запрос одновременно с паузой между тайтлами; при HTTP 429 уважается `Retry-After` и применяется экспоненциальная задержка. Если реальный запуск встретил ошибки инвентаризации, он останавливается до запросов к провайдерам, чтобы неизвестные серии не стали ложными пропусками.
@@ -472,6 +474,8 @@ export KODIK_BRIDGE_URLS=http://127.0.0.1:8765,http://127.0.0.1:8767,http://127.
 
 `.github/workflows/hydrate.yml` запускает добор **каждые 6 часов** (`0 */6 * * *`, UTC = 03:00/09:00/15:00/21:00 МСК) и вручную через `workflow_dispatch`. Джоба сама поднимает Python-bridge'и (CVH/AniBoom всегда, Kodik — только по флагу и при наличии `KODIK_TOKEN`), собирает прод-сборку Next.js, ждёт `/api/health`, запускает `npm run hydrate` и складывает `.cache/hydrate-report.json` в артефакты. Источники пишутся в Supabase, resume-состояние переживает прогоны через `actions/cache`.
 
-Обязательные секреты: `BACKFILL_TOKEN`, `SUPABASE_SERVICE_KEY`, `NEXT_PUBLIC_SUPABASE_URL` (или `SUPABASE_URL`). Необязательные: `KODIK_TOKEN` (включает Kodik-bridge), `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`, `DISCORD_WEBHOOK_URL` (уведомление об успехе/ошибке).
+Обязательные секреты: `BACKFILL_TOKEN`, `SUPABASE_SERVICE_KEY`, `NEXT_PUBLIC_SUPABASE_URL` (или `SUPABASE_URL`). Необязательные: `KODIK_TOKEN` (включает Kodik-bridge), `TG_BOT_TOKEN` + `TG_CHAT_ID` (как в `uptime.yml`), `DISCORD_WEBHOOK_URL`.
+
+Рядом работают два расписания надзора: `episode-coverage-weekly.yml` (понедельник 06:00 UTC — отчёт покрытия из Supabase в Telegram) и `db-size.yml` (ежедневно 05:30 UTC — размер базы: алерт при ≥80% квоты, сводка по понедельникам).
 
 Kodik по расписанию собирает отдельный воркфлоу `sync-sources.yml` (у него свой checkpoint и другой бюджет времени), поэтому в `hydrate.yml` провайдер Kodik по умолчанию выключен (`KODIK_ENABLED=0`) — иначе оба воркера дублируют одну и ту же работу и делят rate-limit апстрима.

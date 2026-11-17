@@ -1,0 +1,111 @@
+name: Supabase storage monitor (daily)
+
+# P1-2 из docs/AUTOMATION-PLAN-2026-11.md: квота Supabase Free — 500 МБ, а
+# `episode_source_urls` растёт с каждой гидрацией. Проверяем раз в день и
+# пишем в Telegram, когда занято ≥ 80% (алерт) или ≥ 95% (критично).
+#
+# Точный размер даёт RPC `db_storage_report()` из миграции
+# supabase/migrations/20261118_db_storage_report.sql. Пока миграция не применена,
+# скрипт считает оценку и помечает отчёт `exact: false` — алерты продолжают
+# работать, но в сообщении это видно.
+
+on:
+  schedule:
+    # 05:30 UTC = 08:30 МСК, до утренних отчётов.
+    - cron: '30 5 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: aninova-db-size
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: db-size
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Check database size
+        id: size
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_DB_QUOTA_MB: ${{ vars.SUPABASE_DB_QUOTA_MB || '500' }}
+          DB_SIZE_ALERT_PCT: ${{ vars.DB_SIZE_ALERT_PCT || '80' }}
+          DB_SIZE_CRITICAL_PCT: ${{ vars.DB_SIZE_CRITICAL_PCT || '95' }}
+        run: |
+          set -uo pipefail
+          mkdir -p .cache
+          code=0
+          node scripts/check-db-size.mjs --summary .cache/db-size.txt --output .cache/db-size-report.json || code=$?
+          echo "code=${code}" >> "$GITHUB_OUTPUT"
+          # 0 — норма, 3 — превышен порог алерта, 1 — критично/ошибка.
+          if [ "$code" = "3" ]; then echo "::warning::База перешла порог алерта"; exit 0; fi
+          exit "$code"
+
+      - name: Summary
+        if: always()
+        run: |
+          set -uo pipefail
+          if [ -f .cache/db-size.txt ]; then
+            { echo '## Supabase storage'; echo ''; echo '```'; cat .cache/db-size.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '_Отчёт не сформирован._' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-size-${{ github.run_id }}
+          path: |
+            .cache/db-size-report.json
+            .cache/db-size.txt
+          if-no-files-found: ignore
+          retention-days: 30
+
+      # Алерт только по делу: нормальные дни не спамят чат, раз в неделю приходит
+      # сводка (чтобы отсутствие сообщений не выглядело как «монитор умер»).
+      - name: Notify Telegram
+        if: always() && hashFiles('.cache/db-size.txt') != ''
+        env:
+          TG_TOKEN: ${{ secrets.TG_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TG_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+          ALERT_CODE: ${{ steps.size.outputs.code }}
+        run: |
+          set -uo pipefail
+          over=0
+          if [ "${ALERT_CODE}" = "3" ] || [ "${ALERT_CODE}" = "1" ]; then over=1; fi
+          weekly=0
+          if [ "$(date -u +%u)" = "1" ]; then weekly=1; fi
+          if [ "$over" = "0" ] && [ "$weekly" = "0" ]; then
+            echo "Всё в норме — в Telegram не пишем (сводка по понедельникам)."
+            exit 0
+          fi
+          if [ -z "${TG_TOKEN:-}" ] || [ -z "${TG_CHAT:-}" ]; then
+            echo "TG_BOT_TOKEN/TG_CHAT_ID не заданы — уведомление пропущено."
+            exit 0
+          fi
+          {
+            cat .cache/db-size.txt
+            echo ''
+            echo "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > .cache/tg-message.txt
+          curl -fsS --max-time 20 -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+            -d "chat_id=${TG_CHAT}" -d "disable_web_page_preview=true" \
+            --data-urlencode "text@.cache/tg-message.txt" > /dev/null \
+            || echo "::warning::Telegram notify failed"

@@ -1,0 +1,115 @@
+name: Episode coverage report (weekly, from Supabase)
+
+# P1-1 из docs/AUTOMATION-PLAN-2026-11.md: отчёт покрытия серий раз в неделю.
+#
+# Почему отдельно от `episode-coverage-report.yml`: тот воркфлоу запускается на
+# PR/пуше и читал локальный `.cache/providers-resolve-cache.json`, которого больше
+# нет в git (feat/db-cache). Здесь источник — Supabase (`episode_source_urls` +
+# `episode_sources`), отчёт уходит в Telegram, чтобы регресс покрытия был виден
+# без захода в Actions.
+
+on:
+  schedule:
+    # Понедельник 06:00 UTC = 09:00 МСК: отчёт к началу недели.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      include_upcoming:
+        description: 'Считать серии анонсированных тайтлов (обычно не нужно)'
+        type: boolean
+        default: false
+      include_hidden:
+        description: 'Учитывать скрытые тайтлы'
+        type: boolean
+        default: false
+
+concurrency:
+  group: aninova-episode-coverage-weekly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Build coverage report from Supabase
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          INCLUDE_UPCOMING: ${{ github.event_name == 'workflow_dispatch' && inputs.include_upcoming || 'false' }}
+          INCLUDE_HIDDEN: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hidden || 'false' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_SERVICE_KEY}" ] || [ -z "${NEXT_PUBLIC_SUPABASE_URL}" ]; then
+            echo "::error::Нужны секреты NEXT_PUBLIC_SUPABASE_URL и SUPABASE_SERVICE_KEY."
+            exit 1
+          fi
+          mkdir -p .cache
+          ARGS="--source=db --summary .cache/episode-coverage-summary.txt"
+          [ "${INCLUDE_UPCOMING}" = "true" ] && ARGS="$ARGS --include-upcoming"
+          [ "${INCLUDE_HIDDEN}" = "true" ] && ARGS="$ARGS --include-hidden"
+          node scripts/audit-episode-coverage.mjs $ARGS
+
+      - name: Summary
+        if: always()
+        run: |
+          set -uo pipefail
+          if [ -f .cache/episode-coverage-summary.txt ]; then
+            {
+              echo '## Покрытие серий (Supabase)'
+              echo ''
+              echo '```'
+              cat .cache/episode-coverage-summary.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '_Отчёт не сформирован._' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: episode-coverage-weekly-${{ github.run_id }}
+          path: |
+            .cache/episode-coverage-report.json
+            .cache/episode-coverage-summary.txt
+          if-no-files-found: ignore
+          retention-days: 30
+
+      # Telegram: обязательный канал оповещений проекта (см. uptime.yml — те же секреты).
+      - name: Notify Telegram
+        if: always() && hashFiles('.cache/episode-coverage-summary.txt') != ''
+        env:
+          TG_TOKEN: ${{ secrets.TG_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TG_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          set -uo pipefail
+          if [ -z "${TG_TOKEN:-}" ] || [ -z "${TG_CHAT:-}" ]; then
+            echo "TG_BOT_TOKEN/TG_CHAT_ID не заданы — уведомление пропущено."
+            exit 0
+          fi
+          {
+            cat .cache/episode-coverage-summary.txt
+            echo ''
+            echo "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > .cache/tg-message.txt
+          curl -fsS --max-time 20 -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+            -d "chat_id=${TG_CHAT}" -d "disable_web_page_preview=true" \
+            --data-urlencode "text@.cache/tg-message.txt" > /dev/null \
+            || echo "::warning::Telegram notify failed"

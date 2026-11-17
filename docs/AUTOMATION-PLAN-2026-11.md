@@ -66,10 +66,9 @@ KODIK_TOKEN не задан — провайдер остаётся пустым
 Нужен `continue-on-error` + ретраи с бэкоффом и отдельный алерт, если heal не прошёл
 3 прогона подряд.
 
-### 2.5 `Episode coverage report` больше не строит отчёт
-Воркфлоу читает `.cache/providers-resolve-cache.json`, которого нет в git. Шаги теперь
-корректно пропускаются, но пользы ноль: отчёт покрытия нужен **из Supabase**
-(`episode_source_urls`), как уже умеет `hydrate-embeds.mjs --dry-run`.
+### 2.5 `Episode coverage report` больше не строит отчёт — ✅ **закрыто**
+Воркфлоу читал `.cache/providers-resolve-cache.json`, которого нет в git. Теперь и он,
+и недельный `episode-coverage-weekly.yml` строят отчёт из Supabase (`--source=db`).
 
 ### 2.6 Мониторинг без оповещений и с дублем
 `uptime.yml` (30 мин) и `production-health.yml` (6 ч) делают почти одно и то же, оба молчат
@@ -90,7 +89,15 @@ KODIK_TOKEN не задан — провайдер остаётся пустым
 54 ветки, из них большинство — отработанные `agent-*`, `checkpoint/*`, `chore/*`, `feat/*`
 после мерджа. Это стоит времени при каждом аудите и раздувает список в интерфейсе.
 
-### 2.9 Нет контроля объёма БД
+### 2.9 Нет контроля объёма БД — ✅ **закрыто** (P1-2, `db-size.yml`)
+
+### 2.13 `episode_sources` пуст при `status=ok` (найдено боевым прогоном P1-1)
+Отчёт покрытия видит 346 032 строки в `episode_source_urls`, но **0 строк** в
+`episode_sources` с `status=ok`. Значит либо шапки озвучек не пишутся воркерами
+(`sync-sources.mjs`/`import-provider-cache-to-db.mjs`), либо у них другой статус.
+Последствие: провайдеры «один embed на тайтл» (AniBoom `?episode=N`, CVH cdn-iframe)
+не видны ни отчёту, ни рантайму `lib/episode-sources.ts`. Проверить запросом
+`select status, count(*) from episode_sources group by 1`.
 Supabase Free — 500 МБ. Таблица `episode_source_urls` растёт от каждой гидрации
 (≈90–150 байт на серию, до 1200 серий на озвучку). Ни один воркфлоу не смотрит на размер
 и не предупредит за месяц до отказа записи.
@@ -120,16 +127,16 @@ Supabase Free — 500 МБ. Таблица `episode_source_urls` растёт о
 | P0-1 | Уведомления о падениях | `workflow_run` на `completed` + `conclusion=failure` → Telegram (тот же формат, что в `uptime.yml`). Один воркфлоу на все 18 | `.github/workflows/notify-failure.yml` (новый) | 45 мин | Искусственно уронить CI в ветке → приходит сообщение со ссылкой на run |
 | P0-2 | Завести `TG_BOT_TOKEN`, `TG_CHAT_ID` | Settings → Secrets (руками, 2 мин), затем проверить `workflow_dispatch` у `uptime.yml` | — | 10 мин | Тестовое сообщение в чат |
 | P0-3 | Включить защиту цепочки поставки | Dependabot alerts + security updates, secret scanning + push protection, branch protection на `main` (require: CI, E2E) | настройки репо (API/UI) | 20 мин | `GET /branches/main/protection` → 200; Dependabot alerts → 200 |
-| P0-4 | `npm audit` gate в CI | `npm audit --omit=dev --audit-level=high` (прод-дерево), отдельным шагом; разобрать critical/high | `ci.yml` | 1 ч + время на апгрейды | 0 critical/high в прод-дереве, шаг зелёный |
-| P0-5 | Добить красные расписания | PR #48 (`bash -e`), PR #49 (пустой кэш), `sync-catalog` heal → `continue-on-error` + алерт после 3 неудач | `sync-catalog.yml` | 1 ч | Три прогона подряд зелёные (или warning) |
+| P0-4 | `npm audit` gate в CI | ✅ **сделано**: шаг в `ci.yml`; `next` 16.3.8 → 16.4.6 (закрыл critical RCE + 3 advisories), `sharp` → 0.35.5, `overrides.source-map-js` → 1.2.2. Итог: `npm audit --omit=dev` = 0 уязвимостей | `ci.yml`, `package.json` | — | ✅ 0 critical/high в прод-дереве |
+| P0-5 | Добить красные расписания | ✅ **сделано**: PR #48 (`bash -e`), PR #49 (пустой кэш), heal в `sync-catalog` → `continue-on-error`, проверка доступности Jikan, внутренний дедлайн 40 мин, 3 ретрая с бэкоффом, батч 150 вместо 500 | `sync-catalog.yml` | — | ✅ падение heal больше не красит прогон |
 | P0-6 | Ротация `BACKFILL_TOKEN` | Токен светился в чате; сгенерировать новый, обновить в GitHub + Netlify/env воркера, старый удалить | — | 15 мин | Старый токен → 403, новый → 200 на `?live=1` |
 
 ### P1 — «чтобы данные и деньги не кончились внезапно» (2–3 недели)
 
 | # | Что | Как | Оценка | Приёмка |
 |---|---|---|---|---|
-| P1-1 | Отчёт покрытия из БД | `scripts/audit-episode-coverage.mjs` → режим `--source=db` (пагинация `episode_source_urls`), воркфлоу раз в неделю + артефакт + строка в TG | 3 ч | Отчёт строится без файлового кэша |
-| P1-2 | Контроль объёма БД | SQL-функция `pg_database_size` + размеры таблиц через REST (`/rest/v1/rpc/…`), воркфлоу раз в день, алерт на 80% квоты | 2 ч | Отчёт с числами, алерт на тестовом пороге |
+| P1-1 | Отчёт покрытия из БД | ✅ **сделано**: `--source=db|file|auto` в `audit-episode-coverage.mjs` (+ `scripts/lib/coverage-db.mjs`, пагинация, single-embed через `episode_sources`), `.github/workflows/episode-coverage-weekly.yml` (пн 06:00 UTC) с TG и артефактом. **Первый боевой прогон**: 346 032 ссылки в `episode_source_urls`, покрыто 79 939 серий из 118 537 (67,44%), без источника 38 598, устарело >24 ч 329 900; `episode_sources` вернул 0 строк при `status=ok` — проверить, пишут ли воркеры шапки | — | ✅ отчёт строится из живой БД |
+| P1-2 | Контроль объёма БД | ✅ **сделано**: `scripts/check-db-size.mjs` (RPC `db_storage_report` из миграции `20261118_db_storage_report.sql`, fallback на оценку по строкам), `.github/workflows/db-size.yml` (ежедневно 05:30 UTC, алерт ≥80%, критично ≥95%) | — | ✅ отчёт с числами, вердикты 0/3/1 проверены тестами |
 | P1-3 | Дрейф миграций | Хеши `supabase/migrations/*.sql` в таблицу `schema_migrations_fingerprint`, сверка в CI (fail при расхождении) | 2 ч | Добавление миграции без применения → красный CI |
 | P1-4 | Сброс edge-кэша после данных | Webhook Netlify purge (build hook / API) в конце `sync-episodes`/`hydrate` | 1 ч | `?live=1` не отдаёт старый ответ после прогона |
 | P1-5 | IndexNow + sitemap ping | `scripts/ping-indexnow.mjs` (ключ в env), вызов после `sync-catalog` | 1.5 ч | Ключ-файл отдаётся, пинг 200/202 |

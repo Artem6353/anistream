@@ -73,6 +73,28 @@ exit 0
         )
         fake_git.chmod(0o755)
 
+        # Windows: NTFS не хранит exec-бит, который понимает MSYS/Git Bash, поэтому
+        # фейк-git с шебангом не запускается («Permission denied») и helper получает
+        # ложный отказ. Проверяем исполняемость фактически и, если платформа так не
+        # умеет, пропускаем тест — на Linux (CI) он выполняется полностью.
+        probe_log = self.root / "git-probe.log"
+        try:
+            probe = subprocess.run(
+                [str(fake_git), "probe"],
+                env={**os.environ, "FAKE_GIT_LOG": str(probe_log)},
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            executable = probe.returncode == 0
+        except OSError:
+            # CreateProcess не смог запустить скрипт напрямую (Windows без exec-бита).
+            executable = False
+        finally:
+            probe_log.unlink(missing_ok=True)
+        if not executable:
+            self.skipTest("платформа не исполняет POSIX-скрипт без exec-бита (Windows) — проверяется в CI")
+
     def run_helper(self, **overrides):
         env = {
             **os.environ,

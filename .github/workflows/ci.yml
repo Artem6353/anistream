@@ -26,6 +26,11 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # P0-4: уязвимости в прод-дереве (то, что реально уезжает на Netlify).
+      # dev-дерево намеренно не проверяем: vitest/vite тянут умеренные advisories,
+      # которые не попадают в рантайм. Порог — high; critical тоже ловится.
+      - name: npm audit (production dependencies only)
+        run: npm audit --omit=dev --audit-level=high
       - name: validate catalog integrity
         run: node scripts/validate-catalog.mjs
       # Аудит 2026-10 (ТЗ 2.4): README заявлял «7962 тайтла», тот же README ниже —
