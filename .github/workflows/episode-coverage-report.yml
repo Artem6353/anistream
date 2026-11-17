@@ -10,7 +10,6 @@ on:
       - 'scripts/episode-coverage-core.mjs'
       - 'tests/episode-coverage.test.ts'
       - 'lib/data/titles.json'
-      - '.cache/providers-resolve-cache.json'
   push:
     branches: [main]
     paths:
@@ -18,7 +17,6 @@ on:
       - 'scripts/audit-episode-coverage.mjs'
       - 'scripts/episode-coverage-core.mjs'
       - 'lib/data/titles.json'
-      - '.cache/providers-resolve-cache.json'
 
 permissions:
   contents: read
@@ -40,11 +38,17 @@ jobs:
       - name: Build coverage report (offline, read-only)
         run: |
           set -euo pipefail
+          if [ ! -f .cache/providers-resolve-cache.json ]; then echo "providers-resolve-cache.json отсутствует (feat/db-cache: кэш в Supabase) — шаг пропущен"; exit 0; fi
           node scripts/audit-episode-coverage.mjs \
             --include-hidden \
             --output .cache/episode-coverage-report.json
       - name: Add concise summary to workflow
         run: |
+          set -euo pipefail
+          if [ ! -f .cache/episode-coverage-report.json ]; then
+            echo "Отчёт не сформирован: файлового кэша нет (feat/db-cache: покрытие живёт в Supabase)." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           node <<'NODE'
           const fs = require('node:fs');
           const report = JSON.parse(fs.readFileSync('.cache/episode-coverage-report.json', 'utf8'));
@@ -89,9 +93,11 @@ jobs:
             expiredDirectRecords: s.expiredDirectCacheRecordsIgnored,
           }));
           NODE
+      # if-no-files-found: error падал на feat/db-cache, где отчёт не строится без файла кэша.
       - uses: actions/upload-artifact@v4
+        if: hashFiles('.cache/episode-coverage-report.json') != ''
         with:
           name: episode-coverage-report
           path: .cache/episode-coverage-report.json
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 14

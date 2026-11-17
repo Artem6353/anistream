@@ -7,8 +7,10 @@ on:
     paths:
       - '.github/workflows/refresh-kodik-episode-cache.yml'
 
+# feat/db-cache: воркфлоу больше не пишет в репозиторий (JSON-кэш убран из git),
+# поэтому contents: write не нужен — только чтение + запись в Supabase.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: aninova-kodik-cache-refresh
@@ -112,18 +114,20 @@ jobs:
           }));
           NODE
 
-      - name: Commit refreshed cache safely
+      # feat/db-cache: кэш резолвов живёт в Supabase (episode_sources +
+      # episode_source_urls), а не в .cache/providers-resolve-cache.json (93 МБ при
+      # лимите GitHub 100 МБ). Файл остаётся только рабочим артефактом этого прогона.
+      - name: Import refreshed cache into Supabase
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .cache/providers-resolve-cache.json
-          if git diff --cached --quiet; then
-            echo "The cache did not change; no commit is needed."
+          if [[ -z "${NEXT_PUBLIC_SUPABASE_URL}" || -z "${SUPABASE_SERVICE_KEY}" ]]; then
+            echo "::warning::Supabase secrets are not configured — skipping DB import (cache stays a local artifact)."
             exit 0
           fi
-          git commit -m "chore(cache): refresh exact Kodik episode source TTLs"
-          bash scripts/push-catalog-commit.sh
+          node scripts/import-provider-cache-to-db.mjs
 
       - uses: actions/upload-artifact@v4
         if: always()

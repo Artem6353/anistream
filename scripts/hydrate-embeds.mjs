@@ -130,6 +130,60 @@ function isDirectSource(source) {
     !/:s\d+$/.test(String(source.id ?? ''));
 }
 
+/** Supabase: основной источник правды после feat/db-cache (JSON-файл убран из git). */
+const SUPA_URL = (configValue('NEXT_PUBLIC_SUPABASE_URL') ?? '').replace(/\/$/, '');
+const SUPA_KEY = configValue('SUPABASE_SERVICE_KEY') || configValue('NEXT_PUBLIC_SUPABASE_ANON_KEY') || '';
+const dbInventoryAvailable = () => Boolean(SUPA_URL && SUPA_KEY);
+
+/**
+ * Инвентарь покрытия из Supabase (episode_source_urls).
+ *
+ * Раньше читали `.cache/providers-resolve-cache.json`: 93 МБ при лимите GitHub 100 МБ,
+ * парсинг на каждый запуск и никакой возможности параллельной записи. Теперь —
+ * одна пагинированная выборка пар (anime_id, episode) страницами по 1000 строк.
+ */
+async function readDbCacheInventory(titles) {
+  const slugByAnimeId = new Map();
+  for (const title of titles) if (title?.anilistId) slugByAnimeId.set(Number(title.anilistId), title.slug);
+  const bySlug = new Map(titles.map((title) => [title.slug, {}]));
+  const PAGE = 1000;
+  let directEpisodeCount = 0;
+  let offset = 0;
+  for (;;) {
+    const res = await fetch(
+      SUPA_URL + '/rest/v1/episode_source_urls?status=eq.ok&select=anime_id,episode' +
+        '&order=anime_id.asc,episode.asc',
+      {
+        headers: {
+          apikey: SUPA_KEY,
+          Authorization: 'Bearer ' + SUPA_KEY,
+          Range: offset + '-' + (offset + PAGE - 1),
+          'Range-Unit': 'items',
+        },
+        signal: AbortSignal.timeout(60_000),
+      },
+    );
+    if (!res.ok) throw new Error('episode_source_urls HTTP ' + res.status);
+    const rows = await res.json();
+    if (!Array.isArray(rows) || !rows.length) break;
+    for (const row of rows) {
+      const slug = slugByAnimeId.get(Number(row?.anime_id));
+      const episode = Number(row?.episode);
+      if (!slug || !Number.isInteger(episode) || episode < 1) continue;
+      const bucket = bySlug.get(slug);
+      if (!bucket) continue;
+      if (bucket[episode] !== 'cache') {
+        bucket[episode] = 'cache';
+        directEpisodeCount++;
+      }
+    }
+    offset += rows.length;
+    if (rows.length < PAGE) break;
+  }
+  return { bySlug, directEpisodeCount };
+}
+
+/** Легаси-инвентарь из JSON-файла (self-hosted без Supabase). Файл больше не в git. */
 function readLocalCacheInventory(titles) {
   const store = JSON.parse(readFileSync(cacheFile, 'utf8'));
   if (!store || typeof store !== 'object' || Array.isArray(store)) {
@@ -159,8 +213,8 @@ if (!['gaps', 'live'].includes(MODE)) {
   console.error('HYDRATE_MODE must be "gaps" or "live".');
   process.exit(1);
 }
-if (!['auto', 'api', 'file'].includes(INVENTORY_SOURCE)) {
-  console.error('HYDRATE_INVENTORY_SOURCE must be "auto", "api", or "file".');
+if (!['auto', 'api', 'db', 'file'].includes(INVENTORY_SOURCE)) {
+  console.error('HYDRATE_INVENTORY_SOURCE must be "auto", "api", "db", or "file".');
   process.exit(1);
 }
 
@@ -261,8 +315,37 @@ let actualInventorySource = 'none';
 
 if (MODE === 'gaps') {
   const canUseLocalFile = localCacheEnabled && !kvConfigured && existsSync(cacheFile);
-  const useLocalFile = INVENTORY_SOURCE === 'file' ||
-    (INVENTORY_SOURCE === 'auto' && canUseLocalFile);
+  const useDb = INVENTORY_SOURCE === 'db' ||
+    (INVENTORY_SOURCE === 'auto' && dbInventoryAvailable());
+  const useLocalFile = !useDb && (INVENTORY_SOURCE === 'file' ||
+    (INVENTORY_SOURCE === 'auto' && canUseLocalFile));
+
+  if (useDb && !dbInventoryAvailable()) {
+    console.error(
+      'HYDRATE_INVENTORY_SOURCE=db требует NEXT_PUBLIC_SUPABASE_URL и SUPABASE_SERVICE_KEY ' +
+        '(в env или .env.local): покрытие серий теперь живёт в episode_source_urls.',
+    );
+    process.exit(1);
+  }
+
+  if (useDb) {
+    try {
+      const inventory = await readDbCacheInventory(allTitles);
+      for (const [slug, episodes] of inventory.bySlug) availability.set(slug, episodes);
+      inventoryTitlesChecked = selectedTitles.length;
+      actualInventorySource = 'db';
+      console.log(
+        'Inventory loaded from Supabase: ' + inventory.directEpisodeCount +
+        ' direct episode entries across ' + selectedTitles.length + ' selected titles.',
+      );
+    } catch (error) {
+      if (INVENTORY_SOURCE === 'db') {
+        console.error('Could not read episode_source_urls from Supabase: ' + String(error));
+        process.exit(1);
+      }
+      console.warn('Supabase inventory unavailable; falling back to API: ' + String(error));
+    }
+  }
 
   if (useLocalFile && (!localCacheEnabled || kvConfigured || !existsSync(cacheFile))) {
     console.error(
@@ -271,7 +354,11 @@ if (MODE === 'gaps') {
     process.exit(1);
   }
 
-  if (useLocalFile) {
+  if (useLocalFile && actualInventorySource === 'none') {
+    console.warn(
+      'HYDRATE_INVENTORY_SOURCE=file: JSON-кэш больше не хранится в git (feat/db-cache) — ' +
+        'это легаси-путь для self-hosted без Supabase.',
+    );
     try {
       const inventory = readLocalCacheInventory(selectedTitles);
       for (const [slug, episodes] of inventory.bySlug) availability.set(slug, episodes);
@@ -290,7 +377,7 @@ if (MODE === 'gaps') {
     }
   }
 
-  if (actualInventorySource !== 'file') {
+  if (actualInventorySource === 'none') {
     actualInventorySource = 'api';
     let knownGapEpisodes = 0;
     let knownGapTitles = 0;
@@ -600,7 +687,7 @@ if (DRY_RUN) {
   saveStateFile(STATE_FILE, pruneState(state, Date.now()));
 
   if (resolved > 0 && SETTLE_MS) {
-    console.log('Waiting ' + SETTLE_MS + ' ms for debounced file-cache writes…');
+    console.log('Waiting ' + SETTLE_MS + ' ms for the server to finish cache writes…');
     await sleep(SETTLE_MS);
   }
 

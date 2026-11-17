@@ -48,7 +48,8 @@ jobs:
           # Предпочтительный путь — scripts/import-provider-cache-to-db.mjs (Supabase),
           # Redis остаётся горячим кэшем. Workflow сохранён для совместимости.
           export ALLOW_LEGACY_UPSTASH_SEED=1
-          report="$(node scripts/migrate-provider-cache-to-upstash.mjs \
+          report="$(if [ ! -f .cache/providers-resolve-cache.json ]; then echo "providers-resolve-cache.json отсутствует (feat/db-cache: кэш в Supabase) — шаг пропущен"; exit 0; fi
+          node scripts/migrate-provider-cache-to-upstash.mjs \
             --file .cache/providers-resolve-cache.json \
             --retention-days "$RETENTION_DAYS" \
             --dry-run)"
@@ -140,7 +141,8 @@ jobs:
           for pass in $(seq 1 "$max_passes"); do
             echo "Migration pass $pass/$max_passes"
             # Подтверждение легаси-сида (см. banner в скрипте); export выше по job.
-            ALLOW_LEGACY_UPSTASH_SEED=1 node scripts/migrate-provider-cache-to-upstash.mjs \
+            ALLOW_LEGACY_UPSTASH_SEED=1 if [ ! -f .cache/providers-resolve-cache.json ]; then echo "providers-resolve-cache.json отсутствует (feat/db-cache: кэш в Supabase) — шаг пропущен"; exit 0; fi
+          node scripts/migrate-provider-cache-to-upstash.mjs \
               --file .cache/providers-resolve-cache.json \
               --progress-file "$progress_file" \
               --batch-size 100 \

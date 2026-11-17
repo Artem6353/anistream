@@ -1,7 +1,7 @@
 # AniStream 2.0
 
 Каталог и плеер аниме на **Next.js 16.3.8 (App Router, RSC/ISR) + TypeScript (strict)**:
-**8032 тайтлов** (AniList + Shikimori-обогащение), реестр источников видео в Supabase,
+**8033 тайтлов** (AniList + Shikimori-обогащение), реестр источников видео в Supabase,
 плеер v3 с озвучками и графиком серий, социалка, админка модерации. Пересборка проекта
 `сайт_для_аниме` (AniStream) с упором на надёжность, скорость и дизайн.
 
@@ -243,7 +243,7 @@ Oracle Always Free VPS, Cloudflare Pages) и рекомендациям по Б�
   из обогащённого датасета, `VideoLinks.getLinks` для прямых m3u8, `parseSkipButtons` для кнопки
   «Пропустить опенинг» с реальными таймингами. Если прямые ссылки недоступны — фолбэк в embed-плеер Kodik.
 - **HLS** воспроизводится лениво подгружаемым `hls.js` (MP4 — нативно), качество переключается в меню плеера.
-- **Каталог 8032 тайтлов**: основной источник — таблица Supabase `public.titles`
+- **Каталог 8033 тайтлов**: основной источник — таблица Supabase `public.titles`
   (`CATALOG_SOURCE=db`, прайм один раз на процесс из `instrumentation.ts`),
   `lib/data/titles.json` — fallback и вход для одноразового импорта
   (`node scripts/import-titles-to-db.mjs`). Метаданные AniList (постеры, баннеры, трейлеры,
@@ -294,7 +294,7 @@ components/   anime · layout · player · profile · schedule · system · ui
 lib/          types · catalog (датасет и запросы) · schedule (live+fallback) ·
               library (локальный профиль) · providers/ (реестр + kodik-резолвер) ·
               shikimori (второй источник) · tv (D-pad навигация) · art (генеративные постеры)
-lib/data/     titles.json — снапшот каталога (8032 тайтлов; fallback при CATALOG_SOURCE=file),
+lib/data/     titles.json — снапшот каталога (8033 тайтлов; fallback при CATALOG_SOURCE=file),
               manual-sources.json
 supabase/     migrations/ — схема (в т.ч. titles, airing_schedule, episodes, episode_sources),
               functions/submit-review
@@ -388,9 +388,13 @@ manual-sources.json  →  Upstash Redis (горячий кэш, TTL 24 ч)  → 
                           Kodik с дата-центр IP отвечает 401)  →  честное «Источников пока нет»
 ```
 
-Файловый кэш `.cache/providers-resolve-cache.json` в production **не читается и не
-пишется** (`cache.fileBackend`, включается обратно только `PROVIDER_CACHE_FILE_BACKEND=1`
-для self-hosted) и больше не пакуется в serverless-функции. Причина в цифрах: одно
+Кэш резолвов хранится в **Supabase** (`episode_sources` + `episode_source_urls`):
+`cache.backend=db` при заданных Supabase-переменных, старт процесса прогревает его в
+память один раз (`instrumentation.ts`, `PROVIDER_CACHE_PRELOAD=0` — выключить), а запись
+идёт UPSERT'ом без перезаписи гигантского файла. JSON-файл
+`.cache/providers-resolve-cache.json` из git **удалён** (93 МБ при лимите GitHub 100 МБ,
+Git LFS недоступен по квотам) и остаётся только легаси-сценарием
+`PROVIDER_CACHE_BACKEND=file` для self-hosted/VPS без БД. Причина в цифрах: одно
 чтение файла давало 675 мс + 1038 мс на парсинг и 370 МБ RSS при лимите функции 1024 МБ.
 Изолированный замер 20 итераций: **497 МБ → 123 МБ RSS**.
 
@@ -456,10 +460,10 @@ export KODIK_BRIDGE_URLS=http://127.0.0.1:8765,http://127.0.0.1:8767,http://127.
 
 Мосты stateless: cookie/сессий между резолвами нет, поэтому запросы можно свободно раскидывать по инстансам. Потолок всё равно задаёт апстрим — Kodik нормально держит порядка единиц rps на токен, поэтому не поднимайте `BRIDGE_UPSTREAM_CONC` без нужды: баны прилетают именно за это.
 
-Инвентаризация по умолчанию (`HYDRATE_INVENTORY_SOURCE=auto`) читает локальный `.cache/providers-resolve-cache.json`, если включён файловый кэш и Upstash KV не настроен. Это быстро и не создаёт тысячи HTTP-запросов к собственному API. При активном Upstash используется API. Можно указать `HYDRATE_INVENTORY_SOURCE=api` для проверки через endpoint или `file` для принудительного чтения локального кэша (не работает с Upstash).
+Инвентаризация по умолчанию (`HYDRATE_INVENTORY_SOURCE=auto`) читает покрытие из **Supabase** (`episode_source_urls`, пагинация по 1000 строк) — это быстро и не создаёт тысячи HTTP-запросов к собственному API. Если Supabase не настроен, скрипт падает на легаси-файл `.cache/providers-resolve-cache.json` (он больше не в git), затем на API. Можно указать `HYDRATE_INVENTORY_SOURCE=db|file|api` явно.
 
 При API-инвентаризации скрипт показывает прогресс и в последовательном режиме прекращает проверку, когда у достаточного количества разных тайтлов обнаружен хотя бы один пропуск. При заданном `MAX_EPISODES` задачи выбираются по кругу: сначала по одной недостающей серии у разных тайтлов, затем следующие пропуски этих тайтлов. Это не даёт длинным сериалам занять весь пакет. По умолчанию один запрос одновременно с паузой между тайтлами; при HTTP 429 уважается `Retry-After` и применяется экспоненциальная задержка. Если реальный запуск встретил ошибки инвентаризации, он останавливается до запросов к провайдерам, чтобы неизвестные серии не стали ложными пропусками.
 
-5. Результаты сохраняются в `.cache/hydrate-report.json` (там же `throughputEpsPerSec`); успешные прямые источники — в `.cache/providers-resolve-cache.json` или Upstash, если он настроен. Повторный запуск безопасен: уже заполненные серии пропускаются, неудачные не исключаются навсегда.
+5. Результаты сохраняются в `.cache/hydrate-report.json` (там же `throughputEpsPerSec`); успешные прямые источники уходят **UPSERT'ом в Supabase** (`episode_sources` + `episode_source_urls`) либо в Upstash, если выбран KV-бэкенд. JSON-файл больше не пишется. Повторный запуск безопасен: уже заполненные серии пропускаются, неудачные не исключаются навсегда.
 
 Запускайте массовый процесс на компьютере/VPS, где есть постоянное файловое хранилище и работающие bridge. Не используйте Vercel без настроенного Upstash для массового заполнения: файловый кэш serverless-функции не является постоянным хранилищем.
