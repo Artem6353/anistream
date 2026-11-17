@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { imageHeaders } from '@/lib/img-cache';
 import { createHash } from 'node:crypto';
 
 /* ИНЦИДЕНТ 2026-10-15 (Netlify): статический `import sharp` ронял ВСЮ функцию
@@ -80,7 +81,7 @@ async function getImage(request: Request) {
   if (fmtWanted !== 'orig' && !(await loadSharp())) {
     return NextResponse.redirect(parsed, {
       status: 302,
-      headers: { 'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=600' },
+      headers: imageHeaders({ immutable: false }),
     });
   }
 
@@ -176,18 +177,14 @@ async function getImage(request: Request) {
 }
 
 function respond(body: Buffer, contentType: string, vary: boolean): Response {
+  /* Инцидент 2026-11-17: картинки вообще не кэшировались на CDN (`X-Vercel-Cache:
+     MISS`, `Age: 0` на каждом постере), поэтому 26 картинок на странице тайтла =
+     26 вызовов функции. Заголовки вынесены в lib/img-cache.ts: `s-maxage` для
+     self-hosted/Netlify + `CDN-Cache-Control` для CDN-слоя Vercel. */
   const headers: Record<string, string> = {
     'Content-Type': contentType,
-    /* Инцидент 2026-11-17: без `s-maxage` CDN ответ не кэширует вообще
-       (наблюдали `X-Vercel-Cache: MISS`, `Age: 0` на каждом постере), поэтому
-       каждая картинка — это вызов serverless-функции: 0,3 с на тёплом инстансе и
-       6–15 с на холодном. Двадцать постеров на странице = двадцать холодных
-       стартов при первом заходе, отсюда «картинки не грузятся».
-       `s-maxage` + `stale-while-revalidate` отдают их из кэша края, а функция
-       трогается только при промахе. */
-    'Cache-Control': 'public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=86400, immutable',
+    ...imageHeaders({ vary }),
   };
-  if (vary) headers['Vary'] = 'Accept'; // fmt=auto: край должен различать Accept-варианты
   // Uint8Array-обёртка: Buffer<ArrayBufferLike> из @types/node 22 не матчится с BodyInit напрямую
   return new Response(new Uint8Array(body), { headers });
 }
