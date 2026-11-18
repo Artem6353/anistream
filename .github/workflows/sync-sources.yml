@@ -89,6 +89,10 @@ jobs:
           # 2 = «нет токена/БД» — не авария, а не сконфигурировано.
           if [ "$code" = "2" ]; then
             echo "::warning::KODIK_TOKEN или SUPABASE_SERVICE_KEY не заданы — источники не синхронизированы."
+            if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+              echo "::error::Ручная синхронизация не запускалась. Добавь KODIK_TOKEN и Supabase service key в GitHub Actions Secrets."
+              exit 1
+            fi
             exit 0
           fi
           exit $code
