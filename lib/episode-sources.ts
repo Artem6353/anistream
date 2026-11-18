@@ -270,11 +270,13 @@ export async function dbEpisodeAvailability(animeId: number, maxEpisode?: number
       .filter((_, index) => cvhTitleResults[index] === false)
       .map((row) => row.translation_id),
   );
-  const cvhEpisodeLists = await Promise.all(
-    cvhTemplates.map((row) =>
-      cvhAvailableEpisodes(normalizeEmbedUrl(row.embed_url) ?? '', expectedTitles),
-    ),
-  );
+  const cvhEpisodeLists = expectedTitles?.length
+    ? await Promise.all(
+        cvhTemplates.map((row) =>
+          cvhAvailableEpisodes(normalizeEmbedUrl(row.embed_url) ?? '', expectedTitles),
+        ),
+      )
+    : cvhTemplates.map(() => [] as number[]);
   if (cvhEpisodeLists.some((available) => available === null)) return null;
 
   const directEpisodes = new Set<number>();
