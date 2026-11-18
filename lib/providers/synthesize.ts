@@ -48,6 +48,19 @@ export function rewriteAniboom(url: string, episode: number): string | null {
   }
 }
 
+/** Return the provider-reported range only when the URL is a rewritable episode template. */
+export function synthesizableEpisodeLimit(
+  providerId: string,
+  url: string | null | undefined,
+  episodesCount: unknown,
+): number {
+  const maxEpisode = Number(episodesCount);
+  if (!url || !Number.isInteger(maxEpisode) || maxEpisode < 1) return 0;
+  if (providerId === 'cvh' && rewriteCvh(url, 1)) return maxEpisode;
+  if (providerId === 'aniboom' && rewriteAniboom(url, 1)) return maxEpisode;
+  return 0;
+}
+
 /** Rewrites only templates whose provider-reported episode range includes the target. */
 export function synthesizeCachedEpisodeSources(base: EpisodeSources, episode: number): EpisodeSource[] {
   const out: EpisodeSource[] = [];
