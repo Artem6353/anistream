@@ -4,6 +4,7 @@ import { cacheGet, cacheSet, cacheKey, isDirectProviderSource } from './cache';
 import { providerLabel } from './bridge';
 import { resolveKodik } from './providers/kodik';
 import { resolveCvh } from './providers/cvh';
+import { resolveCvhDirectSource } from './cvh-direct';
 import { resolveAniboom } from './providers/aniboom';
 import { demoSources, DEMO_SKIP } from './providers/demo';
 import { synthesizeEpisode } from './synthesize';
@@ -243,11 +244,12 @@ export async function resolveEpisodeSources(
 
   if (!ids.length && base) {
     metricLatency(Date.now() - t0);
-    return withDemo({
+    const enriched = await withCvhDirectSources({
       ...base,
       fromCache: true,
       cachedAt: base.cachedAt ?? Date.now(),
     }, ctx);
+    return withDemo(enriched, ctx);
   }
 
   const outcomes = await runProviderQueries(ids, ctx);
@@ -320,7 +322,34 @@ export async function resolveEpisodeSources(
   if (merged.length) await cacheSet(key, result);
   else metrics.demo++;
 
-  return withDemo(result, ctx);
+  const enriched = await withCvhDirectSources(result, ctx);
+  return withDemo(enriched, ctx);
+}
+
+async function withCvhDirectSources(
+  result: EpisodeSources,
+  ctx: ProviderContext,
+): Promise<EpisodeSources> {
+  const templates = result.sources
+    .filter((source) => source.providerId === 'cvh' && source.kind === 'embed' && source.embedUrl)
+    .slice(0, 4);
+  if (!templates.length) return result;
+
+  const resolved = await Promise.all(
+    templates.map((source) => resolveCvhDirectSource(source, ctx.episode).catch(() => null)),
+  );
+  const direct = resolved.filter((source): source is EpisodeSource => source !== null);
+  if (!direct.length) return result;
+
+  // Signed CVH URLs are short-lived and IP-sensitive: expose them to this player
+  // response only. cacheSet above persists the stable iframe template, never these URLs.
+  const sources = dedupe([...direct, ...result.sources]);
+  return {
+    ...result,
+    sources,
+    sourcesUsed: [...new Set(sources.filter(isDirectProviderSource).map((source) => source.providerId))],
+    fromCache: false,
+  };
 }
 
 function dedupe(sources: EpisodeSource[]): EpisodeSource[] {
