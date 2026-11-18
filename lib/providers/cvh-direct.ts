@@ -101,16 +101,18 @@ async function fetchJson<T>(url: string): Promise<T | null> {
   }
 }
 
-async function getPlaylist(id: string): Promise<CvhItem[]> {
+async function getPlaylist(id: string): Promise<CvhItem[] | null> {
   const cached = playlistCache.get(id);
   if (cached && cached.expiresAt > Date.now()) return cached.items;
 
   const url = `${API_BASE}/playlist?pub=747&aggr=mali&id=${encodeURIComponent(id)}`;
   const data = await fetchJson<CvhPlaylist>(url);
-  const items = Array.isArray(data?.items) ? data.items : [];
-  if (items.length) {
-    playlistCache.set(id, { items, expiresAt: Date.now() + PLAYLIST_TTL_MS });
-  }
+  if (!data || !Array.isArray(data.items)) return null;
+  const items = data.items;
+  playlistCache.set(id, {
+    items,
+    expiresAt: Date.now() + (items.length ? PLAYLIST_TTL_MS : 30_000),
+  });
   return items;
 }
 
@@ -125,14 +127,18 @@ async function getVideo(id: string): Promise<CvhVideo | null> {
 }
 
 /** Exact episode numbers available for this studio in the live CVH playlist. */
-export async function cvhAvailableEpisodes(embedUrl: string): Promise<number[]> {
+export async function cvhAvailableEpisodes(embedUrl: string): Promise<number[] | null> {
   const target = parseCvhEmbedUrl(embedUrl);
   if (!target) return [];
   const items = await getPlaylist(target.id);
+  if (!items) return null;
   const wanted = normalizeCvhStudio(target.studio);
   return [...new Set(items
     .filter((item) => Number(item.season ?? 1) === target.season)
-    .filter((item) => !wanted || normalizeCvhStudio(item.voiceStudio) === wanted)
+    .filter((item) => {
+      const actual = normalizeCvhStudio(item.voiceStudio);
+      return !wanted || actual === wanted || (actual && (actual.includes(wanted) || wanted.includes(actual)));
+    })
     .map((item) => Number(item.episode))
     .filter((episode) => Number.isInteger(episode) && episode > 0))]
     .sort((a, b) => a - b);
@@ -164,6 +170,7 @@ export async function resolveCvhDirectSource(
   if (!target) return null;
 
   const items = await getPlaylist(target.id);
+  if (!items) return null;
   const item = selectCvhPlaylistItem(items, { ...target, episode });
   if (!item?.vkId) return null;
 
