@@ -191,6 +191,9 @@ docker compose up --build       # весь стек: web + 2 bridge
 Oracle Always Free VPS, Cloudflare Pages) и рекомендациям по БД (сейчас БД не нужна;
 при аккаунтах — Supabase/Neon; кэш на serverless — Upstash/KV) — в [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
+Аккаунты, вход через Google и по email: как включить провайдеров в Google Cloud Console
+и в панели Supabase — [`docs/AUTH-SETUP.md`](docs/AUTH-SETUP.md).
+
 ## Деплой: Vercel (основной) и Netlify (зеркало/резерв)
 
 Проект одинаково собирается на обеих платформах; различия сведены в таблицу.
