@@ -87,6 +87,17 @@ function rowToSource(row: SourceRow, episode: number, exactEpisodeUrl?: string |
   let url = normalizeEmbedUrl(exactEpisodeUrl);
   let synthesized = false;
 
+  // Older CVH cache rows sometimes point every episode to the first iframe URL.
+  // Rewrite its final episode segment to the requested number; the live CVH
+  // playlist resolver below verifies that this exact episode/dubbing exists.
+  if (row.provider === 'cvh' && url) {
+    const rewritten = rewriteCvh(url, episode);
+    if (rewritten && rewritten !== url) {
+      url = rewritten;
+      synthesized = true;
+    }
+  }
+
   if (!url) {
     const template = normalizeEmbedUrl(row.embed_url);
     if (!template) return null;
