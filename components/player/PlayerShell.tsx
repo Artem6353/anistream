@@ -87,7 +87,7 @@ export function PlayerShell({
   const [sideTab, setSideTab] = useState<'episodes' | 'sources'>('sources');
   const [quality, setQuality] = useState('');
   const [playing, setPlaying] = useState(false);
-  const [playbackError, setPlaybackError] = useState<string | null>(null);
+  const [playbackFailure, setPlaybackFailure] = useState<{ key: string; message: string } | null>(null);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
@@ -114,6 +114,7 @@ export function PlayerShell({
   const [isDrag, setIsDrag] = useState(false);
 
   const dataKey = `${title.slug}:${episode}`;
+  const playbackError = playbackFailure?.key === dataKey ? playbackFailure.message : null;
   /* Аудит 30.09 (react-hooks/set-state-in-effect): при смене серии статус
      выводится из несоответствия ключа (loading), а не ставится синхронно в эффекте. */
   const dataStatus: DataState['status'] = data.key === dataKey ? data.status : 'loading';
@@ -235,7 +236,7 @@ export function PlayerShell({
     keepTime.current = videoRef.current?.currentTime ?? 0;
     switchingSrc.current = true; // на loadedmetadata не показывать баннер — позицию вернёт restore
     setSelectedId(id);
-    setPlaybackError(null);
+    setPlaybackFailure(null);
     setQuality('');
     try {
       localStorage.setItem(`anistream:lastsrc:${title.slug}`, id);
@@ -247,13 +248,12 @@ export function PlayerShell({
     const video = videoRef.current;
     if (!video || !file || isEmbed) return;
     let cancelled = false;
-    setPlaybackError(null);
     if (file.type === 'hls' && !video.canPlayType('application/x-mpegURL')) {
       void import('hls.js')
         .then(({ default: Hls }) => {
           if (cancelled) return;
           if (!Hls.isSupported()) {
-            setPlaybackError('Этот браузер не поддерживает HLS. Выберите другой источник.');
+            setPlaybackFailure({ key: dataKey, message: 'Этот браузер не поддерживает HLS. Выберите другой источник.' });
             return;
           }
           const hls = new Hls({ capLevelToPlayerSize: true });
@@ -262,14 +262,14 @@ export function PlayerShell({
           hls.attachMedia(video);
           hls.on(Hls.Events.ERROR, (_e, data) => {
             if (data.fatal && !cancelled) {
-              setPlaybackError('Не удалось загрузить видеопоток HLS. Попробуйте другую озвучку или источник.');
+              setPlaybackFailure({ key: dataKey, message: 'Не удалось загрузить видеопоток HLS. Попробуйте другую озвучку или источник.' });
               hls.destroy();
               if (hlsRef.current === hls) hlsRef.current = null;
             }
           });
         })
         .catch(() => {
-          if (!cancelled) setPlaybackError('Не удалось запустить HLS-плеер. Попробуйте другой источник.');
+          if (!cancelled) setPlaybackFailure({ key: dataKey, message: 'Не удалось запустить HLS-плеер. Попробуйте другой источник.' });
         });
     } else {
       video.src = file.url;
@@ -512,7 +512,7 @@ export function PlayerShell({
                 onPlay={() => setPlaying(true)}
                 onPause={() => setPlaying(false)}
                 onError={() => {
-                  setPlaybackError('Браузер не смог воспроизвести этот файл. Попробуйте другой источник.');
+                  setPlaybackFailure({ key: dataKey, message: 'Браузер не смог воспроизвести этот файл. Попробуйте другой источник.' });
                 }}
                 onTimeUpdate={(e) => {
                   const v = e.currentTarget;
@@ -770,7 +770,7 @@ export function PlayerShell({
                       <p className="player__menu-title">Качество</p>
                       <div className="player__rates">
                         {files.map((f) => (
-                          <button key={f.quality} className={`chip ${(!quality && f === files[0]) || quality === f.quality ? 'is-active' : ''}`} onClick={() => setQuality(f.quality)}>
+                          <button key={f.quality} className={`chip ${(!quality && f === files[0]) || quality === f.quality ? 'is-active' : ''}`} onClick={() => { setPlaybackFailure(null); setQuality(f.quality); }}>
                             {f.quality}p{f.type === 'hls' ? ' · HLS' : ''}
                           </button>
                         ))}
