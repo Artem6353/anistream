@@ -34,6 +34,7 @@
  *   node scripts/sync-sources.mjs --report
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { episodeLinks } from './lib/kodik-episode-links.mjs';
 
 const FILE = process.env.TITLES_FILE ?? 'lib/data/titles.json';
 const CHECKPOINT = process.env.CHECKPOINT_FILE ?? '.cache/sync-sources-checkpoint.json';
@@ -59,7 +60,11 @@ const REPORT_ONLY = argv.includes('--report');
 /* ~1 запрос/с по практике Kodik (LIMITS.md). */
 const SLEEP_MS = Number(process.env.KODIK_SLEEP_MS ?? 1000);
 const PAGE_LIMIT = Number(process.env.KODIK_PAGE_LIMIT ?? 200);
-const MAX_EPISODE_URLS = Number(process.env.MAX_EPISODE_URLS ?? 1200);
+const maxEpisodeUrlsRaw = Number(process.env.MAX_EPISODE_URLS ?? 1200);
+// 0 means unlimited; keep the conservative 1200-row default for scheduled jobs.
+const MAX_EPISODE_URLS = Number.isFinite(maxEpisodeUrlsRaw) && maxEpisodeUrlsRaw >= 0
+  ? Math.floor(maxEpisodeUrlsRaw)
+  : 1200;
 const MAX_ATTEMPTS = Number(process.env.MAX_ATTEMPTS ?? 5);
 const QUERY_TYPES = process.env.KODIK_TYPES ?? 'anime';
 const ONGOING_ONLY = (process.env.SCOPE ?? '').toLowerCase() === 'ongoing';
@@ -112,36 +117,10 @@ async function kodik(endpoint, payload) {
 
 /* ------------------------------ разбор ответа ----------------------------- */
 
-const abs = (u) => (!u ? null : String(u).startsWith('//') ? `https:${u}` : String(u));
+const abs = (u) => (!u ? null : (String(u).startsWith('//') ? `https:${u}` : String(u)).replace(/&amp;/gi, '&'));
 
 function materialsOf(body) {
   return Array.isArray(body?.results) ? body.results : [];
-}
-
-function episodeLinks(material) {
-  const found = new Map(); // number → link
-  const collect = (raw) => {
-    if (!raw) return;
-    const entries = Array.isArray(raw)
-      ? raw.map((e, i) => [String(e?.episode ?? i + 1), e])
-      : Object.entries(raw);
-    for (const [num, ep] of entries) {
-      const n = Number(num);
-      const link = abs(typeof ep === 'string' ? ep : ep?.link);
-      if (Number.isFinite(n) && n > 0 && link) found.set(n, link);
-    }
-  };
-  const seasons = material?.seasons;
-  if (seasons) {
-    for (const season of Array.isArray(seasons) ? seasons : Object.values(seasons)) collect(season?.episodes);
-  }
-  collect(material?.episodes);
-  // Фильм/спецл из одного видео: ссылка лежит прямо в материале.
-  if (!found.size && material?.type === 'anime') {
-    const link = abs(material?.link);
-    if (link) found.set(1, link);
-  }
-  return found;
 }
 
 function translationsOf(material) {
@@ -255,7 +234,8 @@ function rowsFor(animeId, provider, material) {
     });
     if (!links.size) continue;
     /* Лимит памяти БД: берём ПОСЛЕДНИЕ серии — их смотрят чаще всего. */
-    const numbers = [...links.keys()].sort((a, b) => b - a).slice(0, MAX_EPISODE_URLS);
+    const sortedNumbers = [...links.keys()].sort((a, b) => b - a);
+    const numbers = MAX_EPISODE_URLS > 0 ? sortedNumbers.slice(0, MAX_EPISODE_URLS) : sortedNumbers;
     for (const n of numbers) {
       urls.push({
         anime_id: animeId,
