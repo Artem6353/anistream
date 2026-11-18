@@ -82,12 +82,12 @@ describe('Supabase episode-source resolution', () => {
       {
         anime_id: 457, provider: 'cvh', translation_id: '2', translation_title: 'AniLibria',
         translation_type: 'voice', kind: 'embed', embed_url: 'https://animego.me/cdn-iframe/457/1/1?dubbing=AnilibriaTV',
-        status: 'ok',
+        episodes_count: 26, status: 'ok',
       },
       {
         anime_id: 457, provider: 'aniboom', translation_id: '9', translation_title: '2x2',
         translation_type: 'voice', kind: 'embed', embed_url: 'https://aniboom.one/embed/abc123?episode=1&translation=9',
-        status: 'ok',
+        episodes_count: 26, status: 'ok',
       },
     );
 
@@ -103,6 +103,36 @@ describe('Supabase episode-source resolution', () => {
     expect(aniboom?.synthesized).toBe(true);
   });
 
+  it('does not synthesize AniBoom past the provider-reported episode count', async () => {
+    tables.episode_sources.push({
+      anime_id: 21, provider: 'aniboom', translation_id: '0', translation_title: 'AniBoom · 2x2',
+      translation_type: 'voice', kind: 'embed',
+      embed_url: 'https://aniboom.one/embed/JRwXrQgM0L5?episode=1&translation=9',
+      episodes_count: 1, status: 'ok',
+    });
+
+    const { dbEpisodeSources } = await loadModule();
+    expect(await dbEpisodeSources(21, 25)).toBeNull();
+  });
+
+  it('keeps exact per-episode URLs even when the template episode count is smaller', async () => {
+    tables.episode_sources.push({
+      anime_id: 457, provider: 'cvh', translation_id: '2', translation_title: 'SHIZA Project',
+      translation_type: 'voice', kind: 'embed',
+      embed_url: 'https://animego.me/cdn-iframe/457/1/1?dubbing=SHIZA%20Project',
+      episodes_count: 1, status: 'ok',
+    });
+    tables.episode_source_urls.push({
+      anime_id: 457, provider: 'cvh', translation_id: '2', episode: 2,
+      kind: 'embed', embed_url: 'https://animego.me/cdn-iframe/457/1/2?dubbing=SHIZA%20Project', status: 'ok',
+    });
+
+    const { dbEpisodeSources } = await loadModule();
+    const result = await dbEpisodeSources(457, 2);
+    expect(result?.sources[0].embedUrl).toContain('/2?dubbing=');
+    expect(result?.sources[0].synthesized).toBeUndefined();
+  });
+
   it('reads exact episode coverage and valid CVH template providers from Supabase', async () => {
     tables.episode_source_urls.push(
       { anime_id: 457, provider: 'kodik', translation_id: '1045', episode: 1, embed_url: 'https://kodik.test/1', status: 'ok' },
@@ -111,7 +141,7 @@ describe('Supabase episode-source resolution', () => {
     tables.episode_sources.push({
       anime_id: 457, provider: 'cvh', translation_id: '2', translation_title: 'AniLibria',
       translation_type: 'voice', kind: 'embed', embed_url: 'https://animego.me/cdn-iframe/457/1/1?dubbing=AniLibriaTV',
-      status: 'ok',
+      episodes_count: 26, status: 'ok',
     });
 
     const { dbEpisodeAvailability } = await loadModule();
@@ -119,5 +149,6 @@ describe('Supabase episode-source resolution', () => {
 
     expect(result?.directEpisodes).toEqual([1, 5]);
     expect(result?.templateProviders).toEqual(['cvh']);
+    expect(result?.templateMaxEpisodes).toEqual({ cvh: 26 });
   });
 });
