@@ -1,4 +1,5 @@
 import type { EpisodeSource, EpisodeSources } from './types';
+import { normalizeProviderUrl } from './url';
 
 /**
  * Supabase-бэкенд кэша резолвов (feat/db-cache).
@@ -59,6 +60,7 @@ type SourceRow = {
   translation_id: string;
   translation_title: string | null;
   translation_type: string | null;
+  episodes_count: number | null;
 };
 
 const PROVIDER_NAMES: Record<string, string> = {
@@ -86,7 +88,8 @@ export function translationIdOf(source: EpisodeSource): string {
 
 /** Ссылка, которую реально можно отдать плееру (embed или первый файл). */
 export function sourceUrlOf(source: EpisodeSource): string | null {
-  return source.embedUrl ?? source.files?.[0]?.url ?? null;
+  return normalizeProviderUrl(source.embedUrl) ??
+    normalizeProviderUrl(source.files?.[0]?.url);
 }
 
 /**
@@ -116,7 +119,7 @@ export async function dbLoadCache(
       { maxRows, timeoutMs, deadlineAt, order: 'anime_id.asc,episode.asc' },
     ),
     fetchPaged<SourceRow>(
-      'episode_sources?status=eq.ok&select=anime_id,provider,translation_id,translation_title,translation_type',
+      'episode_sources?status=eq.ok&select=anime_id,provider,translation_id,translation_title,translation_type,episodes_count',
       { maxRows: 200_000, timeoutMs, deadlineAt, order: 'anime_id.asc' },
     ),
   ]);
@@ -130,7 +133,8 @@ export async function dbLoadCache(
   const byKey = new Map<string, { at: number; sources: EpisodeSource[] }>();
   for (const row of urlRows) {
     const slug = slugById.get(Number(row.anime_id));
-    if (!slug || !row.embed_url) continue;
+    const embedUrl = normalizeProviderUrl(row.embed_url);
+    if (!slug || !embedUrl) continue;
     const episode = Number(row.episode);
     if (!Number.isInteger(episode) || episode < 1) continue;
     const key = `ep:${slug}:${episode}`;
@@ -141,8 +145,11 @@ export async function dbLoadCache(
       providerId: row.provider,
       providerName: PROVIDER_NAMES[row.provider] ?? row.provider,
       kind: row.kind === 'file' ? 'file' : 'embed',
-      embedUrl: row.embed_url,
+      embedUrl,
       translationId: row.translation_id,
+      ...(Number.isInteger(Number(header?.episodes_count)) && Number(header?.episodes_count) > 0
+        ? { episodesCount: Number(header?.episodes_count) }
+        : {}),
       voice: header?.translation_type === 'sub' ? 'subtitles' : 'voice',
     };
     const entry = byKey.get(key);

@@ -6,7 +6,8 @@
  * подобран». На проде из-за этого у «Ван-Пис» все 24 «серии» светились доступными,
  * хотя ни один URL не был получен от провайдера.
  *
- * Правило теперь: ok = только реально полученный от провайдера источник.
+ * Прямой URL доказывает только то, что провайдер его когда-то выдал.
+ * Доступность самого видеопотока подтверждается только отдельной проверкой воспроизведения.
  */
 export type SourceKind = 'cache' | 'synth' | 'guess' | 'demo';
 
@@ -20,7 +21,7 @@ export interface AvailabilityHint {
 export function availabilityHint(kind: string | undefined): AvailabilityHint {
   switch (kind) {
     case 'cache':
-      return { tone: 'ok', label: 'Доступно: источник получен от провайдера' };
+      return { tone: 'unverified', label: 'Есть точная ссылка от провайдера; воспроизведение ещё не проверено' };
     case 'synth':
       return { tone: 'unverified', label: 'Ссылка собрана по шаблону и не проверена' };
     case 'guess':

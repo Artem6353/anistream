@@ -25,7 +25,8 @@ export async function GET(request: Request) {
     id,
     configured: available,
   }));
-  const cacheUsesUpstash = providerConfig.cache.enabled && kvEnabled();
+  const configuredCacheBackend = providerConfig.cache.backend ?? (kvEnabled() ? 'kv' : 'file');
+  const cacheUsesUpstash = providerConfig.cache.enabled && configuredCacheBackend === 'kv' && kvEnabled();
   const kodikBridgeUrl = providerConfig.bridges.kodik.url;
   const multiplayerBridgeUrl = providerConfig.bridges.multiplayer.url;
   const [kodikBridgeResult, multiplayerBridgeResult] = await Promise.all([
@@ -43,10 +44,10 @@ export async function GET(request: Request) {
   const providerCache = {
     enabled: providerConfig.cache.enabled,
     writesEnabled: providerConfig.cache.write,
-    backend: !providerConfig.cache.enabled ? 'disabled' : cacheUsesUpstash ? 'upstash' : 'file',
+    backend: !providerConfig.cache.enabled ? 'disabled' : configuredCacheBackend === 'kv' ? 'upstash' : configuredCacheBackend,
     // Version 1 declares support for the losslessly compressed z1: episode-cache values.
     episodeCacheFormatVersion: 1,
-    // null means this deployment uses the filesystem cache (no Redis connection to probe).
+    // Only probe Redis when it is the active backend; DB-backed deployments report null.
     reachable: cacheUsesUpstash ? await kvPing() : null,
   };
   let supabaseProbe: { titles: number | string; episodeSources: number | string } | undefined;
@@ -66,10 +67,11 @@ export async function GET(request: Request) {
         return e instanceof Error ? e.name : 'error';
       }
     };
-    supabaseProbe = {
-      titles: await ping('titles?select=id&limit=1'),
-      episodeSources: await ping('episode_sources?select=anime_id&limit=1'),
-    };
+    const [titles, episodeSources] = await Promise.all([
+      ping('titles?select=id&limit=1'),
+      ping('episode_sources?select=anime_id&limit=1'),
+    ]);
+    supabaseProbe = { titles, episodeSources };
   }
   return NextResponse.json(
     {

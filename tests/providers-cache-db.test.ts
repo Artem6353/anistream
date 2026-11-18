@@ -100,6 +100,22 @@ async function loadCache() {
 }
 
 describe('кэш резолвов в Supabase', () => {
+  it('does not bulk-load the whole Supabase cache on a cold player cache miss', async () => {
+    const fetchMock = vi.mocked(fetch);
+    const { cacheGet } = await loadCache();
+
+    expect(await cacheGet('ep:one-piece:5')).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps the bulk DB preload available as an explicit operation', async () => {
+    const { preloadProviderCache } = await loadCache();
+    const result = await preloadProviderCache();
+
+    expect(result.backend).toBe('db');
+    expect(fetch).toHaveBeenCalled();
+  });
+
   it('cacheSet делает UPSERT в episode_source_urls и шапку в episode_sources', async () => {
     const { cacheSet } = await loadCache();
     await cacheSet('ep:one-piece:5', { sources: [SOURCE('610', 'AniLibria')] } as never);
@@ -131,7 +147,8 @@ describe('кэш резолвов в Supabase', () => {
     await cacheSet('ep:one-piece:5', { sources: [SOURCE('610', 'AniLibria')] } as never);
 
     vi.resetModules(); // новый процесс: память пуста, остаётся только БД
-    const { cacheGet } = await loadCache();
+    const { cacheGet, preloadProviderCache } = await loadCache();
+    await preloadProviderCache(); // bulk preload is explicit/background, never a cache-miss side effect
     const hit = await cacheGet('ep:one-piece:5');
 
     expect(hit?.sources).toHaveLength(1);
@@ -149,7 +166,8 @@ describe('кэш резолвов в Supabase', () => {
     await cacheSet('ep:one-piece:7', { sources: [SOURCE('610', 'AniLibria'), SOURCE('2', 'Субтитры')] } as never);
 
     vi.resetModules();
-    const { cacheGet } = await loadCache();
+    const { cacheGet, preloadProviderCache } = await loadCache();
+    await preloadProviderCache();
     const hit = await cacheGet('ep:one-piece:7');
     expect(hit?.sources.map((s) => s.label).sort()).toEqual(['AniLibria', 'Субтитры']);
     expect(hit?.sourcesUsed).toEqual(['kodik']);
@@ -176,7 +194,8 @@ describe('кэш резолвов в Supabase', () => {
     });
     vi.stubEnv('KODIK_CACHE_TTL_MS', String(60_000));
     vi.resetModules();
-    const { cacheGet } = await loadCache();
+    const { cacheGet, preloadProviderCache } = await loadCache();
+    await preloadProviderCache();
     expect(await cacheGet('ep:one-piece:9')).toBeNull();
   });
 

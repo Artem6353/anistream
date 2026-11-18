@@ -31,6 +31,8 @@
  *   node scripts/import-provider-cache-to-db.mjs --dry-run            # оценка, без записи
  *   node scripts/import-provider-cache-to-db.mjs --limit 200          # порция тайтлов
  *   node scripts/import-provider-cache-to-db.mjs                      # полный перенос
+ *   MAX_EPISODE_URLS=0 node scripts/import-provider-cache-to-db.mjs  # все серии, без лимита
+ *   node scripts/import-provider-cache-to-db.mjs --reset-checkpoint   # повторить полный импорт
  *   node scripts/import-provider-cache-to-db.mjs --verify             # сверка с БД
  * Резюме (resumable): .cache/import-provider-cache-checkpoint.json — повторный запуск
  * продолжает с непрошенных тайтлов, уже записанные строки перезаписываются идемпотентно.
@@ -38,6 +40,8 @@
  * Секреты только из env. Без SUPABASE_SERVICE_KEY — exit 2, ничего не ломает.
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { prepareSyncCheckpoint, syncRunIsComplete } from './lib/sync-checkpoint.mjs';
+import { selectEpisodeNumbers } from './lib/import-cache-limits.mjs';
 
 const CACHE_FILE = process.env.KODIK_CACHE_FILE ?? '.cache/providers-resolve-cache.json';
 const TITLES_FILE = process.env.TITLES_FILE ?? 'lib/data/titles.json';
@@ -58,7 +62,10 @@ const argVal = (name, dflt) => {
 const DRY_RUN = has('--dry-run');
 const VERIFY = has('--verify');
 const LIMIT = Number(argVal('limit', process.env.LIMIT ?? 0));
-const MAX_EPISODE_URLS = Number(process.env.MAX_EPISODE_URLS ?? 1200);
+const maxEpisodeUrlsRaw = Number(process.env.MAX_EPISODE_URLS ?? 1200);
+const MAX_EPISODE_URLS = Number.isFinite(maxEpisodeUrlsRaw) && maxEpisodeUrlsRaw >= 0
+  ? Math.floor(maxEpisodeUrlsRaw)
+  : 1200;
 const BATCH = Number(process.env.IMPORT_BATCH ?? 1000);
 const PAUSE_MS = Number(process.env.IMPORT_PAUSE_MS ?? 120);
 
@@ -95,17 +102,22 @@ function translationIdOf(source) {
 
 const translationTypeOf = (source) => (source.voice === 'subtitles' ? 'sub' : 'voice');
 
-function loadCheckpoint() {
+function loadCheckpoint({ reset = false, preserveCompleted = false } = {}) {
+  if (reset) return prepareSyncCheckpoint(null, 'import');
   try {
-    return JSON.parse(readFileSync(CHECKPOINT, 'utf8'));
+    const saved = JSON.parse(readFileSync(CHECKPOINT, 'utf8'));
+    if (preserveCompleted) return saved;
+    return prepareSyncCheckpoint(saved, 'import');
   } catch {
-    return { done: [] };
+    return prepareSyncCheckpoint(null, 'import');
   }
 }
 function saveCheckpoint(cp) {
   if (DRY_RUN) return;
   mkdirSync('.cache', { recursive: true });
-  writeFileSync(CHECKPOINT, JSON.stringify({ ...cp, at: new Date().toISOString(), done: [...new Set(cp.done)] }));
+  cp.at = new Date().toISOString();
+  cp.mode = 'import';
+  writeFileSync(CHECKPOINT, JSON.stringify({ ...cp, done: [...new Set(cp.done)] }));
 }
 
 async function upsert(table, conflict, rows) {
@@ -193,7 +205,7 @@ if (VERIFY) {
 
 /* ------------------------------- перенос -------------------------------- */
 
-const cp = loadCheckpoint();
+const cp = loadCheckpoint({ reset: has('--reset-checkpoint') });
 const done = new Set(cp.done ?? []);
 const slugs = [...bySlug.keys()].filter((s) => animeIdBySlug.has(s) && !done.has(s));
 const skippedNoTitle = [...bySlug.keys()].filter((s) => !animeIdBySlug.has(s));
@@ -202,7 +214,13 @@ const plan = LIMIT > 0 ? slugs.slice(0, LIMIT) : slugs;
 log(`\nплан: ${plan.length} тайтлов (в кэше ${bySlug.size}, в чекпоинте ${done.size}, без пары в titles.json ${skippedNoTitle.length})`);
 if (skippedNoTitle.length) log(`  примеры без anime_id: ${skippedNoTitle.slice(0, 5).join(', ')}`);
 if (!plan.length) {
-  log('всё уже перенесено. Удалите ' + CHECKPOINT + ' для повторного полного прохода.');
+  if (slugs.length === 0) {
+    cp.completed = true;
+    saveCheckpoint(cp);
+    log('весь кэш уже перенесён; следующий запуск проверит обновлённый кэш заново.');
+  } else {
+    log('пустая порция импорта; чекпоинт сохранён для продолжения.');
+  }
   process.exit(0);
 }
 
@@ -264,8 +282,8 @@ for (let i = 0; i < plan.length; i++) {
     row.episodes_count = epMap.size || null;
     sourceRows.push(row);
     /* Лимит памяти БД: берём ПОСЛЕДНИЕ серии — их смотрят чаще всего. */
-    const numbers = [...epMap.keys()].sort((a, b) => b - a);
-    const kept = numbers.slice(0, MAX_EPISODE_URLS);
+    const numbers = [...epMap.keys()];
+    const kept = selectEpisodeNumbers(numbers, MAX_EPISODE_URLS);
     stats.skippedUrls += numbers.length - kept.length;
     for (const n of kept) {
       urlRows.push({
@@ -292,6 +310,7 @@ for (let i = 0; i < plan.length; i++) {
   }
 }
 
+cp.completed = syncRunIsComplete(plan.length, slugs.length);
 saveCheckpoint(cp);
-log(`\nготово: ${JSON.stringify(stats)}${DRY_RUN ? ' (dry-run — в БД ничего не записано)' : ''}`);
+log(`\nготово: ${JSON.stringify(stats)} · ${cp.completed ? 'импорт завершён' : 'чекпоинт сохранён для продолжения'}${DRY_RUN ? ' (dry-run — в БД ничего не записано)' : ''}`);
 log(`память процесса на пике: RSS ${(process.memoryUsage().rss / 1048576) | 0} МБ, heapUsed ${(process.memoryUsage().heapUsed / 1048576) | 0} МБ`);

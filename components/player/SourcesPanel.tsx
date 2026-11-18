@@ -51,7 +51,13 @@ export function SourcesPanel({
                   onClick={() => onChoose(s.id)}
                 >
                   <span className="source-row__label">{s.label}</span>
-                  {s.guessed ? <span className="source-row__guess">подбор</span> : null}
+                  {s.guessed ? (
+                    <span className="source-row__guess">подбор</span>
+                  ) : s.synthesized ? (
+                    <span className="source-row__guess" title="Номер серии подставлен в шаблон; источник не проверен">
+                      шаблон
+                    </span>
+                  ) : null}
                 </button>
               ))}
             </>
@@ -67,6 +73,13 @@ export function SourcesPanel({
                   onClick={() => onChoose(s.id)}
                 >
                   <span className="source-row__label">{s.label}</span>
+                  {s.guessed ? (
+                    <span className="source-row__guess">подбор</span>
+                  ) : s.synthesized ? (
+                    <span className="source-row__guess" title="Номер серии подставлен в шаблон; источник не проверен">
+                      шаблон
+                    </span>
+                  ) : null}
                 </button>
               ))}
             </>

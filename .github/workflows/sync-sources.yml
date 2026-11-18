@@ -28,6 +28,10 @@ on:
         description: "Лимит тайтлов/страниц за прогон (0 = без лимита)"
         type: string
         default: "300"
+      max_episode_urls:
+        description: "Максимум серий на одну озвучку (0 = все серии, без ограничения)"
+        type: string
+        default: "1200"
 
 concurrency:
   group: aninova-sync-sources
@@ -67,6 +71,7 @@ jobs:
           SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'ongoing' }}
           SLUG_ARG: ${{ github.event_name == 'workflow_dispatch' && inputs.slug || '' }}
           LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.limit || '0' }}
+          MAX_EPISODE_URLS: ${{ github.event_name == 'workflow_dispatch' && inputs.max_episode_urls || '1200' }}
         run: |
           set -uo pipefail
           # cron «25 4» → онгоинги точечно; cron «30 5 * * 0» → bulk по всему каталогу.
@@ -84,6 +89,10 @@ jobs:
           # 2 = «нет токена/БД» — не авария, а не сконфигурировано.
           if [ "$code" = "2" ]; then
             echo "::warning::KODIK_TOKEN или SUPABASE_SERVICE_KEY не заданы — источники не синхронизированы."
+            if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+              echo "::error::Ручная синхронизация не запускалась. Добавь KODIK_TOKEN и Supabase service key в GitHub Actions Secrets."
+              exit 1
+            fi
             exit 0
           fi
           exit $code
