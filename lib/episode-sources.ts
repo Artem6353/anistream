@@ -94,14 +94,20 @@ function rowToSource(row: SourceRow, episode: number, exactEpisodeUrl?: string |
     // A missing/zero count is unknown, not unlimited. Exact per-episode URLs above
     // remain usable regardless of this header metadata.
     const episodesCount = Number(row.episodes_count);
-    if (!Number.isInteger(episodesCount) || episodesCount < 1 || episode > episodesCount) return null;
+    const cvhEpisodeUrl = row.provider === 'cvh' ? rewriteCvh(template, episode) : null;
+    const hasReportedRange =
+      Number.isInteger(episodesCount) && episodesCount >= 1 && episode <= episodesCount;
+    // CVH exposes an episode-specific playlist API, so its live playlist can
+    // verify episodes beyond a stale/episode-1 header count. The direct resolver
+    // checks the exact season, episode and dubbing before returning a stream.
+    if (!hasReportedRange && !cvhEpisodeUrl) return null;
 
     // Kodik uses an individual /seria/<id>/<hash> URL for each episode.
     // A title-level URL is not a safe substitute for a missing episode URL.
     if (row.provider === 'kodik') return null;
 
     if (row.provider === 'cvh') {
-      url = rewriteCvh(template, episode);
+      url = cvhEpisodeUrl;
       synthesized = Boolean(url && episode !== 1);
     } else if (row.provider === 'aniboom') {
       url = rewriteAniboom(template, episode);
