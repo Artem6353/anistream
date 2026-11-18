@@ -4,6 +4,7 @@ import { cacheEntriesForSlug, isDirectProviderSource } from '@/lib/providers/cac
 import { releasedCountFor } from '@/lib/episode-data';
 import { dbEpisodeAvailability, titleHasSources } from '@/lib/episode-sources';
 import { availabilityCacheControl } from '@/lib/availability-cache';
+import { synthesizableEpisodeLimit } from '@/lib/providers/synthesize';
 
 /** Доступность серий: cache (прямой ответ провайдера) | synth (шаблон CVH/AniBoom)
  *  | guess (подбор пулом озвучек) | none.
@@ -31,12 +32,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   for (const entry of entries) {
     for (const source of entry.sources.sources) {
       if (isDirectProviderSource(source)) directEpisodes.add(entry.episode);
-      const maxEpisode = Number(source.episodesCount);
-      if (
-        (source.providerId === 'cvh' || source.providerId === 'aniboom') &&
-        Number.isInteger(maxEpisode) &&
-        maxEpisode > 0
-      ) {
+      const maxEpisode = synthesizableEpisodeLimit(
+        source.providerId,
+        source.embedUrl,
+        source.episodesCount,
+      );
+      if (maxEpisode > 0) {
         cachedTemplateMaxEpisodes[source.providerId] = Math.max(
           cachedTemplateMaxEpisodes[source.providerId] ?? 0,
           maxEpisode,
