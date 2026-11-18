@@ -1,4 +1,5 @@
 import type { EpisodeSource, EpisodeSources, ProviderContext } from './types';
+import { normalizeProviderUrl } from './url';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { getProvidersConfig } from '@/lib/config/providers.config';
@@ -202,7 +203,24 @@ export function isDirectProviderSource(source: EpisodeSource): boolean {
 }
 
 function directResult(result: EpisodeSources): EpisodeSources | null {
-  const sources = result.sources.filter(isDirectProviderSource);
+  const sources = result.sources
+    .filter(isDirectProviderSource)
+    .map((source) => {
+      const embedUrl = normalizeProviderUrl(source.embedUrl);
+      const files = (source.files ?? [])
+        .map((file) => {
+          const url = normalizeProviderUrl(file.url);
+          return url ? { ...file, url } : null;
+        })
+        .filter((file): file is NonNullable<typeof file> => file !== null);
+      if (!embedUrl && !files.length) return null;
+      return {
+        ...source,
+        ...(embedUrl ? { embedUrl } : { embedUrl: undefined }),
+        ...(source.files ? { files } : {}),
+      };
+    })
+    .filter((source): source is EpisodeSource => source !== null);
   if (!sources.length) return null;
   return {
     ...result,
