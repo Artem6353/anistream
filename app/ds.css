@@ -1,0 +1,592 @@
+/* ============================================================
+   DS-2026 · стеклянный слой (профиль и вход)
+   Отдельный неймспейс `ds-`, чтобы не задевать существующие
+   .btn/.card: страницы входа и кабинета используют только эти
+   классы, остальной сайт живёт как раньше.
+   ============================================================ */
+
+:root {
+  --ds-glass: rgba(22, 27, 38, 0.62);
+  --ds-glass-2: rgba(28, 34, 48, 0.78);
+  --ds-glass-line: rgba(255, 255, 255, 0.1);
+  --ds-glass-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  --ds-neon: #a78bfa;
+  --ds-neon-2: #22d3ee;
+  --ds-blur: 18px;
+  --ds-radius: 18px;
+}
+
+:root[data-theme='light'] {
+  --ds-glass: rgba(255, 255, 255, 0.72);
+  --ds-glass-2: rgba(255, 255, 255, 0.9);
+  --ds-glass-line: rgba(15, 23, 42, 0.1);
+  --ds-glass-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+  --ds-neon: #6d28d9;
+  --ds-neon-2: #0e7490;
+}
+
+.ds-page {
+  position: relative;
+  padding-block: clamp(24px, 4vw, 44px) 64px;
+}
+
+/* фоновое сияние: два радиальных пятна, без картинок */
+.ds-page::before {
+  content: '';
+  position: absolute;
+  inset: -120px 0 auto;
+  height: 420px;
+  pointer-events: none;
+  background:
+    radial-gradient(46% 60% at 18% 0%, color-mix(in srgb, var(--ds-neon) 26%, transparent), transparent 70%),
+    radial-gradient(42% 55% at 82% 8%, color-mix(in srgb, var(--ds-neon-2) 22%, transparent), transparent 72%);
+  opacity: 0.55;
+  filter: blur(4px);
+  z-index: -1;
+}
+
+.ds-eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ds-neon);
+}
+
+.ds-text-grad {
+  background: linear-gradient(100deg, var(--ds-neon), var(--ds-neon-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ds-muted {
+  color: var(--muted-2);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.ds-link {
+  color: var(--accent-text);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.ds-link:hover {
+  color: var(--text);
+}
+
+/* ---------- стеклянная карточка ---------- */
+.ds-card {
+  position: relative;
+  border-radius: var(--ds-radius);
+  border: 1px solid var(--ds-glass-line);
+  background: var(--ds-glass);
+  box-shadow: var(--ds-glass-shadow);
+  backdrop-filter: blur(var(--ds-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--ds-blur)) saturate(140%);
+  overflow: hidden;
+}
+
+.ds-card--pad {
+  padding: clamp(18px, 2.4vw, 28px);
+}
+
+.ds-card--glow::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ds-neon), var(--ds-neon-2), transparent);
+  opacity: 0.8;
+}
+
+/* ---------- кнопки ---------- */
+.ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 650;
+  font-size: 14px;
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.16s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.ds-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ds-btn:focus-visible {
+  outline: 2px solid var(--ds-neon);
+  outline-offset: 2px;
+}
+
+.ds-btn--primary {
+  color: #fff;
+  background: linear-gradient(100deg, var(--ds-neon), var(--ds-neon-2));
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--ds-neon) 35%, transparent);
+}
+
+.ds-btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px color-mix(in srgb, var(--ds-neon) 45%, transparent);
+}
+
+.ds-btn--ghost {
+  border-color: var(--ds-glass-line);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+
+.ds-btn--ghost:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ds-neon) 55%, transparent);
+  background: color-mix(in srgb, var(--ds-neon) 12%, transparent);
+}
+
+.ds-btn--danger {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  color: var(--danger);
+}
+
+.ds-btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+}
+
+.ds-btn--google {
+  border-color: var(--ds-glass-line);
+  background: #fff;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.ds-btn--google:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.ds-btn--block {
+  width: 100%;
+}
+
+.ds-btn--sm {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+
+/* ---------- поля ---------- */
+.ds-field {
+  display: grid;
+  gap: 6px;
+}
+
+.ds-field__label {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.ds-field__hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted-2);
+}
+
+.ds-field__error {
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.ds-input-wrap {
+  position: relative;
+  display: block;
+}
+
+.ds-input,
+.ds-textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--ds-glass-line);
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+.ds-textarea {
+  min-height: 96px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.ds-input::placeholder,
+.ds-textarea::placeholder {
+  color: color-mix(in srgb, var(--muted-2) 80%, transparent);
+}
+
+.ds-input:hover,
+.ds-textarea:hover {
+  border-color: var(--line-strong);
+}
+
+.ds-input:focus-visible,
+.ds-textarea:focus-visible {
+  outline: none;
+  border-color: var(--ds-neon);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ds-neon) 26%, transparent);
+}
+
+.ds-input.has-error {
+  border-color: color-mix(in srgb, var(--danger) 70%, transparent);
+}
+
+.ds-input-wrap .ds-input {
+  padding-right: 48px;
+}
+
+.ds-input__action {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.ds-input__action:hover {
+  background: color-mix(in srgb, var(--surface-2) 80%, transparent);
+}
+
+:root[data-theme='light'] .ds-input,
+:root[data-theme='light'] .ds-textarea {
+  background: #fff;
+}
+
+/* индикатор силы пароля */
+.ds-meter {
+  display: block;
+  width: 92px;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line-strong) 60%, transparent);
+  overflow: hidden;
+  flex: none;
+}
+
+.ds-meter__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.25s ease, background-color 0.25s ease;
+}
+
+.ds-meter__fill--weak { background: var(--danger); }
+.ds-meter__fill--meh { background: var(--warn); }
+.ds-meter__fill--ok { background: var(--ds-neon-2); }
+.ds-meter__fill--strong { background: var(--success); }
+
+/* ---------- сегментированный переключатель ---------- */
+.ds-segment {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--ds-glass-line);
+  background: color-mix(in srgb, var(--bg) 45%, transparent);
+}
+
+.ds-segment__item {
+  min-height: 38px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.ds-segment__item:hover {
+  color: var(--text);
+}
+
+.ds-segment__item.is-active {
+  color: var(--text);
+  background: color-mix(in srgb, var(--ds-neon) 22%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ds-neon) 40%, transparent);
+}
+
+/* ---------- спиннер и скелетоны ---------- */
+.ds-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  animation: ds-spin 0.7s linear infinite;
+}
+
+@keyframes ds-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ds-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-2) 75%, transparent);
+}
+
+.ds-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text) 8%, transparent), transparent);
+  animation: ds-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes ds-shimmer {
+  to { transform: translateX(100%); }
+}
+
+.ds-skeleton--line { height: 14px; }
+.ds-skeleton--title { height: 22px; width: 45%; }
+.ds-skeleton--card { height: 148px; }
+
+/* ---------- прогресс ---------- */
+.ds-progress {
+  --value: 0%;
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line-strong) 55%, transparent);
+  overflow: hidden;
+}
+
+.ds-progress::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--value);
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ds-neon), var(--ds-neon-2));
+  transition: width 0.4s ease;
+}
+
+/* ---------- аватар ---------- */
+.ds-avatar {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--ds-neon), var(--ds-neon-2));
+  color: #fff;
+  font-weight: 800;
+  flex: none;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--ds-neon) 30%, transparent);
+}
+
+.ds-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---------- страница входа ---------- */
+.auth-page__glow {
+  display: none;
+}
+
+.auth-page__grid {
+  display: grid;
+  gap: clamp(20px, 3vw, 40px);
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 1040px;
+  margin-inline: auto;
+}
+
+.auth-page__pitch-title {
+  margin: 0 0 14px;
+  font-size: clamp(24px, 3.4vw, 40px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.auth-page__benefits {
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.auth-page__benefits li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.auth-page__benefits span {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.auth-page__link {
+  color: var(--accent-text);
+  text-decoration: none;
+}
+
+.auth-page__link:hover {
+  text-decoration: underline;
+}
+
+.auth-card {
+  display: grid;
+  gap: 14px;
+  max-width: 460px;
+  width: 100%;
+  margin-inline: auto;
+  animation: ds-rise 0.35s ease both;
+}
+
+.auth-card__head h1,
+.auth-card__title {
+  margin: 0 0 6px;
+  font-size: clamp(22px, 2.6vw, 28px);
+  letter-spacing: -0.01em;
+}
+
+.auth-card__badge {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.auth-card__hint {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--accent-text);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.auth-card__error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+}
+
+.auth-card__divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted-2);
+}
+
+.auth-card__divider::before,
+.auth-card__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ds-glass-line);
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-card__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.auth-card__foot {
+  margin: 0;
+  text-align: center;
+}
+
+.auth-card__link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+@keyframes ds-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- адаптив ---------- */
+@media (min-width: 900px) {
+  .auth-page__grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 48px;
+  }
+  .auth-card {
+    margin-inline: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .ds-card--pad { padding: 16px; }
+  .ds-btn { min-height: 46px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-btn,
+  .ds-input,
+  .ds-textarea,
+  .ds-progress::after,
+  .ds-meter__fill { transition: none; }
+  .ds-skeleton::after { animation: none; }
+  .auth-card { animation: none; }
+  .ds-spinner { animation-duration: 1.6s; }
+}

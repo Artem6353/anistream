@@ -1,0 +1,583 @@
+/* ============================================================
+   Кабинет: шапка, табы, списки, история, AniDNA, настройки.
+   Продолжение ds-неймспейса (app/ds.css) — грузится одним файлом.
+   ============================================================ */
+
+.dash {
+  display: grid;
+  gap: 18px;
+  max-width: 1120px;
+  margin-inline: auto;
+}
+
+/* ---------- шапка ---------- */
+.dash__head {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.dash__identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.dash__avatar {
+  width: 88px;
+  height: 88px;
+  font-size: 34px;
+}
+
+.dash__who {
+  min-width: 0;
+}
+
+.dash__name {
+  margin: 0 0 4px;
+  font-size: clamp(22px, 2.6vw, 30px);
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.dash__head-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dash__head-actions a[aria-disabled='true'] {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.dash__stats {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 4px 0 0;
+}
+
+.dash__stats div {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--ds-glass-line);
+  background: color-mix(in srgb, var(--bg) 42%, transparent);
+}
+
+.dash__stats dt {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.dash__stats dd {
+  margin: 2px 0 0;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.dash__alert {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+/* ---------- табы ---------- */
+.dash__tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--ds-glass-line);
+  background: var(--ds-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  scrollbar-width: thin;
+}
+
+.dash__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.dash__tab:hover {
+  color: var(--text);
+}
+
+.dash__tab.is-active {
+  color: var(--text);
+  background: color-mix(in srgb, var(--ds-neon) 20%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ds-neon) 40%, transparent);
+}
+
+.dash__panel {
+  animation: ds-rise 0.28s ease both;
+}
+
+/* ---------- пустые состояния ---------- */
+.dash__empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+  padding-block: 34px;
+}
+
+.dash__empty h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.dash__empty-emoji {
+  margin: 0;
+  font-size: 40px;
+  line-height: 1;
+}
+
+/* ---------- списки ---------- */
+.dash__groups {
+  display: grid;
+  gap: 14px;
+}
+
+.dash__group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.dash__pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-text);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.dash__cards {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.dash__card-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.16s ease;
+}
+
+.dash__card-link:hover {
+  border-color: color-mix(in srgb, var(--ds-neon) 45%, transparent);
+  background: color-mix(in srgb, var(--ds-neon) 10%, transparent);
+  transform: translateY(-1px);
+}
+
+.dash__poster {
+  width: 64px;
+  height: 92px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex: none;
+  background: var(--surface-2);
+}
+
+.dash__poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dash__poster-skeleton {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+}
+
+.dash__card-meta {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dash__card-name {
+  font-weight: 650;
+  font-size: 14px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ---------- история ---------- */
+.dash__history {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dash__history-row {
+  display: grid;
+  gap: 6px;
+}
+
+.dash__history-main {
+  display: grid;
+  gap: 2px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.dash__history-main:hover .dash__card-name {
+  color: var(--accent-text);
+}
+
+.dash__history-bar {
+  width: 100%;
+}
+
+.dash__history-foot {
+  font-size: 12px;
+  border-top: 1px solid var(--ds-glass-line);
+  padding-top: 10px;
+}
+
+/* ---------- AniDNA ---------- */
+.dna {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.dna__card {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-height: 460px;
+  padding: clamp(18px, 3vw, 28px);
+  border-radius: var(--ds-radius);
+  color: #fff;
+  overflow: hidden;
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--ds-neon) 30%, transparent);
+  isolation: isolate;
+}
+
+.dna__noise {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px);
+  background-size: 5px 5px;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  z-index: -1;
+}
+
+.dna__card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.dna__badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-weight: 800;
+}
+
+.dna__code {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.dna__emoji {
+  margin: 4px 0 0;
+  font-size: 44px;
+  line-height: 1;
+}
+
+.dna__title {
+  margin: 0;
+  font-size: clamp(24px, 3.2vw, 34px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.25);
+}
+
+.dna__tagline {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.dna__genres {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dna__genres li {
+  display: grid;
+  grid-template-columns: minmax(70px, 120px) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.dna__genre-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+}
+
+.dna__genre-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #fff;
+}
+
+.dna__genre-share {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.dna__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.dna__metrics dd {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.dna__metrics dt {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.dna__card-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 14px;
+  font-size: 12px;
+  opacity: 0.85;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.dna__side {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.dna__side-head h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+.dna__hint {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--accent-text);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.dna__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.dna__facts div {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ds-glass-line);
+  background: color-mix(in srgb, var(--bg) 40%, transparent);
+}
+
+.dna__facts dt {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-2);
+}
+
+.dna__facts dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.dna__recent h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.dna__recent-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dna__recent-item img,
+.dna__recent-skeleton {
+  display: block;
+  width: 44px;
+  height: 62px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--surface-2);
+}
+
+.dna__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---------- настройки ---------- */
+.settings {
+  display: grid;
+  gap: 14px;
+}
+
+.settings__block {
+  display: grid;
+  gap: 14px;
+}
+
+.settings__title {
+  margin: 0;
+  font-size: 17px;
+}
+
+.settings__avatar-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.settings__avatar {
+  width: 88px;
+  height: 88px;
+  font-size: 32px;
+}
+
+.settings__avatar-actions {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.settings__avatar-actions p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.settings__grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.settings__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.settings__theme {
+  max-width: 420px;
+}
+
+/* ---------- адаптив ---------- */
+@media (min-width: 900px) {
+  .dna {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    align-items: start;
+  }
+  .settings__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .dash__head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dash__head-actions {
+    justify-content: flex-start;
+  }
+  .dash__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dash__avatar {
+    width: 72px;
+    height: 72px;
+    font-size: 28px;
+  }
+  .dna__card {
+    min-height: 400px;
+  }
+}

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { signIn, signInWithGoogle, isSessionValid, notifyAuthChange, takeAuthAction } from '@/lib/sync';
 import { useToast } from '@/components/ui/Toaster';
 import { IconGoogle } from '@/components/ui/icons';
+import { adoptLegacySessionIntoCookieStore } from '@/lib/auth/session-bridge';
+import Link from 'next/link';
 
 /** Модальное окно авторизации (ТЗ блок 14): Google OAuth + email/пароль.
     Закрытие: ×, Esc, клик вне. На мобиле — bottom-sheet (CSS).
@@ -47,6 +49,9 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
   if (!open) return null;
 
   const finish = () => {
+    /* Легаси-вход держит токены в localStorage. Cookie-сессию создаём отдельно:
+       иначе /profile и middleware видели бы гостя при «вошедшем» интерфейсе. */
+    void adoptLegacySessionIntoCookieStore();
     notifyAuthChange();
     const action = takeAuthAction();
     onClose();
@@ -130,6 +135,9 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
             {busy === 'in' ? '…' : 'Войти'}
           </button>
         </form>
+        <p className="auth-note">
+          Нужен аккаунт или вход через Google? <Link href="/auth">Открыть страницу входа</Link>
+        </p>
       </div>
     </div>
   );
