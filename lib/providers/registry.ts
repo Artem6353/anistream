@@ -221,9 +221,10 @@ export async function resolveEpisodeSources(
   if (!options.liveOnly && ctx.animeId) {
     const fromDb = await dbEpisodeSources(ctx.animeId, ctx.episode);
     if (fromDb?.sources.length) {
-      /* Redis — hot cache, но он не должен скрывать новые озвучки, уже импортированные
-         в Supabase. Сливаем оба списка и оставляем только прямые источники в Redis;
-         template-based CVH/AniBoom остаются помеченными synthesized в ответе. */
+      /* Supabase is the source of truth for imported rows. Merge it with any
+         already-hydrated hot cache, but do not UPSERT rows that were just read back
+         from the same database: that creates write traffic on every player request.
+         Template-based CVH/AniBoom remain marked synthesized in the response. */
       const merged = dedupe([...(base?.sources ?? []), ...fromDb.sources]);
       base = {
         ...fromDb,
@@ -233,8 +234,6 @@ export async function resolveEpisodeSources(
         fromCache: Boolean(base),
         cachedAt: base?.cachedAt ?? Date.now(),
       };
-      /* cacheSet сам отфильтрует guessed/synthesized/demo и сохранит только direct URLs. */
-      void cacheSet(key, base).catch(() => {});
     }
   }
 
