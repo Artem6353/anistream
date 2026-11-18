@@ -26,31 +26,37 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
     dbEpisodeAvailability(title.anilistId, total),
   ]);
 
-  const cachedProvidersByEpisode = new Map<number, Set<string>>();
   const directEpisodes = new Set<number>();
+  const cachedTemplateMaxEpisodes: Record<string, number> = {};
   for (const entry of entries) {
-    const providers = cachedProvidersByEpisode.get(entry.episode) ?? new Set<string>();
     for (const source of entry.sources.sources) {
-      if (source.providerId !== 'demo') providers.add(source.providerId);
       if (isDirectProviderSource(source)) directEpisodes.add(entry.episode);
+      const maxEpisode = Number(source.episodesCount);
+      if (
+        (source.providerId === 'cvh' || source.providerId === 'aniboom') &&
+        Number.isInteger(maxEpisode) &&
+        maxEpisode > 0
+      ) {
+        cachedTemplateMaxEpisodes[source.providerId] = Math.max(
+          cachedTemplateMaxEpisodes[source.providerId] ?? 0,
+          maxEpisode,
+        );
+      }
     }
-    cachedProvidersByEpisode.set(entry.episode, providers);
   }
 
   // Supabase is the source of truth for imported episode URLs; Redis is only a hot cache.
   for (const episode of dbAvailability?.directEpisodes ?? []) directEpisodes.add(episode);
 
-  const cachedTemplate = [...cachedProvidersByEpisode.values()].some(
-    (providers) => providers.has('cvh') || providers.has('aniboom'),
-  );
-  const dbTemplate = (dbAvailability?.templateProviders ?? []).some(
-    (provider) => provider === 'cvh' || provider === 'aniboom',
-  );
-  const synthesizable = cachedTemplate || dbTemplate;
+  const templateMaxEpisodes = {
+    ...cachedTemplateMaxEpisodes,
+    ...(dbAvailability?.templateMaxEpisodes ?? {}),
+  };
+  const synthesizableThrough = Math.max(0, ...Object.values(templateMaxEpisodes));
   const episodes: Record<number, 'cache' | 'synth' | 'guess' | 'none'> = {};
   for (let ep = 1; ep <= total; ep++) {
     if (directEpisodes.has(ep)) episodes[ep] = 'cache';
-    else if (synthesizable) episodes[ep] = 'synth';
+    else if (ep <= synthesizableThrough) episodes[ep] = 'synth';
     else if (title.shikimori?.id) episodes[ep] = 'guess';
     else episodes[ep] = 'none';
   }
