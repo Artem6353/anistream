@@ -9,6 +9,7 @@ import { library, useLibrary } from '@/lib/library';
 import { trackEvent } from '@/lib/achievements';
 import { formatTime } from '@/lib/format';
 import { availabilityHint } from '@/lib/source-hints';
+import { nextPlayableSource } from '@/lib/player-source-fallback';
 import { Switch } from '@/components/ui/Switch';
 import { ReportForm } from './ReportForm';
 import { SourcesPanel, type SourceGroup } from './SourcesPanel';
@@ -231,6 +232,7 @@ export function PlayerShell({
 
   const keepTime = useRef(0);
   const switchingSrc = useRef(false);
+  const failedSourcesRef = useRef<{ key: string; ids: Set<string> }>({ key: '', ids: new Set() });
   const chooseSource = (id: string) => {
     trackEvent('voice');
     keepTime.current = videoRef.current?.currentTime ?? 0;
@@ -243,6 +245,32 @@ export function PlayerShell({
     } catch {}
   };
 
+  const failPlayback = useCallback((message: string) => {
+    if (failedSourcesRef.current.key !== dataKey) {
+      failedSourcesRef.current = { key: dataKey, ids: new Set() };
+    }
+    if (selected?.id) failedSourcesRef.current.ids.add(selected.id);
+
+    const next = nextPlayableSource(sources, selected?.id, failedSourcesRef.current.ids);
+    setPlaybackFailure({
+      key: dataKey,
+      message: next
+        ? `${message} Переключаемся на «${next.label}».`
+        : message,
+    });
+
+    if (!next) return;
+    keepTime.current = videoRef.current?.currentTime ?? 0;
+    switchingSrc.current = true;
+    setSelectedId(next.id);
+    setQuality('');
+    try {
+      localStorage.setItem(`anistream:lastsrc:${title.slug}`, next.id);
+    } catch {
+      /* localStorage may be disabled in private/restricted browsing modes. */
+    }
+  }, [dataKey, selected?.id, sources, title.slug]);
+
   /* видео-двивок */
   useEffect(() => {
     const video = videoRef.current;
@@ -253,7 +281,7 @@ export function PlayerShell({
         .then(({ default: Hls }) => {
           if (cancelled) return;
           if (!Hls.isSupported()) {
-            setPlaybackFailure({ key: dataKey, message: 'Этот браузер не поддерживает HLS. Выберите другой источник.' });
+            failPlayback('Этот браузер не поддерживает HLS.');
             return;
           }
           const hls = new Hls({ capLevelToPlayerSize: true });
@@ -262,14 +290,14 @@ export function PlayerShell({
           hls.attachMedia(video);
           hls.on(Hls.Events.ERROR, (_e, data) => {
             if (data.fatal && !cancelled) {
-              setPlaybackFailure({ key: dataKey, message: 'Не удалось загрузить видеопоток HLS. Попробуйте другую озвучку или источник.' });
+              failPlayback('Не удалось загрузить видеопоток HLS.');
               hls.destroy();
               if (hlsRef.current === hls) hlsRef.current = null;
             }
           });
         })
         .catch(() => {
-          if (!cancelled) setPlaybackFailure({ key: dataKey, message: 'Не удалось запустить HLS-плеер. Попробуйте другой источник.' });
+          if (!cancelled) failPlayback('Не удалось запустить HLS-плеер.');
         });
     } else {
       video.src = file.url;
@@ -285,7 +313,7 @@ export function PlayerShell({
       hlsRef.current?.destroy();
       hlsRef.current = null;
     };
-  }, [file, isEmbed]);
+  }, [file, isEmbed, failPlayback]);
 
   /* Аудит 30.09 (P2-23): таймер скрытия проверяет playing через ref — раньше
      контролы гасли через 3 с и НА ПАУЗЕ (poke не знал состояния). */
@@ -509,11 +537,12 @@ export function PlayerShell({
                 poster={title.banner ?? title.poster}
                 playsInline
                 onClick={() => (playing ? videoRef.current?.pause() : void videoRef.current?.play().catch(() => {}))}
-                onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
-                onError={() => {
-                  setPlaybackFailure({ key: dataKey, message: 'Браузер не смог воспроизвести этот файл. Попробуйте другой источник.' });
+                onPlay={() => {
+                  setPlaying(true);
+                  setPlaybackFailure(null);
                 }}
+                onPause={() => setPlaying(false)}
+                onError={() => failPlayback('Браузер не смог воспроизвести этот файл.')}
                 onTimeUpdate={(e) => {
                   const v = e.currentTarget;
                   setTime(v.currentTime);
@@ -533,6 +562,7 @@ export function PlayerShell({
                 }}
                 onLoadedMetadata={(e) => {
                   const v = e.currentTarget;
+                  setPlaybackFailure(null);
                   setDuration(v.duration);
                   v.playbackRate = rate;
                   /* Баннер «Продолжить» (итерация 3.6, задача 2): только нативные источники
@@ -598,8 +628,8 @@ export function PlayerShell({
                 <div className="player__status player__status--error" role="alert">
                   <span>{playbackError}</span>
                   {alternateSource ? (
-                    <button type="button" className="btn btn--primary btn--sm" onClick={() => chooseSource(alternateSource.id)}>
-                      Попробовать другой источник
+                    <button type="button" className="btn btn--primary btn--sm" onClick={() => failPlayback('Предыдущий источник не воспроизводится.')}>
+                      Попробовать следующий источник
                     </button>
                   ) : null}
                 </div>
