@@ -2544,11 +2544,19 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
   display: block;
   background: #000;
 }
-.player__embed-report {
+.player__embed-actions {
   position: absolute;
   right: 12px;
   bottom: 12px;
   z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.player__embed-report {
+  position: static;
   min-height: 36px;
   background: rgba(8, 10, 16, 0.82);
   border-color: rgba(255, 255, 255, 0.22);
@@ -2556,9 +2564,12 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
   backdrop-filter: blur(8px);
 }
 @media (max-width: 600px) {
-  .player__embed-report {
+  .player__embed-actions {
     right: 8px;
     bottom: 8px;
+    gap: 6px;
+  }
+  .player__embed-report {
     min-height: 32px;
     font-size: 11px;
   }
