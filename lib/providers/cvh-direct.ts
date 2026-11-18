@@ -26,7 +26,13 @@ interface CvhItem {
 }
 
 interface CvhPlaylist {
+  titleName?: string;
   items?: CvhItem[];
+}
+
+interface CvhPlaylistData {
+  titleName: string | null;
+  items: CvhItem[];
 }
 
 interface CvhVideo {
@@ -35,7 +41,7 @@ interface CvhVideo {
   sources?: Record<string, unknown>;
 }
 
-const playlistCache = new Map<string, { expiresAt: number; items: CvhItem[] }>();
+const playlistCache = new Map<string, { expiresAt: number; data: CvhPlaylistData }>();
 const videoCache = new Map<string, { expiresAt: number; video: CvhVideo | null }>();
 
 export function parseCvhEmbedUrl(value: string): CvhEmbed | null {
@@ -66,6 +72,32 @@ export function parseCvhEmbedUrl(value: string): CvhEmbed | null {
 
 export function normalizeCvhStudio(value: string | null | undefined): string {
   return (value ?? '').toLocaleLowerCase('ru').replace(/[^\p{L}\p{N}]+/gu, '');
+}
+
+/** Compare the provider's own media title with the catalogue title before trusting its streams. */
+export function cvhTitleMatches(
+  providerTitle: string | null | undefined,
+  expectedTitles: readonly string[],
+): boolean | null {
+  if (!providerTitle?.trim()) return null;
+  const actual = normalizeCvhStudio(providerTitle);
+  const expected = expectedTitles.map(normalizeCvhStudio).filter((value) => value.length >= 4);
+  if (!actual || !expected.length) return null;
+  return expected.some((value) =>
+    actual === value ||
+    (Math.min(actual.length, value.length) >= 5 && (actual.includes(value) || value.includes(actual))),
+  );
+}
+
+export async function cvhTitleMatchesEmbed(
+  embedUrl: string,
+  expectedTitles: readonly string[],
+): Promise<boolean | null> {
+  const target = parseCvhEmbedUrl(embedUrl);
+  if (!target) return false;
+  const playlist = await getPlaylist(target.id);
+  if (!playlist) return null;
+  return cvhTitleMatches(playlist.titleName, expectedTitles);
 }
 
 export function selectCvhPlaylistItem(
@@ -101,19 +133,22 @@ async function fetchJson<T>(url: string): Promise<T | null> {
   }
 }
 
-async function getPlaylist(id: string): Promise<CvhItem[] | null> {
+async function getPlaylist(id: string): Promise<CvhPlaylistData | null> {
   const cached = playlistCache.get(id);
-  if (cached && cached.expiresAt > Date.now()) return cached.items;
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
 
   const url = `${API_BASE}/playlist?pub=747&aggr=mali&id=${encodeURIComponent(id)}`;
-  const data = await fetchJson<CvhPlaylist>(url);
-  if (!data || !Array.isArray(data.items)) return null;
-  const items = data.items;
+  const response = await fetchJson<CvhPlaylist>(url);
+  if (!response || !Array.isArray(response.items)) return null;
+  const data = {
+    titleName: typeof response.titleName === 'string' ? response.titleName : null,
+    items: response.items,
+  };
   playlistCache.set(id, {
-    items,
-    expiresAt: Date.now() + (items.length ? PLAYLIST_TTL_MS : 30_000),
+    data,
+    expiresAt: Date.now() + (data.items.length ? PLAYLIST_TTL_MS : 30_000),
   });
-  return items;
+  return data;
 }
 
 async function getVideo(id: string): Promise<CvhVideo | null> {
@@ -127,11 +162,13 @@ async function getVideo(id: string): Promise<CvhVideo | null> {
 }
 
 /** Exact episode numbers available for this studio in the live CVH playlist. */
-export async function cvhAvailableEpisodes(embedUrl: string): Promise<number[] | null> {
+export async function cvhAvailableEpisodes(embedUrl: string, expectedTitles?: readonly string[]): Promise<number[] | null> {
   const target = parseCvhEmbedUrl(embedUrl);
   if (!target) return [];
-  const items = await getPlaylist(target.id);
-  if (!items) return null;
+  const playlist = await getPlaylist(target.id);
+  if (!playlist) return null;
+  if (expectedTitles?.length && cvhTitleMatches(playlist.titleName, expectedTitles) !== true) return [];
+  const items = playlist.items;
   const wanted = normalizeCvhStudio(target.studio);
   return [...new Set(items
     .filter((item) => Number(item.season ?? 1) === target.season)
@@ -164,14 +201,16 @@ const QUALITY_KEYS: Array<[string, string]> = [
 export async function resolveCvhDirectSource(
   source: EpisodeSource,
   episode: number,
+  expectedTitles?: readonly string[],
 ): Promise<EpisodeSource | null> {
   if (source.providerId !== 'cvh' || !source.embedUrl) return null;
   const target = parseCvhEmbedUrl(source.embedUrl);
   if (!target) return null;
 
-  const items = await getPlaylist(target.id);
-  if (!items) return null;
-  const item = selectCvhPlaylistItem(items, { ...target, episode });
+  const playlist = await getPlaylist(target.id);
+  if (!playlist) return null;
+  if (expectedTitles?.length && cvhTitleMatches(playlist.titleName, expectedTitles) !== true) return null;
+  const item = selectCvhPlaylistItem(playlist.items, { ...target, episode });
   if (!item?.vkId) return null;
 
   const video = await getVideo(item.vkId);
