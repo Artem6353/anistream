@@ -458,6 +458,7 @@ for (let i = 0; i < plan.length; i += ANILIST_CHUNK) {
   log(`  ${Math.min(i + ANILIST_CHUNK, plan.length)}/${plan.length} тайтлов · ${written} строк в БД · ${elapsed} с`);
 }
 
+cp.completed = syncRunIsComplete(plan.length, queue.length);
 saveCheckpoint(cp);
-log(`\nготово: обработано ${processed} тайтлов, записано ${written} строк за ${((Date.now() - started) / 1000).toFixed(0)} с`);
+log(`\nготово: обработано ${processed} тайтлов, записано ${written} строк за ${((Date.now() - started) / 1000).toFixed(0)} с · ${cp.completed ? 'проход завершён' : 'чекпоинт сохранён для продолжения'}`);
 report(titles);
