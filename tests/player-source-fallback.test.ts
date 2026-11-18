@@ -43,3 +43,19 @@ describe('automatic player source fallback', () => {
     expect(nextPlayableSource([only], only.id, new Set())).toBeNull();
   });
 });
+
+it('uses the same provider iframe as fallback after its direct stream fails', () => {
+  const direct = source('cvh:direct', { kind: 'file', files: [{ quality: 'auto', url: 'https://example.test/master.m3u8', type: 'hls' }] });
+  const kodik = source('kodik:other');
+  const iframe = source('cvh:iframe');
+  expect(nextPlayableSource([direct, kodik, iframe], direct.id, new Set([direct.id])))
+    .toBe(iframe);
+});
+
+it('prefers another native file source before switching to an iframe', () => {
+  const current = source('cvh:current', { kind: 'file', files: [{ quality: 'auto', url: 'https://example.test/current.m3u8', type: 'hls' }] });
+  const embed = source('cvh:embed');
+  const alternateFile = source('aniboom:direct', { kind: 'file', files: [{ quality: '720', url: 'https://example.test/720.mp4', type: 'mp4' }] });
+  expect(nextPlayableSource([current, embed, alternateFile], current.id, new Set([current.id])))
+    .toBe(alternateFile);
+});
