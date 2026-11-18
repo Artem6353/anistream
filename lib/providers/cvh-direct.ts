@@ -42,7 +42,9 @@ interface CvhVideo {
 }
 
 const playlistCache = new Map<string, { expiresAt: number; data: CvhPlaylistData }>();
+const playlistInFlight = new Map<string, Promise<CvhPlaylistData | null>>();
 const videoCache = new Map<string, { expiresAt: number; video: CvhVideo | null }>();
+const videoInFlight = new Map<string, Promise<CvhVideo | null>>();
 
 export function parseCvhEmbedUrl(value: string): CvhEmbed | null {
   try {
@@ -141,29 +143,49 @@ async function fetchJson<T>(url: string): Promise<T | null> {
 async function getPlaylist(id: string): Promise<CvhPlaylistData | null> {
   const cached = playlistCache.get(id);
   if (cached && cached.expiresAt > Date.now()) return cached.data;
+  const pending = playlistInFlight.get(id);
+  if (pending) return pending;
 
-  const url = `${API_BASE}/playlist?pub=747&aggr=mali&id=${encodeURIComponent(id)}`;
-  const response = await fetchJson<CvhPlaylist>(url);
-  if (!response || !Array.isArray(response.items)) return null;
-  const data = {
-    titleName: typeof response.titleName === 'string' ? response.titleName : null,
-    items: response.items,
-  };
-  playlistCache.set(id, {
-    data,
-    expiresAt: Date.now() + (data.items.length ? PLAYLIST_TTL_MS : 30_000),
-  });
-  return data;
+  const request = (async () => {
+    const url = `${API_BASE}/playlist?pub=747&aggr=mali&id=${encodeURIComponent(id)}`;
+    const response = await fetchJson<CvhPlaylist>(url);
+    if (!response || !Array.isArray(response.items)) return null;
+    const data = {
+      titleName: typeof response.titleName === 'string' ? response.titleName : null,
+      items: response.items,
+    };
+    playlistCache.set(id, {
+      data,
+      expiresAt: Date.now() + (data.items.length ? PLAYLIST_TTL_MS : 30_000),
+    });
+    return data;
+  })();
+  playlistInFlight.set(id, request);
+  try {
+    return await request;
+  } finally {
+    playlistInFlight.delete(id);
+  }
 }
 
 async function getVideo(id: string): Promise<CvhVideo | null> {
   const cached = videoCache.get(id);
   if (cached && cached.expiresAt > Date.now()) return cached.video;
+  const pending = videoInFlight.get(id);
+  if (pending) return pending;
 
-  const data = await fetchJson<CvhVideo>(`${API_BASE}/video/${encodeURIComponent(id)}`);
-  const video = data?.sources ? data : null;
-  videoCache.set(id, { video, expiresAt: Date.now() + (video ? VIDEO_TTL_MS : 30_000) });
-  return video;
+  const request = (async () => {
+    const data = await fetchJson<CvhVideo>(`${API_BASE}/video/${encodeURIComponent(id)}`);
+    const video = data?.sources ? data : null;
+    videoCache.set(id, { video, expiresAt: Date.now() + (video ? VIDEO_TTL_MS : 30_000) });
+    return video;
+  })();
+  videoInFlight.set(id, request);
+  try {
+    return await request;
+  } finally {
+    videoInFlight.delete(id);
+  }
 }
 
 /** Exact episode numbers available for this studio in the live CVH playlist. */
