@@ -207,7 +207,7 @@ export async function resolveEpisodeSources(
   const cacheUsable = Boolean(
     cached?.sources.length && (!ctx.preferFiles || cachedHasFiles),
   );
-  const base = cacheUsable ? cached : null;
+  let base = cacheUsable ? cached : null;
   const forceLive = Boolean(options.liveOnly || (ctx.preferFiles && !cacheUsable));
 
   if (base) metrics.cacheHit++;
@@ -218,15 +218,23 @@ export async function resolveEpisodeSources(
      а прямой резолв Kodik с дата-центр IP отвечает 401, поэтому достоверные данные
      только те, что заранее собрал воркер scripts/sync-sources.mjs.
      liveOnly (bulk-backfill) БД намеренно пропускает: ему нужны живые ответы. */
-  if (!base && !options.liveOnly && ctx.animeId) {
+  if (!options.liveOnly && ctx.animeId) {
     const fromDb = await dbEpisodeSources(ctx.animeId, ctx.episode);
     if (fromDb?.sources.length) {
-      /* Прогреваем горячий кэш, чтобы повторные запросы не ходили в БД.
-         cacheSet сам решает, куда писать: в проде — только Redis (TTL),
-         файловый бэкенд там отключён. Ошибку глотаем: кэш не должен ронять резолв. */
-      void cacheSet(key, fromDb).catch(() => {});
-      metricLatency(Date.now() - t0);
-      return withDemo({ ...fromDb, fromCache: true, cachedAt: Date.now() }, ctx);
+      /* Redis — hot cache, но он не должен скрывать новые озвучки, уже импортированные
+         в Supabase. Сливаем оба списка и оставляем только прямые источники в Redis;
+         template-based CVH/AniBoom остаются помеченными synthesized в ответе. */
+      const merged = dedupe([...(base?.sources ?? []), ...fromDb.sources]);
+      base = {
+        ...fromDb,
+        ...(base ?? {}),
+        sources: merged,
+        sourcesUsed: [...new Set(merged.filter(isDirectProviderSource).map((source) => source.providerId))],
+        fromCache: Boolean(base),
+        cachedAt: base?.cachedAt ?? Date.now(),
+      };
+      /* cacheSet сам отфильтрует guessed/synthesized/demo и сохранит только direct URLs. */
+      void cacheSet(key, base).catch(() => {});
     }
   }
 
