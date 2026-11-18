@@ -1,5 +1,5 @@
 import type { EpisodeSource, EpisodeSources } from '@/lib/providers/types';
-import { synthesizableEpisodeLimit } from '@/lib/providers/synthesize';
+import { rewriteAniboom, rewriteCvh, synthesizableEpisodeLimit } from '@/lib/providers/synthesize';
 import { normalizeProviderUrl } from '@/lib/providers/url';
 
 /**
