@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   normalizeCvhStudio,
   parseCvhEmbedUrl,
   selectCvhPlaylistItem,
+  resolveCvhDirectSource,
 } from '../lib/providers/cvh-direct';
 
 describe('CVH direct resolver parsing', () => {
@@ -32,5 +33,48 @@ describe('CVH direct resolver parsing', () => {
 
   it('does not invent an item when the studio is absent', () => {
     expect(selectCvhPlaylistItem([], { season: 1, episode: 1, studio: 'SHIZA Project' })).toBeNull();
+  });
+});
+
+describe('CVH direct stream resolution', () => {
+  it('returns adaptive HLS and available MP4 qualities for the exact voice', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        items: [
+          { vkId: 'cvh-wrong', voiceStudio: 'Anything Group', season: 1, episode: 26 },
+          { vkId: 'cvh-right', voiceStudio: 'SHIZA Project', season: 1, episode: 26 },
+        ],
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        sources: {
+          hlsUrl: 'https://video.example/master.m3u8',
+          mpegHighUrl: 'https://video.example/720.mp4',
+          mpegFullHdUrl: 'https://video.example/1080.mp4',
+          mpegMediumUrl: '',
+        },
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const result = await resolveCvhDirectSource({
+        id: 'cvh:shiza:26',
+        label: 'CVH · SHIZA Project',
+        providerId: 'cvh',
+        providerName: 'CVH (AnimeGo)',
+        kind: 'embed',
+        embedUrl: 'https://animego.me/cdn-iframe/98765/1/1?dubbing=SHIZA%20Project',
+        translationId: 'shiza',
+        voice: 'voice',
+      }, 26);
+
+      expect(result?.kind).toBe('file');
+      expect(result?.files).toEqual([
+        { quality: 'auto', url: 'https://video.example/master.m3u8', type: 'hls' },
+        { quality: '1080', url: 'https://video.example/1080.mp4', type: 'mp4' },
+        { quality: '720', url: 'https://video.example/720.mp4', type: 'mp4' },
+      ]);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
