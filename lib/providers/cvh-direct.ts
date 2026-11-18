@@ -94,7 +94,7 @@ export async function cvhTitleMatchesEmbed(
   expectedTitles: readonly string[],
 ): Promise<boolean | null> {
   const target = parseCvhEmbedUrl(embedUrl);
-  if (!target) return false;
+  if (!target) return null;
   const playlist = await getPlaylist(target.id);
   if (!playlist) return null;
   return cvhTitleMatches(playlist.titleName, expectedTitles);
