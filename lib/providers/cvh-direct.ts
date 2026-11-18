@@ -91,7 +91,7 @@ async function fetchJson<T>(url: string): Promise<T | null> {
   try {
     const response = await fetch(url, {
       headers: API_HEADERS,
-      signal: AbortSignal.timeout(4500),
+      signal: AbortSignal.timeout(2500),
       next: { revalidate: 300 },
     });
     if (!response.ok) return null;
