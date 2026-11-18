@@ -2544,6 +2544,25 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
   display: block;
   background: #000;
 }
+.player__embed-report {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 5;
+  min-height: 36px;
+  background: rgba(8, 10, 16, 0.82);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+@media (max-width: 600px) {
+  .player__embed-report {
+    right: 8px;
+    bottom: 8px;
+    min-height: 32px;
+    font-size: 11px;
+  }
+}
 .player__status {
   position: absolute;
   inset: 0;
