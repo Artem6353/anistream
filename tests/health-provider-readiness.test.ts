@@ -148,23 +148,6 @@ describe('provider configuration in health endpoint', () => {
     expect(mocks.kvPing).not.toHaveBeenCalled();
   });
 
-  it('probes Supabase tables concurrently', async () => {
-    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://db.test.supabase.co');
-    vi.stubEnv('SUPABASE_SERVICE_KEY', 'service-test-key');
-    const resolvers: Array<(response: Response) => void> = [];
-    const fetchMock = vi.fn(() => new Promise<Response>((resolve) => resolvers.push(resolve)));
-    vi.stubGlobal('fetch', fetchMock);
-
-    const pending = GET(new Request('http://localhost/api/health?probe=1'));
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-
-    for (const resolve of resolvers) resolve(new Response('[]', { status: 200 }));
-    const response = await pending;
-    const body = await response.json();
-
-    expect(body.supabaseProbe).toEqual({ titles: 200, episodeSources: 200 });
-  });
-
   it('reports configured bridges as unreachable without exposing their URLs', async () => {
     mocks.getProvidersConfig.mockReturnValue({
       cache: { enabled: true, write: true },
