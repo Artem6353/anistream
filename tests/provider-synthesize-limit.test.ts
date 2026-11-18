@@ -58,7 +58,11 @@ describe('cached provider template limits', () => {
   it('does not treat a missing episode count as unlimited', () => {
     const unknownLimit: EpisodeSources = {
       ...base,
-      sources: base.sources.map(({ episodesCount: _episodesCount, ...source }) => source),
+      sources: base.sources.map((source) => {
+        const copy = { ...source };
+        delete copy.episodesCount;
+        return copy;
+      }),
     };
     expect(synthesizeCachedEpisodeSources(unknownLimit, 2)).toEqual([]);
   });
