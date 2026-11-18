@@ -39,7 +39,7 @@ type UrlRow = {
 };
 
 type AvailabilityUrlRow = Pick<UrlRow, 'provider' | 'episode' | 'embed_url'>;
-type AvailabilitySourceRow = Pick<SourceRow, 'provider' | 'embed_url'>;
+type AvailabilitySourceRow = Pick<SourceRow, 'provider' | 'embed_url' | 'episodes_count'>;
 
 const PROVIDER_NAMES: Record<string, string> = {
   kodik: 'Kodik',
@@ -90,6 +90,12 @@ function rowToSource(row: SourceRow, episode: number, exactEpisodeUrl?: string |
     const template = normalizeEmbedUrl(row.embed_url);
     if (!template) return null;
 
+    // A provider template is safe only inside the episode range it explicitly reported.
+    // A missing/zero count is unknown, not unlimited. Exact per-episode URLs above
+    // remain usable regardless of this header metadata.
+    const episodesCount = Number(row.episodes_count);
+    if (!Number.isInteger(episodesCount) || episodesCount < 1 || episode > episodesCount) return null;
+
     // Kodik uses an individual /seria/<id>/<hash> URL for each episode.
     // A title-level URL is not a safe substitute for a missing episode URL.
     if (row.provider === 'kodik') return null;
@@ -117,6 +123,9 @@ function rowToSource(row: SourceRow, episode: number, exactEpisodeUrl?: string |
     kind: row.kind === 'file' ? 'file' : 'embed',
     embedUrl: url,
     translationId,
+    ...(Number.isInteger(Number(row.episodes_count)) && Number(row.episodes_count) > 0
+      ? { episodesCount: Number(row.episodes_count) }
+      : {}),
     voice: row.translation_type === 'sub' ? 'subtitles' : 'voice',
     ...(synthesized ? { synthesized: true } : {}),
   };
@@ -180,8 +189,9 @@ export async function dbEpisodeSources(animeId: number, episode: number): Promis
 export interface DbEpisodeAvailability {
   /** Episode numbers with an exact, non-empty URL in episode_source_urls. */
   directEpisodes: number[];
-  /** CVH/AniBoom have a stored episode URL template that can be rewritten. */
+  /** CVH/AniBoom templates, limited to the episode range reported by that provider. */
   templateProviders: string[];
+  templateMaxEpisodes: Record<string, number>;
 }
 
 /**
@@ -221,20 +231,27 @@ export async function dbEpisodeAvailability(animeId: number, maxEpisode?: number
   }
 
   const templates = await rest<AvailabilitySourceRow>(
-    `episode_sources?anime_id=eq.${animeId}&status=eq.ok&select=provider,embed_url&limit=200`,
+`episode_sources?anime_id=eq.${animeId}&status=eq.ok&select=provider,embed_url,episodes_count&limit=200`,
   );
   if (templates === null) return null;
 
-  const templateProviders = new Set<string>();
+  const templateMaxEpisodes: Record<string, number> = {};
   for (const row of templates) {
     const url = normalizeEmbedUrl(row.embed_url);
-    if (!url) continue;
-    if (row.provider === 'cvh' && rewriteCvh(url, 1)) templateProviders.add('cvh');
-    if (row.provider === 'aniboom' && rewriteAniboom(url, 1)) templateProviders.add('aniboom');
+    const maxEpisode = Number(row.episodes_count);
+    if (!url || !Number.isInteger(maxEpisode) || maxEpisode < 1) continue;
+    if (row.provider === 'cvh' && rewriteCvh(url, 1)) {
+      templateMaxEpisodes.cvh = Math.max(templateMaxEpisodes.cvh ?? 0, maxEpisode);
+    }
+    if (row.provider === 'aniboom' && rewriteAniboom(url, 1)) {
+      templateMaxEpisodes.aniboom = Math.max(templateMaxEpisodes.aniboom ?? 0, maxEpisode);
+    }
   }
+  const templateProviders = Object.keys(templateMaxEpisodes).sort();
 
   return {
     directEpisodes: [...directEpisodes].sort((a, b) => a - b),
-    templateProviders: [...templateProviders].sort(),
+    templateProviders,
+    templateMaxEpisodes,
   };
 }
