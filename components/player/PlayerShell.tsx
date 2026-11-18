@@ -477,9 +477,9 @@ export function PlayerShell({
     v.currentTime = seekRatio(clientX, el) * duration;
   };
 
-  const alternateSource =
-    sources.find((source) => source.id !== selected?.id && !source.guessed && !source.synthesized) ??
-    sources.find((source) => source.id !== selected?.id);
+  const failedSourceIds =
+    failedSourcesRef.current.key === dataKey ? failedSourcesRef.current.ids : new Set<string>();
+  const nextFallbackSource = nextPlayableSource(sources, selected?.id, failedSourceIds);
 
   const grouped: SourceGroup[] = PROVIDER_ORDER.map((pid) => ({
     pid,
@@ -522,13 +522,36 @@ export function PlayerShell({
 
         <div className={`player ${uiVisible || !playing ? 'is-ui' : ''} ${isEmbed ? 'is-iframe' : ''}`} ref={shellRef} onMouseMove={poke} onTouchStart={poke}>
           {isEmbed && selected?.embedUrl ? (
-            <iframe
-              className="player__iframe"
-              src={selected.embedUrl}
-              title={`Плеер: ${title.ru}, серия ${episode} (${selected.label})`}
-              allowFullScreen
-              allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-            />
+            <>
+              <iframe
+                className="player__iframe"
+                src={selected.embedUrl}
+                title={`Плеер: ${title.ru}, серия ${episode} (${selected.label})`}
+                allowFullScreen
+                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+              />
+              <div className="player__embed-actions">
+                {nextFallbackSource ? (
+                  <button
+                    type="button"
+                    className="btn btn--primary btn--sm"
+                    onClick={() => failPlayback('Источник не воспроизводится.')}
+                  >
+                    Следующая озвучка
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="player__embed-report btn btn--ghost btn--sm"
+                  onClick={() => setReportOpen(true)}
+                >
+                  Пожаловаться
+                </button>
+              </div>
+              {playbackError ? (
+                <div className="player__status player__status--error" role="alert">{playbackError}</div>
+              ) : null}
+            </>
           ) : (
             <>
               <video
@@ -627,8 +650,8 @@ export function PlayerShell({
               {playbackError ? (
                 <div className="player__status player__status--error" role="alert">
                   <span>{playbackError}</span>
-                  {alternateSource ? (
-                    <button type="button" className="btn btn--primary btn--sm" onClick={() => failPlayback('Предыдущий источник не воспроизводится.')}>
+                  {nextFallbackSource ? (
+                    <button type="button" className="btn btn--primary btn--sm" onClick={() => failPlayback('Текущий источник не воспроизводится.')}>
                       Попробовать следующий источник
                     </button>
                   ) : null}
