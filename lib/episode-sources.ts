@@ -17,7 +17,7 @@ const dbReady = () => Boolean(SUPA_URL && SUPA_KEY);
 /** Настроен ли Supabase — для веток, где файловый fallback недопустимо дорог. */
 export const episodeSourcesDbConfigured = dbReady;
 
-type SourceRow = {
+export type SourceRow = {
   anime_id: number;
   provider: string;
   translation_id: string;
@@ -83,7 +83,7 @@ export async function titleHasSources(title: { slug: string; anilistId: number }
   return (rows?.length ?? 0) > 0;
 }
 
-function rowToSource(row: SourceRow, episode: number, exactEpisodeUrl?: string | null): EpisodeSource | null {
+export function rowToSource(row: SourceRow, episode: number, exactEpisodeUrl?: string | null): EpisodeSource | null {
   let url = normalizeEmbedUrl(exactEpisodeUrl);
   let synthesized = false;
 
