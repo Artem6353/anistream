@@ -1,5 +1,5 @@
 import type { EpisodeSource, EpisodeSources } from '@/lib/providers/types';
-import { rewriteAniboom, rewriteCvh } from '@/lib/providers/synthesize';
+import { synthesizableEpisodeLimit } from '@/lib/providers/synthesize';
 import { normalizeProviderUrl } from '@/lib/providers/url';
 
 /**
@@ -238,13 +238,12 @@ export async function dbEpisodeAvailability(animeId: number, maxEpisode?: number
   const templateMaxEpisodes: Record<string, number> = {};
   for (const row of templates) {
     const url = normalizeEmbedUrl(row.embed_url);
-    const maxEpisode = Number(row.episodes_count);
-    if (!url || !Number.isInteger(maxEpisode) || maxEpisode < 1) continue;
-    if (row.provider === 'cvh' && rewriteCvh(url, 1)) {
-      templateMaxEpisodes.cvh = Math.max(templateMaxEpisodes.cvh ?? 0, maxEpisode);
-    }
-    if (row.provider === 'aniboom' && rewriteAniboom(url, 1)) {
-      templateMaxEpisodes.aniboom = Math.max(templateMaxEpisodes.aniboom ?? 0, maxEpisode);
+    const maxEpisode = synthesizableEpisodeLimit(row.provider, url, row.episodes_count);
+    if (maxEpisode > 0) {
+      templateMaxEpisodes[row.provider] = Math.max(
+        templateMaxEpisodes[row.provider] ?? 0,
+        maxEpisode,
+      );
     }
   }
   const templateProviders = Object.keys(templateMaxEpisodes).sort();
