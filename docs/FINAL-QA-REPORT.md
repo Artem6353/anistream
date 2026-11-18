@@ -34,11 +34,11 @@ QA_ALLOW_WRITES=1 node scripts/qa-e2e.mjs   # + round-trip флага hidden (н
 | 9 | `/img?…` повторный запрос | **OK** | `X-Vercel-Cache: HIT` |
 | 10 | `providerCache` в `/api/health` | **OK** | `backend=upstash`, `reachable=true`, `writesEnabled=true` |
 | 11 | Границы API | **OK** | `episode=0` и `episode=99999` → **400** с `maxEpisode:1180`; неизвестный slug → **404** |
-| 12 | Supabase: `titles` | **FAIL → FIXED (ждёт прогон)** | **0 строк** вместо ~8033 — каталог в БД отсутствовал, см. §4.1 |
+| 12 | Supabase: `titles` | **FIXED** | было **0 строк** → после `Sync titles` **8033** (§4.1, §4.2) |
 | 13 | Supabase: `episode_source_urls` | **OK** | **346 184** ссылки |
 | 14 | Supabase: `episode_sources` со `status='ok'` | **OK** | **29 633** шапки (прежний долг «0 строк» больше не воспроизводится) |
-| 15 | Сироты в `episode_source_urls` | **SKIP** | проверка бессмысленна при пустом `titles`, скрипт теперь честно помечает SKIP |
-| 16 | Round-trip `hidden` (PATCH → откат) | **SKIP** | требует заполненного `titles` + `allow_writes: true` |
+| 15 | Сироты в `episode_source_urls` | **OK** | 0 ссылок вне каталога, 0 `NULL`, 0 серий < 1 |
+| 16 | Round-trip `hidden` (PATCH → откат) | **OK** | `hidden=true` прочитано обратно, откат подтверждён (CI, `allow_writes: true`) |
 | 17 | GitHub Actions | **FIXED** | 5 падений были на старом коде; плюс 2 реальных бага в новом workflow — исправлены, см. §3 |
 | 18 | Мёртвый код / bridge в рантайме | **OK** | в `app/` и `lib/` нет импортов `bridges/` и `child_process`, см. §5 |
 | 19 | `NEXT_PUBLIC_SITE_URL` в абсолютных ссылках | **OK** | `metadataBase` из конфига; canonical/og:url на проде корректные, см. §6 |
@@ -145,13 +145,15 @@ dry-run теперь завершается секундами: локальна
 
 Цифры получены тем же скриптом в CI (секреты Supabase доступны только там).
 
+Итоговый прогон (workflow **QA end-to-end**, `allow_writes: true`): **16 OK / 0 FAIL / 0 SKIP**.
+
 | Проверка | Значение | Оценка |
 | --- | --- | --- |
-| `titles` | **0** | **дефект**: каталог в БД не заполнен, см. §4.1 |
+| `titles` | **8033** | совпадает с файловым каталогом; БД-каталог заполнен впервые после пересборки |
 | `episode_source_urls` | 346 184 | норма (порог «здоровья» > 300 000) |
 | `episode_sources` со `status='ok'` | 29 633 | **долг §2.13 закрыт** — шапки озвучек пишутся |
-| Сироты (`anime_id > max(titles.id)`, `NULL`, `episode < 1`) | n/a / 0 / 0 | при `max(titles.id) = 0` проверка вырождается → SKIP |
-| Round-trip `hidden` | SKIP | нужен заполненный `titles` и `allow_writes: true` |
+| Сироты (`anime_id > max(titles.id)`, `NULL`, `episode < 1`) | 0 / 0 / 0 | ссылки согласованы с каталогом |
+| Round-trip `hidden` (PATCH → чтение → откат) | OK | `hidden=true` прочитано обратно, откат подтверждён |
 
 ### 4.1 Дефект: `public.titles` пуст (FIXED)
 
@@ -229,8 +231,7 @@ Postgres не может дважды обновить одну строку в�
 
 ## 7. Что осталось за рамками (ручные действия)
 
-1. **Запустить `Sync titles to Supabase`** один раз (workflow_dispatch), затем повторить
-   `QA end-to-end` с `allow_writes: true` — закроет §4.1 и проверку `hidden`.
+1. ~~Запустить `Sync titles to Supabase`~~ — **сделано 2026-11-18**: 8033 тайтла в БД.
 2. **Применить миграцию** `supabase/migrations/20261118_db_storage_report.sql`
    (`supabase db push`) — без неё монитор размера БД работает в режиме оценки (`exact: false`).
 3. **`TG_CHAT_ID`** в секретах GitHub: `TG_BOT_TOKEN` есть, получателя нет — алерты не доходят.
@@ -251,3 +252,6 @@ Postgres не может дважды обновить одну строку в�
 | 2026-11-17 | `Hydrate` (dry_run) | 2 бага в readiness-гейте → исправлены (§3.1, §3.2) |
 | 2026-11-17 | `QA end-to-end` (CI, секреты) | 12 OK, 3 FAIL: пустой `titles`, вырожденные сироты, шумный `catalogMs` в холодном старте |
 | 2026-11-17 | После правок | `catalogMs` — минимум из двух замеров; сироты/`hidden` — честный SKIP при пустом `titles`; добавлен `sync-titles-db.yml` |
+| 2026-11-17 | `Sync titles to Supabase` | первый запуск упал на дублях связей (500) → фикс дедупликации (§4.2) |
+| 2026-11-18 | QA end-to-end (`allow_writes: true`) | **16 OK / 0 FAIL / 0 SKIP**: `titles 8033`, сироты 0, round-trip `hidden` OK |
+| 2026-11-18 | Hydrate (dry_run) | **success** — оба бага readiness-гейта закрыты |
