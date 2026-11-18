@@ -1,5 +1,6 @@
 import type { EpisodeSource, EpisodeSources } from '@/lib/providers/types';
 import { rewriteAniboom, rewriteCvh, synthesizableEpisodeLimit } from '@/lib/providers/synthesize';
+import { cvhAvailableEpisodes } from '@/lib/providers/cvh-direct';
 import { normalizeProviderUrl } from '@/lib/providers/url';
 
 /**
@@ -240,6 +241,20 @@ export async function dbEpisodeAvailability(animeId: number, maxEpisode?: number
 `episode_sources?anime_id=eq.${animeId}&status=eq.ok&select=provider,embed_url,episodes_count&limit=200`,
   );
   if (templates === null) return null;
+
+  // CVH's live playlist is more accurate than the sometimes stale episodes_count
+  // header: it lists exact season/episode/dubbing combinations for this media ID.
+  const cvhTemplates = templates.filter((row) => row.provider === 'cvh' && row.embed_url);
+  const cvhEpisodeLists = await Promise.all(
+    cvhTemplates.map((row) => cvhAvailableEpisodes(normalizeEmbedUrl(row.embed_url) ?? '')),
+  );
+  for (const available of cvhEpisodeLists) {
+    for (const episode of available) {
+      if (!Number.isFinite(maxEpisode) || !maxEpisode || episode <= (maxEpisode as number)) {
+        directEpisodes.add(episode);
+      }
+    }
+  }
 
   const templateMaxEpisodes: Record<string, number> = {};
   for (const row of templates) {
