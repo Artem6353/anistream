@@ -131,6 +131,9 @@ export function PlayerShell({
             s.providerId === settings.defaultProvider && !s.guessed && !s.synthesized,
           )
         : undefined) ??
+      // A freshly resolved native stream is preferred over an iframe when no
+      // explicit provider preference was saved.
+      sources.find((s) => s.providerId !== 'demo' && s.kind === 'file' && !s.guessed && !s.synthesized) ??
       // Не выбираем шаблон/подбор, пока существует хотя бы один подтверждённый URL.
       sources.find((s) => s.providerId !== 'demo' && !s.guessed && !s.synthesized) ??
       // Если прямых ссылок нет, оставляем доступный шаблон или подобранный URL последним fallback.
@@ -679,7 +682,7 @@ export function PlayerShell({
                   <div>
                     <p className="player__title">{selected ? `${selected.label} · ${selected.providerName}` : ''}</p>
                     <p className="player__subtitle">
-                      {file ? `${file.quality}p · ${file.type.toUpperCase()}` : ''}
+                      {file ? `${file.quality.toLowerCase() === 'auto' ? 'Авто' : `${file.quality}p`} · ${file.type.toUpperCase()}` : ''}
                       {selected?.guessed ? ' · URL подобран' : ''}
                     </p>
                   </div>
@@ -828,7 +831,7 @@ export function PlayerShell({
                       <div className="player__rates">
                         {files.map((f) => (
                           <button key={f.quality} className={`chip ${(!quality && f === files[0]) || quality === f.quality ? 'is-active' : ''}`} onClick={() => { setPlaybackFailure(null); setQuality(f.quality); }}>
-                            {f.quality}p{f.type === 'hls' ? ' · HLS' : ''}
+                            {f.quality.toLowerCase() === 'auto' ? 'Авто' : `${f.quality}p`}{f.type === 'hls' ? ' · HLS' : ''}
                           </button>
                         ))}
                       </div>
