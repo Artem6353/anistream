@@ -1,6 +1,6 @@
 import type { EpisodeSource, EpisodeSources } from '@/lib/providers/types';
 import { rewriteAniboom, rewriteCvh, synthesizableEpisodeLimit } from '@/lib/providers/synthesize';
-import { cvhAvailableEpisodes } from '@/lib/providers/cvh-direct';
+import { cvhAvailableEpisodes, cvhTitleMatchesEmbed } from '@/lib/providers/cvh-direct';
 import { normalizeProviderUrl } from '@/lib/providers/url';
 
 /**
@@ -39,8 +39,8 @@ type UrlRow = {
   status: string | null;
 };
 
-type AvailabilityUrlRow = Pick<UrlRow, 'provider' | 'episode' | 'embed_url'>;
-type AvailabilitySourceRow = Pick<SourceRow, 'provider' | 'embed_url' | 'episodes_count'>;
+type AvailabilityUrlRow = Pick<UrlRow, 'provider' | 'translation_id' | 'episode' | 'embed_url'>;
+type AvailabilitySourceRow = Pick<SourceRow, 'provider' | 'translation_id' | 'embed_url' | 'episodes_count'>;
 
 const PROVIDER_NAMES: Record<string, string> = {
   kodik: 'Kodik',
@@ -216,17 +216,17 @@ export interface DbEpisodeAvailability {
  * Bulk availability metadata for a title. This is deliberately read from Supabase,
  * not only from the Redis episode cache: imported rows must count even on a cold cache.
  */
-export async function dbEpisodeAvailability(animeId: number, maxEpisode?: number): Promise<DbEpisodeAvailability | null> {
+export async function dbEpisodeAvailability(animeId: number, maxEpisode?: number, expectedTitles?: readonly string[]): Promise<DbEpisodeAvailability | null> {
   if (!dbReady()) return null;
 
-  const directEpisodes = new Set<number>();
+  const directRows: AvailabilityUrlRow[] = [];
   const pageSize = 1000;
   const maxPages = 50;
 
   for (let page = 0; page < maxPages; page++) {
     const start = page * pageSize;
     const rows = await rest<AvailabilityUrlRow>(
-      `episode_source_urls?anime_id=eq.${animeId}&status=eq.ok&embed_url=not.is.null&select=provider,episode,embed_url&order=episode.asc&limit=${pageSize}`,
+      `episode_source_urls?anime_id=eq.${animeId}&status=eq.ok&embed_url=not.is.null&select=provider,translation_id,episode,embed_url&order=episode.asc&limit=${pageSize}`,
       [start, start + pageSize - 1],
     );
     // Do not report a partial result as complete if the database query failed.
@@ -240,7 +240,7 @@ export async function dbEpisodeAvailability(animeId: number, maxEpisode?: number
         (!Number.isFinite(maxEpisode) || !maxEpisode || episode <= (maxEpisode as number)) &&
         normalizeEmbedUrl(row.embed_url)
       ) {
-        directEpisodes.add(episode);
+        directRows.push(row);
       }
     }
 
@@ -249,18 +249,37 @@ export async function dbEpisodeAvailability(animeId: number, maxEpisode?: number
   }
 
   const templates = await rest<AvailabilitySourceRow>(
-`episode_sources?anime_id=eq.${animeId}&status=eq.ok&select=provider,embed_url,episodes_count&limit=200`,
+`episode_sources?anime_id=eq.${animeId}&status=eq.ok&select=provider,translation_id,embed_url,episodes_count&limit=200`,
   );
   if (templates === null) return null;
 
   // CVH's live playlist is more accurate than the sometimes stale episodes_count
   // header: it lists exact season/episode/dubbing combinations for this media ID.
   const cvhTemplates = templates.filter((row) => row.provider === 'cvh' && row.embed_url);
-  const cvhEpisodeLists = await Promise.all(
-    cvhTemplates.map((row) => cvhAvailableEpisodes(normalizeEmbedUrl(row.embed_url) ?? '')),
+  const cvhTitleResults = await Promise.all(
+    cvhTemplates.map((row) =>
+      cvhTitleMatchesEmbed(normalizeEmbedUrl(row.embed_url) ?? '', expectedTitles ?? []),
+    ),
   );
   // If the live CVH API failed, do not cache a partial availability map as complete.
+  if (cvhTitleResults.some((match) => match === null)) return null;
+  const mismatchedCvhTranslations = new Set(
+    cvhTemplates
+      .filter((_, index) => cvhTitleResults[index] === false)
+      .map((row) => row.translation_id),
+  );
+  const cvhEpisodeLists = await Promise.all(
+    cvhTemplates.map((row) =>
+      cvhAvailableEpisodes(normalizeEmbedUrl(row.embed_url) ?? '', expectedTitles),
+    ),
+  );
   if (cvhEpisodeLists.some((available) => available === null)) return null;
+
+  const directEpisodes = new Set<number>();
+  for (const row of directRows) {
+    if (row.provider === 'cvh' && mismatchedCvhTranslations.has(row.translation_id)) continue;
+    directEpisodes.add(Number(row.episode));
+  }
   for (const available of cvhEpisodeLists) {
     for (const episode of available ?? []) {
       if (!Number.isFinite(maxEpisode) || !maxEpisode || episode <= (maxEpisode as number)) {
@@ -271,6 +290,7 @@ export async function dbEpisodeAvailability(animeId: number, maxEpisode?: number
 
   const templateMaxEpisodes: Record<string, number> = {};
   for (const row of templates) {
+    if (row.provider === 'cvh' && mismatchedCvhTranslations.has(row.translation_id)) continue;
     const url = normalizeEmbedUrl(row.embed_url);
     const maxEpisode = synthesizableEpisodeLimit(row.provider, url, row.episodes_count);
     if (maxEpisode > 0) {
