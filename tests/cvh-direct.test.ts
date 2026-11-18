@@ -4,6 +4,7 @@ import {
   parseCvhEmbedUrl,
   selectCvhPlaylistItem,
   resolveCvhDirectSource,
+  cvhAvailableEpisodes,
 } from '../lib/providers/cvh-direct';
 
 describe('CVH direct resolver parsing', () => {
@@ -73,6 +74,39 @@ describe('CVH direct stream resolution', () => {
         { quality: '720', url: 'https://video.example/720.mp4', type: 'mp4' },
       ]);
       expect(fetchMock).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('CVH live episode availability', () => {
+  it('returns only episodes present for the selected studio and season', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({
+      items: [
+        { vkId: 'one', voiceStudio: 'SHIZA Project', season: 1, episode: 1 },
+        { vkId: 'two', voiceStudio: 'SHIZA Project', season: 1, episode: 2 },
+        { vkId: 'other', voiceStudio: 'Anything Group', season: 1, episode: 2 },
+        { vkId: 'season-two', voiceStudio: 'SHIZA Project', season: 2, episode: 1 },
+      ],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      await expect(cvhAvailableEpisodes(
+        'https://animego.me/cdn-iframe/98766/1/1?dubbing=SHIZA%20Project',
+      )).resolves.toEqual([1, 2]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('returns null rather than an empty result when the CVH API fails', async () => {
+    const fetchMock = vi.fn().mockRejectedValueOnce(new Error('network error'));
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      await expect(cvhAvailableEpisodes(
+        'https://animego.me/cdn-iframe/98767/1/1?dubbing=SHIZA%20Project',
+      )).resolves.toBeNull();
     } finally {
       vi.unstubAllGlobals();
     }
