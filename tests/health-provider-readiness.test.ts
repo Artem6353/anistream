@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   allTitles: vi.fn(),
@@ -35,6 +35,11 @@ vi.mock('@/lib/providers/bridge', () => ({
 import { GET } from '../app/api/health/route';
 
 describe('provider configuration in health endpoint', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.allTitles.mockReturnValue(Array.from({ length: 42 }, (_, i) => ({ slug: `title-${i}` })));
@@ -123,6 +128,41 @@ describe('provider configuration in health endpoint', () => {
       episodeCacheFormatVersion: 1,
       reachable: null,
     });
+  });
+
+  it('does not report Redis as reachable when Supabase is the active cache backend', async () => {
+    mocks.getProvidersConfig.mockReturnValue({
+      cache: { enabled: true, write: true, backend: 'db' },
+      bridges: {
+        kodik: { url: '', timeoutMs: 6000 },
+        multiplayer: { url: '', timeoutMs: 6000 },
+      },
+    });
+    mocks.kvEnabled.mockReturnValue(true);
+    mocks.kvPing.mockResolvedValue(true);
+
+    const response = await GET(new Request('http://localhost/api/health'));
+    const body = await response.json();
+
+    expect(body.providerCache).toMatchObject({ backend: 'db', reachable: null });
+    expect(mocks.kvPing).not.toHaveBeenCalled();
+  });
+
+  it('probes Supabase tables concurrently', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://db.test.supabase.co');
+    vi.stubEnv('SUPABASE_SERVICE_KEY', 'service-test-key');
+    const resolvers: Array<(response: Response) => void> = [];
+    const fetchMock = vi.fn(() => new Promise<Response>((resolve) => resolvers.push(resolve)));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pending = GET(new Request('http://localhost/api/health?probe=1'));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    for (const resolve of resolvers) resolve(new Response('[]', { status: 200 }));
+    const response = await pending;
+    const body = await response.json();
+
+    expect(body.supabaseProbe).toEqual({ titles: 200, episodeSources: 200 });
   });
 
   it('reports configured bridges as unreachable without exposing their URLs', async () => {
