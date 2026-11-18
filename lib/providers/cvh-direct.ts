@@ -75,18 +75,23 @@ export function normalizeCvhStudio(value: string | null | undefined): string {
 }
 
 /** Compare the provider's own media title with the catalogue title before trusting its streams. */
+function normalizeCvhTitle(value: string): string {
+  const withoutSeasonSuffix = value
+    .trim()
+    .replace(/\\s+(?:(?:season|сезон|part|часть)\\s*)?(?:[0-9]+|ii|iii|iv)$/i, '');
+  return normalizeCvhStudio(withoutSeasonSuffix);
+}
+
 export function cvhTitleMatches(
   providerTitle: string | null | undefined,
   expectedTitles: readonly string[],
 ): boolean | null {
   if (!providerTitle?.trim()) return null;
-  const actual = normalizeCvhStudio(providerTitle);
-  const expected = expectedTitles.map(normalizeCvhStudio).filter((value) => value.length >= 4);
+  const actual = normalizeCvhTitle(providerTitle);
+  const expected = expectedTitles.map(normalizeCvhTitle).filter((value) => value.length >= 4);
   if (!actual || !expected.length) return null;
-  return expected.some((value) =>
-    actual === value ||
-    (Math.min(actual.length, value.length) >= 5 && (actual.includes(value) || value.includes(actual))),
-  );
+  // Exact normalized identity only: substring matching can confuse Naruto with Naruto Shippuden.
+  return expected.includes(actual);
 }
 
 export async function cvhTitleMatchesEmbed(
