@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getTitle } from '@/lib/catalog';
 import { cacheEntriesForSlug, isDirectProviderSource } from '@/lib/providers/cache';
 import { releasedCountFor } from '@/lib/episode-data';
-import { titleHasSources } from '@/lib/episode-sources';
+import { dbEpisodeAvailability, titleHasSources } from '@/lib/episode-sources';
 
 /** Доступность серий: cache (прямой ответ провайдера) | synth (шаблон CVH/AniBoom)
  *  | guess (подбор пулом озвучек) | none.
@@ -20,22 +20,35 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   const title = getTitle(slug);
   if (!title) return NextResponse.json({ error: 'not found' }, { status: 404 });
   const total = (await releasedCountFor(title)) ?? 0;
-  const entries = await cacheEntriesForSlug(slug);
-  const byEp = new Map<number, string[]>();
-  for (const e of entries) {
-    byEp.set(
-      e.episode,
-      e.sources.sources.filter((s) => s.providerId !== 'demo').map((s) => s.providerId),
-    );
+  const [entries, dbAvailability] = await Promise.all([
+    cacheEntriesForSlug(slug),
+    dbEpisodeAvailability(title.anilistId, total),
+  ]);
+
+  const cachedProvidersByEpisode = new Map<number, Set<string>>();
+  const directEpisodes = new Set<number>();
+  for (const entry of entries) {
+    const providers = cachedProvidersByEpisode.get(entry.episode) ?? new Set<string>();
+    for (const source of entry.sources.sources) {
+      if (source.providerId !== 'demo') providers.add(source.providerId);
+      if (isDirectProviderSource(source)) directEpisodes.add(entry.episode);
+    }
+    cachedProvidersByEpisode.set(entry.episode, providers);
   }
-  const directByEp = new Map<number, boolean>();
-  for (const e of entries) {
-    if (e.sources.sources.some(isDirectProviderSource)) directByEp.set(e.episode, true);
-  }
-  const synthesizable = [...byEp.values()].some((provs) => provs.some((p) => p === 'cvh' || p === 'aniboom'));
+
+  // Supabase is the source of truth for imported episode URLs; Redis is only a hot cache.
+  for (const episode of dbAvailability?.directEpisodes ?? []) directEpisodes.add(episode);
+
+  const cachedTemplate = [...cachedProvidersByEpisode.values()].some(
+    (providers) => providers.has('cvh') || providers.has('aniboom'),
+  );
+  const dbTemplate = (dbAvailability?.templateProviders ?? []).some(
+    (provider) => provider === 'cvh' || provider === 'aniboom',
+  );
+  const synthesizable = cachedTemplate || dbTemplate;
   const episodes: Record<number, 'cache' | 'synth' | 'guess' | 'none'> = {};
   for (let ep = 1; ep <= total; ep++) {
-    if (directByEp.get(ep)) episodes[ep] = 'cache';
+    if (directEpisodes.has(ep)) episodes[ep] = 'cache';
     else if (synthesizable) episodes[ep] = 'synth';
     else if (title.shikimori?.id) episodes[ep] = 'guess';
     else episodes[ep] = 'none';
