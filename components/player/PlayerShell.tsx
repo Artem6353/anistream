@@ -89,6 +89,7 @@ export function PlayerShell({
   const [quality, setQuality] = useState('');
   const [playing, setPlaying] = useState(false);
   const [playbackFailure, setPlaybackFailure] = useState<{ key: string; message: string } | null>(null);
+  const [failedSourcesState, setFailedSourcesState] = useState<{ key: string; ids: string[] }>({ key: '', ids: [] });
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
@@ -251,7 +252,8 @@ export function PlayerShell({
     }
     if (selected?.id) failedSourcesRef.current.ids.add(selected.id);
 
-    const next = nextPlayableSource(sources, selected?.id, failedSourcesRef.current.ids);
+    setFailedSourcesState({ key: dataKey, ids: [...failedSourcesRef.current.ids] });
+    const next = nextPlayableSource(sources, selected?.id, new Set(failedSourcesRef.current.ids));
     setPlaybackFailure({
       key: dataKey,
       message: next
@@ -477,8 +479,9 @@ export function PlayerShell({
     v.currentTime = seekRatio(clientX, el) * duration;
   };
 
-  const failedSourceIds =
-    failedSourcesRef.current.key === dataKey ? failedSourcesRef.current.ids : new Set<string>();
+  const failedSourceIds = new Set(
+    failedSourcesState.key === dataKey ? failedSourcesState.ids : [],
+  );
   const nextFallbackSource = nextPlayableSource(sources, selected?.id, failedSourceIds);
 
   const grouped: SourceGroup[] = PROVIDER_ORDER.map((pid) => ({
