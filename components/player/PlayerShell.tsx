@@ -87,6 +87,7 @@ export function PlayerShell({
   const [sideTab, setSideTab] = useState<'episodes' | 'sources'>('sources');
   const [quality, setQuality] = useState('');
   const [playing, setPlaying] = useState(false);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
@@ -234,6 +235,7 @@ export function PlayerShell({
     keepTime.current = videoRef.current?.currentTime ?? 0;
     switchingSrc.current = true; // на loadedmetadata не показывать баннер — позицию вернёт restore
     setSelectedId(id);
+    setPlaybackError(null);
     setQuality('');
     try {
       localStorage.setItem(`anistream:lastsrc:${title.slug}`, id);
@@ -245,11 +247,13 @@ export function PlayerShell({
     const video = videoRef.current;
     if (!video || !file || isEmbed) return;
     let cancelled = false;
+    setPlaybackError(null);
     if (file.type === 'hls' && !video.canPlayType('application/x-mpegURL')) {
       void import('hls.js')
         .then(({ default: Hls }) => {
-          if (cancelled || !Hls.isSupported()) {
-            video.src = file.url;
+          if (cancelled) return;
+          if (!Hls.isSupported()) {
+            setPlaybackError('Этот браузер не поддерживает HLS. Выберите другой источник.');
             return;
           }
           const hls = new Hls({ capLevelToPlayerSize: true });
@@ -257,11 +261,15 @@ export function PlayerShell({
           hls.loadSource(file.url);
           hls.attachMedia(video);
           hls.on(Hls.Events.ERROR, (_e, data) => {
-            if (data.fatal) video.src = file.url;
+            if (data.fatal && !cancelled) {
+              setPlaybackError('Не удалось загрузить видеопоток HLS. Попробуйте другую озвучку или источник.');
+              hls.destroy();
+              if (hlsRef.current === hls) hlsRef.current = null;
+            }
           });
         })
         .catch(() => {
-          if (!cancelled) video.src = file.url;
+          if (!cancelled) setPlaybackError('Не удалось запустить HLS-плеер. Попробуйте другой источник.');
         });
     } else {
       video.src = file.url;
@@ -441,6 +449,10 @@ export function PlayerShell({
     v.currentTime = seekRatio(clientX, el) * duration;
   };
 
+  const alternateSource =
+    sources.find((source) => source.id !== selected?.id && !source.guessed && !source.synthesized) ??
+    sources.find((source) => source.id !== selected?.id);
+
   const grouped: SourceGroup[] = PROVIDER_ORDER.map((pid) => ({
     pid,
     name: PROVIDER_NAMES[pid] ?? pid,
@@ -499,6 +511,9 @@ export function PlayerShell({
                 onClick={() => (playing ? videoRef.current?.pause() : void videoRef.current?.play().catch(() => {}))}
                 onPlay={() => setPlaying(true)}
                 onPause={() => setPlaying(false)}
+                onError={() => {
+                  setPlaybackError('Браузер не смог воспроизвести этот файл. Попробуйте другой источник.');
+                }}
                 onTimeUpdate={(e) => {
                   const v = e.currentTarget;
                   setTime(v.currentTime);
@@ -579,6 +594,16 @@ export function PlayerShell({
               ) : null}
               {dataStatus === 'loading' ? <div className="player__status">Собираем источники…</div> : null}
               {dataStatus === 'error' ? <div className="player__status player__status--error">Источники недоступны: {data.message}</div> : null}
+              {playbackError ? (
+                <div className="player__status player__status--error" role="alert">
+                  <span>{playbackError}</span>
+                  {alternateSource ? (
+                    <button type="button" className="btn btn--primary btn--sm" onClick={() => chooseSource(alternateSource.id)}>
+                      Попробовать другой источник
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
               {nextIn !== null && nextEpisode ? (
                 <div className="player__next" role="dialog" aria-label="Следующая серия">
                   <p className="player__next-title">Следующая серия через {nextIn} с</p>
