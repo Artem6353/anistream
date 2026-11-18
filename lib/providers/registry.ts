@@ -343,7 +343,13 @@ async function withCvhDirectSources(
 
   // Signed CVH URLs are short-lived and IP-sensitive: expose them to this player
   // response only. cacheSet above persists the stable iframe template, never these URLs.
-  const sources = dedupe([...direct, ...result.sources]);
+  const directBaseIds = new Set(direct.map((source) => source.id.replace(/:direct$/, '')));
+  const fallbacks = result.sources.map((source) =>
+    directBaseIds.has(source.id) && source.kind === 'embed'
+      ? { ...source, label: `${source.label} · iframe` }
+      : source,
+  );
+  const sources = dedupe([...direct, ...fallbacks]);
   return {
     ...result,
     sources,
