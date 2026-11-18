@@ -20,7 +20,7 @@ describe('automatic player source fallback', () => {
     const exact = source('kodik:exact');
     const synthesized = source('cvh:synth', { synthesized: true });
     expect(nextPlayableSource([guessed, synthesized, exact], 'kodik:failed', new Set()))
-      .toBe(guessed === exact ? guessed : exact);
+      .toBe(exact);
   });
 
   it('does not retry sources that already failed in the current episode', () => {
