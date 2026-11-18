@@ -3,6 +3,7 @@ import { getTitle } from '@/lib/catalog';
 import { cacheEntriesForSlug, isDirectProviderSource } from '@/lib/providers/cache';
 import { releasedCountFor } from '@/lib/episode-data';
 import { dbEpisodeAvailability, titleHasSources } from '@/lib/episode-sources';
+import { availabilityCacheControl } from '@/lib/availability-cache';
 
 /** Доступность серий: cache (прямой ответ провайдера) | synth (шаблон CVH/AniBoom)
  *  | guess (подбор пулом озвучек) | none.
@@ -60,6 +61,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
      s-maxage+SWR — CDN кэширует по полному URL (ключ = набор слагов). */
   return NextResponse.json(
     { slug, episodes, verified, total },
-    { headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=60' } },
+    { headers: { 'Cache-Control': availabilityCacheControl(dbAvailability !== null) } },
   );
 }
