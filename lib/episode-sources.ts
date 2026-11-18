@@ -256,11 +256,13 @@ export async function dbEpisodeAvailability(animeId: number, maxEpisode?: number
   // CVH's live playlist is more accurate than the sometimes stale episodes_count
   // header: it lists exact season/episode/dubbing combinations for this media ID.
   const cvhTemplates = templates.filter((row) => row.provider === 'cvh' && row.embed_url);
-  const cvhTitleResults = await Promise.all(
-    cvhTemplates.map((row) =>
-      cvhTitleMatchesEmbed(normalizeEmbedUrl(row.embed_url) ?? '', expectedTitles ?? []),
-    ),
-  );
+  const cvhTitleResults = expectedTitles?.length
+    ? await Promise.all(
+        cvhTemplates.map((row) =>
+          cvhTitleMatchesEmbed(normalizeEmbedUrl(row.embed_url) ?? '', expectedTitles),
+        ),
+      )
+    : cvhTemplates.map(() => true);
   // If the live CVH API failed, do not cache a partial availability map as complete.
   if (cvhTitleResults.some((match) => match === null)) return null;
   const mismatchedCvhTranslations = new Set(
