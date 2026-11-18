@@ -4,7 +4,7 @@ import { cacheGet, cacheSet, cacheKey, isDirectProviderSource } from './cache';
 import { providerLabel } from './bridge';
 import { resolveKodik } from './providers/kodik';
 import { resolveCvh } from './providers/cvh';
-import { resolveCvhDirectSource } from './cvh-direct';
+import { cvhTitleMatchesEmbed, resolveCvhDirectSource } from './cvh-direct';
 import { resolveAniboom } from './providers/aniboom';
 import { demoSources, DEMO_SKIP } from './providers/demo';
 import { synthesizeEpisode } from './synthesize';
@@ -335,16 +335,29 @@ async function withCvhDirectSources(
     .slice(0, 4);
   if (!templates.length) return result;
 
+  const expectedTitles = [ctx.title, ctx.originalTitle, ctx.slug];
+  const titleMatches = await Promise.all(
+    templates.map((source) => cvhTitleMatchesEmbed(source.embedUrl!, expectedTitles)),
+  );
+  const mismatchedIds = new Set(
+    templates.filter((_, index) => titleMatches[index] === false).map((source) => source.id),
+  );
+  const trustedTemplates = templates.filter((_, index) => titleMatches[index] !== false);
   const resolved = await Promise.all(
-    templates.map((source) => resolveCvhDirectSource(source, ctx.episode).catch(() => null)),
+    trustedTemplates.map((source) =>
+      resolveCvhDirectSource(source, ctx.episode, expectedTitles).catch(() => null),
+    ),
   );
   const direct = resolved.filter((source): source is EpisodeSource => source !== null);
-  if (!direct.length) return result;
 
-  // Signed CVH URLs are short-lived and IP-sensitive: expose them to this player
-  // response only. cacheSet above persists the stable iframe template, never these URLs.
+  // Never expose a CVH ID whose own playlist names a different anime.
+  const safeBaseSources = result.sources.filter((source) => !mismatchedIds.has(source.id));
+  if (!direct.length && safeBaseSources.length === result.sources.length) return result;
+
+  // Signed CVH URLs are short-lived: expose them to this response only.
+  // cacheSet above persists stable iframe templates, never these stream URLs.
   const directBaseIds = new Set(direct.map((source) => source.id.replace(/:direct$/, '')));
-  const fallbacks = result.sources.map((source) =>
+  const fallbacks = safeBaseSources.map((source) =>
     directBaseIds.has(source.id) && source.kind === 'embed'
       ? { ...source, label: `${source.label} · iframe` }
       : source,
