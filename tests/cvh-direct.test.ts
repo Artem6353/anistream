@@ -129,3 +129,22 @@ describe('CVH title identity guard', () => {
     expect(cvhTitleMatches(null, ['Мастер муси', 'Mushishi'])).toBeNull();
   });
 });
+
+it('deduplicates concurrent requests for the same CVH playlist ID', async () => {
+  const fetchMock = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({
+    titleName: 'Мастер муси',
+    items: [{ vkId: 'ep1', voiceStudio: 'SHIZA Project', season: 1, episode: 1 }],
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+  vi.stubGlobal('fetch', fetchMock);
+  try {
+    const url = 'https://animego.me/cdn-iframe/98768/1/1?dubbing=SHIZA%20Project';
+    const results = await Promise.all([
+      cvhAvailableEpisodes(url, ['Мастер муси']),
+      cvhAvailableEpisodes(url, ['Мастер муси']),
+    ]);
+    expect(results).toEqual([[1], [1]]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
