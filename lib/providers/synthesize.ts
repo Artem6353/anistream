@@ -48,10 +48,12 @@ export function rewriteAniboom(url: string, episode: number): string | null {
   }
 }
 
-const synthFrom = (base: EpisodeSources, episode: number): EpisodeSource[] => {
+/** Rewrites only templates whose provider-reported episode range includes the target. */
+export function synthesizeCachedEpisodeSources(base: EpisodeSources, episode: number): EpisodeSource[] {
   const out: EpisodeSource[] = [];
   for (const s of base.sources) {
-    if (!s.embedUrl) continue;
+    const maxEpisode = Number(s.episodesCount);
+    if (!s.embedUrl || !Number.isInteger(maxEpisode) || maxEpisode < 1 || episode > maxEpisode) continue;
     let url: string | null = null;
     if (s.providerId === 'cvh') url = rewriteCvh(s.embedUrl, episode);
     else if (s.providerId === 'aniboom') url = rewriteAniboom(s.embedUrl, episode);
@@ -59,7 +61,7 @@ const synthFrom = (base: EpisodeSources, episode: number): EpisodeSource[] => {
     out.push({ ...s, id: `${s.id}:s${episode}`, embedUrl: url, synthesized: true });
   }
   return out;
-};
+}
 
 export async function synthesizeEpisode(ctx: ProviderContext): Promise<EpisodeSources | null> {
   /* 1) шаблон из episode-1 или любой ДРУГОЙ кэшированной серии с синтезируемыми URL */
@@ -69,7 +71,7 @@ export async function synthesizeEpisode(ctx: ProviderContext): Promise<EpisodeSo
   ];
   for (const base of candidates) {
     if (!base?.sources?.length) continue;
-    const sources = synthFrom(base, ctx.episode);
+    const sources = synthesizeCachedEpisodeSources(base, ctx.episode);
     if (sources.length) {
       return { sources, sourcesUsed: [...new Set(sources.map((s) => s.providerId))].sort(), fromCache: false };
     }
