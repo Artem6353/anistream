@@ -125,7 +125,8 @@ describe('ветка «источники из БД» (мок-fetch)', () => {
     // Нет точной per-episode строки для озвучки 609: общий URL тайтла нельзя
     // выдавать за URL выбранной серии, иначе плеер может открыть не тот эпизод.
     expect(kodik.some((s) => s.translationId === '609')).toBe(false);
-    expect(body.fromCache).toBe(true);
+    // Источник получен из Supabase, а не из Redis hot-cache.
+    expect(body.fromCache).toBe(false);
   });
 
   it('ходит в PostgREST с anime_id и номером серии', () => {
