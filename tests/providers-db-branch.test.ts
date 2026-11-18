@@ -108,7 +108,7 @@ describe('ветка «источники из БД» (мок-fetch)', () => {
     fetchMock.mockImplementation(defaultFetchImpl);
   });
 
-  it('отдаёт строки episode_sources/episode_source_urls как JSON 200', async () => {
+  it('отдаёт только точные URL серий из episode_source_urls как JSON 200', async () => {
     const res = await GET(req(), params);
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('application/json');
@@ -117,14 +117,14 @@ describe('ветка «источники из БД» (мок-fetch)', () => {
       fromCache?: boolean;
     };
     const kodik = body.sources.filter((s) => s.providerId === 'kodik');
-    expect(kodik).toHaveLength(2);
+    expect(kodik).toHaveLength(1);
     /* Per-episode embed из episode_source_urls побеждает общий embed тайтла. */
     expect(kodik.find((s) => s.translationId === '610')?.embedUrl).toBe(
       'https://kodikplayer.com/serial/556839/1abc',
     );
-    expect(kodik.find((s) => s.translationId === '609')?.embedUrl).toBe(
-      'https://kodikplayer.com/serial/556840/1',
-    );
+    // Нет точной per-episode строки для озвучки 609: общий URL тайтла нельзя
+    // выдавать за URL выбранной серии, иначе плеер может открыть не тот эпизод.
+    expect(kodik.some((s) => s.translationId === '609')).toBe(false);
     expect(body.fromCache).toBe(true);
   });
 
