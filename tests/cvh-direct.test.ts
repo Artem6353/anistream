@@ -5,6 +5,7 @@ import {
   selectCvhPlaylistItem,
   resolveCvhDirectSource,
   cvhAvailableEpisodes,
+  cvhTitleMatches,
 } from '../lib/providers/cvh-direct';
 
 describe('CVH direct resolver parsing', () => {
@@ -110,5 +111,21 @@ describe('CVH live episode availability', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+describe('CVH title identity guard', () => {
+  it('accepts Russian and original-title matches', () => {
+    expect(cvhTitleMatches('Мастер муси', ['Мастер муси', 'Mushishi'])).toBe(true);
+    expect(cvhTitleMatches('Магическая битва', ['Магическая битва', 'Jujutsu Kaisen'])).toBe(true);
+  });
+
+  it('rejects a CVH media ID that points to a different anime', () => {
+    expect(cvhTitleMatches('Смертельный парад', ['Тетрадь смерти', 'Death Note', 'death-note']))
+      .toBe(false);
+  });
+
+  it('does not claim a match when the provider did not return a title', () => {
+    expect(cvhTitleMatches(null, ['Мастер муси', 'Mushishi'])).toBeNull();
   });
 });
