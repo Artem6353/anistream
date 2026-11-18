@@ -269,7 +269,7 @@ export function PlayerShell({
     } catch {
       /* localStorage may be disabled in private/restricted browsing modes. */
     }
-  }, [dataKey, selected?.id, sources, title.slug]);
+  }, [dataKey, selected, sources, title.slug]);
 
   /* видео-двивок */
   useEffect(() => {
