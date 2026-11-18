@@ -143,20 +143,19 @@ export function SiteHeader() {
             )}
             <DmIcon />
             {!logged ? (
-              <button
-                type="button"
-                className="btn btn--outline btn--md header__login"
-                onClick={() => window.dispatchEvent(new CustomEvent('anistream:open-auth'))}
-              >
+              /* Вход — отдельная страница /auth: сессия живёт в cookie, поэтому её видят
+                 server components и middleware (защита /profile). Модалка осталась для
+                 auth-gate («лайк без входа»), но канонический путь — ссылка. */
+              <Link className="btn btn--outline btn--md header__login" href="/auth">
                 Войти
-              </button>
+              </Link>
             ) : (
-              <Link className="header__avatar" href="/profile/settings" aria-label="Профиль" title="Профиль">
+              <Link className="header__avatar" href="/profile" aria-label="Профиль" title="Профиль">
                 {/* Аватар из Supabase Storage — произвольный host вне remotePatterns
                     next/image; маленький (28px), lazy не критичен. Осознанный <img>. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{initials}</span>}
-                <span className="sr-only">Профиль и настройки</span>
+                <span className="sr-only">Профиль</span>
               </Link>
             )}
             <div className="theme-switch">

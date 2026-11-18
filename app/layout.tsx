@@ -1,10 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import './ds.css';
+import './dash.css';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { Footer } from '@/components/layout/Footer';
 import { Toaster } from '@/components/ui/Toaster';
 import { ThemeInit } from '@/components/system/ThemeInit';
+import { SessionBridge } from '@/components/auth/SessionBridge';
 import { getProvidersConfig } from '@/lib/config/providers.config';
 import { SwRegister } from '@/components/system/SwRegister';
 import dynamic from 'next/dynamic';
@@ -90,6 +93,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <I18nProvider>
         <ThemeInit />
+        <SessionBridge />
         <SwRegister />
         <TvMode />
         <Toaster>

@@ -9,8 +9,9 @@ import { clientIp } from '@/lib/ip';
    Правило редиректа вынесено в edge-safe '@/lib/genre-redirect' (только
    lib/labels); регрессия закрыта тестом tests/edge-import-guard.test.ts. */
 import { genreRedirectTarget } from '@/lib/genre-redirect';
+import { isProtectedPath, refreshSupabaseSession, safeNextPath } from '@/lib/supabase/middleware';
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   /* Каноникализация хоста при переезде (SEO-микс Vercel+Netlify): если задан
@@ -42,6 +43,29 @@ export function proxy(request: NextRequest) {
       url.search = '';
       return NextResponse.redirect(url, 308);
     }
+  }
+
+  /* Supabase Auth (редизайн, блок «вход/профиль»): сессия живёт в cookies, поэтому
+     обновляем её здесь — serverless-инстанс не держит таймеров, и без этого
+     access_token истекал молча, а серверный рендер видел «гостя».
+     Заодно закрываем личный кабинет: /profile/* (кроме публичных /profile/<username>). */
+  if (path === '/auth' || isProtectedPath(path)) {
+    const { response: authResponse, user } = await refreshSupabaseSession(request);
+    if (isProtectedPath(path) && !user) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/auth';
+      url.search = '';
+      const next = path + (request.nextUrl.search || '');
+      url.searchParams.set('next', safeNextPath(next));
+      return NextResponse.redirect(url);
+    }
+    if (path === '/auth' && user) {
+      const url = request.nextUrl.clone();
+      url.pathname = safeNextPath(request.nextUrl.searchParams.get('next'));
+      url.search = '';
+      return NextResponse.redirect(url);
+    }
+    return authResponse;
   }
 
   const rule = LIMITS.find((r) => path.startsWith(r.prefix));
@@ -94,4 +118,4 @@ function serviceTokenValid(request: NextRequest): boolean {
   return constantTimeEqual(provided, expected);
 }
 
-export const config = { matcher: ['/api/:path*', '/genre/:path*'] };
+export const config = { matcher: ['/api/:path*', '/genre/:path*', '/profile/:path*', '/profile', '/auth'] };

@@ -45,7 +45,47 @@ function lsGet(key: string): string | null {
 }
 
 export function getToken(): string | null {
-  return lsGet(LS_TOKEN);
+  return mirrored?.access ?? lsGet(LS_TOKEN);
+}
+
+/**
+ * Сессия из нового входа (`/auth`, cookie-хранилище @supabase/ssr).
+ *
+ * Почему только в памяти: access/refresh-токены в localStorage читаются любым
+ * XSS-скриптом (CodeQL: js/clear-text-storage-of-sensitive-data). Cookie-сессию
+ * SDK восстанавливает сам при загрузке, поэтому дублировать секреты на диск
+ * незачем — здесь достаточно копии на время жизни таба.
+ */
+let mirrored: { access: string; refresh?: string; expiresAt: number | null } | null = null;
+
+export interface MirrorableSession {
+  access_token: string;
+  refresh_token?: string;
+  expires_at?: number | null;
+  expires_in?: number;
+}
+
+/** Кладёт сессию SDK в память (и стирает старые токены из localStorage). */
+export function setMirroredSession(session: MirrorableSession | null): void {
+  if (!session?.access_token) {
+    mirrored = null;
+    return;
+  }
+  const expiresAt = session.expires_at
+    ? session.expires_at * 1000
+    : typeof session.expires_in === 'number'
+      ? Date.now() + session.expires_in * 1000
+      : null;
+  mirrored = { access: session.access_token, refresh: session.refresh_token, expiresAt };
+}
+
+export function getMirroredSession(): MirrorableSession | null {
+  if (!mirrored) return null;
+  return {
+    access_token: mirrored.access,
+    refresh_token: mirrored.refresh,
+    expires_at: mirrored.expiresAt === null ? null : Math.floor(mirrored.expiresAt / 1000),
+  };
 }
 
 /**
@@ -53,6 +93,9 @@ export function getToken(): string | null {
  * Без ключа expires (старая сессия до миграции) считаем валидным — 401 добьёт refresh.
  */
 export function isSessionValid(): boolean {
+  if (mirrored) {
+    return !mirrored.expiresAt || Date.now() < mirrored.expiresAt;
+  }
   const token = lsGet(LS_TOKEN);
   if (!token) return false;
   const exp = Number(lsGet(LS_EXPIRES) ?? 0);
@@ -89,6 +132,7 @@ export function saveToken(token: string) {
 
 /** Логаут: удаляет ВСЕ три ключа + кэши профиля (баг 5: аватар не должен переживать выход). */
 export function clearToken() {
+  mirrored = null;
   try {
     localStorage.removeItem(LS_TOKEN);
     localStorage.removeItem(LS_REFRESH);
@@ -108,7 +152,7 @@ export function clearToken() {
  * Ошибка (400/401/сеть) — очищает токены и возвращает null.
  */
 export async function refreshAccessToken(): Promise<string | null> {
-  const refresh = lsGet(LS_REFRESH);
+  const refresh = mirrored?.refresh ?? lsGet(LS_REFRESH);
   if (!refresh) return null;
   try {
     const r = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=refresh_token`, {
@@ -125,7 +169,9 @@ export async function refreshAccessToken(): Promise<string | null> {
       clearToken();
       return null;
     }
-    saveTokens(j);
+    // Сессию из cookie-входа обновляем в памяти: писать токены в localStorage нельзя.
+    if (mirrored) setMirroredSession(j);
+    else saveTokens(j);
     return j.access_token;
   } catch {
     return null;
@@ -151,7 +197,7 @@ export const signIn = (email: string, password: string) => auth('token?grant_typ
 /** Гарантирует живой access_token: превентивный refresh, если до истечения < 60 с. */
 async function ensureFresh(): Promise<string> {
   let token = getToken();
-  const exp = Number(lsGet(LS_EXPIRES) ?? 0);
+  const exp = mirrored?.expiresAt ?? Number(lsGet(LS_EXPIRES) ?? 0);
   if (token && exp && Date.now() > exp - 60_000) {
     token = await refreshAccessToken();
     if (!token) throw new SessionExpiredError();

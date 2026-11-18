@@ -32,7 +32,7 @@ describe('proxy: лимит для сервисной гидрации', () => {
     vi.stubEnv('BACKFILL_TOKEN', TOKEN);
     const proxy = await freshProxy();
     let blocked = 0;
-    for (let i = 0; i < 70; i++) if (proxy(req()).status === 429) blocked++;
+    for (let i = 0; i < 70; i++) if ((await proxy(req()))?.status === 429) blocked++;
     expect(blocked).toBe(10);
   });
 
@@ -41,7 +41,7 @@ describe('proxy: лимит для сервисной гидрации', () => {
     const proxy = await freshProxy();
     let blocked = 0;
     for (let i = 0; i < 200; i++) {
-      if (proxy(req(undefined, { 'x-backfill-token': TOKEN })).status === 429) blocked++;
+      if ((await proxy(req(undefined, { 'x-backfill-token': TOKEN })))?.status === 429) blocked++;
     }
     expect(blocked).toBe(0);
   });
@@ -51,7 +51,7 @@ describe('proxy: лимит для сервисной гидрации', () => {
     const proxy = await freshProxy();
     let blocked = 0;
     for (let i = 0; i < 70; i++) {
-      if (proxy(req(undefined, { 'x-backfill-token': 'wrong' })).status === 429) blocked++;
+      if ((await proxy(req(undefined, { 'x-backfill-token': 'wrong' })))?.status === 429) blocked++;
     }
     expect(blocked).toBe(10);
   });
@@ -61,7 +61,7 @@ describe('proxy: лимит для сервисной гидрации', () => {
     const proxy = await freshProxy();
     let blocked = 0;
     for (let i = 0; i < 70; i++) {
-      if (proxy(req(undefined, { 'x-backfill-token': '' })).status === 429) blocked++;
+      if ((await proxy(req(undefined, { 'x-backfill-token': '' })))?.status === 429) blocked++;
     }
     expect(blocked).toBe(10);
   });
@@ -70,15 +70,16 @@ describe('proxy: лимит для сервисной гидрации', () => {
     vi.stubEnv('BACKFILL_TOKEN', TOKEN);
     vi.stubEnv('BACKFILL_RATE_LIMIT', '2');
     const proxy = await freshProxy();
-    const results = [0, 1, 2].map(() => proxy(req(undefined, { 'x-backfill-token': TOKEN })).status);
+    const results: number[] = [];
+    for (let i = 0; i < 3; i++) results.push((await proxy(req(undefined, { 'x-backfill-token': TOKEN })))?.status ?? 0);
     expect(results).toEqual([200, 200, 429]);
   });
 
   it('сервисный бакет не расходует публичный (обычные запросы не блокируются)', async () => {
     vi.stubEnv('BACKFILL_TOKEN', TOKEN);
     const proxy = await freshProxy();
-    for (let i = 0; i < 60; i++) proxy(req(undefined, { 'x-backfill-token': TOKEN }));
-    expect(proxy(req()).status).toBe(200);
+    for (let i = 0; i < 60; i++) await proxy(req(undefined, { 'x-backfill-token': TOKEN }));
+    expect((await proxy(req()))?.status).toBe(200);
   });
 
   it('другие роуты (не /api/providers) остаются на своих правилах', async () => {
@@ -87,7 +88,7 @@ describe('proxy: лимит для сервисной гидрации', () => {
     // /api/admin/login: 5/мин — токен гидрации не расширяет антибрутфорс.
     let blocked = 0;
     for (let i = 0; i < 7; i++) {
-      if (proxy(req('/api/admin/login', { 'x-backfill-token': TOKEN })).status === 429) blocked++;
+      if ((await proxy(req('/api/admin/login', { 'x-backfill-token': TOKEN })))?.status === 429) blocked++;
     }
     /* Здесь токен ДЕЙСТВУЕТ на любой /api/* (middleware не различает пути), поэтому
        проверяем, что лимит всё равно ненулевой при выключенной фиче. */
@@ -95,7 +96,7 @@ describe('proxy: лимит для сервисной гидрации', () => {
     const proxy2 = await freshProxy();
     blocked = 0;
     for (let i = 0; i < 7; i++) {
-      if (proxy2(req('/api/admin/login', { 'x-backfill-token': TOKEN })).status === 429) blocked++;
+      if ((await proxy2(req('/api/admin/login', { 'x-backfill-token': TOKEN })))?.status === 429) blocked++;
     }
     expect(blocked).toBe(2);
   });
