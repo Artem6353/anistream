@@ -121,7 +121,15 @@ export function PlayerShell({
   const selected: EpisodeSource | undefined = useMemo(
     () =>
       sources.find((s) => s.id === selectedId) ??
-      // провайдер по умолчанию из настроек (ТЗ блок 6): берём его источник, если он есть в серии
+      // Сначала предпочтительный провайдер, но только с прямой ссылкой конкретной серии.
+      (settings.defaultProvider && settings.defaultProvider !== 'demo'
+        ? sources.find((s) =>
+            s.providerId === settings.defaultProvider && !s.guessed && !s.synthesized,
+          )
+        : undefined) ??
+      // Не выбираем шаблон/подбор, пока существует хотя бы один подтверждённый URL.
+      sources.find((s) => s.providerId !== 'demo' && !s.guessed && !s.synthesized) ??
+      // Если прямых ссылок нет, оставляем доступный шаблон или подобранный URL последним fallback.
       (settings.defaultProvider && settings.defaultProvider !== 'demo'
         ? sources.find((s) => s.providerId === settings.defaultProvider)
         : undefined) ??
