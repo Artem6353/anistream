@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EpisodeSources } from '../lib/providers/types';
-import { synthesizeCachedEpisodeSources } from '../lib/providers/synthesize';
+import { synthesizableEpisodeLimit, synthesizeCachedEpisodeSources } from '../lib/providers/synthesize';
 
 const base: EpisodeSources = {
   fromCache: true,
@@ -73,5 +73,22 @@ describe('cached provider template limits', () => {
       sources: [base.sources[2]],
     };
     expect(synthesizeCachedEpisodeSources(kodikOnly, 2)).toEqual([]);
+  });
+});
+
+describe('provider template coverage validation', () => {
+  it('reports a range only for a supported, rewritable CVH or AniBoom template', () => {
+    expect(synthesizableEpisodeLimit('cvh', 'https://animego.me/cdn-iframe/457/1/1?dubbing=SHIZA', 26)).toBe(26);
+    expect(synthesizableEpisodeLimit('aniboom', 'https://aniboom.one/embed/id?episode=1&translation=9', 100)).toBe(100);
+  });
+
+  it('does not mark exact Kodik links or malformed URLs as synthesizable', () => {
+    expect(synthesizableEpisodeLimit('kodik', 'https://kodikplayer.com/seria/1/hash/720p', 26)).toBe(0);
+    expect(synthesizableEpisodeLimit('cvh', 'https://animego.me/player/1', 26)).toBe(0);
+  });
+
+  it('does not infer coverage when the provider did not report an episode count', () => {
+    expect(synthesizableEpisodeLimit('cvh', 'https://animego.me/cdn-iframe/457/1/1', null)).toBe(0);
+    expect(synthesizableEpisodeLimit('aniboom', 'https://aniboom.one/embed/id?episode=1', 0)).toBe(0);
   });
 });
