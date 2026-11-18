@@ -259,8 +259,10 @@ export async function dbEpisodeAvailability(animeId: number, maxEpisode?: number
   const cvhEpisodeLists = await Promise.all(
     cvhTemplates.map((row) => cvhAvailableEpisodes(normalizeEmbedUrl(row.embed_url) ?? '')),
   );
+  // If the live CVH API failed, do not cache a partial availability map as complete.
+  if (cvhEpisodeLists.some((available) => available === null)) return null;
   for (const available of cvhEpisodeLists) {
-    for (const episode of available) {
+    for (const episode of available ?? []) {
       if (!Number.isFinite(maxEpisode) || !maxEpisode || episode <= (maxEpisode as number)) {
         directEpisodes.add(episode);
       }
