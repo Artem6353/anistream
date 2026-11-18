@@ -532,6 +532,7 @@ export function PlayerShell({
                 title={`Плеер: ${title.ru}, серия ${episode} (${selected.label})`}
                 allowFullScreen
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                onLoad={() => setPlaybackFailure(null)}
               />
               <div className="player__embed-actions">
                 {nextFallbackSource ? (
