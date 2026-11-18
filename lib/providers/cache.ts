@@ -73,7 +73,10 @@ function backend(): 'db' | 'kv' | 'file' {
 
 async function load(file: string): Promise<CacheShape> {
   if (memory) return memory;
-  if (backend() === 'db' && dbCacheConfigured()) return loadFromDb();
+  /* DB cache hydration is an explicit background preload, never a request-time miss.
+     The registry reads the requested episode directly from Supabase after this hot-cache
+     lookup; waiting for tens of thousands of rows here caused 20s cold-player timeouts. */
+  if (backend() === 'db' && dbCacheConfigured()) return {};
   if (!fileBackendUsable()) {
     memory = {};
     return memory;
@@ -130,7 +133,9 @@ export async function preloadProviderCache(): Promise<{ entries: number; backend
   if (!cfg.enabled) return { entries: 0, backend: 'disabled' };
   if (backend() === 'file') return { entries: 0, backend: 'file' };
   try {
-    const store = await load(cfg.file);
+    const store = backend() === 'db' && dbCacheConfigured()
+      ? await loadFromDb()
+      : await load(cfg.file);
     return { entries: Object.keys(store).length, backend: backend() };
   } catch {
     return { entries: 0, backend: backend() };
@@ -395,8 +400,9 @@ export async function cacheSet(key: string, sources: EpisodeSources): Promise<vo
       return;
     }
     await dbUpsertEpisode(animeId, Number(m[2]), direct.sources);
-    const store = await load(cfg.file);
-    store[key] = entry;
+    // Do not trigger a bulk DB preload from a write path. Update memory only when
+    // the background preload has already completed; Supabase remains the source of truth.
+    if (memory) memory[key] = entry;
     return;
   }
   if (backend() === 'kv' && kvEnabled()) {
@@ -441,10 +447,10 @@ export async function cacheFlush(): Promise<void> {
 export async function cacheStats(): Promise<{ entries: number; file: string }> {
   const cfg = getProvidersConfig().cache;
   if (backend() === 'db') {
-    const store = await load(cfg.file);
+    // Health/stat requests must not cause a cold bulk preload either.
     const counts = await dbCacheCounts();
     return {
-      entries: Object.keys(store).length,
+      entries: Object.keys(memory ?? {}).length,
       file: counts.urls === null ? 'supabase' : `supabase (urls=${counts.urls}, headers=${counts.headers ?? '?'})`,
     };
   }
