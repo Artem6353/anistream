@@ -60,6 +60,7 @@ type SourceRow = {
   translation_id: string;
   translation_title: string | null;
   translation_type: string | null;
+  episodes_count: number | null;
 };
 
 const PROVIDER_NAMES: Record<string, string> = {
@@ -118,7 +119,7 @@ export async function dbLoadCache(
       { maxRows, timeoutMs, deadlineAt, order: 'anime_id.asc,episode.asc' },
     ),
     fetchPaged<SourceRow>(
-      'episode_sources?status=eq.ok&select=anime_id,provider,translation_id,translation_title,translation_type',
+      'episode_sources?status=eq.ok&select=anime_id,provider,translation_id,translation_title,translation_type,episodes_count',
       { maxRows: 200_000, timeoutMs, deadlineAt, order: 'anime_id.asc' },
     ),
   ]);
@@ -146,6 +147,9 @@ export async function dbLoadCache(
       kind: row.kind === 'file' ? 'file' : 'embed',
       embedUrl,
       translationId: row.translation_id,
+      ...(Number.isInteger(Number(header?.episodes_count)) && Number(header?.episodes_count) > 0
+        ? { episodesCount: Number(header?.episodes_count) }
+        : {}),
       voice: header?.translation_type === 'sub' ? 'subtitles' : 'voice',
     };
     const entry = byKey.get(key);
