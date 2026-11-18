@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getTitle } from '@/lib/catalog';
 import { cacheEntriesForSlug, isDirectProviderSource } from '@/lib/providers/cache';
 import { releasedCountFor } from '@/lib/episode-data';
-import { dbEpisodeAvailability, titleHasSources } from '@/lib/episode-sources';
+import { dbEpisodeAvailability } from '@/lib/episode-sources';
 import { availabilityCacheControl } from '@/lib/availability-cache';
 import { synthesizableEpisodeLimit } from '@/lib/providers/synthesize';
 
@@ -24,13 +24,16 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   const total = (await releasedCountFor(title)) ?? 0;
   const [entries, dbAvailability] = await Promise.all([
     cacheEntriesForSlug(slug),
-    dbEpisodeAvailability(title.anilistId, total),
+    dbEpisodeAvailability(title.anilistId, total, [title.ru, title.romaji, title.slug]),
   ]);
 
   const directEpisodes = new Set<number>();
   const cachedTemplateMaxEpisodes: Record<string, number> = {};
   for (const entry of entries) {
     for (const source of entry.sources.sources) {
+      // CVH availability is validated against the provider's live playlist below.
+      // Do not trust stale Redis CVH templates, which can belong to another anime.
+      if (source.providerId === 'cvh') continue;
       if (isDirectProviderSource(source)) directEpisodes.add(entry.episode);
       const maxEpisode = synthesizableEpisodeLimit(
         source.providerId,
@@ -61,7 +64,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
     else if (title.shikimori?.id) episodes[ep] = 'guess';
     else episodes[ep] = 'none';
   }
-  const verified = await titleHasSources(title);
+  const verified = directEpisodes.size > 0 || synthesizableThrough > 0;
   /* Аудит 01.10, итерация 2: роут читает searchParams → это dynamic-FUNCTION,
      revalidate=600 на таких не работает (зонд: x-vercel-cache MISS на повторах),
      а край уважает s-maxage в ответе функции. Поэтому: без revalidate, с явным
