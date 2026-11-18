@@ -43,7 +43,7 @@ export async function GET(request: Request) {
   const providerCache = {
     enabled: providerConfig.cache.enabled,
     writesEnabled: providerConfig.cache.write,
-    backend: !providerConfig.cache.enabled ? 'disabled' : cacheUsesUpstash ? 'upstash' : 'file',
+    backend: !providerConfig.cache.enabled ? 'disabled' : providerConfig.cache.backend,
     // Version 1 declares support for the losslessly compressed z1: episode-cache values.
     episodeCacheFormatVersion: 1,
     // null means this deployment uses the filesystem cache (no Redis connection to probe).
