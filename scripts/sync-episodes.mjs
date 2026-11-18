@@ -21,6 +21,7 @@
  *   node scripts/sync-episodes.mjs --report        # только отчёт покрытия, без сети
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { prepareSyncCheckpoint, syncRunIsComplete } from './lib/sync-checkpoint.mjs';
 
 const FILE = process.env.TITLES_FILE ?? 'lib/data/titles.json';
 const CHECKPOINT = process.env.CHECKPOINT_FILE ?? '.cache/sync-episodes-checkpoint.json';
@@ -70,17 +71,20 @@ const log = (...a) => console.log(...a);
 
 /* ------------------------------- чекпоинт -------------------------------- */
 
-function loadCheckpoint() {
+function loadCheckpoint({ preserveCompleted = false } = {}) {
   try {
-    return JSON.parse(readFileSync(CHECKPOINT, 'utf8'));
+    const saved = JSON.parse(readFileSync(CHECKPOINT, 'utf8'));
+    if (preserveCompleted) return saved;
+    return prepareSyncCheckpoint(saved, MODE);
   } catch {
-    return { done: [], at: null };
+    return prepareSyncCheckpoint(null, MODE);
   }
 }
 function saveCheckpoint(cp) {
   if (DRY_RUN) return;
   mkdirSync('.cache', { recursive: true });
   cp.at = new Date().toISOString();
+  cp.mode = MODE;
   // Храним только id — файл на 8000 чисел, а не дамп данных.
   writeFileSync(CHECKPOINT, JSON.stringify({ ...cp, done: [...new Set(cp.done)].slice(-20_000) }));
 }
@@ -181,7 +185,10 @@ const QUERY_SINGLE = `query($id:Int!,$page:Int!){
 async function airingForIds(ids) {
   const byMedia = new Map();
   const data = await anilist(QUERY_BATCH, { ids });
-  for (const n of data?.Page?.airingSchedules ?? []) {
+  if (!data?.Page || !Array.isArray(data.Page.airingSchedules)) {
+    throw new Error('AniList batch query failed or returned an incomplete response; checkpoint was not advanced');
+  }
+  for (const n of data.Page.airingSchedules) {
     if (!Number.isFinite(n.mediaId) || !Number.isFinite(n.episode) || !Number.isFinite(n.airingAt)) continue;
     if (!byMedia.has(n.mediaId)) byMedia.set(n.mediaId, []);
     byMedia.get(n.mediaId).push({ number: n.episode, aired_at: n.airingAt * 1000 });
@@ -201,9 +208,19 @@ async function airingForOne(id) {
   const rows = [];
   for (let page = 1; page <= 12; page++) {
     const data = await anilist(QUERY_SINGLE, { id, page });
-    const nodes = data?.Page?.airingSchedules ?? [];
-    for (const n of nodes) if (Number.isFinite(n.episode) && Number.isFinite(n.airingAt)) rows.push({ number: n.episode, aired_at: n.airingAt * 1000 });
-    if (!data?.Page?.pageInfo?.hasNextPage) break;
+    if (!data?.Page || !Array.isArray(data.Page.airingSchedules)) {
+      throw new Error(`AniList deep fetch failed for media ${id}, page ${page}; checkpoint was not advanced`);
+    }
+    for (const n of data.Page.airingSchedules) {
+      if (Number.isFinite(n.episode) && Number.isFinite(n.airingAt)) {
+        rows.push({ number: n.episode, aired_at: n.airingAt * 1000 });
+      }
+    }
+    const hasNextPage = Boolean(data.Page.pageInfo?.hasNextPage);
+    if (!hasNextPage) return rows;
+    if (page === 12) {
+      throw new Error(`AniList deep fetch exceeded 12 pages for media ${id}; refusing to save partial episode metadata`);
+    }
     await sleep(ANILIST_SLEEP_MS);
   }
   return rows;
@@ -252,7 +269,7 @@ function report(titles) {
     ongoing: titles.filter((t) => t.status === 'ongoing').length,
     withMalId: titles.filter((t) => t.malId).length,
     checkpoint: existsSync(CHECKPOINT) ? loadCheckpoint().at : null,
-    doneInCheckpoint: existsSync(CHECKPOINT) ? loadCheckpoint().done.length : 0,
+    doneInCheckpoint: existsSync(CHECKPOINT) ? (loadCheckpoint({ preserveCompleted: true }).done?.length ?? 0) : 0,
   };
   mkdirSync('.cache', { recursive: true });
   writeFileSync(REPORT_FILE, JSON.stringify(out, null, 2));
@@ -282,7 +299,13 @@ if (!SUPA_URL || !SUPA_KEY) {
   if (!DRY_RUN) process.exit(2);
 }
 if (!plan.length) {
-  log('все тайтлы уже обработаны: чекпоинт полный. Удалите ' + CHECKPOINT + ' для полного прохода.');
+  if (queue.length === 0) {
+    cp.completed = true;
+    saveCheckpoint(cp);
+    log('все тайтлы обработаны: следующий запуск начнёт свежую синхронизацию.');
+  } else {
+    log('нет тайтлов в выбранном лимите; чекпоинт сохранён для продолжения.');
+  }
   process.exit(0);
 }
 
