@@ -487,7 +487,7 @@ export function PlayerShell({
               src={selected.embedUrl}
               title={`Плеер: ${title.ru}, серия ${episode} (${selected.label})`}
               allowFullScreen
-              allow="fullscreen; encrypted-media; picture-in-picture"
+              allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             />
           ) : (
             <>
@@ -592,7 +592,7 @@ export function PlayerShell({
                   </div>
                 </div>
               ) : null}
-              <div className="player__ui">
+              {!isEmbed ? <div className="player__ui">
                 <div className="player__top">
                   <div>
                     <p className="player__title">{selected ? `${selected.label} · ${selected.providerName}` : ''}</p>
@@ -720,7 +720,15 @@ export function PlayerShell({
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> : (
+                <button
+                  type="button"
+                  className="player__embed-report btn btn--ghost btn--sm"
+                  onClick={() => setReportOpen(true)}
+                >
+                  Пожаловаться на источник
+                </button>
+              )}
               {reportOpen ? (
                 <ReportForm
                   slug={title.slug}
@@ -730,7 +738,7 @@ export function PlayerShell({
                 />
               ) : null}
 
-              {menuOpen ? (
+              {!isEmbed && menuOpen ? (
                 <div className="player__menu" role="menu" aria-label="Настройки плеера">
                   {files.length > 1 ? (
                     <>
@@ -752,7 +760,7 @@ export function PlayerShell({
               ) : null}
 
               {/* ТЗ 4.1 (3.3): скорость — отдельный dropdown 0.5…2 */}
-              {rateOpen ? (
+              {!isEmbed && rateOpen ? (
                 <div className="player__menu" role="menu" aria-label="Скорость воспроизведения">
                   <p className="player__menu-title">Скорость</p>
                   <div className="player__rates">
