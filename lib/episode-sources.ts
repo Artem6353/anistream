@@ -1,5 +1,6 @@
 import type { EpisodeSource, EpisodeSources } from '@/lib/providers/types';
 import { rewriteAniboom, rewriteCvh } from '@/lib/providers/synthesize';
+import { normalizeProviderUrl } from '@/lib/providers/url';
 
 /**
  * Реестр источников видео.
@@ -47,9 +48,7 @@ const PROVIDER_NAMES: Record<string, string> = {
 };
 
 function normalizeEmbedUrl(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const url = value.trim().replace(/&amp;/gi, '&');
-  return /^https?:\/\//i.test(url) ? url : null;
+  return normalizeProviderUrl(value);
 }
 
 async function rest<T>(path: string, range?: [number, number]): Promise<T[] | null> {
