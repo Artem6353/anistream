@@ -39,6 +39,8 @@ test('4 · каталог → тайтл → отзыв (локальный ре
   // страница тайтла: заголовок и секция отзывов
   await expect(page.locator('section.reviews')).toBeVisible();
   const marker = `e2e-отзыв-${Date.now()}`;
+  // Turnstile lazy: форма появляется только после клика «Оставить отзыв».
+  await page.locator('.reviews__open', { hasText: 'Оставить отзыв' }).click();
   await page.locator('.reviews__form input[placeholder="Ваше имя"]').fill('E2E-бот');
   await page.locator('textarea.reviews__text').fill(marker);
   await page.locator('.reviews__form button', { hasText: 'Отправить' }).click();

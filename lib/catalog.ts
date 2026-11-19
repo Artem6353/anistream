@@ -115,8 +115,10 @@ function fromDbRow(r: DbTitle): Title & { hidden?: boolean } {
   } as Title & { hidden?: boolean };
 }
 
-/** Сколько строк тянем за раз: 8000 тайтлов одним запросом PostgREST не отдаст. */
-const DB_PAGE = 2000;
+/** Сколько строк тянем за раз. PostgREST по умолчанию отдаёт максимум 1000 строк
+ *  (db-max-rows), поэтому просить больше бессмысленно: ответ обрежется, и цикл
+ *  ниже ошибочно примет это за последнюю страницу. */
+const DB_PAGE = 1000;
 
 let priming: Promise<number> | null = null;
 
@@ -138,7 +140,12 @@ export function primeCatalogFromDb(): Promise<number> {
     const deadline = Date.now() + budgetMs;
     try {
       const out: (Title & { hidden?: boolean })[] = [];
-      for (let from = 0; ; from += DB_PAGE) {
+      /* Идём до пустой страницы, а не до `rows.length < DB_PAGE`: сервер может
+         отдать меньше запрошенного (db-max-rows), и это не значит, что данные
+         закончились. Смещение увеличиваем на фактическое число строк — иначе
+         при ответе 1000 на запрос 2000 диапазон 1000–1999 был бы пропущен. */
+      let complete = false;
+      for (let from = 0; ; ) {
         const remaining = deadline - Date.now();
         if (remaining <= 0) {
           console.warn(`[catalog] прайм из БД не уложился в ${budgetMs} мс — остаёмся на файловом каталоге`);
@@ -154,10 +161,17 @@ export function primeCatalogFromDb(): Promise<number> {
         );
         if (!res.ok) return 0; // таблица ещё не создана/нет прав — остаёмся на файле
         const rows = (await res.json()) as DbTitle[];
-        if (!Array.isArray(rows) || !rows.length) break;
+        if (!Array.isArray(rows)) return 0;
+        if (!rows.length) {
+          complete = true;
+          break;
+        }
         for (const r of rows) out.push(fromDbRow(r));
-        if (rows.length < DB_PAGE) break;
+        from += rows.length;
       }
+      /* Сюда можно попасть только после пустой страницы; явная проверка защищает
+         от будущих правок, которые добавят break/return внутри цикла. */
+      if (!complete) return 0;
       /* Предохранитель (аудит 2026-10, задача 1): неполная таблица не должна
          подменять каталог. Если импорт прервался или в БД пока одна строка,
          сайт показывал бы один тайтл вместо 8017 — остаёмся на файле. */

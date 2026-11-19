@@ -9,7 +9,9 @@ import { library, useLibrary } from '@/lib/library';
 
 type Theme = 'dark' | 'light' | 'system';
 
-const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
+/* Должно совпадать с file_size_limit бакета avatars (2 MB), иначе Storage
+   отклонит файл уже после загрузки. */
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const ACCEPTED_AVATAR_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
 /**
@@ -91,7 +93,7 @@ export function AccountSettings({ profile, email }: { profile: ProfileRow | null
       return;
     }
     if (file.size > MAX_AVATAR_BYTES) {
-      toast.error('Файл больше 3 МБ — сожмите картинку');
+      toast.error('Файл больше 2 МБ — сожмите картинку');
       return;
     }
 
@@ -164,7 +166,7 @@ export function AccountSettings({ profile, email }: { profile: ProfileRow | null
               {uploading && <span className="ds-spinner" aria-hidden="true" />}
               {uploading ? 'Загружаем…' : 'Загрузить фото'}
             </button>
-            <p className="ds-muted">PNG/JPEG/WebP до 3 МБ. Хранится в Supabase Storage, бакет «avatars».</p>
+            <p className="ds-muted">PNG/JPEG/WebP до 2 МБ. Хранится в Supabase Storage, бакет «avatars».</p>
           </div>
         </div>
       </section>

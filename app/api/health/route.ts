@@ -18,6 +18,14 @@ export async function GET(request: Request) {
   const t0 = performance.now();
   const wantProbe = new URL(request.url).searchParams.get('probe') === '1';
   const total = allTitles().length;
+  /* P0-аудит 2026-11-19: раньше health считал живым каталог из одного тайтла.
+     После сбоя пагинации прод отдавал 1000 из 8033 и при этом выглядел здоровым.
+     Порог настраивается для тестов/локальной неполной БД, но в проде — 7900. */
+  const expectedMin = Math.max(1, Number(process.env.CATALOG_MIN_EXPECTED_TITLES ?? 7900) || 7900);
+  const catalogHealthy = total >= expectedMin;
+  const warnings = catalogHealthy
+    ? []
+    : [`каталог неполный: ${total} тайтлов, ожидается минимум ${expectedMin}`];
   const providerConfig = getProvidersConfig();
   // This is configuration readiness, not a network health probe. Bridge URLs can
   // be configured while the bridge itself is offline; that is checked on resolve.
@@ -78,7 +86,9 @@ export async function GET(request: Request) {
       uptime: Math.round(osUptime()),
       titles: total,
       /* ТЗ 2.1: видно, откуда фактически прочитан каталог (db или файловый fallback). */
-      catalog: catalogSourceInfo(),
+      catalog: { ...catalogSourceInfo(), expectedMin, healthy: catalogHealthy },
+      catalogHealthy,
+      warnings,
       catalogMs: Math.round(performance.now() - t0),
       supabase: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
       supabaseProbe,
