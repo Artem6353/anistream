@@ -34,6 +34,7 @@
  *   node scripts/sync-sources.mjs --report
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { isDoneRecently, markDone, parseDone, serializeDone } from './lib/sync-checkpoint.mjs';
 
 const FILE = process.env.TITLES_FILE ?? 'lib/data/titles.json';
 const CHECKPOINT = process.env.CHECKPOINT_FILE ?? '.cache/sync-sources-checkpoint.json';
@@ -64,6 +65,10 @@ const MAX_ATTEMPTS = Number(process.env.MAX_ATTEMPTS ?? 5);
 const QUERY_TYPES = process.env.KODIK_TYPES ?? 'anime';
 const ONGOING_ONLY = (process.env.SCOPE ?? '').toLowerCase() === 'ongoing';
 const LIMIT = Number(argVal('limit', process.env.LIMIT ?? 0));
+/* Онгоинг перепроверяем не реже раза в 6 часов: иначе новая серия не попадёт
+   в БД до ручного сброса чекпоинта. 0 отключает TTL (перепроверять каждый запуск). */
+const TITLE_TTL_MINUTES = Math.max(0, Number(process.env.SYNC_TITLE_TTL_MINUTES ?? 360));
+const TITLE_TTL_MS = TITLE_TTL_MINUTES * 60_000;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = (...a) => console.log(...a);
@@ -228,7 +233,8 @@ function saveCheckpoint(cp) {
   if (DRY_RUN) return;
   mkdirSync('.cache', { recursive: true });
   cp.at = new Date().toISOString();
-  cp.done = [...new Set(cp.done ?? [])].slice(-20_000);
+  const done = cp.done instanceof Map ? cp.done : parseDone(cp.done);
+  cp.done = serializeDone(done, Date.now());
   writeFileSync(CHECKPOINT, JSON.stringify(cp));
 }
 
@@ -341,10 +347,16 @@ async function runTitles() {
   const titles = loadTitles().filter((t) => (SLUG ? t.slug === SLUG : true));
   if (SLUG && !titles.length) throw new Error(`тайтл не найден или исключён: ${SLUG}`);
   const cp = loadCheckpoint();
-  const done = new Set(cp.done ?? []);
-  const queue = titles.filter((t) => shikimoriIdOf(t) && !done.has(t.anilistId));
+  const done = parseDone(cp.done);
+  const now = Date.now();
+  /* TTL — ключевое отличие от старого массива done: онгоинг снова попадает
+     в очередь, когда истекает окно, даже если его уже проверяли. */
+  const queue = titles.filter((t) =>
+    shikimoriIdOf(t) &&
+    !isDoneRecently(done, t.anilistId, now, TITLE_TTL_MS),
+  );
   const plan = LIMIT > 0 ? queue.slice(0, LIMIT) : queue;
-  log(`title: к обработке ${plan.length} (в чекпоинте ${done.size})`);
+  log(`title: к обработке ${plan.length} (в чекпоинте ${done.size}, TTL ${TITLE_TTL_MINUTES} мин)`);
 
   let matched = 0;
   let sourcesWritten = 0;
@@ -372,7 +384,8 @@ async function runTitles() {
     urlsWritten += await supaUpsert('episode_source_urls', 'anime_id,provider,translation_id,episode', urlBatch);
     await markDead(t.anilistId, 'kodik', alive);
 
-    cp.done = [...(cp.done ?? []), t.anilistId];
+    markDone(done, t.anilistId, Date.now());
+    cp.done = done;
     saveCheckpoint(cp);
     log(`  ${t.slug}: озвучек ${alive.size}, серий ${urlBatch.length}`);
   }
@@ -390,6 +403,7 @@ function report() {
     kodikToken: Boolean(TOKEN),
     supabase: Boolean(SUPA_URL && SUPA_KEY),
     checkpoint: loadCheckpoint().at,
+    titleTtlMinutes: TITLE_TTL_MINUTES,
     maxEpisodeUrlsPerTranslation: MAX_EPISODE_URLS,
   };
   mkdirSync('.cache', { recursive: true });

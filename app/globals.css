@@ -1604,6 +1604,21 @@ input, select {
   color: var(--muted-2);
   font-weight: 700;
 }
+.player__report {
+  right: 50%;
+  bottom: 50%;
+  transform: translate(50%, 50%);
+  width: min(360px, calc(100vw - 32px));
+  z-index: 8;
+}
+.player__report-status {
+  min-height: 1.2em;
+  color: var(--muted);
+  font-size: 12px;
+}
+.player__report-status:not(:empty) {
+  color: var(--accent-text);
+}
 .player__rates {
   display: flex;
   gap: 6px;
@@ -2546,11 +2561,23 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
   display: block;
   background: #000;
 }
+/* Действия embed-плеера живут ПОД кадром, а не поверх провайдерских
+   контролов: иначе они не скрываются вместе с UI и перекрывают fullscreen. */
+.player__embed-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 2px 0;
+}
+.player__embed-footer .player__embed-hint {
+  margin: 0;
+  text-align: left;
+  flex: 1 1 220px;
+}
 .player__embed-actions {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  z-index: 5;
+  position: static;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2566,10 +2593,16 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
   backdrop-filter: blur(8px);
 }
 @media (max-width: 600px) {
+  .player__embed-footer {
+    align-items: stretch;
+    gap: 8px;
+  }
   .player__embed-actions {
-    right: 8px;
-    bottom: 8px;
-    gap: 6px;
+    width: 100%;
+    justify-content: stretch;
+  }
+  .player__embed-actions .btn {
+    flex: 1 1 0;
   }
   .player__embed-report {
     min-height: 32px;

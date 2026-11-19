@@ -53,6 +53,7 @@ export function releasedEpisodes(title) {
 export function selectTitles(titles, opts = {}) {
   const skipUpcoming = opts.skipUpcoming !== false;
   const skipNoShikimori = Boolean(opts.skipNoShikimori);
+  const ongoingFirst = Boolean(opts.ongoingFirst);
   const giantThreshold = Number(opts.skipEpisodesGreaterThan) || 0;
   const skipped = { upcoming: 0, noShikimori: 0, giants: 0, unknownEpisodes: 0, hidden: 0 };
   const selected = [];
@@ -85,7 +86,15 @@ export function selectTitles(titles, opts = {}) {
     selected.push({ ...title, episodes: released, favourites: Number(title.favourites) || 0 });
   }
 
-  selected.sort((a, b) => b.favourites - a.favourites || a.slug.localeCompare(b.slug));
+  /* Онгоинги идут первыми: новая серия должна получать источник в ближайший
+     прогон, а не после многодневного backlog завершённых тайтлов. */
+  selected.sort((a, b) => {
+    if (ongoingFirst) {
+      const byStatus = Number(b.status === 'ongoing') - Number(a.status === 'ongoing');
+      if (byStatus) return byStatus;
+    }
+    return b.favourites - a.favourites || a.slug.localeCompare(b.slug);
+  });
   return { selected, skipped };
 }
 

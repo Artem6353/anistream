@@ -78,15 +78,25 @@ const RESOLVERS: Record<string, Resolver> = {
 /** Таймаут резолва по провайдеру: bridge-таймаут + 500 мс grace, чтобы bridge успел ответить сам. */
 function timeoutFor(id: string): number {
   const cfg = getProvidersConfig();
+  /* Без bridge CVH ищется напрямую: playlist + до четырёх video-запросов.
+     6.5 секунды мало для холодного запроса, поэтому даём direct-ветке 10 с. */
+  if (id === 'cvh' && !cfg.bridges.multiplayer.url) {
+    return Math.max(cfg.providerTimeoutMs, 10_000);
+  }
   const base = id === 'kodik' ? cfg.bridges.kodik.timeoutMs : cfg.bridges.multiplayer.timeoutMs;
   return Math.max(cfg.providerTimeoutMs, base + 500);
 }
 
-function enabledProviderIds(): string[] {
+function enabledProviderIds(ctx: ProviderContext): string[] {
   const cfg = getProvidersConfig();
   const ids: string[] = [];
   if (cfg.bridges.kodik.url || (cfg.kodik.enabled && cfg.kodik.token)) ids.push('kodik');
   if (cfg.bridges.multiplayer.url) ids.push('cvh', 'aniboom');
+  /* Без bridge CVH всё равно доступен напрямую по Shikimori id. Иначе на
+     Vercel/GitHub (нет 127.0.0.1-моста) новые тайтлы никогда не находились. */
+  else if (ctx.shikimoriId && process.env.CVH_DIRECT_DISCOVERY !== '0' && !ids.includes('cvh')) {
+    ids.push('cvh');
+  }
   return ids;
 }
 
@@ -243,7 +253,7 @@ export async function resolveEpisodeSources(
   }
 
   /* 2) Резолверы запускаются одновременно. Наличие Kodik в кэше не отключает CVH/AniBoom. */
-  const enabledIds = enabledProviderIds();
+  const enabledIds = enabledProviderIds(ctx);
   const ids = enabledIds.filter((id) => shouldResolveProvider(id, key, base, ctx, forceLive));
 
   if (!ids.length && base) {

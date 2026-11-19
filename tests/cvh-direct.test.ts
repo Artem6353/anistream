@@ -6,6 +6,7 @@ import {
   resolveCvhDirectSource,
   cvhAvailableEpisodes,
   cvhTitleMatches,
+  discoverCvhSources,
 } from '../lib/providers/cvh-direct';
 
 describe('CVH direct resolver parsing', () => {
@@ -147,4 +148,47 @@ it('deduplicates concurrent requests for the same CVH playlist ID', async () => 
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+describe('CVH discovery without the AnimeGO bridge', () => {
+  const ctx = {
+    slug: 'mushishi', anilistId: 1, shikimoriId: 77777,
+    title: 'Мастер муси', originalTitle: 'Mushishi', year: 2005,
+    format: 'TV', episodesCount: 26, isAdult: false, episode: 1, totalEpisodes: 26,
+  };
+
+  it('builds voice templates directly from the Shikimori id playlist', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({
+      titleName: 'Мастер муси',
+      items: [
+        { vkId: 'a', voiceStudio: 'SHIZA Project', season: 1, episode: 1 },
+        { vkId: 'b', voiceStudio: 'SHIZA Project', season: 1, episode: 2 },
+        { vkId: 'c', voiceStudio: 'AniLibria', season: 1, episode: 1 },
+      ],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const sources = await discoverCvhSources(ctx);
+      expect(sources).toHaveLength(2);
+      expect(sources[0].providerId).toBe('cvh');
+      expect(sources[0].embedUrl).toContain('/cdn-iframe/77777/');
+      expect(sources[0].episodesCount).toBe(2);
+      expect(sources.every((source) => source.kind === 'embed' && !source.guessed)).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('rejects a playlist whose title does not match the catalogue', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({
+      titleName: 'Смертельный парад',
+      items: [{ vkId: 'a', voiceStudio: 'SHIZA Project', season: 1, episode: 1 }],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      await expect(discoverCvhSources({ ...ctx, shikimoriId: 77778 })).resolves.toEqual([]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

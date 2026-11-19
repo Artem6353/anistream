@@ -27,3 +27,33 @@ export function nextPlayableSource(
     null
   );
 }
+
+
+/**
+ * Explicit "next voice" action: keep the current provider first and rotate
+ * through its other translations before falling back to another provider.
+ * Unlike playback failure recovery, the user asked for another voice, not
+ * necessarily another player, so a same-provider embed beats an unrelated
+ * direct HLS stream.
+ */
+export function nextVoiceSource(
+  sources: readonly EpisodeSource[],
+  currentId: string | undefined,
+  failedIds: ReadonlySet<string>,
+): EpisodeSource | null {
+  const current = sources.find((source) => source.id === currentId);
+  if (current) {
+    const sameProvider = sources.filter(
+      (source) =>
+        source.id !== current.id &&
+        !failedIds.has(source.id) &&
+        source.providerId === current.providerId &&
+        !source.guessed &&
+        !source.synthesized,
+    );
+    const sameKind = sameProvider.filter((source) => source.kind === current.kind);
+    if (sameKind.length) return sameKind[0];
+    if (sameProvider.length) return sameProvider[0];
+  }
+  return nextPlayableSource(sources, currentId, failedIds);
+}

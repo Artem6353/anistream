@@ -355,7 +355,7 @@ RLS у всех таблиц одинаковый: публичное чтени
 | --- | --- | --- | --- |
 | `sync-airing.yml` | каждые 30 минут | AniList `airingSchedules` → `airing_schedule` | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_KEY` |
 | `sync-episodes.yml` | 6 часов (онгоинги) + сутки (полный проход) | номера/даты серий, `episodes_aired` Shikimori, опционально названия через Jikan | те же |
-| `sync-sources.yml` | сутки (онгоинги) + неделя (bulk) | Kodik `/list` или `/search` → `episode_sources` + `episode_source_urls` | те же + `KODIK_TOKEN` |
+| `sync-sources.yml` | каждые 6 часов (онгоинги, TTL 6 ч) + неделя (bulk) | Kodik `/list` или `/search` → `episode_sources` + `episode_source_urls` | те же + `KODIK_TOKEN` |
 | `sync-catalog.yml` | 6 часов | новые тайтлы из AniList/Jikan в `titles.json` → **repair-catalog (офлайн, идемпотентно)** → **check-catalog-quality --gate** → коммит | — |
 | `repair-catalog-descriptions.yml` | только `workflow_dispatch` | сетевой ремонт: описания из Shikimori, `episodes_aired`, русские имена персонажей (`--limit`/`--cursor`) | `SHIKIMORI_USER_AGENT` |
 
@@ -476,10 +476,16 @@ export KODIK_BRIDGE_URLS=http://127.0.0.1:8765,http://127.0.0.1:8767,http://127.
 
 ### Расписание в GitHub Actions
 
-`.github/workflows/hydrate.yml` запускает добор **каждые 6 часов** (`0 */6 * * *`, UTC = 03:00/09:00/15:00/21:00 МСК) и вручную через `workflow_dispatch`. Джоба сама поднимает Python-bridge'и (CVH/AniBoom всегда, Kodik — только по флагу и при наличии `KODIK_TOKEN`), собирает прод-сборку Next.js, ждёт `/api/health`, запускает `npm run hydrate` и складывает `.cache/hydrate-report.json` в артефакты. Источники пишутся в Supabase, resume-состояние переживает прогоны через `actions/cache`.
+`.github/workflows/hydrate.yml` запускает добор **каждые 6 часов** (`0 */6 * * *`, UTC = 03:00/09:00/15:00/21:00 МСК) и вручную через `workflow_dispatch`. Джоба сама поднимает Python-bridge'и (CVH/AniBoom всегда, Kodik — только по флагу и при наличии `KODIK_TOKEN`), собирает прод-сборку Next.js, ждёт `/api/health`, запускает `npm run hydrate` и складывает отчёты в артефакты. Источники пишутся в Supabase.
+
+Прогон ограничен 90 минутами и 1200 сериями: сначала онгоинги и последние серии, затем backlog. Воркер сохраняет resume-state до жёсткого таймаута job, поэтому новый запуск продолжает с места остановки, а не начинает 53-тысячный план заново.
 
 Обязательные секреты: `BACKFILL_TOKEN`, `SUPABASE_SERVICE_KEY`, `NEXT_PUBLIC_SUPABASE_URL` (или `SUPABASE_URL`). Необязательные: `KODIK_TOKEN` (включает Kodik-bridge), `TG_BOT_TOKEN` + `TG_CHAT_ID` (как в `uptime.yml`), `DISCORD_WEBHOOK_URL`.
 
 Рядом работают два расписания надзора: `episode-coverage-weekly.yml` (понедельник 06:00 UTC — отчёт покрытия из Supabase в Telegram) и `db-size.yml` (ежедневно 05:30 UTC — размер базы: алерт при ≥80% квоты, сводка по понедельникам).
 
 Kodik по расписанию собирает отдельный воркфлоу `sync-sources.yml` (у него свой checkpoint и другой бюджет времени), поэтому в `hydrate.yml` провайдер Kodik по умолчанию выключен (`KODIK_ENABLED=0`) — иначе оба воркера дублируют одну и ту же работу и делят rate-limit апстрима.
+
+`sync-sources.yml` хранит в чекпоинте время проверки каждого тайтла и перепроверяет онгоинг после `SYNC_TITLE_TTL_MINUTES` (по умолчанию 360 минут). Без этого старый массив `done` навсегда исключал уже проверенные тайтлы, и новые серии не искались. Если секрет `KODIK_TOKEN` не задан, шаг Kodik завершается предупреждением (`exit 2`), а CVH/AniBoom продолжают работать через `hydrate.yml`.
+
+Для CVH поиск AnimeGO больше не обязателен: id `cdn-iframe` совпадает с Shikimori id, поэтому `resolveCvh` при недоступном bridge получает плейлист напрямую из `plapi.cdnvideohub.com` и проверяет название перед использованием. Это работает и на Vercel, и на GitHub Actions, где поиск AnimeGO отдаёт дата-центр IP пустой результат. Отключается через `CVH_DIRECT_DISCOVERY=0`.

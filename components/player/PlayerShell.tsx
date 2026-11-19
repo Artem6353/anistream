@@ -9,7 +9,7 @@ import { library, useLibrary } from '@/lib/library';
 import { trackEvent } from '@/lib/achievements';
 import { formatTime } from '@/lib/format';
 import { availabilityHint } from '@/lib/source-hints';
-import { nextPlayableSource } from '@/lib/player-source-fallback';
+import { nextPlayableSource, nextVoiceSource } from '@/lib/player-source-fallback';
 import { Switch } from '@/components/ui/Switch';
 import { ReportForm } from './ReportForm';
 import { SourcesPanel, type SourceGroup } from './SourcesPanel';
@@ -486,6 +486,9 @@ export function PlayerShell({
     failedSourcesState.key === dataKey ? failedSourcesState.ids : [],
   );
   const nextFallbackSource = nextPlayableSource(sources, selected?.id, failedSourceIds);
+  /* "Следующая озвучка" — это осознанный выбор пользователя: сначала другие
+     озвучки того же провайдера, и только потом другой провайдер. */
+  const nextVoice = nextVoiceSource(sources, selected?.id, failedSourceIds);
 
   const grouped: SourceGroup[] = PROVIDER_ORDER.map((pid) => ({
     pid,
@@ -537,24 +540,6 @@ export function PlayerShell({
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                 onLoad={() => setPlaybackFailure(null)}
               />
-              <div className="player__embed-actions">
-                {nextFallbackSource ? (
-                  <button
-                    type="button"
-                    className="btn btn--primary btn--sm"
-                    onClick={() => failPlayback('Источник не воспроизводится.')}
-                  >
-                    Следующая озвучка
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="player__embed-report btn btn--ghost btn--sm"
-                  onClick={() => setReportOpen(true)}
-                >
-                  Пожаловаться
-                </button>
-              </div>
               {playbackError ? (
                 <div className="player__status player__status--error" role="alert">{playbackError}</div>
               ) : null}
@@ -814,15 +799,6 @@ export function PlayerShell({
                   Пожаловаться на источник
                 </button>
               )}
-              {reportOpen ? (
-                <ReportForm
-                  slug={title.slug}
-                  episode={episode}
-                  sourceLabel={selected?.label ?? 'источник'}
-                  onClose={() => setReportOpen(false)}
-                />
-              ) : null}
-
               {!isEmbed && menuOpen ? (
                 <div className="player__menu" role="menu" aria-label="Настройки плеера">
                   {files.length > 1 ? (
@@ -869,10 +845,44 @@ export function PlayerShell({
               ) : null}
             </>
           )}
+          {/* Форма жалобы общая для native и iframe. Раньше она рендерилась только
+              в native-ветке, поэтому кнопка «Пожаловаться» у Kodik/CVH не открывала
+              ничего. Оверлей появляется только по клику и не мешает fullscreen. */}
+          {reportOpen ? (
+            <ReportForm
+              slug={title.slug}
+              episode={episode}
+              sourceLabel={selected?.label ?? 'источник'}
+              onClose={() => setReportOpen(false)}
+            />
+          ) : null}
         </div>
 
-        {/* ТЗ 4.1 (3.1): для embed-источников наши контролы скрыты — подсказка */}
-        {isEmbed && selected?.embedUrl ? <p className="player__embed-hint">Управление внутри плеера провайдера</p> : null}
+        {/* Действия для iframe вынесены из плеера: раньше они висели поверх
+            провайдерских контролов, не скрывались и перекрывали fullscreen. */}
+        {isEmbed && selected?.embedUrl ? (
+          <div className="player__embed-footer">
+            <p className="player__embed-hint">Управление внутри плеера провайдера</p>
+            <div className="player__embed-actions">
+              {nextVoice ? (
+                <button
+                  type="button"
+                  className="btn btn--primary btn--sm"
+                  onClick={() => chooseSource(nextVoice.id)}
+                >
+                  Следующая озвучка
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="player__embed-report btn btn--ghost btn--sm"
+                onClick={() => setReportOpen(true)}
+              >
+                Пожаловаться
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {/* горизонтальный скролл-бар серий под плеером (ТЗ 2.1) */}
         <div className="epbar-wrap">
