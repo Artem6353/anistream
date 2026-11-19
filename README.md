@@ -447,6 +447,9 @@ npm run cache:migrate-ttl -- --apply
 | `HYDRATE_DELAY_MS` | `0` | Пауза между задачами. Троттлинг уже живёт в bridge (семафор апстрима, single-flight, негативный кэш), лишняя пауза только растягивает прогон. |
 | `SKIP_EPISODES_GREATER_THAN` | `0` (выкл) | Пропустить тайтлы, где больше N вышедших серий (`500` — «гиганты» не блокируют первый проход). |
 | `HYDRATE_RETRY_MINUTES` | `360` | Сколько не повторять серию, по которой источник не нашёлся. `0` — повторять всегда. |
+| `HYDRATE_ONGOING_FIRST` / `HYDRATE_NEWEST_FIRST` | `1` | Сначала онгоинги и последние серии, затем backlog. |
+| `HYDRATE_MAX_MINUTES` | `0` | Мягкий дедлайн прогона; при срабатывании state сохраняется. В Actions — 90. |
+| `HYDRATE_SLUG` / `HYDRATE_EPISODE` | пусто / `0` | Точечный прогон одного тайтла/серии для проверки или ручного добора. |
 | `HYDRATE_STATE_FILE` | `.cache/hydrate-state.json` | Файл прогресса для resume; `--reset-state` его очищает. |
 | `BACKFILL_RATE_LIMIT` | `3600` | Отдельный бакет лимитера для запросов с верным `x-backfill-token` (публичный лимит `/api/providers` — 60/мин). |
 
