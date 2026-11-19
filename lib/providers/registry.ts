@@ -4,6 +4,7 @@ import { cacheGet, cacheSet, cacheKey, isDirectProviderSource } from './cache';
 import { providerLabel } from './bridge';
 import { resolveKodik } from './providers/kodik';
 import { resolveCvh } from './providers/cvh';
+import { cvhTitleMatchesEmbed, resolveCvhDirectSource } from './cvh-direct';
 import { resolveAniboom } from './providers/aniboom';
 import { demoSources, DEMO_SKIP } from './providers/demo';
 import { synthesizeEpisode } from './synthesize';
@@ -207,7 +208,8 @@ export async function resolveEpisodeSources(
   const cacheUsable = Boolean(
     cached?.sources.length && (!ctx.preferFiles || cachedHasFiles),
   );
-  const base = cacheUsable ? cached : null;
+  let base = cacheUsable ? cached : null;
+  let dbLoaded = false;
   const forceLive = Boolean(options.liveOnly || (ctx.preferFiles && !cacheUsable));
 
   if (base) metrics.cacheHit++;
@@ -218,15 +220,25 @@ export async function resolveEpisodeSources(
      а прямой резолв Kodik с дата-центр IP отвечает 401, поэтому достоверные данные
      только те, что заранее собрал воркер scripts/sync-sources.mjs.
      liveOnly (bulk-backfill) БД намеренно пропускает: ему нужны живые ответы. */
-  if (!base && !options.liveOnly && ctx.animeId) {
+  if (!options.liveOnly && ctx.animeId) {
     const fromDb = await dbEpisodeSources(ctx.animeId, ctx.episode);
     if (fromDb?.sources.length) {
-      /* Прогреваем горячий кэш, чтобы повторные запросы не ходили в БД.
-         cacheSet сам решает, куда писать: в проде — только Redis (TTL),
-         файловый бэкенд там отключён. Ошибку глотаем: кэш не должен ронять резолв. */
-      void cacheSet(key, fromDb).catch(() => {});
-      metricLatency(Date.now() - t0);
-      return withDemo({ ...fromDb, fromCache: true, cachedAt: Date.now() }, ctx);
+      /* Supabase is the source of truth for imported rows. Merge it with any
+         already-hydrated hot cache, but do not UPSERT rows that were just read back
+         from the same database: that creates write traffic on every player request.
+         Template-based CVH/AniBoom remain marked synthesized in the response. */
+      const merged = dedupe([...(base?.sources ?? []), ...fromDb.sources]);
+      dbLoaded = true;
+      base = {
+        ...fromDb,
+        ...(base ?? {}),
+        sources: merged,
+        sourcesUsed: [...new Set(merged.filter(isDirectProviderSource).map((source) => source.providerId))],
+        /* DB — тоже кэш: ответ можно отдать с s-maxage, но только пока в нём нет
+           подписанных direct-HLS URL (их withCvhDirectSources помечает fromCache=false). */
+        fromCache: true,
+        cachedAt: base?.cachedAt ?? Date.now(),
+      };
     }
   }
 
@@ -236,11 +248,12 @@ export async function resolveEpisodeSources(
 
   if (!ids.length && base) {
     metricLatency(Date.now() - t0);
-    return withDemo({
+    const enriched = await withCvhDirectSources({
       ...base,
       fromCache: true,
       cachedAt: base.cachedAt ?? Date.now(),
     }, ctx);
+    return withDemo(enriched, ctx);
   }
 
   const outcomes = await runProviderQueries(ids, ctx);
@@ -281,7 +294,9 @@ export async function resolveEpisodeSources(
   const result: EpisodeSources = {
     sources: merged,
     sourcesUsed: providersUsed,
-    fromCache: Boolean(base && ids.length === 0),
+    /* Если база уже дала строки, ответ остаётся кэшируемым даже при неудачном
+       live-дозапросе провайдеров. Direct-HLS ниже всё равно выставит false. */
+    fromCache: Boolean(base && (dbLoaded || ids.length === 0)),
     cachedAt: base?.cachedAt,
     skip,
     errors: Object.keys(errors).length ? errors : undefined,
@@ -313,7 +328,53 @@ export async function resolveEpisodeSources(
   if (merged.length) await cacheSet(key, result);
   else metrics.demo++;
 
-  return withDemo(result, ctx);
+  const enriched = await withCvhDirectSources(result, ctx);
+  return withDemo(enriched, ctx);
+}
+
+async function withCvhDirectSources(
+  result: EpisodeSources,
+  ctx: ProviderContext,
+): Promise<EpisodeSources> {
+  const templates = result.sources
+    .filter((source) => source.providerId === 'cvh' && source.kind === 'embed' && source.embedUrl)
+    .slice(0, 4);
+  if (!templates.length) return result;
+
+  const expectedTitles = [ctx.title, ctx.originalTitle, ctx.slug];
+  const titleMatches = await Promise.all(
+    templates.map((source) => cvhTitleMatchesEmbed(source.embedUrl!, expectedTitles)),
+  );
+  const mismatchedIds = new Set(
+    templates.filter((_, index) => titleMatches[index] === false).map((source) => source.id),
+  );
+  const trustedTemplates = templates.filter((_, index) => titleMatches[index] !== false);
+  const resolved = await Promise.all(
+    trustedTemplates.map((source) =>
+      resolveCvhDirectSource(source, ctx.episode, expectedTitles).catch(() => null),
+    ),
+  );
+  const direct = resolved.filter((source): source is EpisodeSource => source !== null);
+
+  // Never expose a CVH ID whose own playlist names a different anime.
+  const safeBaseSources = result.sources.filter((source) => !mismatchedIds.has(source.id));
+  if (!direct.length && safeBaseSources.length === result.sources.length) return result;
+
+  // Signed CVH URLs are short-lived: expose them to this response only.
+  // cacheSet above persists stable iframe templates, never these stream URLs.
+  const directBaseIds = new Set(direct.map((source) => source.id.replace(/:direct$/, '')));
+  const fallbacks = safeBaseSources.map((source) =>
+    directBaseIds.has(source.id) && source.kind === 'embed'
+      ? { ...source, label: `${source.label} · iframe` }
+      : source,
+  );
+  const sources = dedupe([...direct, ...fallbacks]);
+  return {
+    ...result,
+    sources,
+    sourcesUsed: [...new Set(sources.filter(isDirectProviderSource).map((source) => source.providerId))],
+    fromCache: false,
+  };
 }
 
 function dedupe(sources: EpisodeSource[]): EpisodeSource[] {

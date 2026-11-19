@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 import { getTitle, loadTitles } from '@/lib/catalog';
 import { episodeCount, episodeInfo } from '@/lib/episodes';
 import { maxEpisodeNumberDb, validEpisodeDb } from '@/lib/episode-route';
@@ -23,7 +23,9 @@ interface Props {
 }
 
 /* Аудит 2026-10 (ТЗ 2.2): как и у страницы тайтла, без generateStaticParams маршрут
- * был динамическим и revalidate не работал. Предрендерим первую серию популярных
+ * был динамическим и revalidate не работал. С 2026-11-19 — сутки: страница серии
+ * не содержит live-данных, а частые ревалиды съедали квоту ISR Writes.
+ * Предрендерим первую серию популярных
  * тайтлов (точка входа из поиска и карточек); остальные серии Next дорисует
  * on-demand и закэширует (dynamicParams = true). Полный набор (тайтл × серия) —
  * это сотни тысяч страниц, его не собрать ни здесь, ни на Vercel. */

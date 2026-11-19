@@ -9,6 +9,7 @@ import { library, useLibrary } from '@/lib/library';
 import { trackEvent } from '@/lib/achievements';
 import { formatTime } from '@/lib/format';
 import { availabilityHint } from '@/lib/source-hints';
+import { nextPlayableSource } from '@/lib/player-source-fallback';
 import { Switch } from '@/components/ui/Switch';
 import { ReportForm } from './ReportForm';
 import { SourcesPanel, type SourceGroup } from './SourcesPanel';
@@ -87,6 +88,8 @@ export function PlayerShell({
   const [sideTab, setSideTab] = useState<'episodes' | 'sources'>('sources');
   const [quality, setQuality] = useState('');
   const [playing, setPlaying] = useState(false);
+  const [playbackFailure, setPlaybackFailure] = useState<{ key: string; message: string } | null>(null);
+  const [failedSourcesState, setFailedSourcesState] = useState<{ key: string; ids: string[] }>({ key: '', ids: [] });
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
@@ -113,6 +116,7 @@ export function PlayerShell({
   const [isDrag, setIsDrag] = useState(false);
 
   const dataKey = `${title.slug}:${episode}`;
+  const playbackError = playbackFailure?.key === dataKey ? playbackFailure.message : null;
   /* Аудит 30.09 (react-hooks/set-state-in-effect): при смене серии статус
      выводится из несоответствия ключа (loading), а не ставится синхронно в эффекте. */
   const dataStatus: DataState['status'] = data.key === dataKey ? data.status : 'loading';
@@ -121,7 +125,18 @@ export function PlayerShell({
   const selected: EpisodeSource | undefined = useMemo(
     () =>
       sources.find((s) => s.id === selectedId) ??
-      // провайдер по умолчанию из настроек (ТЗ блок 6): берём его источник, если он есть в серии
+      // Сначала предпочтительный провайдер, но только с прямой ссылкой конкретной серии.
+      (settings.defaultProvider && settings.defaultProvider !== 'demo'
+        ? sources.find((s) =>
+            s.providerId === settings.defaultProvider && !s.guessed && !s.synthesized,
+          )
+        : undefined) ??
+      // A freshly resolved native stream is preferred over an iframe when no
+      // explicit provider preference was saved.
+      sources.find((s) => s.providerId !== 'demo' && s.kind === 'file' && !s.guessed && !s.synthesized) ??
+      // Не выбираем шаблон/подбор, пока существует хотя бы один подтверждённый URL.
+      sources.find((s) => s.providerId !== 'demo' && !s.guessed && !s.synthesized) ??
+      // Если прямых ссылок нет, оставляем доступный шаблон или подобранный URL последним fallback.
       (settings.defaultProvider && settings.defaultProvider !== 'demo'
         ? sources.find((s) => s.providerId === settings.defaultProvider)
         : undefined) ??
@@ -221,16 +236,45 @@ export function PlayerShell({
 
   const keepTime = useRef(0);
   const switchingSrc = useRef(false);
+  const failedSourcesRef = useRef<{ key: string; ids: Set<string> }>({ key: '', ids: new Set() });
   const chooseSource = (id: string) => {
     trackEvent('voice');
     keepTime.current = videoRef.current?.currentTime ?? 0;
     switchingSrc.current = true; // на loadedmetadata не показывать баннер — позицию вернёт restore
     setSelectedId(id);
+    setPlaybackFailure(null);
     setQuality('');
     try {
       localStorage.setItem(`anistream:lastsrc:${title.slug}`, id);
     } catch {}
   };
+
+  const failPlayback = useCallback((message: string) => {
+    if (failedSourcesRef.current.key !== dataKey) {
+      failedSourcesRef.current = { key: dataKey, ids: new Set() };
+    }
+    if (selected?.id) failedSourcesRef.current.ids.add(selected.id);
+
+    setFailedSourcesState({ key: dataKey, ids: [...failedSourcesRef.current.ids] });
+    const next = nextPlayableSource(sources, selected?.id, new Set(failedSourcesRef.current.ids));
+    setPlaybackFailure({
+      key: dataKey,
+      message: next
+        ? `${message} Переключаемся на «${next.label}».`
+        : message,
+    });
+
+    if (!next) return;
+    keepTime.current = videoRef.current?.currentTime ?? 0;
+    switchingSrc.current = true;
+    setSelectedId(next.id);
+    setQuality('');
+    try {
+      localStorage.setItem(`anistream:lastsrc:${title.slug}`, next.id);
+    } catch {
+      /* localStorage may be disabled in private/restricted browsing modes. */
+    }
+  }, [dataKey, selected, sources, title.slug]);
 
   /* видео-двивок */
   useEffect(() => {
@@ -240,8 +284,9 @@ export function PlayerShell({
     if (file.type === 'hls' && !video.canPlayType('application/x-mpegURL')) {
       void import('hls.js')
         .then(({ default: Hls }) => {
-          if (cancelled || !Hls.isSupported()) {
-            video.src = file.url;
+          if (cancelled) return;
+          if (!Hls.isSupported()) {
+            failPlayback('Этот браузер не поддерживает HLS.');
             return;
           }
           const hls = new Hls({ capLevelToPlayerSize: true });
@@ -249,11 +294,15 @@ export function PlayerShell({
           hls.loadSource(file.url);
           hls.attachMedia(video);
           hls.on(Hls.Events.ERROR, (_e, data) => {
-            if (data.fatal) video.src = file.url;
+            if (data.fatal && !cancelled) {
+              failPlayback('Не удалось загрузить видеопоток HLS.');
+              hls.destroy();
+              if (hlsRef.current === hls) hlsRef.current = null;
+            }
           });
         })
         .catch(() => {
-          if (!cancelled) video.src = file.url;
+          if (!cancelled) failPlayback('Не удалось запустить HLS-плеер.');
         });
     } else {
       video.src = file.url;
@@ -269,7 +318,7 @@ export function PlayerShell({
       hlsRef.current?.destroy();
       hlsRef.current = null;
     };
-  }, [file, isEmbed]);
+  }, [file, isEmbed, failPlayback]);
 
   /* Аудит 30.09 (P2-23): таймер скрытия проверяет playing через ref — раньше
      контролы гасли через 3 с и НА ПАУЗЕ (poke не знал состояния). */
@@ -433,6 +482,11 @@ export function PlayerShell({
     v.currentTime = seekRatio(clientX, el) * duration;
   };
 
+  const failedSourceIds = new Set(
+    failedSourcesState.key === dataKey ? failedSourcesState.ids : [],
+  );
+  const nextFallbackSource = nextPlayableSource(sources, selected?.id, failedSourceIds);
+
   const grouped: SourceGroup[] = PROVIDER_ORDER.map((pid) => ({
     pid,
     name: PROVIDER_NAMES[pid] ?? pid,
@@ -474,13 +528,37 @@ export function PlayerShell({
 
         <div className={`player ${uiVisible || !playing ? 'is-ui' : ''} ${isEmbed ? 'is-iframe' : ''}`} ref={shellRef} onMouseMove={poke} onTouchStart={poke}>
           {isEmbed && selected?.embedUrl ? (
-            <iframe
-              className="player__iframe"
-              src={selected.embedUrl}
-              title={`Плеер: ${title.ru}, серия ${episode} (${selected.label})`}
-              allowFullScreen
-              allow="fullscreen; encrypted-media; picture-in-picture"
-            />
+            <>
+              <iframe
+                className="player__iframe"
+                src={selected.embedUrl}
+                title={`Плеер: ${title.ru}, серия ${episode} (${selected.label})`}
+                allowFullScreen
+                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                onLoad={() => setPlaybackFailure(null)}
+              />
+              <div className="player__embed-actions">
+                {nextFallbackSource ? (
+                  <button
+                    type="button"
+                    className="btn btn--primary btn--sm"
+                    onClick={() => failPlayback('Источник не воспроизводится.')}
+                  >
+                    Следующая озвучка
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="player__embed-report btn btn--ghost btn--sm"
+                  onClick={() => setReportOpen(true)}
+                >
+                  Пожаловаться
+                </button>
+              </div>
+              {playbackError ? (
+                <div className="player__status player__status--error" role="alert">{playbackError}</div>
+              ) : null}
+            </>
           ) : (
             <>
               <video
@@ -489,8 +567,12 @@ export function PlayerShell({
                 poster={title.banner ?? title.poster}
                 playsInline
                 onClick={() => (playing ? videoRef.current?.pause() : void videoRef.current?.play().catch(() => {}))}
-                onPlay={() => setPlaying(true)}
+                onPlay={() => {
+                  setPlaying(true);
+                  setPlaybackFailure(null);
+                }}
                 onPause={() => setPlaying(false)}
+                onError={() => failPlayback('Браузер не смог воспроизвести этот файл.')}
                 onTimeUpdate={(e) => {
                   const v = e.currentTarget;
                   setTime(v.currentTime);
@@ -510,6 +592,7 @@ export function PlayerShell({
                 }}
                 onLoadedMetadata={(e) => {
                   const v = e.currentTarget;
+                  setPlaybackFailure(null);
                   setDuration(v.duration);
                   v.playbackRate = rate;
                   /* Баннер «Продолжить» (итерация 3.6, задача 2): только нативные источники
@@ -571,6 +654,16 @@ export function PlayerShell({
               ) : null}
               {dataStatus === 'loading' ? <div className="player__status">Собираем источники…</div> : null}
               {dataStatus === 'error' ? <div className="player__status player__status--error">Источники недоступны: {data.message}</div> : null}
+              {playbackError ? (
+                <div className="player__status player__status--error" role="alert">
+                  <span>{playbackError}</span>
+                  {nextFallbackSource ? (
+                    <button type="button" className="btn btn--primary btn--sm" onClick={() => failPlayback('Текущий источник не воспроизводится.')}>
+                      Попробовать следующий источник
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
               {nextIn !== null && nextEpisode ? (
                 <div className="player__next" role="dialog" aria-label="Следующая серия">
                   <p className="player__next-title">Следующая серия через {nextIn} с</p>
@@ -584,12 +677,12 @@ export function PlayerShell({
                   </div>
                 </div>
               ) : null}
-              <div className="player__ui">
+              {!isEmbed ? <div className="player__ui">
                 <div className="player__top">
                   <div>
                     <p className="player__title">{selected ? `${selected.label} · ${selected.providerName}` : ''}</p>
                     <p className="player__subtitle">
-                      {file ? `${file.quality}p · ${file.type.toUpperCase()}` : ''}
+                      {file ? `${file.quality.toLowerCase() === 'auto' ? 'Авто' : `${file.quality}p`} · ${file.type.toUpperCase()}` : ''}
                       {selected?.guessed ? ' · URL подобран' : ''}
                     </p>
                   </div>
@@ -712,7 +805,15 @@ export function PlayerShell({
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> : (
+                <button
+                  type="button"
+                  className="player__embed-report btn btn--ghost btn--sm"
+                  onClick={() => setReportOpen(true)}
+                >
+                  Пожаловаться на источник
+                </button>
+              )}
               {reportOpen ? (
                 <ReportForm
                   slug={title.slug}
@@ -722,15 +823,15 @@ export function PlayerShell({
                 />
               ) : null}
 
-              {menuOpen ? (
+              {!isEmbed && menuOpen ? (
                 <div className="player__menu" role="menu" aria-label="Настройки плеера">
                   {files.length > 1 ? (
                     <>
                       <p className="player__menu-title">Качество</p>
                       <div className="player__rates">
                         {files.map((f) => (
-                          <button key={f.quality} className={`chip ${(!quality && f === files[0]) || quality === f.quality ? 'is-active' : ''}`} onClick={() => setQuality(f.quality)}>
-                            {f.quality}p{f.type === 'hls' ? ' · HLS' : ''}
+                          <button key={f.quality} className={`chip ${(!quality && f === files[0]) || quality === f.quality ? 'is-active' : ''}`} onClick={() => { setPlaybackFailure(null); setQuality(f.quality); }}>
+                            {f.quality.toLowerCase() === 'auto' ? 'Авто' : `${f.quality}p`}{f.type === 'hls' ? ' · HLS' : ''}
                           </button>
                         ))}
                       </div>
@@ -744,7 +845,7 @@ export function PlayerShell({
               ) : null}
 
               {/* ТЗ 4.1 (3.3): скорость — отдельный dropdown 0.5…2 */}
-              {rateOpen ? (
+              {!isEmbed && rateOpen ? (
                 <div className="player__menu" role="menu" aria-label="Скорость воспроизведения">
                   <p className="player__menu-title">Скорость</p>
                   <div className="player__rates">

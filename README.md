@@ -305,7 +305,7 @@ supabase/     migrations/ — схема (в т.ч. titles, airing_schedule, epi
 
 Принципы:
 
-- **Сервер-first**: каталог, фильтры и жанры рендерятся RSC без клиентского JS; главная и расписание — ISR (`revalidate = 3600`).
+- **Сервер-first**: каталог, фильтры и жанры рендерятся RSC без клиентского JS; главная и расписание — ISR (`revalidate = 3600`), карточки и страницы серий — сутки (`revalidate = 86400`) для экономии ISR Writes.
 - **Офлайн-надёжность**: у каждого постера детерминированный генеративный SVG-фолбэк (`lib/art.ts`);
   расписание читает таблицу `airing_schedule`, а при её недоступности — реальный график из каталога
   (демо-неделя из хеша слага удалена: на проде она показывала «One Piece серия 5» с пометкой «демо»).
@@ -392,9 +392,10 @@ manual-sources.json  →  Upstash Redis (горячий кэш, TTL 24 ч)  → 
 ```
 
 Кэш резолвов хранится в **Supabase** (`episode_sources` + `episode_source_urls`):
-`cache.backend=db` при заданных Supabase-переменных, старт процесса прогревает его в
-память один раз (`instrumentation.ts`, `PROVIDER_CACHE_PRELOAD=0` — выключить), а запись
-идёт UPSERT'ом без перезаписи гигантского файла. JSON-файл
+`cache.backend=db` при заданных Supabase-переменных; точечные чтения идут через
+`dbEpisodeSources()`, а фоновый прогрев `instrumentation.ts` по умолчанию **выключен**
+(`PROVIDER_CACHE_PRELOAD=1` включает его только для self-hosted). Запись идёт UPSERT'ом
+без перезаписи гигантского файла. JSON-файл
 `.cache/providers-resolve-cache.json` из git **удалён** (93 МБ при лимите GitHub 100 МБ,
 Git LFS недоступен по квотам) и остаётся только легаси-сценарием
 `PROVIDER_CACHE_BACKEND=file` для self-hosted/VPS без БД. Причина в цифрах: одно

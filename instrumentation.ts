@@ -13,7 +13,13 @@
 export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
   if (process.env.NEXT_PHASE === 'phase-production-build') return;
-  if ((process.env.PROVIDER_CACHE_PRELOAD ?? '1') === '0') return;
+  /* С 2026-11-19 preload по умолчанию ВЫКЛЮЧЕН. На холодном Vercel-инстансе
+     выборка 60k строк `episode_source_urls` занимала минуты и параллельно
+     выматывала Supabase: `/api/providers` уходил в таймаут и отдавал пустой
+     список, поэтому плеер показывал «Собираем источники…» вместо видео.
+     Источник правды читается точечно через `dbEpisodeSources()`; Redis остаётся
+     горячим кэшем. Включать только для self-hosted: PROVIDER_CACHE_PRELOAD=1. */
+  if ((process.env.PROVIDER_CACHE_PRELOAD ?? '0') === '0') return;
 
   /* ВАЖНО: прогрев не блокирует приём трафика (инцидент 2026-11-17).
      Раньше `register()` ждал полной выборки `episode_source_urls` — 346k строк,

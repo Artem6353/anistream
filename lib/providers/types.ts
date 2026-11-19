@@ -25,6 +25,8 @@ export interface EpisodeSource {
   embedUrl?: string;
   files?: StreamFile[];
   translationId?: string;
+  /** Provider-reported episode count for safe use of URL templates. */
+  episodesCount?: number;
   voice?: 'voice' | 'subtitles' | 'unknown';
   /** URL подобран пулом озвучек (без кэш-шаблона) — может не найтись у провайдера. */
   guessed?: boolean;
