@@ -215,8 +215,14 @@ export default async function TitlePage({ params }: { params: Promise<{ slug: st
     <AgeGate adult={Boolean(title.isAdult)} />
     <div className="detail">
       <div className="detail__backdrop" aria-hidden>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={(title.banner ? imgProxyUrl(title.banner, 1600, 72) : null) ?? artUri(title.slug, title.romaji, true)} alt="" />
+        {/* eslint-disable-next-line @next/next/no-img-element -- LCP-фон: обычный img с явным fetchPriority, без next/image */}
+        <img
+          src={(title.banner ? imgProxyUrl(title.banner, 1600, 72) : null) ?? artUri(title.slug, title.romaji, true)}
+          alt=""
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+        />
       </div>
       <div className="container">
         <div className="detail__inner">

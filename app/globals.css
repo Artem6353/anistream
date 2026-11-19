@@ -319,7 +319,7 @@ input, select {
   pointer-events: none;
 }
 .chip--check.is-active {
-  color: #fff;
+  color: var(--accent-text);
   border-color: color-mix(in srgb, var(--accent) 65%, transparent);
   background: color-mix(in srgb, var(--accent) 20%, transparent);
 }
@@ -1097,7 +1097,8 @@ input, select {
   -webkit-line-clamp: var(--lines, 3);
   -webkit-box-orient: vertical;
   overflow: hidden;
-  color: #cfd8e6;
+  /* Не фиксированный светлый цвет: в light-теме #cfd8e6 на #f4f7fc давал 1.33:1. */
+  color: var(--muted);
 }
 .expandable__text.is-open {
   display: block;
@@ -2446,7 +2447,8 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
 }
 
 .chip.is-active {
-  color: #fff;
+  /* --accent-text адаптирован к теме: на светлом фоне не белый текст (1.14:1). */
+  color: var(--accent-text);
   border-color: color-mix(in srgb, var(--accent) 65%, transparent);
   background: color-mix(in srgb, var(--accent) 20%, transparent);
 }
@@ -3143,6 +3145,10 @@ html[data-tv='true'] .card:focus-within .card__media {
 .reviews__avg { color: var(--warn-text); font-weight: 700; font-size: 13px; display: inline-flex; gap: 5px; align-items: center; }
 .reviews__mode { font-size: 11px; color: var(--muted-2); border: 1px dashed var(--line-strong); padding: 3px 8px; border-radius: 999px; }
 .reviews__form { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.reviews__form--collapsed { display: none; }
+.reviews__open { align-self: flex-start; margin: 12px 0 4px; }
+.reviews__form-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.reviews__form-title { font-size: 13px; font-weight: 700; color: var(--muted); }
 .reviews__rating { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
 .reviews__rating .input { width: 80px; }
 .reviews__text { resize: vertical; min-height: 70px; }

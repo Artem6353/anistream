@@ -163,6 +163,28 @@ describe('provider configuration in health endpoint', () => {
     });
   });
 
+  it('warns when the catalog is truncated below the expected 7900 titles', async () => {
+    mocks.allTitles.mockReturnValue(Array.from({ length: 1000 }, (_, i) => ({ slug: `title-${i}` })));
+
+    const response = await GET(new Request('http://localhost/api/health'));
+    const body = await response.json();
+
+    expect(body.catalogHealthy).toBe(false);
+    expect(body.catalog.expectedMin).toBe(7900);
+    expect(body.warnings).toEqual(['каталог неполный: 1000 тайтлов, ожидается минимум 7900']);
+  });
+
+  it('does not warn when the catalog is complete', async () => {
+    mocks.allTitles.mockReturnValue(Array.from({ length: 8033 }, (_, i) => ({ slug: `title-${i}` })));
+
+    const response = await GET(new Request('http://localhost/api/health'));
+    const body = await response.json();
+
+    expect(body.catalogHealthy).toBe(true);
+    expect(body.catalog.expectedMin).toBe(7900);
+    expect(body.warnings).toEqual([]);
+  });
+
   it('keeps site health separate from provider configuration readiness', async () => {
     mocks.providersWithAvailability.mockReturnValue([
       { id: 'demo', label: 'AniNova Demo', available: true },

@@ -3,7 +3,7 @@ import { isSessionValid } from '@/lib/sync';
 import { requireAuth, queueAuthAction } from '@/lib/auth-gate';
 import { trackEvent } from '@/lib/achievements';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { addReview, loadReviews, reactToReview, fetchCaptcha, SOCIAL_MODE, type ReviewItem, type CaptchaChallenge } from '@/lib/social';
 import { useLibrary } from '@/lib/library';
 import { timeAgo } from '@/lib/format';
@@ -28,20 +28,54 @@ export function ReviewsSection({ slug }: { slug: string }) {
   const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [tsToken, setTsToken] = useState('');
   const [formError, setFormError] = useState('');
+  const [formOpen, setFormOpen] = useState(false);
+  const [turnstileRequested, setTurnstileRequested] = useState(false);
+  const turnstileSlot = useRef<HTMLDivElement>(null);
   const { settings } = useLibrary();
 
+  /* P1-аудит 2026-11-19: не грузим Turnstile (~1.5 МБ) на каждом открытии
+     страницы тайтла. Скрипт подключается только после клика «Оставить отзыв»;
+     до этого форма свёрнута, поэтому виджету нечего рендерить. */
   useEffect(() => {
-    if (!USE_TURNSTILE) return;
-    const w = window as unknown as { aniTurnstileCb?: (t: string) => void; turnstile?: { reset: (el?: string) => void } };
+    if (!USE_TURNSTILE || !turnstileRequested) return;
+    const w = window as unknown as {
+      aniTurnstileCb?: (t: string) => void;
+      turnstile?: { reset: (el?: string | HTMLElement) => void; render?: (el: string | HTMLElement, opts: Record<string, unknown>) => string };
+    };
     w.aniTurnstileCb = (t: string) => setTsToken(t);
-    if (document.querySelector('script[data-turnstile]')) return;
+
+    const renderWidget = () => {
+      if (!turnstileSlot.current || !w.turnstile?.render) return;
+      w.turnstile.render(turnstileSlot.current, {
+        sitekey: TURNSTILE_KEY,
+        callback: (token: string) => setTsToken(token),
+        'expired-callback': () => setTsToken(''),
+        'error-callback': () => setTsToken(''),
+      });
+    };
+
+    if (w.turnstile?.render) {
+      renderWidget();
+      return;
+    }
+    const existing = document.querySelector<HTMLScriptElement>('script[data-turnstile]');
+    if (existing) {
+      existing.addEventListener('load', renderWidget, { once: true });
+      return;
+    }
     const s = document.createElement('script');
-    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     s.async = true;
     s.defer = true;
     s.dataset.turnstile = '1';
+    s.onload = () => renderWidget();
     document.head.appendChild(s);
-  }, []);
+  }, [turnstileRequested]);
+
+  const openForm = () => {
+    setFormOpen(true);
+    if (USE_TURNSTILE) setTurnstileRequested(true);
+  };
 
   useEffect(() => {
     if (SOCIAL_MODE !== 'supabase' || USE_TURNSTILE) return;
@@ -88,6 +122,10 @@ export function ReviewsSection({ slug }: { slug: string }) {
   const submit = async () => {
     // В локальном режиме отзывы сохраняются в localStorage и доступны без аккаунта.
     // Общему Supabase-хранилищу требуется авторизация; после входа действие выполнится из очереди.
+    if (USE_TURNSTILE && !tsToken) {
+      setFormError('Дождитесь проверки Cloudflare и попробуйте ещё раз');
+      return;
+    }
     if (SOCIAL_MODE === 'supabase' && !isSessionValid()) {
       queueAuthAction(() => submit());
       return;
@@ -163,7 +201,18 @@ export function ReviewsSection({ slug }: { slug: string }) {
         </button>
       </div>
 
-      <div className="reviews__form">
+      {!formOpen ? (
+        <button type="button" className="btn btn--outline btn--md reviews__open" onClick={openForm} aria-expanded="false" aria-controls="reviews-form">
+          {tab === 'reviews' ? 'Оставить отзыв' : 'Написать комментарий'}
+        </button>
+      ) : null}
+      <div id="reviews-form" className={`reviews__form${formOpen ? '' : ' reviews__form--collapsed'}`}>
+        <div className="reviews__form-head">
+          <span className="reviews__form-title">{tab === 'reviews' ? 'Новый отзыв' : 'Новый комментарий'}</span>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setFormOpen(false)}>
+            Отмена
+          </button>
+        </div>
         <input className="input" placeholder="Ваше имя" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
         {tab === 'reviews' ? (
           <label className="reviews__rating">
@@ -183,8 +232,8 @@ export function ReviewsSection({ slug }: { slug: string }) {
           </button>
         ) : null}
         <textarea className="input reviews__text" placeholder={tab === 'reviews' ? 'Ваш отзыв об аниме…' : 'Написать комментарий…'} value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} rows={3} />
-        {USE_TURNSTILE ? (
-          <div className="cf-turnstile" data-sitekey={TURNSTILE_KEY} data-callback="aniTurnstileCb" />
+        {USE_TURNSTILE && turnstileRequested ? (
+          <div ref={turnstileSlot} className="cf-turnstile" data-sitekey={TURNSTILE_KEY} data-callback="aniTurnstileCb" />
         ) : null}
         {SOCIAL_MODE === 'supabase' && !USE_TURNSTILE && captcha ? (
           <label className="reviews__rating">
@@ -234,7 +283,15 @@ export function ReviewsSection({ slug }: { slug: string }) {
                 👎 {r.dislikes}
               </button>
               {tab === 'comments' ? (
-                <button type="button" className="review__vote" onClick={() => setReplyTo(r.id)}>
+                <button
+                  type="button"
+                  className="review__vote"
+                  onClick={() => {
+                    setTab('comments');
+                    setReplyTo(r.id);
+                    openForm();
+                  }}
+                >
                   Ответить
                 </button>
               ) : null}
