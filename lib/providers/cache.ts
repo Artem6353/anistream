@@ -5,6 +5,7 @@ import { getProvidersConfig } from '@/lib/config/providers.config';
 import { kvDel, kvEnabled, kvGet, kvMget, kvSet } from './cache-kv';
 import { dbCacheConfigured, dbCacheCounts, dbLoadCache, dbUpsertEpisode } from './cache-db';
 import { decodeEpisodeCacheValue, encodeEpisodeCacheValue } from './cache-codec.mjs';
+import { normalizeProviderUrl, rewriteAniboom, rewriteCvh } from './url';
 
 /**
  * Cache-first хранилище EpisodeSources (self-growing, как в оригинале):
@@ -201,8 +202,24 @@ export function isDirectProviderSource(source: EpisodeSource): boolean {
     !/:s\d+$/.test(source.id);
 }
 
-function directResult(result: EpisodeSources): EpisodeSources | null {
-  const sources = result.sources.filter(isDirectProviderSource);
+function normalizeCachedSource(source: EpisodeSource, episode?: number): EpisodeSource | null {
+  let url = normalizeProviderUrl(source.embedUrl);
+  if (!url) return null;
+  if (episode && source.providerId === 'cvh') {
+    url = rewriteCvh(url, episode) ?? url;
+  } else if (episode && source.providerId === 'aniboom') {
+    url = rewriteAniboom(url, episode) ?? url;
+  }
+  return url === source.embedUrl ? source : { ...source, embedUrl: url };
+}
+
+function directResult(result: EpisodeSources, episode?: number): EpisodeSources | null {
+  const sources = result.sources
+    .map((source) => normalizeCachedSource(source, episode))
+    .filter((source): source is EpisodeSource => {
+      if (!source) return false;
+      return isDirectProviderSource(source);
+    });
   if (!sources.length) return null;
   return {
     ...result,
@@ -290,7 +307,7 @@ export async function cacheEntriesForSlug(slug: string): Promise<{ episode: numb
         if (isCacheEntryExpired(entry, cfg.ttlMs)) {
           return { episode, sources: null, failed: false };
         }
-        return { episode, sources: directResult(entry.sources), failed: false };
+        return { episode, sources: directResult(entry.sources, episode), failed: false };
       } catch {
         return { episode, sources: null, failed: true };
       }
@@ -322,7 +339,7 @@ export async function cacheEntriesForSlug(slug: string): Promise<{ episode: numb
     if (!key.startsWith(prefix)) continue;
     const ep = Number(key.slice(prefix.length));
     if (!Number.isInteger(ep) || ep < 1 || isCacheEntryExpired(entry, cfg.ttlMs)) continue;
-    const sources = directResult(entry.sources);
+    const sources = directResult(entry.sources, ep);
     if (sources) out.push({ episode: ep, sources });
   }
   return out.sort((a, b) => a.episode - b.episode);
@@ -342,7 +359,8 @@ export async function cacheGet(key: string): Promise<EpisodeSources | null> {
     try {
       const entry = decodeEpisodeCacheValue(raw) as { at: number; ttlMs?: number; sources: EpisodeSources };
       if (isCacheEntryExpired(entry, cfg.ttlMs)) return null;
-      return directResult(entry.sources);
+      const episode = Number(key.slice(key.lastIndexOf(':') + 1));
+      return directResult(entry.sources, Number.isInteger(episode) && episode > 0 ? episode : undefined);
     } catch {
       return null;
     }
@@ -351,7 +369,8 @@ export async function cacheGet(key: string): Promise<EpisodeSources | null> {
   const entry = store[key];
   if (!entry) return null;
   if (isCacheEntryExpired(entry, cfg.ttlMs)) return null;
-  return directResult(entry.sources);
+  const episode = Number(key.slice(key.lastIndexOf(':') + 1));
+  return directResult(entry.sources, Number.isInteger(episode) && episode > 0 ? episode : undefined);
 }
 
 /** Пишем только реальные источники провайдеров (demo не кэшируем). */

@@ -1,5 +1,9 @@
 import type { EpisodeSource, EpisodeSources, ProviderContext } from './types';
 import { cacheGet, cacheEntriesForSlug } from './cache';
+import { rewriteAniboom, rewriteCvh } from './url';
+
+/* Совместимость: исторически эти функции жили здесь и импортируются тестами. */
+export { rewriteAniboom, rewriteCvh } from './url';
 
 /**
  * Синтез серий 2+ без bridge/токенов — три ступени:
@@ -23,30 +27,6 @@ const CVH_STANDARD_DUBBINGS = [
   'MiraiDUB',
 ];
 
-export function rewriteCvh(url: string, episode: number): string | null {
-  try {
-    const u = new URL(url);
-    const parts = u.pathname.split('/').filter(Boolean);
-    if (parts[0] !== 'cdn-iframe' || parts.length < 3) return null;
-    if (!/^\d+$/.test(parts[parts.length - 1])) return null;
-    parts[parts.length - 1] = String(episode);
-    u.pathname = '/' + parts.join('/');
-    return u.toString();
-  } catch {
-    return null;
-  }
-}
-
-export function rewriteAniboom(url: string, episode: number): string | null {
-  try {
-    const u = new URL(url);
-    if (!u.searchParams.has('episode')) return null;
-    u.searchParams.set('episode', String(episode));
-    return u.toString();
-  } catch {
-    return null;
-  }
-}
 
 const synthFrom = (base: EpisodeSources, episode: number): EpisodeSource[] => {
   const out: EpisodeSource[] = [];

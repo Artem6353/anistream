@@ -1,4 +1,5 @@
 import type { EpisodeSource, EpisodeSources } from '@/lib/providers/types';
+import { normalizeProviderUrl, rewriteAniboom, rewriteCvh } from '@/lib/providers/url';
 
 /**
  * Реестр источников видео (аудит 2026-10, ТЗ 1.6/1.7).
@@ -22,7 +23,7 @@ const dbReady = () => Boolean(SUPA_URL && SUPA_KEY);
 /** Настроен ли Supabase — для веток, где файловый fallback недопустимо дорог. */
 export const episodeSourcesDbConfigured = dbReady;
 
-type SourceRow = {
+export type SourceRow = {
   anime_id: number;
   provider: string;
   translation_id: string;
@@ -83,9 +84,33 @@ const PROVIDER_NAMES: Record<string, string> = {
   aniboom: 'AniBoom',
 };
 
-function rowToSource(row: SourceRow, episode: number, embedUrl?: string | null): EpisodeSource | null {
-  const url = embedUrl ?? row.embed_url;
+function normalizeEmbedUrl(value: string | null | undefined): string | null {
+  return normalizeProviderUrl(value);
+}
+
+/** Приводит URL к рабочему виду и подставляет номер серии для шаблонных провайдеров. */
+export function rowToSource(row: SourceRow, episode: number, exactEpisodeUrl?: string | null): EpisodeSource | null {
+  let url = normalizeEmbedUrl(exactEpisodeUrl ?? row.embed_url);
   if (!url) return null;
+
+  /* Legacy-строки AniBoom содержат &amp;, а CVH — зашитую /1/1. Нормализуем амперсанд
+     и переписываем последний сегмент пути/параметр episode под запрошенную серию.
+     Для Kodik это не делаем: hash уникален для каждой серии. */
+  let synthesized = false;
+  if (row.provider === 'cvh') {
+    const rewritten = rewriteCvh(url, episode);
+    if (rewritten) {
+      synthesized = rewritten !== url;
+      url = rewritten;
+    }
+  } else if (row.provider === 'aniboom') {
+    const rewritten = rewriteAniboom(url, episode);
+    if (rewritten) {
+      synthesized = rewritten !== url;
+      url = rewritten;
+    }
+  }
+
   const providerId = row.provider;
   const translationId = row.translation_id;
   return {
@@ -96,8 +121,8 @@ function rowToSource(row: SourceRow, episode: number, embedUrl?: string | null):
     kind: row.kind === 'file' ? 'file' : 'embed',
     embedUrl: url,
     translationId,
+    ...(synthesized ? { synthesized: true } : {}),
     voice: row.translation_type === 'sub' ? 'subtitles' : 'voice',
-    /* Это НЕ guess и НЕ synthesized: строку записал воркер из реального ответа провайдера. */
   };
 }
 
@@ -135,17 +160,25 @@ export async function dbEpisodeSources(animeId: number, episode: number): Promis
   for (const u of urls ?? []) {
     const key = `${u.provider}:${u.translation_id}`;
     if ((titles ?? []).some((r) => `${r.provider}:${r.translation_id}` === key)) continue;
-    if (!u.embed_url) continue;
-    sources.push({
-      id: `${u.provider}:${u.translation_id}:${episode}`,
-      label: PROVIDER_NAMES[u.provider] ?? u.provider,
-      providerId: u.provider,
-      providerName: PROVIDER_NAMES[u.provider] ?? u.provider,
-      kind: u.kind === 'file' ? 'file' : 'embed',
-      embedUrl: u.embed_url,
-      translationId: u.translation_id,
-      voice: 'voice',
-    });
+    const embedUrl = normalizeEmbedUrl(u.embed_url);
+    if (!embedUrl) continue;
+    const source = rowToSource(
+      {
+        anime_id: animeId,
+        provider: u.provider,
+        translation_id: u.translation_id,
+        translation_title: null,
+        translation_type: null,
+        kind: u.kind,
+        embed_url: embedUrl,
+        episodes_count: null,
+        checked_at: null,
+        status: u.status,
+      },
+      episode,
+      embedUrl,
+    );
+    if (source) sources.push(source);
   }
 
   if (!sources.length) return null;
