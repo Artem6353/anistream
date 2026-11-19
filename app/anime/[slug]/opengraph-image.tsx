@@ -3,6 +3,9 @@ import { getTitle } from '@/lib/catalog';
 import { artUri } from '@/lib/art';
 import { TYPE_LABELS } from '@/lib/labels';
 
+/* OG-картинка тайтла не меняется чаще раза в сутки; кэшируем её на edge,
+   чтобы генерация не тратила ISR Writes на каждый показ в соцсетях. */
+export const revalidate = 86400;
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 

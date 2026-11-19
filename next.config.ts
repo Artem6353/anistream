@@ -51,7 +51,9 @@ const CSP_DIRECTIVES = [
   "font-src 'self' data:",
   "media-src 'self' https: blob:",
   "worker-src 'self'",
-  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graphql.anilist.co https://shikimori.io https://shikimori.one https://api.jikan.moe https://api.aniskip.com https://challenges.cloudflare.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io ${analyticsScriptSrc} ${metrikaSrc} ${metrikaWsSrc}`.trim(),
+  /* Direct-HLS CVH: hls.js тянет плейлист и сегменты через fetch, а не <video>,
+     поэтому okcdn/vkuser обязаны быть в connect-src (media-src их не покрывает). */
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graphql.anilist.co https://shikimori.io https://shikimori.one https://api.jikan.moe https://api.aniskip.com https://challenges.cloudflare.com https://plapi.cdnvideohub.com https://*.okcdn.ru https://*.vkuser.net https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io ${analyticsScriptSrc} ${metrikaSrc} ${metrikaWsSrc}`.trim(),
   /* баг 29.09: embed CVH реально живёт на animego.me (cdn-iframe), а не animego.org —
      без .me enforce-CSP блокировал плеер («This content is blocked»). */
   `frame-src https://kodik.info https://kodikplayer.com https://animego.org https://cdn.animego.org https://animego.me https://cdn.animego.me https://aniboom.one https://www.youtube.com https://challenges.cloudflare.com ${metrikaSrc}`.trim(),

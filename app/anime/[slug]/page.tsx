@@ -3,7 +3,7 @@ import type { Title } from '@/lib/types';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 import { getTitle, loadTitles, similarTitles } from '@/lib/catalog';
 import { TYPE_LABELS, genreLabel } from '@/lib/labels';
 import { MetaBadges } from '@/components/anime/MetaBadges';
@@ -47,7 +47,8 @@ const metaDescription = (t: Title) =>
  * динамическим (в сборке — «ƒ /anime/[slug]»), поэтому `export const revalidate = 3600`
  * не применялся вовсе: Vercel отдавал страницу тайтла с cache-control: private, no-store
  * и x-vercel-cache: MISS на каждый запрос. Каждый просмотр = вызов serverless-функции
- * + парсинг 28 МБ titles.json.
+ * + парсинг 28 МБ titles.json. С 2026-11-19 сутки: карточка тайтла меняется редко,
+ * а каждый лишний ревалид = ISR Write в лимите Vercel.
  *
  * generateStaticParams возвращает НЕБОЛЬШОЙ набор самых популярных тайтлов, а
  * dynamicParams = true (по умолчанию) позволяет Next дорисовать любой другой slug
