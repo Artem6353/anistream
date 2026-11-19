@@ -82,6 +82,13 @@ describe('selectTitles: фильтры прогона', () => {
     expect(selectTitles([a, b], {}).selected.map((t) => t.slug)).toEqual(['b', 'a']);
   });
 
+  it('ongoingFirst ставит онгоинги выше более популярных завершённых тайтлов', () => {
+    const popularFinished = { ...finished, slug: 'popular', favourites: 999 };
+    const lowOngoing = { ...ongoing, slug: 'airing', favourites: 1 };
+    const { selected } = selectTitles([popularFinished, lowOngoing], { ongoingFirst: true });
+    expect(selected.map((t) => t.slug)).toEqual(['airing', 'popular']);
+  });
+
   it('skipNoShikimori уважается', () => {
     const withShiki = { ...finished, slug: 'has-shiki', shikimori: { id: 1 } };
     const { selected, skipped } = selectTitles([withShiki, finished], { skipNoShikimori: true });

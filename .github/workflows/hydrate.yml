@@ -36,6 +36,11 @@ on:
         description: 'Только построить план, без резолвов провайдеров'
         type: boolean
         default: false
+      mode:
+        description: 'gaps = только пропуски, live = перепроверить выбранные серии'
+        type: choice
+        default: gaps
+        options: [gaps, live]
       limit:
         description: 'Сколько тайтлов взять (0 = все с пробелами)'
         type: string
@@ -43,7 +48,7 @@ on:
       max_episodes:
         description: 'Потолок серий за прогон (0 = без потолка)'
         type: string
-        default: '0'
+        default: '1200'
       concurrency:
         description: 'Параллельных резолвов, 1..32'
         type: string
@@ -57,6 +62,14 @@ on:
         type: choice
         default: auto
         options: [auto, db, file, api]
+      slug:
+        description: 'Только один тайтл (slug), пусто = по всему scope'
+        type: string
+        default: ''
+      episode:
+        description: 'Только одна серия (0 = все недостающие)'
+        type: string
+        default: '0'
       include_kodik:
         description: 'Поднимать Kodik-bridge (нужен секрет KODIK_TOKEN)'
         type: boolean
@@ -78,12 +91,18 @@ env:
   CATALOG_SOURCE: file
   BASE: http://127.0.0.1:3000
   APP_PORT: '3000'
+  # Bridge отвечает за 4–20 секунд под очередью; прежние 6.5 с давали timeout
+  # на каждой серии и «direct=0» во всех прогонах. 30 с — с запасом на очередь.
+  PROVIDER_TIMEOUT_MS: '30000'
+  MULTIPLAYER_BRIDGE_TIMEOUT_MS: '30000'
 
 jobs:
   hydrate:
     name: hydrate
     runs-on: ubuntu-latest
-    timeout-minutes: 330
+    # С мягким лимитом hydrate (90 мин) job успевает сохранить state и отчёт,
+    # вместо того чтобы быть убитым на 330-й минуте, как прошлые прогоны.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
@@ -144,6 +163,7 @@ jobs:
         env:
           KODIK_TOKEN: ${{ secrets.KODIK_TOKEN }}
           INCLUDE_KODIK: ${{ github.event_name == 'workflow_dispatch' && inputs.include_kodik || 'false' }}
+          PYTHONUNBUFFERED: '1'
         run: |
           set -euo pipefail
           # Эфемерный BRIDGE_TOKEN: bridge'и слушают 127.0.0.1, но токен всё равно
@@ -156,7 +176,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
           # CVH/AniBoom — основной путь гидрации: этих провайдеров нет в sync-sources.yml.
-          MULTIPLAYER_BRIDGE_PORT=8766 nohup python bridges/multi_player_bridge.py > .cache/bridge-multiplayer.log 2>&1 &
+          MULTIPLAYER_BRIDGE_PORT=8766 nohup python -u bridges/multi_player_bridge.py > .cache/bridge-multiplayer.log 2>&1 &
 
           if [ "${INCLUDE_KODIK}" = "true" ] && [ -n "${KODIK_TOKEN}" ]; then
             echo "KODIK_BRIDGE_URL=http://127.0.0.1:8765" >> "$GITHUB_ENV"
@@ -194,6 +214,19 @@ jobs:
 
       - name: Start app
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+        env:
+          # КРИТИЧНО: это окружение процесса next start, а не шага hydrate.
+          # Без BACKFILL_TOKEN приложение отвечало 403 на ?live=1 (все прогоны
+          # давали request-errors), а без Supabase-ключей писало резолвы в
+          # эфемерный файл вместо episode_sources.
+          BACKFILL_TOKEN: ${{ secrets.BACKFILL_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          PROVIDER_CACHE_BACKEND: db
+          PROVIDER_CACHE_ENABLED: 'true'
+          PROVIDER_CACHE_WRITE: 'true'
+          PROVIDER_CACHE_PRELOAD: '0'
         run: |
           set -euo pipefail
           nohup npm run start > .cache/app.log 2>&1 &
@@ -222,13 +255,22 @@ jobs:
           PROVIDER_CACHE_WRITE: 'true'
           # Прогрев всего кэша в память на раннере не нужен: hydrate идёт в свежий процесс.
           PROVIDER_CACHE_PRELOAD: '0'
+          HYDRATE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'gaps' }}
           HYDRATE_INVENTORY_SOURCE: ${{ github.event_name == 'workflow_dispatch' && inputs.inventory_source || 'auto' }}
-          HYDRATE_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && inputs.concurrency || '10' }}
+          HYDRATE_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && inputs.concurrency || '8' }}
           # 0 мс: троттлинг живёт в bridge (BRIDGE_UPSTREAM_CONC + single-flight).
           HYDRATE_DELAY_MS: '0'
           HYDRATE_RETRY_MINUTES: '360'
+          # Новые серии онгоингов — первыми; внутри тайтла сначала последние серии.
+          HYDRATE_ONGOING_FIRST: '1'
+          HYDRATE_NEWEST_FIRST: '1'
+          # Воркер сам остановится и сохранит state до жёсткого timeout job.
+          HYDRATE_MAX_MINUTES: '90'
+          HYDRATE_TIMEOUT_MS: '30000'
+          HYDRATE_SLUG: ${{ github.event_name == 'workflow_dispatch' && inputs.slug || '' }}
+          HYDRATE_EPISODE: ${{ github.event_name == 'workflow_dispatch' && inputs.episode || '0' }}
           LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.limit || '0' }}
-          MAX_EPISODES: ${{ github.event_name == 'workflow_dispatch' && inputs.max_episodes || '0' }}
+          MAX_EPISODES: ${{ github.event_name == 'workflow_dispatch' && inputs.max_episodes || '1200' }}
           SKIP_EPISODES_GREATER_THAN: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_episodes_greater_than || '0' }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
         run: |
@@ -237,15 +279,17 @@ jobs:
           # `|| code=$?` обязателен: GitHub запускает шаг как `bash -e`, поэтому
           # голый вызов с exit 2/130 уронил бы шаг до разбора кода выхода.
           code=0
-          node scripts/hydrate-embeds.mjs || code=$?
+          # 93 минуты: скрипт останавливается сам на 90-й и успевает сохранить state;
+          # timeout — страховка от зависшего fetch, чтобы job не потерял кэш чекпоинта.
+          timeout --signal=INT --kill-after=60s 5580 node scripts/hydrate-embeds.mjs || code=$?
           # 2 = ни одного источника (bridge/upstream недоступны) — это не поломка кода,
-          # 130 = прогон прерван по таймауту/сигналу. Не красим CI, но и не прячем.
+          # 124/130 = прогон прерван по таймауту/сигналу. Не красим CI, но и не прячем.
           if [ "$code" = "2" ]; then
             echo "::warning::Hydrate не нашёл ни одного источника (bridge/upstream). См. .cache/bridge-*.log"
             exit 0
           fi
-          if [ "$code" = "130" ]; then
-            echo "::warning::Hydrate прерван (состояние сохранено, следующий прогон продолжит)."
+          if [ "$code" = "130" ] || [ "$code" = "124" ] || [ "$code" = "137" ]; then
+            echo "::warning::Hydrate остановлен по мягкому лимиту (состояние сохранено, следующий прогон продолжит)."
             exit 0
           fi
           exit "$code"
@@ -281,6 +325,8 @@ jobs:
           path: |
             .cache/hydrate-report.json
             .cache/hydrate-plan.json
+            .cache/hydrate-state.json
+            .cache/provider-errors.jsonl
             .cache/health.json
             .cache/app.log
             .cache/bridge-multiplayer.log

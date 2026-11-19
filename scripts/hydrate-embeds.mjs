@@ -58,6 +58,16 @@ const SKIP_UPCOMING = (process.env.SKIP_UPCOMING ?? '1') !== '0';
 const SKIP_NO_SHIKIMORI = (process.env.SKIP_NO_SHIKIMORI ?? '0') !== '0';
 const SKIP_EPISODES_GREATER_THAN = Math.max(0, Math.floor(numberEnv('SKIP_EPISODES_GREATER_THAN', 0)));
 const RETRY_MINUTES = Math.max(0, numberEnv('HYDRATE_RETRY_MINUTES', 360));
+/* Приоритет свежих серий: онгоинги выше backlog, внутри тайтла — последние серии. */
+const ONGOING_FIRST = (process.env.HYDRATE_ONGOING_FIRST ?? '1') !== '0';
+const NEWEST_FIRST = (process.env.HYDRATE_NEWEST_FIRST ?? '1') !== '0';
+/* Мягкий дедлайн: воркер сам останавливается и сохраняет состояние до того,
+   как GitHub Actions убьёт job по timeout-minutes. 0 — без ограничения. */
+const MAX_RUN_MINUTES = Math.max(0, numberEnv('HYDRATE_MAX_MINUTES', 0));
+const MAX_RUN_MS = MAX_RUN_MINUTES * 60_000;
+/* Точечный прогон для проверки/ручного добора: один тайтл и/или одна серия. */
+const SLUG_FILTER = (process.env.HYDRATE_SLUG ?? '').trim();
+const EPISODE_FILTER = Math.max(0, Math.floor(numberEnv('HYDRATE_EPISODE', 0)));
 const LIMIT = Math.max(0, Math.floor(numberEnv('LIMIT', 0)));
 const MAX_EPISODES = Math.max(0, Math.floor(numberEnv('MAX_EPISODES', 0)));
 const DRY_RUN = process.argv.includes('--dry-run') || process.env.DRY_RUN === '1';
@@ -308,8 +318,16 @@ const { selected: eligibleTitles, skipped } = selectTitles(allTitles, {
   skipUpcoming: SKIP_UPCOMING,
   skipNoShikimori: SKIP_NO_SHIKIMORI,
   skipEpisodesGreaterThan: SKIP_EPISODES_GREATER_THAN,
+  ongoingFirst: ONGOING_FIRST,
 });
-const selectedTitles = LIMIT ? eligibleTitles.slice(0, LIMIT) : eligibleTitles;
+const scopedTitles = SLUG_FILTER
+  ? eligibleTitles.filter((title) => title.slug === SLUG_FILTER)
+  : eligibleTitles;
+if (SLUG_FILTER && !scopedTitles.length) {
+  console.error('HYDRATE_SLUG=' + SLUG_FILTER + ': тайтл не найден среди вышедших серий каталога.');
+  process.exit(1);
+}
+const selectedTitles = LIMIT ? scopedTitles.slice(0, LIMIT) : scopedTitles;
 const skippedUpcoming = skipped.upcoming;
 const skippedNoShikimori = skipped.noShikimori;
 
@@ -326,7 +344,12 @@ console.log(
   ' · upcoming skipped: ' + skippedUpcoming +
   ' · no-Shikimori skipped: ' + skippedNoShikimori +
   ' · giants skipped (>' + SKIP_EPISODES_GREATER_THAN + ' eps): ' + skipped.giants +
-  ' · retry-failed after: ' + RETRY_MINUTES + ' min',
+  ' · retry-failed after: ' + RETRY_MINUTES + ' min' +
+  ' · ongoing first: ' + (ONGOING_FIRST ? 'yes' : 'no') +
+  ' · newest first: ' + (NEWEST_FIRST ? 'yes' : 'no') +
+  ' · max run: ' + (MAX_RUN_MINUTES ? MAX_RUN_MINUTES + ' min' : 'off') +
+  (SLUG_FILTER ? ' · slug: ' + SLUG_FILTER : '') +
+  (EPISODE_FILTER ? ' · episode: ' + EPISODE_FILTER : ''),
 );
 
 /* Resume-состояние: что уже отработано (ok) и что недавно не нашлось (none/err). */
@@ -506,7 +529,10 @@ const resumeSkipped = { resolved: 0, recentFailure: 0 };
 for (const title of selectedTitles) {
   const known = availability.get(title.slug);
   const episodes = [];
-  for (let episode = 1; episode <= title.episodes; episode++) {
+  const episodeNumbers = EPISODE_FILTER
+    ? (EPISODE_FILTER <= title.episodes ? [EPISODE_FILTER] : [])
+    : Array.from({ length: title.episodes }, (_, index) => index + 1);
+  for (const episode of episodeNumbers) {
     const hasDirectCache = known?.[episode] === 'cache';
     // In gaps mode, any state except a direct cache record is a gap.
     // If inventory failed, attempt all episodes rather than silently omitting the title.
@@ -525,6 +551,7 @@ for (const title of selectedTitles) {
       episodes.push(episode);
     }
   }
+  if (NEWEST_FIRST) episodes.reverse();
   if (episodes.length) plan.push({ slug: title.slug, episodes, favourites: title.favourites });
 }
 
@@ -574,6 +601,11 @@ const planSummary = {
   inventoryEarlyStopped,
   limitTitles: LIMIT || null,
   limitEpisodes: MAX_EPISODES || null,
+  ongoingFirst: ONGOING_FIRST,
+  newestFirst: NEWEST_FIRST,
+  maxRunMinutes: MAX_RUN_MINUTES || null,
+  slug: SLUG_FILTER || null,
+  episode: EPISODE_FILTER || null,
   taskSelection: MAX_EPISODES ? 'round-robin by title and missing-episode depth' : 'title-priority, then episode order',
   note: 'Only direct non-demo resolver results count as filled; guessed/synthesized URLs are not treated as verified coverage.',
 };
@@ -609,6 +641,7 @@ if (DRY_RUN) {
   const failures = [];
   const queue = [...tasks];
   const startedAt = Date.now();
+  const runStartedAt = startedAt;
   let stopping = false;
   let lastStateSave = 0;
 
@@ -672,6 +705,11 @@ if (DRY_RUN) {
 
   const workers = Array.from({ length: Math.min(CONCURRENCY, Math.max(1, tasks.length)) }, async () => {
     while (queue.length && !stopping) {
+      if (MAX_RUN_MS && Date.now() - runStartedAt >= MAX_RUN_MS) {
+        stopping = true;
+        console.warn('Hydrate: достигнут мягкий лимит ' + MAX_RUN_MINUTES + ' мин — сохраняем состояние.');
+        break;
+      }
       const task = queue.shift();
       if (!task) break;
       try {

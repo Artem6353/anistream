@@ -21,6 +21,7 @@ export interface SelectTitlesOptions {
   skipUpcoming?: boolean;
   skipNoShikimori?: boolean;
   skipEpisodesGreaterThan?: number;
+  ongoingFirst?: boolean;
 }
 
 export interface SelectTitlesResult {

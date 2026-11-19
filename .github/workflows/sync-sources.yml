@@ -5,10 +5,11 @@ name: Sync video sources (Kodik → Supabase)
 # с дата-центр IP отвечает 401 — поэтому рантайм читает только таблицу episode_sources.
 on:
   schedule:
-    # Онгоинги — раз в день (в день выхода серии источник должен появиться быстро).
-    - cron: "25 4 * * *"
+    # Онгоинги — каждые 6 часов. TTL чекпоинта (SYNC_TITLE_TTL_MINUTES) заставляет
+    # перепроверять те же тайтлы после выхода новой серии, а не навсегда их пропускать.
+    - cron: "35 */6 * * *"
     # Остальной каталог — раз в неделю bulk-проходом по /list (дешевле, чем 8000 /search).
-    - cron: "30 5 * * 0"
+    - cron: "30 2 * * 0"
   workflow_dispatch:
     inputs:
       mode:
@@ -64,14 +65,19 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || '' }}
-          SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'ongoing' }}
+          SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || '' }}
+          SYNC_TITLE_TTL_MINUTES: '360'
           SLUG_ARG: ${{ github.event_name == 'workflow_dispatch' && inputs.slug || '' }}
           LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.limit || '0' }}
         run: |
           set -uo pipefail
-          # cron «25 4» → онгоинги точечно; cron «30 5 * * 0» → bulk по всему каталогу.
-          if [ -n "$MODE" ]; then mode="$MODE"; elif [ "$(date -u +%u)" = "7" ] && [ "$(date -u +%-H)" = "5" ]; then mode="bulk"; else mode="title"; fi
+          # cron «35 */6» → онгоинги точечно; воскресный «30 2» → bulk по всему каталогу.
+          if [ -n "$MODE" ]; then mode="$MODE"; elif [ "$(date -u +%u)" = "7" ] && [ "$(date -u +%-H)" = "2" ]; then mode="bulk"; else mode="title"; fi
           ARGS="--mode $mode"
+          # bulk всегда идёт по всему каталогу: иначе недельный проход никогда не
+          # увидит завершённые тайтлы, а SCOPE=ongoing остался бы от title-режима.
+          if [ "$mode" = "bulk" ]; then SCOPE=""; fi
+          if [ -z "$SCOPE" ] && [ "$mode" = "title" ]; then SCOPE="ongoing"; fi
           [ -n "$SCOPE" ] && export SCOPE
           [ -n "$SLUG_ARG" ] && ARGS="$ARGS --slug $SLUG_ARG"
           [ "${LIMIT:-0}" != "0" ] && ARGS="$ARGS --limit $LIMIT"

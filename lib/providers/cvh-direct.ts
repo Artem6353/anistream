@@ -1,4 +1,4 @@
-import type { EpisodeSource } from './types';
+import type { EpisodeSource, ProviderContext } from './types';
 
 const API_BASE = 'https://plapi.cdnvideohub.com/api/v1/player/sv';
 const API_HEADERS = {
@@ -269,4 +269,59 @@ export async function resolveCvhDirectSource(
     voice: source.voice,
     contentType: 'video',
   };
+}
+
+
+/**
+ * Discover CVH directly by Shikimori id, without the AnimeGO HTML bridge.
+ *
+ * AnimeGO's cdn-iframe id is the same Shikimori id (`/cdn-iframe/52991/...`),
+ * and plapi returns the full playlist with voice studios. This is the fallback
+ * for GitHub Actions, where the AnimeGO search page rejects datacenter IPs.
+ * It is intentionally strict: only an exact normalized title match is accepted.
+ */
+export async function discoverCvhSources(ctx: ProviderContext): Promise<EpisodeSource[]> {
+  const id = Number(ctx.shikimoriId);
+  if (!Number.isInteger(id) || id <= 0) return [];
+  const playlist = await getPlaylist(String(id));
+  if (!playlist) return [];
+  const expected = [ctx.title, ctx.originalTitle, ctx.slug];
+  if (cvhTitleMatches(playlist.titleName, expected) !== true) return [];
+
+  const studios = new Map<string, { studio: string; season: number; episodes: number[]; subtitles: boolean }>();
+  for (const item of playlist.items) {
+    const studio = item.voiceStudio?.trim();
+    const episode = Number(item.episode);
+    const season = Number(item.season ?? 1);
+    if (!studio || !item.vkId || !Number.isInteger(episode) || episode < 1) continue;
+    if (!Number.isInteger(season) || season < 1) continue;
+    const key = `${season}:${normalizeCvhStudio(studio)}`;
+    const entry = studios.get(key) ?? {
+      studio,
+      season,
+      episodes: [],
+      subtitles: /суб|sub/i.test(String(item.voiceType ?? '')),
+    };
+    entry.episodes.push(episode);
+    studios.set(key, entry);
+  }
+
+  return [...studios.values()]
+    .sort((a, b) => a.season - b.season || b.episodes.length - a.episodes.length)
+    .slice(0, 12)
+    .map((entry) => {
+      const studioPath = encodeURIComponent(entry.studio);
+      return {
+        id: `cvh:${normalizeCvhStudio(entry.studio)}:${entry.season}:${entry.episodes.length}`,
+        label: `CVH · ${entry.studio}`,
+        providerId: 'cvh',
+        providerName: 'CVH (AnimeGo)',
+        kind: 'embed',
+        embedUrl: `https://animego.me/cdn-iframe/${id}/${studioPath}/${entry.season}/${Math.max(...entry.episodes)}`,
+        translationId: `${normalizeCvhStudio(entry.studio)}:${entry.season}`,
+        episodesCount: Math.max(...entry.episodes),
+        voice: entry.subtitles ? 'subtitles' : 'voice',
+        contentType: 'anime-serial',
+      } satisfies EpisodeSource;
+    });
 }
