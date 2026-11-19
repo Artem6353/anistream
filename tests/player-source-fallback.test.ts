@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EpisodeSource } from '@/lib/providers/types';
-import { nextPlayableSource } from '@/lib/player-source-fallback';
+import { nextPlayableSource, nextVoiceSource } from '@/lib/player-source-fallback';
 
 const source = (id: string, flags: Partial<EpisodeSource> = {}): EpisodeSource => ({
   id,
@@ -58,4 +58,26 @@ it('prefers another native file source before switching to an iframe', () => {
   const alternateFile = source('aniboom:direct', { kind: 'file', files: [{ quality: '720', url: 'https://example.test/720.mp4', type: 'mp4' }] });
   expect(nextPlayableSource([current, embed, alternateFile], current.id, new Set([current.id])))
     .toBe(alternateFile);
+});
+
+describe('explicit next-voice action', () => {
+  it('keeps the current provider and rotates to another voice before switching players', () => {
+    const kodikA = source('kodik:a');
+    const kodikB = source('kodik:b');
+    const cvhDirect = source('cvh:direct', { kind: 'file', files: [{ quality: 'auto', url: 'https://example.test/a.m3u8', type: 'hls' }] });
+    expect(nextVoiceSource([kodikA, kodikB, cvhDirect], kodikA.id, new Set())).toBe(kodikB);
+  });
+
+  it('falls back to another provider when the current one has a single voice', () => {
+    const kodik = source('kodik:only');
+    const cvh = source('cvh:other');
+    expect(nextVoiceSource([kodik, cvh], kodik.id, new Set())).toBe(cvh);
+  });
+
+  it('does not return a failed voice twice', () => {
+    const a = source('kodik:a');
+    const b = source('kodik:b');
+    const c = source('kodik:c');
+    expect(nextVoiceSource([a, b, c], a.id, new Set([b.id]))).toBe(c);
+  });
 });
