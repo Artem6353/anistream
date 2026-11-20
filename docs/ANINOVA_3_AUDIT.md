@@ -6,7 +6,8 @@
 **Production:** `https://aninova-catalog.vercel.app/`  
 **Репозиторий:** `Artem6353/anistream`  
 **Продуктовое ограничение (подтверждено владельцем 2026-11-20):** все комиксы, манга, манхва, маньхуа, вебтуны и оригинальные графические произведения — **только на русском языке**.  
-**Статус B0:** `PARTIAL` — аудит, карта системы, backup и ADR готовы; живые GitHub/CodeQL/Vercel/Advisor-данные и часть DB-проверок недоступны без токенов; блокирующий fix подготовлен веткой, PR не открыт.
+**Статус B0:** `PARTIAL` — аудит, карта системы, backup и ADR готовы; живые GitHub/CodeQL/Vercel/Advisor-данные и часть DB-проверок недоступны без токенов; блокирующий fix подготовлен веткой, PR не открыт.  
+**Статус B0.5:** `PARTIAL` — Actions/PR-flow проверены, найдена и уточнена причина F-02, подготовлены планы F-03/F-04/F-06; CodeQL/Dependabot/Advisors и полный backup остаются `BLOCKED`. Полный отчёт — `docs/ANINOVA_3_B0_5_REPORT.md`.
 
 ---
 
@@ -308,7 +309,7 @@ sha256sum -c .cache/b0-wip-20261119/SHA256SUMS
 
 ### F-01 — P0, блокирующий: автоматизация каталога пушит в защищённый `main`
 
-**Evidence:** `scripts/push-catalog-commit.sh` содержал `git push origin HEAD:main`; этот helper вызывался из `sync-catalog.yml`, `repair-catalog-descriptions.yml`, `hydrate.yml`. В ТЗ зафиксирован отказ GitHub: «Changes must be made through a pull request».
+**Evidence:** `scripts/push-catalog-commit.sh` содержал `git push origin HEAD:main`; этот helper вызывался из `sync-catalog.yml`, `repair-catalog-descriptions.yml`, `hydrate.yml`. Свежий run `44603963760` (2026-11-19T19:59:21Z, `main` @ `6ed9d1c`) упал на шаге 10 «enrich with Shikimori»; annotations GitHub: `Catalog push rejected; fetching main and rebasing (attempt 1/3..3/3)`, затем `Catalog push failed after three attempts` и `Process completed with exit code 1` на `.github/workflows/sync-catalog.yml:66-67`. Это подтверждает: причина — не сеть и не данные, а запрет direct push в защищённый `main`.
 
 **Impact:** каждый cron-прогон синка каталога завершается ошибкой после выполнения работы; изменения не доходят до `main`, ветка защиты не должна отключаться.
 
@@ -318,7 +319,9 @@ sha256sum -c .cache/b0-wip-20261119/SHA256SUMS
 - workflow получают `pull-requests: write` и `GITHUB_TOKEN` только на шаге публикации;
 - батчи коммитятся локально, публикуются одним PR в конце;
 - Python-тесты переписаны на проверку «нет push в main», «PR создаётся/переиспользуется», «грязное дерево fail-closed».
-- Локальная проверка helper'а: ручной harness с fake `git`/`curl` — 4 сценария (create PR, reuse PR, nothing to publish, dirty tree) прошли; Python-тесты на Windows пропускаются из-за exec-bit и выполнятся в CI Linux.
+- Локальная проверка helper'а (B0.5): Python-тесты теперь запускаются и на Windows (fake `git`/`curl` через `GIT_BIN`/`CURL_BIN`), 10 passed / 1 skipped (exec-bit проверяется в Linux CI); покрыты create PR, reuse PR, force-with-lease, nothing-to-publish, dirty tree, push failure, GitHub GET 500, PR POST 422, отсутствие direct push в workflow/helper.
+- Executable bit helper'а выставлен в git-index (`100755`); на Linux CI проверяется отдельным тестом.
+- При падении прогона после мутаций `titles.json` сохраняется artifact'ом `catalog-batch-<run_id>` (retention 14 дней), чтобы локальные коммиты раннера не терялись.
 
 **Ограничение:** PR не открыт, ветка не запушена — нет `gh`/GitHub token в локальной среде. Команды для владельца:
 
@@ -329,15 +332,19 @@ git push -u origin fix/catalog-sync-pr-flow
 
 ### F-02 — P1: DB-прайм каталога не активен в production
 
-**Evidence:** `/api/health` → `catalog.source=file`, `catalog.configured=db`, `count=8033`; `public.titles` = 8033 строки; локальный замер 10 страниц ≈ 6,0 с; бюджет 8 с; прайм fire-and-forget.
+**Evidence (B0.5, уточнено):** `/api/health` → `catalog.source=file`, `catalog.configured=db`, `count=8033`; `public.titles` = 8033 строки. В production четыре запроса с интервалом 10 с попали в один процесс (`uptime` 1555→1590), но `source` остался `file` даже через 40 с. Локально с `CATALOG_SOURCE=db` и бюджетом 60 с первый запрос отдал `file`, а через ~6 с тот же процесс переключился на `source=db` (8033). Замер 10 страниц `titles`: `select=*` ≈3,3 с / 19,4 МБ; card-projection ≈2,1 с / 4,0 МБ. Production-бюджет — 8 с (`lib/catalog.ts:139`).
 
-**Impact:** каждый холодный процесс парсит 28 МБ JSON (≈2,7 с в health), DB-путь не проверяется в бою; при расхождении файла и БД поведение будет непредсказуемым. Данные сейчас идентичны по количеству, поэтому пользовательского дефекта нет.
+**Причина (подтверждена частично):** `primeCatalogFromDb()` кэширует промис навсегда (`lib/catalog.ts:130-131`); при таймауте/любой ошибке страницы возвращает `0` (`:150-162`, `:190-191`), и повторных попыток в этом процессе нет. Health читает каталог до завершения прайма, а на serverless фоновая работа может быть заморожена после ответа. Восьми секунд недостаточно для холодного прайма; после первого обрыва `source=file` остаётся до конца жизни инстанса. Точная ветка (`timeout` vs HTTP error) без диагностики не видна — catch молчит.
 
-**Решение B0:** не менять «вслепую». В B3/инфраструктурном PR:
-1. добавить в health причину прайма (`completed|timeout|http_error|min_rows`, `elapsedMs`, `rows`);
-2. измерить реальное время прайма на Vercel;
-3. либо поднять бюджет и прогревать асинхронно с readiness-сигналом, либо перейти на ленивую загрузку каталога из БД без полного прайма;
-4. добавить тест, что при доступной полной БД health после прогрева показывает `source=db`.
+**Impact:** каждый холодный процесс парсит 28 МБ JSON; DB-путь не проверяется в бою; при расхождении файла и БД поведение непредсказуемо. Данные совпадают по количеству, поэтому пользовательского дефекта сейчас нет.
+
+**Решение (план, не применять до staging-проверки):**
+1. добавить в health `catalog.prime = {status, reason, elapsedMs, rows, pages, startedAt, finishedAt}` без секретов;
+2. не кэшировать `0` навсегда: сбрасывать `priming` при transient-ошибке, retry с backoff и circuit breaker;
+3. не обрывать весь прайм из-за одной страницы: per-page retry, активное время вместо wall-clock, чтобы заморозка инстанса не съедала бюджет;
+4. уменьшить projection для runtime-каталога (card-projection 4 МБ вместо 19 МБ) и/или грузить описания лениво;
+5. прогрев: ограниченный awaited prime в `instrumentation.register()` либо отдельный snapshot в Storage/CDN; выбрать после замера cold start на Vercel;
+6. тесты: cold start с медленной БД, падение одной страницы, timeout, freeze-симуляция, `source=db` после успешного прайма, `source=file` при неполной таблице.
 
 ### F-03 — P1: legacy-auth хранит токены в `localStorage`
 
@@ -373,15 +380,15 @@ git push -u origin fix/catalog-sync-pr-flow
 
 ### F-07 — P1, BLOCKED: нет свежих GitHub/CodeQL/Vercel/Advisor данных
 
-**Evidence:** unauthenticated GitHub API → `403 rate limit`; `gh` не установлен; Vercel/Supabase Management token отсутствует.
+**Evidence (B0.5):** GitHub Actions API доступен без токена: получены 100 последних runs и job/annotations для `44603963760`. `code-scanning/alerts`, `dependabot/alerts` и `branches/main/protection` возвращают `401 Requires authentication`; `gh` не установлен; Vercel/Supabase Management token отсутствует; Supabase Advisors недоступны.
 
-**Impact:** нельзя подтвердить отсутствие critical/high alerts и drift политик; B0 не может закрыть security-часть «по факту».
+**Impact:** нельзя подтвердить отсутствие critical/high CodeQL/Dependabot alerts и drift политик; Actions-часть закрыта, security-часть — нет.
 
-**Что нужно от владельца:** выполнить команды из §9 или выдать read-only токены; после этого обновить этот документ.
+**Что нужно от владельца:** выполнить команды из §9 или выдать read-only токены (GitHub `security_events: read`, Supabase Management read, Vercel read); после этого обновить этот документ и risk register.
 
 ### F-08 — P2: 6 workflow без явного `permissions`
 
-См. §4.9. Рекомендация: отдельный PR с `permissions: contents: read` (и `pull-requests: write` только там, где нужно).
+См. §4.9. **B0.5 fix:** ветка `fix/workflow-least-privilege` (`ed8ba3a`) добавляет `contents: read` в `ci`, `e2e`, `uptime`, `rls`, `push-daily`, `push-test`; новый тест `tests/test_workflow_permissions.py` падает, если у workflow нет top-level `permissions.contents` или запрошен `write-all`. PR не открыт (нет GitHub token).
 
 ### F-09 — P2: `check:rls` сломан на текущем бандле
 
@@ -423,9 +430,11 @@ git push -u origin fix/catalog-sync-pr-flow
 
 104 ветки, много squash-merged. Рекомендация: после B0 удалить смерженные remote-ветки (владельцем), оставить `main` + активные.
 
-### F-15 — P1 (product constraint): комиксы только на русском
+### F-15 — P1 (product constraint, final): комиксы только на русском
 
-**Evidence:** подтверждено владельцем 2026-11-20; в Master Specification язык контента не был зафиксирован как жёсткое условие. Текущего Comics-домена нет, поэтому дефекта в проде нет — есть риск спроектировать импорт/reader без этого ограничения.
+**Evidence:** окончательно утверждено владельцем 2026-11-20; в Master Specification язык контента не был зафиксирован как жёсткое условие. Текущего Comics-домена нет, поэтому дефекта в проде нет — есть риск спроектировать импорт/reader без этого ограничения.
+
+**Финальное правило (без повторного согласования):** публичное произведение Comics обязано иметь русское название и проверенные русские метаданные; reader показывает только главы `language='ru'`; fallback на en/ja/ko/zh запрещён; оригинальные названия хранятся только для сопоставления ID и не заменяют русские в публичном UI; публикация fail-closed; наличие RU-локализации не заменяет проверку прав.
 
 **Impact:** если B3 начнёт импортировать главы без фильтра `language='ru'`, AniNova нарушит продуктовое требование и может показать нелицензированный/непереведённый контент. Если language не участвует в правах, fail-closed модель прав не сработает.
 
@@ -435,6 +444,30 @@ git push -u origin fix/catalog-sync-pr-flow
 - импортёр маркирует не-RU записи `needs_translation` и не публикует их;
 - quality gate и acceptance-тесты B3 проверяют, что не-RU глава не открывается;
 - для оригинальных произведений — русский текст обязателен до публикации reader-версии.
+
+### F-16 — P2: GitHub Actions используют Node 20 actions под Node 24
+
+**Evidence (B0.5):** annotation к run `44603963760`: «Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4». В workflow 53 вхождения `actions/*@v4`/`setup-python@v5`.
+
+**Impact:** предупреждение, не отказ; при следующем ужесточении GitHub Actions возможны поломки CI.
+
+**Fix:** отдельный PR обновить actions на актуальные major-версии, прогнать CI/E2E; не менять вместе с PR-flow.
+
+### F-17 — P2: dev-only high advisory в `zod@4.6.5`
+
+**Evidence (B0.5):** `npm audit --omit=dev` → 0 vulnerabilities; полный `npm audit` → `zod <4.6.6`, severity high, GHSA-mrhx-c7xc-m3w5 (memory exhaustion, CWE-770), приходит транзитивно через `eslint-config-next@16.3.5 → eslint-plugin-react-hooks@7.1.1`.
+
+**Impact:** не входит в production runtime (`dev: true` в lock), но отравляет полный audit и будущий CI-гейт.
+
+**Fix:** обновить `eslint-config-next`/`eslint-plugin-react-hooks` или добавить overrides `zod@^4.6.6`; проверить `npm run lint`/`npm test`; не закрывать advisory без обновления.
+
+### F-18 — P3: нет Dependabot config и SECURITY.md
+
+**Evidence (B0.5):** `.github/dependabot.yml` отсутствует; `SECURITY.md` отсутствует; CodeQL workflow в репозитории нет (возможно, default setup в GitHub, но проверить alerts без токена нельзя).
+
+**Impact:** нет автоматических dependency PR и публичного канала уязвимостей; CodeQL-статус неизвестен.
+
+**Fix:** добавить `dependabot.yml` (npm + github-actions, weekly), `SECURITY.md`; подтвердить CodeQL default setup или добавить workflow с least-privilege permissions.
 
 ---
 
@@ -515,7 +548,7 @@ gh api repos/Artem6353/anistream/branches/main/protection
 4. **Приоритет auth-долга:** recovery/reset/delete до B1 или после B1 (дизайн)?
 5. **Мобильный репозиторий:** подтверждается ли отдельный `aninova-mobile` (ADR-001) и когда создавать?
 6. **Sign in with Apple:** нужен ли сразу для iOS-релиза (зависит от App Review 4.8)?
-7. **Русский язык комиксов:** считать ли требование применимым и к метаданным (только RU-названия/описания) или достаточно русского контента глав и RU-интерфейса? Предлагаемое прочтение: UI и описания — RU, оригинальное название хранится справочно; reader — только RU-главы. Подтвердить до B3.
+7. ~~Русский язык комиксов~~ — **решено 2026-11-20:** RU-название и проверенные русские метаданные обязательны для публичных произведений; reader — только RU-главы; fallback на другие языки запрещён; оригинальные названия — только для сопоставления ID. См. ADR-012 §13.7.
 
 ---
 
@@ -524,12 +557,14 @@ gh api repos/Artem6353/anistream/branches/main/protection
 | Пункт B0 | Статус | Комментарий |
 |---|---|---|
 | 1. Inspect main/ветки/WIP | `DONE` | WIP сохранён, ветки проверены |
-| 2. Свежие GitHub/CodeQL/Dependabot/Actions/Vercel/Supabase/Redis | `PARTIAL` | Redis OK; GitHub/Vercel/Advisors `BLOCKED` |
+| 2. Свежие GitHub/CodeQL/Dependabot/Actions/Vercel/Supabase/Redis | `PARTIAL` | Redis OK; Actions runs/annotations получены в B0.5; CodeQL/Dependabot/Vercel/Advisors `BLOCKED` |
 | 3. Карта routes/components/API/DB/auth/storage/workflows | `DONE` | §4 |
-| 4. Schema vs code vs prod | `PARTIAL` | таблицы/счётчики сверены; policies/grants — нет |
-| 5. Каталог, player, provider cache, user data, auth | `DONE` | §4.8, §5 |
-| 6. Backup metadata + restore instructions | `PARTIAL` | файлы/метаданные есть; DB dump — нет доступа |
-| 7. Блокирующие infra fixes отдельными PR | `PARTIAL` | ветка `fix/catalog-sync-pr-flow` готова; PR не открыт |
-| 8. ADR по API/mobile/auth/data/design | `DONE` | `docs/ANINOVA_3_ARCHITECTURE.md` |
+| 4. Schema vs code vs prod | `PARTIAL` | таблицы/счётчики сверены; policies/grants — нет; F-06 зависимости проверены |
+| 5. Каталог, player, provider cache, user data, auth | `DONE` | §4.8, §5; F-02 причина уточнена |
+| 6. Backup metadata + restore instructions | `PARTIAL` | файлы/метаданные проверены; DB dump/restore drill — нет доступа |
+| 7. Блокирующие infra fixes отдельными PR | `PARTIAL` | `fix/catalog-sync-pr-flow` + `fix/workflow-least-privilege` готовы; PR не открыты |
+| 8. ADR по API/mobile/auth/data/design | `DONE` | `docs/ANINOVA_3_ARCHITECTURE.md` + ADR-012 §13.7 final |
+
+**B0.5 уточнение:** Actions-часть F-07 закрыта; security-часть (CodeQL/Dependabot/branch protection/Advisors) остаётся `BLOCKED`. F-01 причина подтверждена run `44603963760`; F-02 воспроизведена и объяснена; F-03/F-04/F-06 планы добавлены; backup остаётся `PARTIAL` (нет полного DB dump/restore drill).
 
 **Итог:** B0 можно считать завершённым после снятия F-07 (внешние токены) и подтверждения F-01 в PR. До этого — `PARTIAL`, не `DONE`.

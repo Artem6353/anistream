@@ -106,6 +106,21 @@ email signup → confirmation → sign in → resend → forgot (anti-enumeratio
 - Sign in with Apple — проверить актуальные App Review Guidelines; добавить, если применимо к iOS-релизу.
 - Logout очищает cookie, legacy-зеркала, in-memory cache; гостевую библиотеку не удаляет без согласия.
 
+**План миграции legacy-auth (B0.5, выполнять в B4; не удалять старый контур до доказанной совместимости):**
+
+| Фаза | Действие | Критерий выхода |
+|---|---|---|
+| 0. Инвентаризация | Найти все чтения/записи `anistream:supa_*`, `getToken`, `saveToken`, `applyAuthTokens`, `adoptLegacySessionIntoCookieStore`; зафиксировать экраны и API | Список потребителей с file:line, тест-план |
+| 1. Совместимость | `getToken()` читает cookie-сессию SDK; legacy-ключи только читаются для миграции, не пишутся; `applyAuthTokens` → единый `setSession` через SDK | Старые сессии продолжают работать; новые токены не попадают в localStorage |
+| 2. Web-контур | Единый `AuthProvider` на `@supabase/ssr`; `AuthModal` вызывает SDK; server `getUser()`; proxy обновляет cookies | Вход/выход/refresh работают в web и SSR; нет токенов в localStorage |
+| 3. Полные flows | confirmation/resend, reset, change email/password, Google link/unlink, sessions list/revoke, export, delete | Security-тесты: redirect allowlist, PKCE/state, anti-enumeration, ownership, no token in logs |
+| 4. Guest merge | Анонимные bookmarks/history/reviews получают `owner_key`; при входе — preview + merge по детерминированным ключам, конфликт → сохранить обе версии | Нет потери гостевых данных; merge идемпотентен; есть rollback |
+| 5. Вывод legacy | Удалить `saveToken`/`saveTokens` и ключи; оставить one-time cleanup | 30 дней без роста ошибок; тесты зелёные; релиз notes |
+
+**Инварианты:** `service_role` никогда не в браузере; JWT/refresh не в localStorage, не в URL, не в логах; logout чистит cookie + in-memory + legacy-ключи; удаление аккаунта не удаляет гостевые данные без согласия; linking только подтверждённый, без auto-merge по email.
+
+**Rollback:** feature flag `AUTH_CONTOUR=legacy|cookie`; на время B4 оба контура читают один `auth.users.id`; откат — вернуть чтение legacy-ключей, не удаляя cookie-сессию. Удаление legacy — только после 30-дневного окна и backup.
+
 ---
 
 ## 6. ADR-005 — Права на контент: fail-closed
@@ -122,6 +137,31 @@ email signup → confirmation → sign in → resend → forgot (anti-enumeratio
 **Язык как часть правового условия:** для comics `language` входит в проверку допуска. Источник с не-RU главами не становится доступен только потому, что `rights_status=approved`; нужна русскоязычная версия с подтверждёнными правами (ADR-012).
 
 **Следствие для текущего anime-домена:** `episode_source_urls` сейчас anon-readable (F-06). В B3/B7 закрыть прямой anon-доступ и отдавать проекцию через API с rate limit; это не ломает player, если API сохраняет контракт.
+
+**F-06 — план закрытия anon-доступа (B0.5; не применять до проверки зависимостей):**
+
+Текущее состояние: `public.episode_source_urls` (350 074) и `public.episode_sources` (30 406) имеют `for select using (true)` (`supabase/migrations/20261012_episode_sources.sql:56,61`) и читаются анонимным ключом через PostgREST. Это утечка provider/URL-метаданных и обход API rate limit.
+
+Зависимости (проверено):
+- сервер: `lib/episode-sources.ts:20`, `lib/providers/cache-db.ts:23` — используют `SUPABASE_SERVICE_KEY || NEXT_PUBLIC_SUPABASE_ANON_KEY`;
+- API: `app/api/providers/[slug]/[episode]/route.ts` и `/api/availability/[slug]` читают через серверный слой;
+- workflows/scripts: `hydrate.yml`, `db-size.yml`, `episode-coverage-weekly.yml`, `refresh-kodik-episode-cache.yml`, `sync-titles-db.yml`;
+- клиентских компонентов, читающих эти таблицы напрямую, не найдено.
+
+План:
+1. Убрать anon-fallback в `lib/episode-sources.ts` и `lib/providers/cache-db.ts`: без `SUPABASE_SERVICE_KEY` — fail-closed с логом, а не тихое чтение anon-ключом.
+2. Добавить staging-тест: anon `GET /rest/v1/episode_source_urls?select=*&limit=1` → `401/403` или 0 строк; service-role — читает; player API отдаёт тот же контракт.
+3. Миграция (отдельный PR, после теста):
+   ```sql
+   drop policy if exists episode_sources_read on public.episode_sources;
+   drop policy if exists episode_source_urls_read on public.episode_source_urls;
+   revoke select on public.episode_sources, public.episode_source_urls from anon, authenticated;
+   ```
+   Write-политики `service_role` оставить; RLS не отключать.
+4. Проверить все workflows/scripts на service key; если какой-то использует anon — перевести на service key в GitHub Secrets, не в клиент.
+5. Rollback: вернуть read-политику и grant в одной миграции; player не зависит от anon-доступа.
+
+**Не делать:** не удалять таблицы/строки, не отключать RLS, не выдавать service key в браузер, не закрывать доступ до staging-проверки.
 
 ---
 
@@ -230,7 +270,7 @@ email signup → confirmation → sign in → resend → forgot (anti-enumeratio
 
 - Текст глав/страниц — русский, с подтверждённым правом на публикацию/embed.
 - Название, описание, жанры, статус, предупреждения, UI-тексты — русские.
-- Оригинальное название, `title_en`, `title_romaji`, авторские имена и издательские данные могут храниться как справочные поля и показываться вторично.
+- Оригинальное название, `title_en`, `title_romaji`, авторские имена и издательские данные могут храниться как справочные поля **только для сопоставления ID/источников** и не заменяют русское название в публичном UI. Показывать их публично можно только как вторичную подпись, если русское название уже есть; публикация без русского названия запрещена.
 - Оригинальное произведение, созданное не на русском, допускается к reader только после русскоязычной локализации с подтверждёнными правами. До этого — карточка без кнопки чтения.
 
 ### 13.2. Поля данных
@@ -257,9 +297,10 @@ comic_rights.language             text            -- язык лицензии/�
 
 1. `is_published=true` **и** `ru_ready=true` **и** есть `comic_chapters.language='ru'` **и** `rights_status='approved'` **и** `access_mode` разрешён.
 2. Нет русского источника/перевода → `ru_ready=false`, карточка показывается, кнопка чтения отсутствует, отображается «Где читать официально» только если ссылка разрешена.
-3. Не-RU глава может храниться как metadata/provenance, но **не** отдаётся reader-API и не индексируется.
+3. Не-RU глава может храниться как metadata/provenance, но **не** отдаётся reader-API и не индексируется. Автоматический fallback на `en`/`ja`/`ko`/`zh` запрещён: отсутствие RU-главы — это отказ в доступе, а не переключение языка.
 4. Автоперевод/машинный перевод без прав и редактуры не считается русскоязычной публикацией и не открывается.
 5. При отзыве прав или истечении срока русскоязычный доступ скрывается, даже если глава осталась в БД.
+6. Публикация fail-closed: если язык главы неизвестен, пуст или не `ru`, глава не попадает в reader-выборку и не считается `ru_ready`.
 
 ### 13.4. Импорт и quality gate
 
@@ -285,9 +326,16 @@ comic_rights.language             text            -- язык лицензии/�
 - Fan-translation без разрешения не допускается в hosted/embed.
 - Если русское издание доступно только на внешней официальной платформе — используем `external_link`, без проксирования страниц.
 
-### 13.7. Открытый вопрос до B3
+### 13.7. Финальное решение (утверждено 2026-11-20, без повторного согласования)
 
-Нужно подтвердить, считается ли требование «только на русском» применимым к **метаданным** (только RU-названия/описания) или достаточно русского контента глав и RU-интерфейса. Предлагаемое прочтение: UI и описания — RU, оригинальное название — справочно, reader — только RU-главы. До подтверждения B3 не создаёт публичные comics-таблицы с не-RU reader-контентом.
+1. **Публичное произведение Comics обязано иметь русское название и проверенные русские метаданные.** `title_ru` — NOT NULL для публикации; `description_ru` — обязательное для publish-гейта. Оригинальные названия хранятся только для сопоставления ID и не являются публичным названием.
+2. **Reader показывает только главы `language='ru'`.** Это правило уровня API и RLS, а не только UI. Не-RU главы не отдаются reader-эндпоинтом даже при прямом запросе.
+3. **Fallback на en/ja/ko/zh запрещён.** Нет RU-главы → нет чтения; показываем «Русскоязычная версия пока недоступна» и, если разрешено, официальную ссылку.
+4. **Публикация fail-closed.** Неизвестный/пустой язык, `translation_status != ready`, `ru_ready != true` или отсутствие `rights_status='approved'` блокируют публикацию и reader-доступ.
+5. **RU-локализация ≠ права.** Русский перевод — отдельный объект прав; лицензия на оригинал не даёт права на перевод/публикацию RU-версии. Fan-translation без разрешения не допускается.
+6. **Проверяемость.** B3 acceptance: 0 не-RU глав в reader-выборке; 0 публичных works без `title_ru`; quality gate падает при нарушении; RLS/API-тест подтверждает отказ на не-RU главу.
+
+До выполнения этих условий B3 не создаёт публичные comics-таблицы и не включает reader.
 
 ---
 

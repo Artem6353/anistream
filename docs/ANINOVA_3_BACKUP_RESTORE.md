@@ -24,10 +24,25 @@
 ### 1.1. Проверка целостности
 
 ```bash
-sha256sum -c .cache/b0-wip-20261119/SHA256SUMS
-node -e 'const a=require("./backups/lib_data_titles.json.2026-11-19.bak"); if(!Array.isArray(a)||a.length!==8033) process.exit(1); console.log("titles backup OK:",a.length)'
+# SHA256SUMS содержит имена app/*, но копии лежат в .cache/b0-wip-20261119/;
+# сверяем хэши самих копий (ожидаемые значения — в SHA256SUMS).
+sha256sum .cache/b0-wip-20261119/layout.tsx .cache/b0-wip-20261119/theme-2026.css
+node -e 'const fs=require("fs"); const a=JSON.parse(fs.readFileSync("./backups/lib_data_titles.json.2026-11-19.bak","utf8")); if(!Array.isArray(a)||a.length!==8033) process.exit(1); console.log("titles backup OK:",a.length)'
 node -e 'const s=require("./.cache/b0-metadata-snapshot.json"); console.log("tables:",Object.keys(s.tables).length)'
 ```
+
+### 1.2. Проверка B0.5 (2026-11-20)
+
+| Проверка | Результат | Evidence |
+|---|---|---|
+| `titles.json` backup читается как JSON-массив | `OK`, 8033 | `JSON.parse(fs.readFileSync(...))`; прежняя команда с `require()` на `.bak` давала ложный `not-array`, т.к. Node не парсит `.bak` как JSON |
+| WIP SHA256 | `OK` (оба файла) | `26026d48… layout.tsx`, `3fa79462… theme-2026.css` |
+| Метаданные БД | `OK`, 26 таблиц | `.cache/b0-metadata-snapshot.json` |
+| Полный `pg_dump` / PITR | `BLOCKED` | нет connection string/DB password, нет Management API token; `pg_dump`/`psql`/`supabase` CLI не установлены |
+| Restore drill | `NOT DONE` | нельзя создать тестовую БД/восстановить дамп без доступа; partial table snapshot — не полный backup |
+| Weekly backup workflow | `PARTIAL` | `.github/workflows/backup-weekly.yml` создаёт ветку `backups` только для tracked-файлов; БД/Storage не покрывает |
+
+**Вывод B0.5:** локальные file/WIP-бэкапы проверены; полноценный DB+Storage backup и restore drill остаются `BLOCKED` до получения owner-доступа. Это не позволяет считать backup-часть B0 закрытой.
 
 Ожидаемо: 8033 тайтла, 26 таблиц.
 
