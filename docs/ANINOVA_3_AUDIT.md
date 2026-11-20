@@ -99,7 +99,7 @@ sha256sum -c .cache/b0-wip-20261119/SHA256SUMS
 
 | Ветка | HEAD | Назначение | Статус |
 |---|---|---|---|
-| `fix/catalog-sync-pr-flow` | `1f6cd26` | PR-публикация каталога вместо direct push в `main` | локальный коммит, не запушен, PR не открыт |
+| `fix/catalog-sync-pr-flow` | `5abe9fd` | PR-публикация каталога вместо direct push в `main` | локальный коммит, не запушен, PR не открыт |
 | `docs/aninova-3-b0-audit` | этот документ | B0-документация | локальный коммит, не запушен |
 
 `main` не изменялся. Production не деплоился. DB-запись не выполнялась.
@@ -313,7 +313,7 @@ sha256sum -c .cache/b0-wip-20261119/SHA256SUMS
 
 **Impact:** каждый cron-прогон синка каталога завершается ошибкой после выполнения работы; изменения не доходят до `main`, ветка защиты не должна отключаться.
 
-**B0 fix:** ветка `fix/catalog-sync-pr-flow` (`1f6cd26`):
+**B0 fix:** ветка `fix/catalog-sync-pr-flow` (`5abe9fd`, база `1f6cd26`):
 - новый `scripts/publish-catalog-changes.sh` публикует HEAD в bot-ветку `automation/catalog-sync` и создаёт/переиспользует один rolling PR;
 - никогда не пушит в `main`, использует `--force-with-lease` только для bot-ветки;
 - workflow получают `pull-requests: write` и `GITHUB_TOKEN` только на шаге публикации;
