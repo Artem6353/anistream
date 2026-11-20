@@ -30,7 +30,7 @@
 | Объект | Состояние |
 |---|---|
 | `main` / `origin/main` | `6ed9d1c` — не изменялись |
-| `docs/aninova-3-b0-audit` | `2bef267` + правки B0.5 (этот отчёт) |
+| `docs/aninova-3-b0-audit` | `2bef267` + B0.5 docs commits |
 | `fix/catalog-sync-pr-flow` | `5abe9fd` |
 | `fix/workflow-least-privilege` | `3701590` |
 | `refs/backup/b0-wip-full-20261119` | `cb2bd7b` |
@@ -330,7 +330,7 @@ git push -u origin docs/aninova-3-b0-audit
 | Ветка/ref | SHA | Содержимое |
 |---|---|---|
 | `main` | `6ed9d1c` | baseline, не изменялся |
-| `docs/aninova-3-b0-audit` | `2bef267` + B0.5 docs | audit/architecture/risk/backup/report |
+| `docs/aninova-3-b0-audit` | `2bef267` + B0.5 docs commits | audit/architecture/risk/backup/report |
 | `fix/catalog-sync-pr-flow` | `5abe9fd` | PR publisher, workflows, tests, artifact |
 | `fix/workflow-least-privilege` | `3701590` | 6 workflows + permissions test |
 | `refs/backup/b0-wip-full-20261119` | `cb2bd7b` | WIP layout + theme |
