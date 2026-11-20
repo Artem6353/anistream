@@ -1,6 +1,9 @@
 name: Push test (manual end-to-end check)
 on:
   workflow_dispatch:   # аудит блок 3: ручная проверка доставки пуша до устройства
+permissions:
+  contents: read
+
 jobs:
   push:
     runs-on: ubuntu-latest

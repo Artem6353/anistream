@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: "*/10 * * * *"   # каждые 10 минут: мониторинг + мягкий прогрев serverless-инстанса
   workflow_dispatch:
+permissions:
+  contents: read
+
 jobs:
   ping:
     runs-on: ubuntu-latest

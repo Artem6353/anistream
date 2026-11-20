@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: "0 15 * * *"  # 18:00 MSK
   workflow_dispatch:
+permissions:
+  contents: read
+
 jobs:
   push:
     runs-on: ubuntu-latest
