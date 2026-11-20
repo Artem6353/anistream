@@ -1,7 +1,7 @@
 # AniNova 3.0 — B0 Risk Register
 
 **Дата:** 2026-11-20  
-**Связанные документы:** `docs/ANINOVA_3_AUDIT.md`, `docs/ANINOVA_3_ARCHITECTURE.md`, `docs/ANINOVA_3_BACKUP_RESTORE.md`  
+**Связанные документы:** `docs/ANINOVA_3_AUDIT.md`, `docs/ANINOVA_3_ARCHITECTURE.md`, `docs/ANINOVA_3_BACKUP_RESTORE.md`, `docs/ANINOVA_3_B0_5_REPORT.md`  
 **Правило:** risk register обновляется при каждом этапе; закрытие риска требует evidence, а не «сделано».
 
 ## 1. Шкала
