@@ -26,6 +26,8 @@ concurrency:
 
 permissions:
   contents: write
+  # Публикация идёт через PR: main защищён и не принимает direct push.
+  pull-requests: write
 
 jobs:
   repair:
@@ -75,7 +77,9 @@ jobs:
       - name: validate catalog integrity
         run: node scripts/validate-catalog.mjs
 
-      - name: commit if changed
+      - name: commit and publish via pull request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           git config user.name "anistream-bot"
@@ -83,7 +87,7 @@ jobs:
           git add lib/data/titles.json
           if ! git diff --cached --quiet; then
             git commit -m "chore(catalog): repair descriptions/episodes/characters ($(date -u +%F))"
-            bash scripts/push-catalog-commit.sh
+            bash scripts/publish-catalog-changes.sh
           else
             echo "изменений нет — коммит пропускаем"
           fi
