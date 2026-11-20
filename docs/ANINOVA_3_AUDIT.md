@@ -356,7 +356,7 @@ git push -u origin fix/catalog-sync-pr-flow
 
 ### F-04 — P1: неполный auth lifecycle
 
-**Evidence:** в коде нет `resetPasswordForEmail`, `resend`, `updateUser`, account delete/export, identity linking.
+**Evidence:** единственные auth-вызовы — `components/auth/AuthPageClient.tsx:80-118` (`signInWithPassword`/`signUp`) и `AuthModal.tsx:78-115` (Google + legacy `signIn`); `app/api/auth/signout/route.ts:21` и `SignOutButton.tsx:27` — только выход. `grep` по `resetPasswordForEmail`, `resend(`, `updateUser(`, `deleteUser(`, `linkIdentity`, `unlinkIdentity` не находит вызовов. Нет account export/delete, sessions list/revoke, смены email/password.
 
 **Impact:** пользователь не может восстановить пароль/подтвердить email повторно/удалить аккаунт — это блокирует требования AniNova 3.0 и review мобильного приложения.
 
