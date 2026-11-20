@@ -1,0 +1,492 @@
+{
+  "base": "http://localhost:3521",
+  "at": "2026-11-20T21:06:22.468Z",
+  "shots": [
+    {
+      "size": "390",
+      "screen": "home",
+      "url": "http://localhost:3521/preview/aninova-3",
+      "status": 200,
+      "sw": 390,
+      "iw": 390,
+      "title": "Главная · AniNova"
+    },
+    {
+      "size": "390",
+      "screen": "catalog",
+      "url": "http://localhost:3521/preview/aninova-3/catalog",
+      "status": 200,
+      "sw": 390,
+      "iw": 390,
+      "title": "Каталог аниме · AniNova 3.0"
+    },
+    {
+      "size": "390",
+      "screen": "anime",
+      "url": "http://localhost:3521/preview/aninova-3/anime/one-piece",
+      "status": 200,
+      "sw": 390,
+      "iw": 390,
+      "title": "Ван-Пис (1999) · AniNova 3.0"
+    },
+    {
+      "size": "390",
+      "screen": "watch",
+      "url": "http://localhost:3521/preview/aninova-3/anime/one-piece/1",
+      "status": 200,
+      "sw": 390,
+      "iw": 390,
+      "title": "Ван-Пис (1999) — серия 1 · AniNova 3.0"
+    },
+    {
+      "size": "390",
+      "screen": "comics",
+      "url": "http://localhost:3521/preview/aninova-3/comics",
+      "status": 200,
+      "sw": 390,
+      "iw": 390,
+      "title": "Комиксы · AniNova 3.0"
+    },
+    {
+      "size": "390",
+      "screen": "comic",
+      "url": "http://localhost:3521/preview/aninova-3/comics/gorod-stekla",
+      "status": 200,
+      "sw": 390,
+      "iw": 390,
+      "title": "Город стекла · AniNova 3.0"
+    },
+    {
+      "size": "390",
+      "screen": "read",
+      "url": "http://localhost:3521/preview/aninova-3/comics/gorod-stekla/read",
+      "status": 200,
+      "sw": 390,
+      "iw": 390,
+      "title": "Город стекла — чтение · AniNova 3.0"
+    },
+    {
+      "size": "390",
+      "screen": "profile",
+      "url": "http://localhost:3521/preview/aninova-3/profile",
+      "status": 200,
+      "sw": 390,
+      "iw": 390,
+      "title": "Профиль · AniNova 3.0"
+    },
+    {
+      "size": "390",
+      "screen": "auth",
+      "url": "http://localhost:3521/preview/aninova-3/auth",
+      "status": 200,
+      "sw": 390,
+      "iw": 390,
+      "title": "Вход и регистрация · AniNova 3.0"
+    },
+    {
+      "size": "768",
+      "screen": "home",
+      "url": "http://localhost:3521/preview/aninova-3",
+      "status": 200,
+      "sw": 768,
+      "iw": 768,
+      "title": "Главная · AniNova"
+    },
+    {
+      "size": "768",
+      "screen": "catalog",
+      "url": "http://localhost:3521/preview/aninova-3/catalog",
+      "status": 200,
+      "sw": 768,
+      "iw": 768,
+      "title": "Каталог аниме · AniNova 3.0"
+    },
+    {
+      "size": "768",
+      "screen": "anime",
+      "url": "http://localhost:3521/preview/aninova-3/anime/one-piece",
+      "status": 200,
+      "sw": 768,
+      "iw": 768,
+      "title": "Ван-Пис (1999) · AniNova 3.0"
+    },
+    {
+      "size": "768",
+      "screen": "watch",
+      "url": "http://localhost:3521/preview/aninova-3/anime/one-piece/1",
+      "status": 200,
+      "sw": 768,
+      "iw": 768,
+      "title": "Ван-Пис (1999) — серия 1 · AniNova 3.0"
+    },
+    {
+      "size": "768",
+      "screen": "comics",
+      "url": "http://localhost:3521/preview/aninova-3/comics",
+      "status": 200,
+      "sw": 768,
+      "iw": 768,
+      "title": "Комиксы · AniNova 3.0"
+    },
+    {
+      "size": "768",
+      "screen": "comic",
+      "url": "http://localhost:3521/preview/aninova-3/comics/gorod-stekla",
+      "status": 200,
+      "sw": 768,
+      "iw": 768,
+      "title": "Город стекла · AniNova 3.0"
+    },
+    {
+      "size": "768",
+      "screen": "read",
+      "url": "http://localhost:3521/preview/aninova-3/comics/gorod-stekla/read",
+      "status": 200,
+      "sw": 768,
+      "iw": 768,
+      "title": "Город стекла — чтение · AniNova 3.0"
+    },
+    {
+      "size": "768",
+      "screen": "profile",
+      "url": "http://localhost:3521/preview/aninova-3/profile",
+      "status": 200,
+      "sw": 768,
+      "iw": 768,
+      "title": "Профиль · AniNova 3.0"
+    },
+    {
+      "size": "768",
+      "screen": "auth",
+      "url": "http://localhost:3521/preview/aninova-3/auth",
+      "status": 200,
+      "sw": 768,
+      "iw": 768,
+      "title": "Вход и регистрация · AniNova 3.0"
+    },
+    {
+      "size": "1024",
+      "screen": "home",
+      "url": "http://localhost:3521/preview/aninova-3",
+      "status": 200,
+      "sw": 1024,
+      "iw": 1024,
+      "title": "Главная · AniNova"
+    },
+    {
+      "size": "1024",
+      "screen": "catalog",
+      "url": "http://localhost:3521/preview/aninova-3/catalog",
+      "status": 200,
+      "sw": 1024,
+      "iw": 1024,
+      "title": "Каталог аниме · AniNova 3.0"
+    },
+    {
+      "size": "1024",
+      "screen": "anime",
+      "url": "http://localhost:3521/preview/aninova-3/anime/one-piece",
+      "status": 200,
+      "sw": 1024,
+      "iw": 1024,
+      "title": "Ван-Пис (1999) · AniNova 3.0"
+    },
+    {
+      "size": "1024",
+      "screen": "watch",
+      "url": "http://localhost:3521/preview/aninova-3/anime/one-piece/1",
+      "status": 200,
+      "sw": 1024,
+      "iw": 1024,
+      "title": "Ван-Пис (1999) — серия 1 · AniNova 3.0"
+    },
+    {
+      "size": "1024",
+      "screen": "comics",
+      "url": "http://localhost:3521/preview/aninova-3/comics",
+      "status": 200,
+      "sw": 1024,
+      "iw": 1024,
+      "title": "Комиксы · AniNova 3.0"
+    },
+    {
+      "size": "1024",
+      "screen": "comic",
+      "url": "http://localhost:3521/preview/aninova-3/comics/gorod-stekla",
+      "status": 200,
+      "sw": 1024,
+      "iw": 1024,
+      "title": "Город стекла · AniNova 3.0"
+    },
+    {
+      "size": "1024",
+      "screen": "read",
+      "url": "http://localhost:3521/preview/aninova-3/comics/gorod-stekla/read",
+      "status": 200,
+      "sw": 1024,
+      "iw": 1024,
+      "title": "Город стекла — чтение · AniNova 3.0"
+    },
+    {
+      "size": "1024",
+      "screen": "profile",
+      "url": "http://localhost:3521/preview/aninova-3/profile",
+      "status": 200,
+      "sw": 1024,
+      "iw": 1024,
+      "title": "Профиль · AniNova 3.0"
+    },
+    {
+      "size": "1024",
+      "screen": "auth",
+      "url": "http://localhost:3521/preview/aninova-3/auth",
+      "status": 200,
+      "sw": 1024,
+      "iw": 1024,
+      "title": "Вход и регистрация · AniNova 3.0"
+    },
+    {
+      "size": "1440",
+      "screen": "home",
+      "url": "http://localhost:3521/preview/aninova-3",
+      "status": 200,
+      "sw": 1440,
+      "iw": 1440,
+      "title": "Главная · AniNova"
+    },
+    {
+      "size": "1440",
+      "screen": "catalog",
+      "url": "http://localhost:3521/preview/aninova-3/catalog",
+      "status": 200,
+      "sw": 1440,
+      "iw": 1440,
+      "title": "Каталог аниме · AniNova 3.0"
+    },
+    {
+      "size": "1440",
+      "screen": "anime",
+      "url": "http://localhost:3521/preview/aninova-3/anime/one-piece",
+      "status": 200,
+      "sw": 1440,
+      "iw": 1440,
+      "title": "Ван-Пис (1999) · AniNova 3.0"
+    },
+    {
+      "size": "1440",
+      "screen": "watch",
+      "url": "http://localhost:3521/preview/aninova-3/anime/one-piece/1",
+      "status": 200,
+      "sw": 1440,
+      "iw": 1440,
+      "title": "Ван-Пис (1999) — серия 1 · AniNova 3.0"
+    },
+    {
+      "size": "1440",
+      "screen": "comics",
+      "url": "http://localhost:3521/preview/aninova-3/comics",
+      "status": 200,
+      "sw": 1440,
+      "iw": 1440,
+      "title": "Комиксы · AniNova 3.0"
+    },
+    {
+      "size": "1440",
+      "screen": "comic",
+      "url": "http://localhost:3521/preview/aninova-3/comics/gorod-stekla",
+      "status": 200,
+      "sw": 1440,
+      "iw": 1440,
+      "title": "Город стекла · AniNova 3.0"
+    },
+    {
+      "size": "1440",
+      "screen": "read",
+      "url": "http://localhost:3521/preview/aninova-3/comics/gorod-stekla/read",
+      "status": 200,
+      "sw": 1440,
+      "iw": 1440,
+      "title": "Город стекла — чтение · AniNova 3.0"
+    },
+    {
+      "size": "1440",
+      "screen": "profile",
+      "url": "http://localhost:3521/preview/aninova-3/profile",
+      "status": 200,
+      "sw": 1440,
+      "iw": 1440,
+      "title": "Профиль · AniNova 3.0"
+    },
+    {
+      "size": "1440",
+      "screen": "auth",
+      "url": "http://localhost:3521/preview/aninova-3/auth",
+      "status": 200,
+      "sw": 1440,
+      "iw": 1440,
+      "title": "Вход и регистрация · AniNova 3.0"
+    },
+    {
+      "size": "1920",
+      "screen": "home",
+      "url": "http://localhost:3521/preview/aninova-3?tv=1",
+      "status": 200,
+      "sw": 1920,
+      "iw": 1920,
+      "title": "Главная · AniNova"
+    },
+    {
+      "size": "1920",
+      "screen": "catalog",
+      "url": "http://localhost:3521/preview/aninova-3/catalog?tv=1",
+      "status": 200,
+      "sw": 1920,
+      "iw": 1920,
+      "title": "Каталог аниме · AniNova 3.0"
+    },
+    {
+      "size": "1920",
+      "screen": "anime",
+      "url": "http://localhost:3521/preview/aninova-3/anime/one-piece?tv=1",
+      "status": 200,
+      "sw": 1920,
+      "iw": 1920,
+      "title": "Ван-Пис (1999) · AniNova 3.0"
+    },
+    {
+      "size": "1920",
+      "screen": "watch",
+      "url": "http://localhost:3521/preview/aninova-3/anime/one-piece/1?tv=1",
+      "status": 200,
+      "sw": 1920,
+      "iw": 1920,
+      "title": "Ван-Пис (1999) — серия 1 · AniNova 3.0"
+    },
+    {
+      "size": "1920",
+      "screen": "comics",
+      "url": "http://localhost:3521/preview/aninova-3/comics?tv=1",
+      "status": 200,
+      "sw": 1920,
+      "iw": 1920,
+      "title": "Комиксы · AniNova 3.0"
+    },
+    {
+      "size": "1920",
+      "screen": "comic",
+      "url": "http://localhost:3521/preview/aninova-3/comics/gorod-stekla?tv=1",
+      "status": 200,
+      "sw": 1920,
+      "iw": 1920,
+      "title": "Город стекла · AniNova 3.0"
+    },
+    {
+      "size": "1920",
+      "screen": "read",
+      "url": "http://localhost:3521/preview/aninova-3/comics/gorod-stekla/read?tv=1",
+      "status": 200,
+      "sw": 1920,
+      "iw": 1920,
+      "title": "Город стекла — чтение · AniNova 3.0"
+    },
+    {
+      "size": "1920",
+      "screen": "profile",
+      "url": "http://localhost:3521/preview/aninova-3/profile?tv=1",
+      "status": 200,
+      "sw": 1920,
+      "iw": 1920,
+      "title": "Профиль · AniNova 3.0"
+    },
+    {
+      "size": "1920",
+      "screen": "auth",
+      "url": "http://localhost:3521/preview/aninova-3/auth?tv=1",
+      "status": 200,
+      "sw": 1920,
+      "iw": 1920,
+      "title": "Вход и регистрация · AniNova 3.0"
+    },
+    {
+      "size": "3840",
+      "screen": "home",
+      "url": "http://localhost:3521/preview/aninova-3?tv=1",
+      "status": 200,
+      "sw": 3840,
+      "iw": 3840,
+      "title": "Главная · AniNova"
+    },
+    {
+      "size": "3840",
+      "screen": "catalog",
+      "url": "http://localhost:3521/preview/aninova-3/catalog?tv=1",
+      "status": 200,
+      "sw": 3840,
+      "iw": 3840,
+      "title": "Каталог аниме · AniNova 3.0"
+    },
+    {
+      "size": "3840",
+      "screen": "anime",
+      "url": "http://localhost:3521/preview/aninova-3/anime/one-piece?tv=1",
+      "status": 200,
+      "sw": 3840,
+      "iw": 3840,
+      "title": "Ван-Пис (1999) · AniNova 3.0"
+    },
+    {
+      "size": "3840",
+      "screen": "watch",
+      "url": "http://localhost:3521/preview/aninova-3/anime/one-piece/1?tv=1",
+      "status": 200,
+      "sw": 3840,
+      "iw": 3840,
+      "title": "Ван-Пис (1999) — серия 1 · AniNova 3.0"
+    },
+    {
+      "size": "3840",
+      "screen": "comics",
+      "url": "http://localhost:3521/preview/aninova-3/comics?tv=1",
+      "status": 200,
+      "sw": 3840,
+      "iw": 3840,
+      "title": "Комиксы · AniNova 3.0"
+    },
+    {
+      "size": "3840",
+      "screen": "comic",
+      "url": "http://localhost:3521/preview/aninova-3/comics/gorod-stekla?tv=1",
+      "status": 200,
+      "sw": 3840,
+      "iw": 3840,
+      "title": "Город стекла · AniNova 3.0"
+    },
+    {
+      "size": "3840",
+      "screen": "read",
+      "url": "http://localhost:3521/preview/aninova-3/comics/gorod-stekla/read?tv=1",
+      "status": 200,
+      "sw": 3840,
+      "iw": 3840,
+      "title": "Город стекла — чтение · AniNova 3.0"
+    },
+    {
+      "size": "3840",
+      "screen": "profile",
+      "url": "http://localhost:3521/preview/aninova-3/profile?tv=1",
+      "status": 200,
+      "sw": 3840,
+      "iw": 3840,
+      "title": "Профиль · AniNova 3.0"
+    },
+    {
+      "size": "3840",
+      "screen": "auth",
+      "url": "http://localhost:3521/preview/aninova-3/auth?tv=1",
+      "status": 200,
+      "sw": 3840,
+      "iw": 3840,
+      "title": "Вход и регистрация · AniNova 3.0"
+    }
+  ]
+}

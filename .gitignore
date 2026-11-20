@@ -29,3 +29,5 @@ screenshots/
 __pycache__/
 *.pyc
 *.tmp
+
+AGENTS.md

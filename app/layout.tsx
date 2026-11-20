@@ -22,6 +22,7 @@ import { AuthGate } from '@/components/auth/AuthGate';
 import { AchievementToast } from '@/components/profile/AchievementToast';
 import { ScopeSync } from '@/components/system/ScopeSync';
 import { I18nProvider } from '@/lib/i18n';
+import { ChromeGate, MainGate } from '@/components/system/ChromeGate';
 
 export const metadata: Metadata = {
   metadataBase: new URL(getProvidersConfig().site.url),
@@ -95,18 +96,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeInit />
         <SessionBridge />
         <SwRegister />
-        <TvMode />
-        <Toaster>
+        <ChromeGate>
+          <TvMode />
           <SiteHeader />
-          <main id="content">{children}</main>
-          <Footer />
-          <MobileNav />
-          <CookieConsent />
+        </ChromeGate>
+        <Toaster>
+          <MainGate>{children}</MainGate>
+          <ChromeGate>
+            <Footer />
+            <MobileNav />
+            <CookieConsent />
+            <AuthGate />
+          </ChromeGate>
           <ClientMonitoring />
           {/* S5: Яндекс.Метрика (lazyOnload; включается только при NEXT_PUBLIC_METRIKA_ID) */}
           <Metrika />
           <AutoSync />
-        <AuthGate />
         <AchievementToast />
         <ScopeSync />
         </Toaster>

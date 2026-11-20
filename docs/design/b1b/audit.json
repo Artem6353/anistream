@@ -1,0 +1,221 @@
+{
+  "base": "http://localhost:3521",
+  "at": "2026-11-20T21:04:32.546Z",
+  "widths": [
+    360,
+    390,
+    430,
+    768,
+    1024,
+    1280,
+    1440,
+    1920,
+    3840
+  ],
+  "overflow": [],
+  "contrast": {
+    "screens": 9,
+    "failures": 0,
+    "minRatio": 4.62,
+    "details": [
+      {
+        "screen": "home",
+        "theme": "dark",
+        "failures": [],
+        "min": 4.62
+      },
+      {
+        "screen": "catalog",
+        "theme": "dark",
+        "failures": [],
+        "min": 4.62
+      },
+      {
+        "screen": "anime",
+        "theme": "dark",
+        "failures": [],
+        "min": 4.62
+      },
+      {
+        "screen": "watch",
+        "theme": "dark",
+        "failures": [],
+        "min": 4.62
+      },
+      {
+        "screen": "comics",
+        "theme": "dark",
+        "failures": [],
+        "min": 4.62
+      },
+      {
+        "screen": "comic",
+        "theme": "dark",
+        "failures": [],
+        "min": 4.62
+      },
+      {
+        "screen": "read",
+        "theme": "dark",
+        "failures": [],
+        "min": 4.62
+      },
+      {
+        "screen": "profile",
+        "theme": "dark",
+        "failures": [],
+        "min": 4.62
+      },
+      {
+        "screen": "auth",
+        "theme": "dark",
+        "failures": [],
+        "min": 4.62
+      }
+    ]
+  },
+  "semantics": [
+    {
+      "screen": "home",
+      "h1": 1,
+      "main": 1,
+      "unnamed": [],
+      "imgsMissingAlt": 0,
+      "imgs": 41,
+      "divButtons": 0,
+      "skip": true
+    },
+    {
+      "screen": "catalog",
+      "h1": 1,
+      "main": 1,
+      "unnamed": [],
+      "imgsMissingAlt": 0,
+      "imgs": 24,
+      "divButtons": 0,
+      "skip": true
+    },
+    {
+      "screen": "anime",
+      "h1": 1,
+      "main": 1,
+      "unnamed": [],
+      "imgsMissingAlt": 0,
+      "imgs": 12,
+      "divButtons": 0,
+      "skip": true
+    },
+    {
+      "screen": "watch",
+      "h1": 1,
+      "main": 1,
+      "unnamed": [],
+      "imgsMissingAlt": 0,
+      "imgs": 11,
+      "divButtons": 0,
+      "skip": true
+    },
+    {
+      "screen": "comics",
+      "h1": 1,
+      "main": 1,
+      "unnamed": [],
+      "imgsMissingAlt": 0,
+      "imgs": 0,
+      "divButtons": 0,
+      "skip": true
+    },
+    {
+      "screen": "comic",
+      "h1": 1,
+      "main": 1,
+      "unnamed": [],
+      "imgsMissingAlt": 0,
+      "imgs": 0,
+      "divButtons": 0,
+      "skip": true
+    },
+    {
+      "screen": "read",
+      "h1": 1,
+      "main": 1,
+      "unnamed": [],
+      "imgsMissingAlt": 0,
+      "imgs": 1,
+      "divButtons": 0,
+      "skip": true
+    },
+    {
+      "screen": "profile",
+      "h1": 1,
+      "main": 1,
+      "unnamed": [],
+      "imgsMissingAlt": 0,
+      "imgs": 0,
+      "divButtons": 0,
+      "skip": true
+    },
+    {
+      "screen": "auth",
+      "h1": 1,
+      "main": 1,
+      "unnamed": [],
+      "imgsMissingAlt": 0,
+      "imgs": 0,
+      "divButtons": 0,
+      "skip": true
+    }
+  ],
+  "keyboard": {
+    "search": {
+      "focusInInput": true,
+      "results": 6,
+      "restoredOnClose": true
+    },
+    "reader": {
+      "before": "1 / 4",
+      "after": "2 / 4",
+      "arrowsWork": true
+    },
+    "menu": {
+      "initial": "a3-menu__item",
+      "trapped": true,
+      "restored": true
+    }
+  },
+  "motion": {
+    "mediaMatches": true,
+    "pulseAnimation": "1e-06s",
+    "scrollBehavior": "auto",
+    "transitions": "1e-06s"
+  },
+  "performance": [
+    {
+      "screen": "home",
+      "js": 246502,
+      "css": 33442,
+      "img": 572778,
+      "total": 879689,
+      "requests": 69,
+      "dom": 582
+    },
+    {
+      "screen": "catalog",
+      "js": 245666,
+      "css": 33442,
+      "img": 55204,
+      "total": 416494,
+      "requests": 93,
+      "dom": 526
+    },
+    {
+      "screen": "anime",
+      "js": 246269,
+      "css": 33442,
+      "img": 277300,
+      "total": 589702,
+      "requests": 51,
+      "dom": 532
+    }
+  ]
+}

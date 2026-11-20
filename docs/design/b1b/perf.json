@@ -1,0 +1,72 @@
+{
+  "base": "http://localhost:3521",
+  "at": "2026-11-20T21:06:37.576Z",
+  "results": [
+    {
+      "route": "/preview/aninova-3",
+      "lcp": 212,
+      "js": 246502,
+      "css": 33442,
+      "img": 572778,
+      "total": 879686,
+      "requests": 69,
+      "dom": 582,
+      "lcpElement": null
+    },
+    {
+      "route": "/preview/aninova-3/catalog",
+      "lcp": 212,
+      "js": 245666,
+      "css": 33442,
+      "img": 55204,
+      "total": 416503,
+      "requests": 93,
+      "dom": 526,
+      "lcpElement": null
+    },
+    {
+      "route": "/preview/aninova-3/anime/one-piece",
+      "lcp": 152,
+      "js": 246269,
+      "css": 33442,
+      "img": 277300,
+      "total": 589704,
+      "requests": 51,
+      "dom": 532,
+      "lcpElement": null
+    },
+    {
+      "route": "/preview/aninova-3/comics/gorod-stekla",
+      "lcp": 132,
+      "js": 244777,
+      "css": 33442,
+      "img": 0,
+      "total": 314076,
+      "requests": 43,
+      "dom": 247,
+      "lcpElement": null
+    },
+    {
+      "route": "/preview/aninova-3/comics/gorod-stekla/read",
+      "lcp": 76,
+      "js": 248501,
+      "css": 33442,
+      "img": 0,
+      "total": 371487,
+      "requests": 17,
+      "dom": 84,
+      "lcpElement": null
+    },
+    {
+      "route": "/",
+      "lcp": 232,
+      "js": 245117,
+      "css": 24919,
+      "img": 412958,
+      "total": 815401,
+      "requests": 73,
+      "dom": 1394,
+      "lcpElement": null
+    }
+  ]
+}
