@@ -10,6 +10,8 @@
 
 Причина: PR-flow и least-privilege fixes подготовлены и проверены локально, но не запушены/не открыты PR (нет GitHub auth); CodeQL/Dependabot/branch protection/Supabase Advisors/Vercel logs недоступны без токенов; полный DB backup и restore drill не выполнены. B1 не начат.
 
+**Соответствие deliverable:** (1) что проверено — §2–§7; (2) что исправлено — §2.2, §3.3; (3) PR/checks — §2.3–§2.5; (4) остаточные проблемы — §8; (5) blocked checks — §8.1; (6) production-риски — §8.2; (7) готовность к B1 — §9.
+
 ---
 
 ## 0. Краткий итог по задачам
