@@ -1,0 +1,1548 @@
+{
+  "generatedAt": "2026-11-20T03:41:44.625Z",
+  "base": "http://localhost:3518",
+  "overflow": [],
+  "contrast": [
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "home",
+      "total": 168,
+      "minRatio": 4.74,
+      "minSample": {
+        "text": "Каталог",
+        "cls": "",
+        "ratio": 4.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "catalog",
+      "total": 220,
+      "minRatio": 4.74,
+      "minSample": {
+        "text": "Жанр",
+        "cls": "",
+        "ratio": 4.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "anime",
+      "total": 193,
+      "minRatio": 4.6,
+      "minSample": {
+        "text": "Подборка локальная: совпадение п",
+        "cls": "m-demo-note",
+        "ratio": 4.6
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "watch",
+      "total": 160,
+      "minRatio": 4.6,
+      "minSample": {
+        "text": "01",
+        "cls": "m-ep-num",
+        "ratio": 4.6
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "comics",
+      "total": 101,
+      "minRatio": 4.6,
+      "minSample": {
+        "text": "Продолжить чтение",
+        "cls": "m-feature-label",
+        "ratio": 4.6
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "comic",
+      "total": 153,
+      "minRatio": 4.6,
+      "minSample": {
+        "text": "Автор",
+        "cls": "",
+        "ratio": 4.6
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "read",
+      "total": 22,
+      "minRatio": 4.74,
+      "minSample": {
+        "text": "Стрелки ← → или свайп. Демонстра",
+        "cls": "rd-note",
+        "ratio": 4.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "profile",
+      "total": 134,
+      "minRatio": 4.74,
+      "minSample": {
+        "text": "сегодня, 21:40",
+        "cls": "m-hist-when",
+        "ratio": 4.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "login",
+      "total": 52,
+      "minRatio": 4.74,
+      "minSample": {
+        "text": "Забыли?",
+        "cls": "auth-mini",
+        "ratio": 4.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "register",
+      "total": 55,
+      "minRatio": 4.74,
+      "minSample": {
+        "text": "Видно другим: в профиле, клубах ",
+        "cls": "auth-hint",
+        "ratio": 4.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "home",
+      "total": 168,
+      "minRatio": 5.3,
+      "minSample": {
+        "text": "Каталог",
+        "cls": "",
+        "ratio": 5.3
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "catalog",
+      "total": 220,
+      "minRatio": 5.3,
+      "minSample": {
+        "text": "Главная",
+        "cls": "",
+        "ratio": 5.3
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "anime",
+      "total": 193,
+      "minRatio": 5.3,
+      "minSample": {
+        "text": "Главная",
+        "cls": "",
+        "ratio": 5.3
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "watch",
+      "total": 160,
+      "minRatio": 5.3,
+      "minSample": {
+        "text": "Главная",
+        "cls": "",
+        "ratio": 5.3
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "comics",
+      "total": 101,
+      "minRatio": 5.3,
+      "minSample": {
+        "text": "Главная",
+        "cls": "",
+        "ratio": 5.3
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "comic",
+      "total": 153,
+      "minRatio": 5.3,
+      "minSample": {
+        "text": "Главная",
+        "cls": "",
+        "ratio": 5.3
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "read",
+      "total": 22,
+      "minRatio": 5.3,
+      "minSample": {
+        "text": "1 / 4",
+        "cls": "rd-count",
+        "ratio": 5.3
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "profile",
+      "total": 134,
+      "minRatio": 5.3,
+      "minSample": {
+        "text": "Главная",
+        "cls": "",
+        "ratio": 5.3
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "login",
+      "total": 52,
+      "minRatio": 5.3,
+      "minSample": {
+        "text": "Главная",
+        "cls": "",
+        "ratio": 5.3
+      },
+      "failures": []
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "register",
+      "total": 55,
+      "minRatio": 5.3,
+      "minSample": {
+        "text": "Главная",
+        "cls": "",
+        "ratio": 5.3
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "home",
+      "total": 125,
+      "minRatio": 5.74,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "catalog",
+      "total": 191,
+      "minRatio": 5.74,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "anime",
+      "total": 149,
+      "minRatio": 5.74,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "watch",
+      "total": 110,
+      "minRatio": 5.74,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "comics",
+      "total": 99,
+      "minRatio": 5.74,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "comic",
+      "total": 142,
+      "minRatio": 5.74,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "read",
+      "total": 22,
+      "minRatio": 5.74,
+      "minSample": {
+        "text": "Стрелки ← → или свайп. Демонстра",
+        "cls": "rd-note",
+        "ratio": 5.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "profile",
+      "total": 111,
+      "minRatio": 5.74,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.74
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "login",
+      "total": 61,
+      "minRatio": 5.44,
+      "minSample": {
+        "text": "Почта",
+        "cls": "",
+        "ratio": 5.44
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "register",
+      "total": 64,
+      "minRatio": 5.44,
+      "minSample": {
+        "text": "Никнейм",
+        "cls": "",
+        "ratio": 5.44
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "home",
+      "total": 125,
+      "minRatio": 5.22,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.22
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "catalog",
+      "total": 191,
+      "minRatio": 5.22,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.22
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "anime",
+      "total": 149,
+      "minRatio": 5.22,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.22
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "watch",
+      "total": 110,
+      "minRatio": 5.22,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.22
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "comics",
+      "total": 99,
+      "minRatio": 5.22,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.22
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "comic",
+      "total": 142,
+      "minRatio": 5.22,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.22
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "read",
+      "total": 22,
+      "minRatio": 5.22,
+      "minSample": {
+        "text": "Стрелки ← → или свайп. Демонстра",
+        "cls": "rd-note",
+        "ratio": 5.22
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "profile",
+      "total": 111,
+      "minRatio": 5.22,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.22
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "login",
+      "total": 61,
+      "minRatio": 5.22,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.22
+      },
+      "failures": []
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "register",
+      "total": 64,
+      "minRatio": 5.22,
+      "minSample": {
+        "text": "Пятница, 20 ноября 2026",
+        "cls": "e-date-long",
+        "ratio": 5.22
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "home",
+      "total": 142,
+      "minRatio": 5.03,
+      "minSample": {
+        "text": "Прототип B1-A. Демонстрационные ",
+        "cls": "c-footer-note",
+        "ratio": 5.03
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "catalog",
+      "total": 126,
+      "minRatio": 5.03,
+      "minSample": {
+        "text": "Прототип B1-A. Демонстрационные ",
+        "cls": "c-footer-note",
+        "ratio": 5.03
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "anime",
+      "total": 122,
+      "minRatio": 5.03,
+      "minSample": {
+        "text": "Прототип B1-A. Демонстрационные ",
+        "cls": "c-footer-note",
+        "ratio": 5.03
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "watch",
+      "total": 77,
+      "minRatio": 5.03,
+      "minSample": {
+        "text": "Прототип B1-A. Демонстрационные ",
+        "cls": "c-footer-note",
+        "ratio": 5.03
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "comics",
+      "total": 87,
+      "minRatio": 5.03,
+      "minSample": {
+        "text": "сегодня",
+        "cls": "",
+        "ratio": 5.03
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "comic",
+      "total": 103,
+      "minRatio": 5.03,
+      "minSample": {
+        "text": "Прототип B1-A. Демонстрационные ",
+        "cls": "c-footer-note",
+        "ratio": 5.03
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "read",
+      "total": 22,
+      "minRatio": 15.85,
+      "minSample": {
+        "text": "К содержанию",
+        "cls": "skip-link",
+        "ratio": 15.85
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "profile",
+      "total": 104,
+      "minRatio": 5.03,
+      "minSample": {
+        "text": "сегодня, 21:40",
+        "cls": "",
+        "ratio": 5.03
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "login",
+      "total": 48,
+      "minRatio": 5.03,
+      "minSample": {
+        "text": "Демонстрационная форма B1-A · Su",
+        "cls": "auth-demo",
+        "ratio": 5.03
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "register",
+      "total": 51,
+      "minRatio": 5.03,
+      "minSample": {
+        "text": "Видно другим: в профиле, клубах ",
+        "cls": "auth-hint",
+        "ratio": 5.03
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "home",
+      "total": 142,
+      "minRatio": 4.67,
+      "minSample": {
+        "text": "Прототип B1-A. Демонстрационные ",
+        "cls": "c-footer-note",
+        "ratio": 4.67
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "catalog",
+      "total": 126,
+      "minRatio": 4.67,
+      "minSample": {
+        "text": "Прототип B1-A. Демонстрационные ",
+        "cls": "c-footer-note",
+        "ratio": 4.67
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "anime",
+      "total": 122,
+      "minRatio": 4.67,
+      "minSample": {
+        "text": "Прототип B1-A. Демонстрационные ",
+        "cls": "c-footer-note",
+        "ratio": 4.67
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "watch",
+      "total": 77,
+      "minRatio": 4.67,
+      "minSample": {
+        "text": "Прототип B1-A. Демонстрационные ",
+        "cls": "c-footer-note",
+        "ratio": 4.67
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "comics",
+      "total": 87,
+      "minRatio": 4.67,
+      "minSample": {
+        "text": "сегодня",
+        "cls": "",
+        "ratio": 4.67
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "comic",
+      "total": 103,
+      "minRatio": 4.67,
+      "minSample": {
+        "text": "Прототип B1-A. Демонстрационные ",
+        "cls": "c-footer-note",
+        "ratio": 4.67
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "read",
+      "total": 22,
+      "minRatio": 17.21,
+      "minSample": {
+        "text": "Стеклянный город · глава 12",
+        "cls": "rd-chapter",
+        "ratio": 17.21
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "profile",
+      "total": 104,
+      "minRatio": 4.67,
+      "minSample": {
+        "text": "сегодня, 21:40",
+        "cls": "",
+        "ratio": 4.67
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "login",
+      "total": 48,
+      "minRatio": 4.56,
+      "minSample": {
+        "text": "Забыли?",
+        "cls": "auth-mini",
+        "ratio": 4.56
+      },
+      "failures": []
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "register",
+      "total": 51,
+      "minRatio": 4.56,
+      "minSample": {
+        "text": "Войти",
+        "cls": "",
+        "ratio": 4.56
+      },
+      "failures": []
+    }
+  ],
+  "keyboard": [
+    {
+      "concept": "minimal",
+      "focusVisible": {
+        "tag": "BUTTON",
+        "outline": "solid",
+        "width": "2px"
+      },
+      "searchOpen": {
+        "exists": true,
+        "focused": true
+      },
+      "searchClosed": true
+    },
+    {
+      "concept": "minimal",
+      "reader": {
+        "before": "1 / 4",
+        "after": "2 / 4",
+        "arrowsWork": true
+      }
+    },
+    {
+      "concept": "editorial",
+      "focusVisible": {
+        "tag": "BUTTON",
+        "outline": "solid",
+        "width": "2px"
+      },
+      "searchOpen": {
+        "exists": true,
+        "focused": true
+      },
+      "searchClosed": true
+    },
+    {
+      "concept": "editorial",
+      "reader": {
+        "before": "1 / 4",
+        "after": "2 / 4",
+        "arrowsWork": true
+      }
+    },
+    {
+      "concept": "cinematic",
+      "focusVisible": {
+        "tag": "BUTTON",
+        "outline": "solid",
+        "width": "2px"
+      },
+      "searchOpen": {
+        "exists": true,
+        "focused": true
+      },
+      "searchClosed": true
+    },
+    {
+      "concept": "cinematic",
+      "reader": {
+        "before": "1 / 4",
+        "after": "2 / 4",
+        "arrowsWork": true
+      }
+    }
+  ],
+  "motion": {
+    "mediaMatches": true,
+    "pulseAnimation": "1e-06s",
+    "scrollBehavior": "auto"
+  },
+  "js": [
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "home",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 18,
+      "withSrcset": 18,
+      "lazy": 17,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "catalog",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 12,
+      "withSrcset": 12,
+      "lazy": 12,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "anime",
+      "scriptKb": 155,
+      "scriptCount": 10,
+      "images": 4,
+      "withSrcset": 4,
+      "lazy": 3,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "watch",
+      "scriptKb": 156,
+      "scriptCount": 10,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "comics",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 7,
+      "withSrcset": 7,
+      "lazy": 7,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "comic",
+      "scriptKb": 155,
+      "scriptCount": 10,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "read",
+      "scriptKb": 145,
+      "scriptCount": 6,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "profile",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 9,
+      "withSrcset": 9,
+      "lazy": 9,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "login",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 0,
+      "withSrcset": 0,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "dark",
+      "screen": "register",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 0,
+      "withSrcset": 0,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "home",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 18,
+      "withSrcset": 18,
+      "lazy": 17,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "catalog",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 12,
+      "withSrcset": 12,
+      "lazy": 12,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "anime",
+      "scriptKb": 155,
+      "scriptCount": 10,
+      "images": 4,
+      "withSrcset": 4,
+      "lazy": 3,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "watch",
+      "scriptKb": 156,
+      "scriptCount": 10,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "comics",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 7,
+      "withSrcset": 7,
+      "lazy": 7,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "comic",
+      "scriptKb": 155,
+      "scriptCount": 10,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "read",
+      "scriptKb": 145,
+      "scriptCount": 6,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "profile",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 9,
+      "withSrcset": 9,
+      "lazy": 9,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "login",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 0,
+      "withSrcset": 0,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "minimal",
+      "theme": "light",
+      "screen": "register",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 0,
+      "withSrcset": 0,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "home",
+      "scriptKb": 160,
+      "scriptCount": 10,
+      "images": 7,
+      "withSrcset": 7,
+      "lazy": 6,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "catalog",
+      "scriptKb": 160,
+      "scriptCount": 10,
+      "images": 0,
+      "withSrcset": 0,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "anime",
+      "scriptKb": 166,
+      "scriptCount": 11,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "watch",
+      "scriptKb": 167,
+      "scriptCount": 11,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "comics",
+      "scriptKb": 160,
+      "scriptCount": 10,
+      "images": 4,
+      "withSrcset": 4,
+      "lazy": 3,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "comic",
+      "scriptKb": 166,
+      "scriptCount": 11,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "read",
+      "scriptKb": 145,
+      "scriptCount": 6,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "profile",
+      "scriptKb": 160,
+      "scriptCount": 10,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 1,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "login",
+      "scriptKb": 160,
+      "scriptCount": 10,
+      "images": 0,
+      "withSrcset": 0,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "dark",
+      "screen": "register",
+      "scriptKb": 160,
+      "scriptCount": 10,
+      "images": 0,
+      "withSrcset": 0,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "home",
+      "scriptKb": 160,
+      "scriptCount": 10,
+      "images": 7,
+      "withSrcset": 7,
+      "lazy": 6,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "catalog",
+      "scriptKb": 160,
+      "scriptCount": 10,
+      "images": 0,
+      "withSrcset": 0,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "anime",
+      "scriptKb": 166,
+      "scriptCount": 11,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "watch",
+      "scriptKb": 167,
+      "scriptCount": 11,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "comics",
+      "scriptKb": 160,
+      "scriptCount": 10,
+      "images": 4,
+      "withSrcset": 4,
+      "lazy": 3,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "comic",
+      "scriptKb": 166,
+      "scriptCount": 11,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "read",
+      "scriptKb": 145,
+      "scriptCount": 6,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "profile",
+      "scriptKb": 160,
+      "scriptCount": 10,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 1,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "login",
+      "scriptKb": 160,
+      "scriptCount": 10,
+      "images": 0,
+      "withSrcset": 0,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "theme": "light",
+      "screen": "register",
+      "scriptKb": 160,
+      "scriptCount": 10,
+      "images": 0,
+      "withSrcset": 0,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "home",
+      "scriptKb": 152,
+      "scriptCount": 8,
+      "images": 20,
+      "withSrcset": 20,
+      "lazy": 19,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "catalog",
+      "scriptKb": 152,
+      "scriptCount": 8,
+      "images": 13,
+      "withSrcset": 13,
+      "lazy": 13,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "anime",
+      "scriptKb": 152,
+      "scriptCount": 9,
+      "images": 6,
+      "withSrcset": 6,
+      "lazy": 5,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "watch",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 2,
+      "withSrcset": 2,
+      "lazy": 1,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "comics",
+      "scriptKb": 152,
+      "scriptCount": 8,
+      "images": 9,
+      "withSrcset": 9,
+      "lazy": 8,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "comic",
+      "scriptKb": 154,
+      "scriptCount": 10,
+      "images": 2,
+      "withSrcset": 2,
+      "lazy": 1,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "read",
+      "scriptKb": 145,
+      "scriptCount": 6,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "profile",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 11,
+      "withSrcset": 11,
+      "lazy": 10,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "login",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 2,
+      "withSrcset": 2,
+      "lazy": 1,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "dark",
+      "screen": "register",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 2,
+      "withSrcset": 2,
+      "lazy": 1,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "home",
+      "scriptKb": 152,
+      "scriptCount": 8,
+      "images": 20,
+      "withSrcset": 20,
+      "lazy": 19,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "catalog",
+      "scriptKb": 152,
+      "scriptCount": 8,
+      "images": 13,
+      "withSrcset": 13,
+      "lazy": 13,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "anime",
+      "scriptKb": 152,
+      "scriptCount": 9,
+      "images": 6,
+      "withSrcset": 6,
+      "lazy": 5,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "watch",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 2,
+      "withSrcset": 2,
+      "lazy": 1,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "comics",
+      "scriptKb": 152,
+      "scriptCount": 8,
+      "images": 9,
+      "withSrcset": 9,
+      "lazy": 8,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "comic",
+      "scriptKb": 154,
+      "scriptCount": 10,
+      "images": 2,
+      "withSrcset": 2,
+      "lazy": 1,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "read",
+      "scriptKb": 145,
+      "scriptCount": 6,
+      "images": 1,
+      "withSrcset": 1,
+      "lazy": 0,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "profile",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 11,
+      "withSrcset": 11,
+      "lazy": 10,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "login",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 2,
+      "withSrcset": 2,
+      "lazy": 1,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "theme": "light",
+      "screen": "register",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 2,
+      "withSrcset": 2,
+      "lazy": 1,
+      "noAlt": 0
+    }
+  ],
+  "images": [
+    {
+      "concept": "minimal",
+      "scriptKb": 154,
+      "scriptCount": 9,
+      "images": 18,
+      "withSrcset": 18,
+      "lazy": 17,
+      "noAlt": 0
+    },
+    {
+      "concept": "editorial",
+      "scriptKb": 160,
+      "scriptCount": 10,
+      "images": 7,
+      "withSrcset": 7,
+      "lazy": 6,
+      "noAlt": 0
+    },
+    {
+      "concept": "cinematic",
+      "scriptKb": 152,
+      "scriptCount": 8,
+      "images": 20,
+      "withSrcset": 20,
+      "lazy": 19,
+      "noAlt": 0
+    }
+  ]
+}
