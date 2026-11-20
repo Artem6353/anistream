@@ -39,42 +39,44 @@ fail() {
 [ -n "$REPO" ] || fail "GITHUB_REPOSITORY не задан (ожидается owner/repo)"
 
 OWNER="${REPO%%/*}"
+GIT="${GIT_BIN:-git}"
+CURL="${CURL_BIN:-curl}"
 API="https://api.github.com/repos/$REPO"
 
 # Незакоммиченные изменения нельзя терять молча: workflow обязан закоммитить батч.
-if ! git diff --quiet || ! git diff --cached --quiet; then
+if ! "$GIT" diff --quiet || ! "$GIT" diff --cached --quiet; then
   fail "в рабочем дереве есть незакоммиченные изменения — сначала commit, затем публикация"
 fi
 
-git rev-parse --verify --quiet "refs/remotes/origin/$BASE" >/dev/null || git fetch origin "$BASE"
-BASE_SHA="$(git rev-parse "refs/remotes/origin/$BASE")"
-HEAD_SHA="$(git rev-parse HEAD)"
+"$GIT" rev-parse --verify --quiet "refs/remotes/origin/$BASE" >/dev/null || "$GIT" fetch origin "$BASE"
+BASE_SHA="$("$GIT" rev-parse "refs/remotes/origin/$BASE")"
+HEAD_SHA="$("$GIT" rev-parse HEAD)"
 
 if [ "$HEAD_SHA" = "$BASE_SHA" ]; then
   echo "каталог не изменился относительно origin/$BASE — PR не нужен"
   exit 0
 fi
 
-AHEAD="$(git rev-list --count "refs/remotes/origin/$BASE..HEAD")"
+AHEAD="$("$GIT" rev-list --count "refs/remotes/origin/$BASE..HEAD")"
 if [ "$AHEAD" -eq 0 ]; then
   echo "HEAD не содержит коммитов сверх origin/$BASE — PR не нужен"
   exit 0
 fi
 
 # Выкладываем bot-ветку. Force-with-lease разрешён только для неё: main не трогаем.
-git fetch --quiet origin "+refs/heads/$HEAD_BRANCH:refs/remotes/origin/$HEAD_BRANCH" 2>/dev/null || true
-if git show-ref --verify --quiet "refs/remotes/origin/$HEAD_BRANCH"; then
-  REMOTE_SHA="$(git rev-parse "refs/remotes/origin/$HEAD_BRANCH")"
-  git push --force-with-lease="refs/heads/$HEAD_BRANCH:$REMOTE_SHA" origin "HEAD:refs/heads/$HEAD_BRANCH"
+"$GIT" fetch --quiet origin "+refs/heads/$HEAD_BRANCH:refs/remotes/origin/$HEAD_BRANCH" 2>/dev/null || true
+if "$GIT" show-ref --verify --quiet "refs/remotes/origin/$HEAD_BRANCH"; then
+  REMOTE_SHA="$("$GIT" rev-parse "refs/remotes/origin/$HEAD_BRANCH")"
+  "$GIT" push --force-with-lease="refs/heads/$HEAD_BRANCH:$REMOTE_SHA" origin "HEAD:refs/heads/$HEAD_BRANCH"
 else
-  git push origin "HEAD:refs/heads/$HEAD_BRANCH"
+  "$GIT" push origin "HEAD:refs/heads/$HEAD_BRANCH"
 fi
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
 api_curl() {
-  curl -sS \
+  "$CURL" -sS \
     -H "Authorization: Bearer $TOKEN" \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
@@ -108,8 +110,8 @@ if [ -n "${GITHUB_SERVER_URL:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ] && [ -n "$
   RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 fi
 
-STAT_LINE="$(git diff --stat "refs/remotes/origin/$BASE..HEAD" | tail -n 1 || true)"
-FILES="$(git diff --name-only "refs/remotes/origin/$BASE..HEAD" | head -n 12 || true)"
+STAT_LINE="$("$GIT" diff --stat "refs/remotes/origin/$BASE..HEAD" | tail -n 1 || true)"
+FILES="$("$GIT" diff --name-only "refs/remotes/origin/$BASE..HEAD" | head -n 12 || true)"
 
 BODY="Автоматический снимок каталога, собранный workflow.
 

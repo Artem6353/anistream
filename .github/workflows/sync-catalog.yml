@@ -172,3 +172,17 @@ jobs:
           # Батчи выше коммитятся локально, публикуются одним rolling PR здесь.
           # Helper никогда не пушит в main: branch protection требует PR.
           bash scripts/publish-catalog-changes.sh
+
+      # Checkpoint: если прогон упал на любом шаге после мутаций, данные уже
+      # находятся только в локальных коммитах раннера и исчезнут вместе с ним.
+      # Артефакт сохраняет собранный titles.json для ручного разбора/повтора.
+      - name: Preserve catalog batch on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-batch-${{ github.run_id }}
+          path: |
+            lib/data/titles.json
+            .cache/episode-dates-report.json
+          if-no-files-found: ignore
+          retention-days: 14
