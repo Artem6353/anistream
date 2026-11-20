@@ -23,6 +23,8 @@ concurrency:
 
 permissions:
   contents: write
+  # Публикация каталога идёт через PR: main защищён и не принимает direct push.
+  pull-requests: write
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -64,7 +66,7 @@ jobs:
             git add lib/data/titles.json
             if ! git diff --cached --quiet; then
               git commit -m "chore(catalog): enrich batch $i"
-              bash scripts/push-catalog-commit.sh
+              # Публикация — одним PR в конце прогона (см. шаг commit if changed).
             fi
             echo "batch $i done"
           done
@@ -118,8 +120,6 @@ jobs:
             git add lib/data/titles.json
             if ! git diff --cached --quiet; then
               git commit -m "chore(catalog): heal batch $i"
-              bash scripts/push-catalog-commit.sh \
-                || { echo "::error::не удалось запушить heal batch $i"; exit 1; }
             fi
             echo "heal batch $i done"
           done
@@ -135,7 +135,6 @@ jobs:
             git add lib/data/titles.json .cache/episode-dates-report.json 2>/dev/null || true
             if ! git diff --cached --quiet; then
               git commit -m "chore(catalog): dates batch $i"
-              bash scripts/push-catalog-commit.sh
             fi
             echo "dates batch $i done"
           done
@@ -151,7 +150,9 @@ jobs:
       # Предохранитель: не коммитим, если каталог похудел или дефектов больше порога.
       - name: catalog quality gate (blocks the commit)
         run: node scripts/check-catalog-quality.mjs --gate
-      - name: commit if changed
+      - name: commit and publish via pull request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           node scripts/validate-catalog.mjs
@@ -167,5 +168,7 @@ jobs:
           # --cached --quiet даёт exit 0, и push пропускался — коммит терялся на раннере.
           if ! git diff --cached --quiet; then
             git commit -m "chore(catalog): auto-sync $(date -u +%F-%H%M)"
-            bash scripts/push-catalog-commit.sh
           fi
+          # Батчи выше коммитятся локально, публикуются одним rolling PR здесь.
+          # Helper никогда не пушит в main: branch protection требует PR.
+          bash scripts/publish-catalog-changes.sh

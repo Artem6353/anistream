@@ -81,8 +81,10 @@ concurrency:
   cancel-in-progress: false
 
 # contents: write — только для шага коммита ЛЕГАСИ-файлового кэша (см. заголовок).
+# pull-requests: write — публикация этого коммита идёт через PR, не direct push в main.
 permissions:
   contents: write
+  pull-requests: write
 
 env:
   NEXT_TELEMETRY_DISABLED: '1'
@@ -340,6 +342,8 @@ jobs:
       # и только если файл меньше 50 МБ (лимит GitHub на объект — 100 МБ).
       - name: Commit provider cache (legacy file backend only)
         if: always() && github.ref == 'refs/heads/main' && github.event_name == 'schedule'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           CACHE=.cache/providers-resolve-cache.json
@@ -364,7 +368,7 @@ jobs:
             exit 0
           fi
           git commit -m "chore(cache): hydrate $(date -u +%Y-%m-%dT%H:%MZ)"
-          bash scripts/push-catalog-commit.sh
+          bash scripts/publish-catalog-changes.sh
 
       - name: Notify Telegram / Discord
         if: always()
