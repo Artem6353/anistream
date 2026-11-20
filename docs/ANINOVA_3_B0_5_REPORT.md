@@ -32,7 +32,7 @@
 | `main` / `origin/main` | `6ed9d1c` — не изменялись |
 | `docs/aninova-3-b0-audit` | `2bef267` + правки B0.5 (этот отчёт) |
 | `fix/catalog-sync-pr-flow` | `5abe9fd` |
-| `fix/workflow-least-privilege` | `ed8ba3a` |
+| `fix/workflow-least-privilege` | `3701590` |
 | `refs/backup/b0-wip-full-20261119` | `cb2bd7b` |
 | `refs/backup/b0-wip-20261119` | `b539528` |
 | WIP `app/layout.tsx` + `app/theme-2026.css` | сохранены, не закоммичены в `main`; SHA256 совпадают |
@@ -136,7 +136,7 @@ git push -u origin docs/aninova-3-b0-audit
 
 ### 3.3. Что исправлено
 
-- `fix/workflow-least-privilege` (`ed8ba3a`): `contents: read` добавлен в `ci.yml`, `e2e.yml`, `uptime.yml`, `rls.yml`, `push-daily.yml`, `push-test.yml`.
+- `fix/workflow-least-privilege` (`3701590`): `contents: read` добавлен в `ci.yml`, `e2e.yml`, `uptime.yml`, `rls.yml`, `push-daily.yml`, `push-test.yml`.
 - Новый `tests/test_workflow_permissions.py`: падает, если у workflow нет top-level `permissions.contents` или стоит `write-all`; отдельно проверяет `pull-requests: write` у PR-publishers (после merge helper'а) и отсутствие `HEAD:main`.
 - Ничего не «закрыто» без исправления: F-17 не подавлен, F-16 не замаскирован, RLS-политики не менялись.
 
@@ -332,7 +332,7 @@ git push -u origin docs/aninova-3-b0-audit
 | `main` | `6ed9d1c` | baseline, не изменялся |
 | `docs/aninova-3-b0-audit` | `2bef267` + B0.5 docs | audit/architecture/risk/backup/report |
 | `fix/catalog-sync-pr-flow` | `5abe9fd` | PR publisher, workflows, tests, artifact |
-| `fix/workflow-least-privilege` | `ed8ba3a` | 6 workflows + permissions test |
+| `fix/workflow-least-privilege` | `3701590` | 6 workflows + permissions test |
 | `refs/backup/b0-wip-full-20261119` | `cb2bd7b` | WIP layout + theme |
 | `refs/backup/b0-wip-20261119` | `b539528` | WIP tracked diff |
 

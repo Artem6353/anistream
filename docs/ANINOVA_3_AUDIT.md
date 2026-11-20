@@ -388,7 +388,7 @@ git push -u origin fix/catalog-sync-pr-flow
 
 ### F-08 — P2: 6 workflow без явного `permissions`
 
-См. §4.9. **B0.5 fix:** ветка `fix/workflow-least-privilege` (`ed8ba3a`) добавляет `contents: read` в `ci`, `e2e`, `uptime`, `rls`, `push-daily`, `push-test`; новый тест `tests/test_workflow_permissions.py` падает, если у workflow нет top-level `permissions.contents` или запрошен `write-all`. PR не открыт (нет GitHub token).
+См. §4.9. **B0.5 fix:** ветка `fix/workflow-least-privilege` (`3701590`) добавляет `contents: read` в `ci`, `e2e`, `uptime`, `rls`, `push-daily`, `push-test`; новый тест `tests/test_workflow_permissions.py` падает, если у workflow нет top-level `permissions.contents` или запрошен `write-all`. PR не открыт (нет GitHub token).
 
 ### F-09 — P2: `check:rls` сломан на текущем бандле
 
