@@ -85,7 +85,7 @@
 | `python -m unittest tests.test_workflow_permissions -v` | **2 passed, 1 skipped** (PR-flow контракт проверяется после merge helper'а) |
 | YAML parse всех workflow | OK |
 | `git ls-files -s scripts/publish-catalog-changes.sh` | `100755` |
-| Поиск `HEAD:main` / direct push | в helper и workflows не найден |
+| Поиск `HEAD:main` / direct push | в исполняемых строках helper/workflows не найден (исторический комментарий исключён тестом) |
 
 ### 2.4. PR-flow: что не выполнено
 
