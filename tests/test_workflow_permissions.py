@@ -10,6 +10,7 @@ Deliberately dependency-free: CI's Python job does not install PyYAML.
 
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 
@@ -76,7 +77,7 @@ class WorkflowPermissionsTests(unittest.TestCase):
             for number, line in enumerate(text.splitlines(), start=1):
                 if line.lstrip().startswith("#"):
                     continue
-                if "HEAD:main" in line or "push --force" in line:
+                if "HEAD:main" in line or re.search(r"push\s+--force(?!-)", line):
                     offenders.append(f"{path.name}:{number}: {line.strip()}")
         self.assertEqual(offenders, [], "\n".join(offenders))
 
