@@ -348,7 +348,7 @@ git push -u origin fix/catalog-sync-pr-flow
 
 ### F-03 — P1: legacy-auth хранит токены в `localStorage`
 
-**Evidence:** `lib/sync.ts` → `saveTokens()` пишет `anistream:supa_token`, `anistream:supa_refresh`, `anistream:supa_expires`; `AuthModal` использует этот слой. При этом `session-bridge.ts` утверждает, что токены только в памяти.
+**Evidence:** `lib/sync.ts:24-27` — ключи `anistream:supa_token`, `:supa_refresh`, `:supa_expires`; `:114-122` `saveTokens()` пишет их в `localStorage`; `:190` `auth()` вызывает `saveTokens()` на каждом login/signup. `components/auth/AuthModal.tsx:100-115` использует legacy `signIn`, а `:51-55` пытается «переселить» сессию в cookie через `adoptLegacySessionIntoCookieStore`. `lib/auth/session-bridge.ts:12-14` утверждает, что токены только в памяти, но `:50-53` прямо описывает legacy-вход с токенами на диске. То есть запись в localStorage реально происходит (хотя бы транзитно) и остаётся, если adoption не удался.
 
 **Impact:** XSS/расширение браузера может украсть refresh token; два контура дают рассинхрон входа.
 
