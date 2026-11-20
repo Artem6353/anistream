@@ -87,7 +87,18 @@
 | `git ls-files -s scripts/publish-catalog-changes.sh` | `100755` |
 | Поиск `HEAD:main` / direct push | в исполняемых строках helper/workflows не найден (исторический комментарий исключён тестом) |
 
-### 2.4. PR-flow: что не выполнено
+### 2.4. Открытые PR на момент проверки
+
+| PR | Ветка | Состояние | Отношение к B0.5 |
+|---|---|---|---|
+| #67 | `fix/video-availability-2026-11-18` | open | не наш; не трогали |
+| #42 | `chore/cache-out-of-git` | draft | не наш; не трогали |
+| #41 | `fix/audit-2026-11-12` | open | не наш; не трогали |
+| #39 | `agent-in-envexample-ab52` | open (Netlify bot) | не наш; не трогали |
+
+Новых PR не создано: B0.5-ветки существуют только локально. Auto-merge не включался.
+
+### 2.5. PR-flow: что не выполнено
 
 - Ветки **не запушены**, PR **не открыт**: нет `gh` CLI и GitHub token.
 - Linux CI (Python 3.13, exec-bit, реальный `git`/`curl`) не прогнан — только локальные fake-бинари.
