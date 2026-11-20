@@ -499,7 +499,7 @@ Production health snapshot сохранён в `.cache/b0-health-production.json
 |---|---|---|
 | GitHub CodeQL alerts | нет токена, API rate-limited | `gh api .../code-scanning/alerts` под владельцем |
 | Dependabot alerts | нет токена | GitHub Security → Dependabot |
-| Actions run logs/status | нет токена | `gh run list` / Actions UI |
+| Actions logs (полные) | runs/annotations получены без токена; полные логи требуют admin | `gh run view --log` / Actions UI |
 | Vercel runtime/deploy logs | нет токена | Vercel dashboard → Logs |
 | Supabase Advisors | нет Management API token | Supabase Dashboard → Advisors |
 | `pg_policies`/grants/триггеры | нет SQL-доступа | SQL Editor read-only запросы |
