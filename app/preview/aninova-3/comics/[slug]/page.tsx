@@ -12,6 +12,7 @@ import {
   chaptersLine,
   comicDisplayTitle,
   isPublishableEntry,
+  publicAuthors,
   publicRuChapters,
   publicationSummary,
   volumeLine,
@@ -55,6 +56,7 @@ export default async function A3ComicPage({ params }: Props) {
   const readable = canOpenReader(comic);
   const publishable = isPublishableEntry(comic);
   const title = comicDisplayTitle(comic);
+  const authors = publicAuthors(comic);
 
   return (
     <article className="a3-wrap a3-comic a3-comic--source">
@@ -88,15 +90,12 @@ export default async function A3ComicPage({ params }: Props) {
               Название и метаданные сверены с источником по идентификатору. Прав на публикацию и русских глав нет.
             </p>
           ) : null}
-          {/* Лицензионное название источника показываем только когда название
-              произведения само подтверждено: иначе это чужая заявка. */}
-          {comic.metadata?.licenseNameRu && !title.pending ? (
-            <p className="a3-muted">Название русской лицензии по данным источника: {comic.metadata.licenseNameRu}</p>
-          ) : null}
-          {comic.titleOriginal && !title.pending && comic.titleOriginal !== title.text ? (
-            <p className="a3-comic__orig">{comic.titleOriginal}</p>
-          ) : null}
-          {comic.authors.length ? <p className="a3-comic__authors">{comic.authors.join(', ')}</p> : null}
+          {/* Лицензионное название источника публично не выводится: официального
+              подтверждения издателя нет (officialPublisherConfirmed = false), а сама
+              заявка часто содержит иностранное написание. Данные остаются внутренними. */}
+          {/* Оригинальное (иностранное) название публично не выводится ни в каком виде:
+              оно остаётся во внутренних данных для сопоставления и сверки. */}
+          {authors.length ? <p className="a3-comic__authors">{authors.join(', ')}</p> : null}
           {comic.genres.length ? (
             <div className="a3-chips a3-chips--inline">
               {comic.genres.slice(0, 6).map((genre) => (

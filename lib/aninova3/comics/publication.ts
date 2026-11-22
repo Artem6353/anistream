@@ -87,6 +87,19 @@ export function comicDisplayTitle(comic: ComicWork): {
   return { text: PENDING_TITLE_TEXT, russian: false, pending: true, verification: comic.verification };
 }
 
+/**
+ * Авторы для публичного показа.
+ *
+ * B1-E.1: имена из графа (AniList staff) остаются во внутренних данных для
+ * сопоставления произведений, но пользователю показываются только после того, как
+ * редакция подтвердила их для этого произведения (`authorsVerified`). Пустой массив
+ * означает «авторов не показываем»; запасных вариантов («взять иностранные») нет.
+ */
+export function publicAuthors(comic: Pick<ComicWork, 'authors' | 'authorsVerified'>): string[] {
+  if (!comic.authorsVerified) return [];
+  return comic.authors.map((name) => (typeof name === 'string' ? name.trim() : '')).filter((name) => name.length > 0);
+}
+
 /** Название для внутреннего сопоставления: никогда не подменяет публичное. */
 export function comicInternalTitle(comic: ComicWork): string {
   return comic.titleOriginal;

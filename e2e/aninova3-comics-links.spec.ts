@@ -200,9 +200,9 @@ test.describe('B1-C: страница Comics → аниме-адаптации',
     const text = await heading.innerText();
     expect(text).toMatch(/[а-яё]/i);
     expect(text).not.toMatch(/[a-z]{4,}/i);
-    /* Оригинальное название может быть подписью под русским, но не заменой ему. */
-    const orig = page.locator('.a3-comic__orig');
-    if (await orig.count()) expect(await orig.first().innerText()).not.toBe(text);
+    /* B1-E.1: оригинальное название не выводится вообще — ни подписью, ни блоком. */
+    await expect(page.locator('.a3-comic__orig')).toHaveCount(0);
+    expect(await page.locator('.a3-comic__info').innerText()).not.toContain('ONE PIECE');
     await expect(page.getByRole('link', { name: /Читать/ })).toHaveCount(0);
     await expect(page.locator('.a3-publication-state')).toContainText('Публикация недоступна');
   });
@@ -223,6 +223,9 @@ ${await page.locator('.a3-comic__info').innerText()}
 ${page.url()}`.toLowerCase();
     if (record.titleRu) expect(visible).not.toContain(record.titleRu.toLowerCase().slice(0, 12));
     if (record.titleOriginal) expect(visible).not.toContain(record.titleOriginal.toLowerCase().slice(0, 10));
+    /* Непроверенные авторы из графа тоже не публикуются. */
+    await expect(page.locator('.a3-comic__authors')).toHaveCount(0);
+    await expect(page.locator('.a3-comic__orig')).toHaveCount(0);
     /* Слаг нейтральный: только comic-<anilistId>. */
     expect(record.slug).toMatch(/^comic-\d+$/);
     /* Адаптации при этом видны: связь подтверждена, скрыта только метаинформация. */
@@ -235,6 +238,39 @@ ${page.url()}`.toLowerCase();
     await page.waitForURL((url) => !url.pathname.endsWith(record.legacySlug));
     expect(page.url()).toMatch(/\/preview\/aninova-3\/comics\/[a-z0-9-]+$/);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  });
+
+  /* B1-E.1: авторы — публичное утверждение, а не украшение карточки. */
+  test('подтверждённые редакцией авторы показываются', async ({ page }) => {
+    await page.goto(`${ROOT}/comics/naruto`);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Наруто');
+    await expect(page.locator('.a3-comic__authors')).toHaveText('Масаси Кисимото');
+    await expect(page).toHaveTitle(/^Наруто/);
+  });
+
+  test('авторы из графа не показываются без подтверждения', async ({ page }) => {
+    /* У One Piece в графе есть авторы AniList, но редакция их не подтверждала. */
+    const comic = data().graph.comics.find((c) => c.anilist === 30013);
+    expect(comic?.authors?.length ?? 0).toBeGreaterThan(0);
+    await page.goto(`${ROOT}/comics/one-piece`);
+    await expect(page.locator('.a3-comic__authors')).toHaveCount(0);
+    const pageText = await page.locator('body').innerText();
+    for (const author of comic?.authors ?? []) {
+      expect(pageText).not.toContain(author);
+    }
+  });
+
+  test('оригинальное название не раскрывается ни в тексте, ни в SEO-заголовке', async ({ page }) => {
+    const html = await (await page.request.get(`${ROOT}/comics/one-piece`)).text();
+    const seoTitle = await page.goto(`${ROOT}/comics/one-piece`).then(() => page.title());
+    expect(seoTitle).toMatch(/Ван-Пис/);
+    for (const name of ['ONE PIECE', 'One Piece', 'ワンピース']) {
+      expect(html).not.toContain(name);
+      expect(seoTitle).not.toContain(name);
+    }
+    /* Оригинальное название есть только во внутренних данных. */
+    const record = data().graph.comics.find((c) => c.anilist === 30013);
+    expect(record?.titleOriginal).toBe('ONE PIECE');
   });
 
   test('читалка закрыта для произведения без прав и глав', async ({ page }) => {
@@ -371,6 +407,8 @@ test.describe('B1-C: адаптивность новых блоков', () => {
         `${ROOT}/anime/one-piece`,
         `${ROOT}/anime/fujimoto-tatsuki-17-26`,
         `${ROOT}/comics/one-piece`,
+        /* B1-E.1: страница с подтверждёнными авторами — отдельная строка в карточке. */
+        `${ROOT}/comics/naruto`,
       ]) {
         await page.goto(url);
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -395,7 +433,7 @@ interface VerifiedRow {
 
 interface CatalogData {
   verified: Map<number, VerifiedRow>;
-  graph: { comics: { anilist: number; titleOriginal?: string }[] };
+  graph: { comics: { anilist: number; titleOriginal?: string; titleNative?: string | null; authors?: string[] }[] };
 }
 
 let DATA: CatalogData | null = null;

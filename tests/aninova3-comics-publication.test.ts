@@ -12,6 +12,7 @@ import {
   publicationIssues,
   pluralRu,
   publicationSummary,
+  publicAuthors,
   publicRuChapters,
 } from '@/lib/aninova3/comics/publication';
 import type { ComicWork } from '@/lib/aninova3/comics/model';
@@ -82,6 +83,56 @@ describe('полная проверка публикации', () => {
     expect(title.text).toBe(PENDING_TITLE_TEXT);
     /* Оригинальное название не подставляется вместо русского. */
     expect(title.text).not.toContain(unverified.titleOriginal);
+  });
+
+  /* B1-E.1: авторы — отдельное утверждение, а не украшение карточки. Имена из графа
+     (AniList staff) есть у 4091 произведения, но публично они не выводятся, пока
+     редакция не подтвердила их для конкретного произведения. */
+  it('неподтверждённые авторы не попадают в публичный вывод', () => {
+    /* Берём произведение без редакционного подтверждения и даём ему авторов из
+       графа — так выглядит источник, из которого раньше утекали имена. */
+    const graph = buildSourceGraph({
+      ...FIXTURE_GRAPH,
+      comics: (FIXTURE_GRAPH.comics ?? []).map((c) => (c.anilist === 900005 ? { ...c, authors: ['Raw Author'] } : c)),
+    });
+    const localStore = buildComicStore(graph, FIXTURE_EDITORIALS);
+    const hidden = localStore.byId.get('comic:anilist:900005');
+    expect(hidden?.authors).toEqual(['Raw Author']);
+    expect(hidden?.authorsVerified).toBe(false);
+    expect(publicAuthors(hidden!)).toEqual([]);
+  });
+
+  it('подтверждённые авторы показываются', () => {
+    const verifiedAuthors = byId('comic:anilist:900001');
+    expect(verifiedAuthors.authorsVerified).toBe(true);
+    expect(publicAuthors(verifiedAuthors)).toEqual(['Тестовый автор']);
+  });
+
+  it('подтверждение авторов без имён не даёт подписи', () => {
+    expect(publicAuthors({ authors: ['   ', ''], authorsVerified: true })).toEqual([]);
+  });
+
+  it('ни один публичный экран Comics не выводит оригинальное название', async () => {
+    /* Регрессия B1-E.1: `titleOriginal`/`titleNative` — внутренние поля. Если они
+       появятся в публичном коде страниц и компонентов, оригинальное название снова
+       утечёт в HTML, поэтому проверяем сам публичный слой, а не только рендер. */
+    const { readFile, readdir } = await import('node:fs/promises');
+    const { join } = await import('node:path');
+    const roots = ['app/preview/aninova-3/comics', 'components/aninova3/comics'];
+    const files: string[] = [];
+    const walk = async (dir: string) => {
+      for (const entry of await readdir(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) await walk(full);
+        else if (/\.(ts|tsx)$/.test(entry.name)) files.push(full);
+      }
+    };
+    for (const root of roots) await walk(join(process.cwd(), root));
+    expect(files.length).toBeGreaterThan(4);
+    for (const file of files) {
+      const text = await readFile(file, 'utf8');
+      expect(text, file).not.toMatch(/titleOriginal|titleNative|comicInternalTitle/);
+    }
   });
 
   it('истёкшее разрешение закрывает публикацию', () => {

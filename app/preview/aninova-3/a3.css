@@ -2792,11 +2792,6 @@
   width: 100%;
   height: auto;
 }
-.a3-comic__orig {
-  margin: -4px 0 6px;
-  color: var(--a3-muted);
-  font-size: 13px;
-}
 .a3-comic__authors {
   margin: 0 0 10px;
   color: var(--a3-text);

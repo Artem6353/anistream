@@ -44,7 +44,9 @@ export function A3AdaptationSection({ links }: { links: LinkedAnime[] }) {
               <PosterArt
                 src={link.anime.poster}
                 seed={link.anime.slug}
-                initials={link.anime.romaji}
+                /* B1-E.1: на страницах Comics не показываем иностранные названия —
+                   инициалы берём из русского названия, иначе нейтральный маркер. */
+                initials={/^[а-яё]/i.test(link.anime.ru) ? link.anime.ru.slice(0, 1) : '•'}
                 alt={`Постер: ${link.anime.ru}`}
                 width={120}
               />
