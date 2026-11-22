@@ -1,0 +1,2253 @@
+{
+  "generatedAt": "2026-11-22T19:44:28.564Z",
+  "note": "Случаи, которым нужна редакционная/техническая проверка. Связи не удалены — только помечены.",
+  "multiSourceNeedsReview": [
+    {
+      "anime": 124153,
+      "startYear": 2021,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 129672,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2021,
+          "chapters": null,
+          "mal": null,
+          "title": "SK∞"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 129369,
+          "relation": "SPIN_OFF",
+          "format": "MANGA",
+          "year": 2021,
+          "chapters": 26,
+          "mal": 133274,
+          "title": "SK∞: Chill Out!"
+        }
+      ]
+    },
+    {
+      "anime": 143270,
+      "startYear": 2022,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 151808,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2022,
+          "chapters": null,
+          "mal": 150973,
+          "title": "Lycoris Recoil"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 155071,
+          "relation": "SPIN_OFF",
+          "format": "MANGA",
+          "year": 2022,
+          "chapters": 15,
+          "mal": 153383,
+          "title": "Lycoris Recoil Recollect"
+        },
+        {
+          "comic": 155976,
+          "relation": "SPIN_OFF",
+          "format": "MANGA",
+          "year": 2022,
+          "chapters": 44,
+          "mal": 154401,
+          "title": "Lycoris Recoil Koushiki Comic Anthology: Reload"
+        },
+        {
+          "comic": 157671,
+          "relation": "SPIN_OFF",
+          "format": "MANGA",
+          "year": 2022,
+          "chapters": 40,
+          "mal": 155639,
+          "title": "Lycoris Recoil Koushiki Comic Anthology: Repeat"
+        },
+        {
+          "comic": 158111,
+          "relation": "SPIN_OFF",
+          "format": "MANGA",
+          "year": 2022,
+          "chapters": 7,
+          "mal": 155640,
+          "title": "Lycoris Recoil Koushiki Comic Anthology: React"
+        }
+      ]
+    },
+    {
+      "anime": 201903,
+      "startYear": 2026,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 206719,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2026,
+          "chapters": null,
+          "mal": 190679,
+          "title": "Chou Kaguya-hime!"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 219256,
+          "relation": "SEQUEL",
+          "format": "MANGA",
+          "year": 2026,
+          "chapters": null,
+          "mal": null,
+          "title": "Chou Kaguya Meshi!"
+        }
+      ]
+    },
+    {
+      "anime": 949,
+      "startYear": 1988,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 51158,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1989,
+          "chapters": null,
+          "mal": 21158,
+          "title": "Comic Gunbuster"
+        }
+      ],
+      "laterAdaptations": [
+        {
+          "comic": 62811,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2010,
+          "chapters": 30,
+          "mal": 32811,
+          "title": "Top wo Nerae! GunBuster"
+        }
+      ],
+      "otherEdges": [
+        {
+          "comic": 139047,
+          "relation": "SPIN_OFF",
+          "format": "MANGA",
+          "year": 1989,
+          "chapters": 9,
+          "mal": null,
+          "title": "Top wo Nerae! NEXT GENERATION: Hakkutsu Senkan-hen"
+        }
+      ]
+    },
+    {
+      "anime": 97880,
+      "startYear": 2019,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 116767,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2020,
+          "chapters": null,
+          "mal": 132836,
+          "title": "Code Geass: Fukkatsu no Lelouch"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 202995,
+          "relation": "SPIN_OFF",
+          "format": "MANGA",
+          "year": 2025,
+          "chapters": null,
+          "mal": 182806,
+          "title": "Code Geass: Shinketsu no Almaria"
+        }
+      ]
+    },
+    {
+      "anime": 95,
+      "startYear": 1999,
+      "verdict": "multi_source_with_issues",
+      "reason": "several_serialized_sources",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 34186,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1999,
+          "chapters": 30,
+          "mal": 4186,
+          "title": "Turn A Gundam"
+        },
+        {
+          "comic": 146167,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1999,
+          "chapters": null,
+          "mal": null,
+          "title": "Turn A Gundam"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 61845,
+          "relation": "PREQUEL",
+          "format": "MANGA",
+          "year": 2004,
+          "chapters": 8,
+          "mal": 31845,
+          "title": "Turn A Gundam: Tsuki no Kaze"
+        },
+        {
+          "comic": 84123,
+          "relation": "OTHER",
+          "format": "MANGA",
+          "year": 2011,
+          "chapters": 34,
+          "mal": 54123,
+          "title": "Gundam EXA"
+        }
+      ]
+    },
+    {
+      "anime": 101261,
+      "startYear": 2019,
+      "verdict": "multi_source_with_issues",
+      "reason": "several_serialized_sources",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 109545,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2019,
+          "chapters": null,
+          "mal": 119875,
+          "title": "Sarazanmai"
+        },
+        {
+          "comic": 132614,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2020,
+          "chapters": 16,
+          "mal": 132813,
+          "title": "Anthology: Minna de Sarazanmai"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 108703,
+          "relation": "SPIN_OFF",
+          "format": "MANGA",
+          "year": 2018,
+          "chapters": 11,
+          "mal": 114517,
+          "title": "Reo to Mabu: Futari wa Sarazanmai"
+        }
+      ]
+    },
+    {
+      "anime": 4981,
+      "startYear": 2008,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 171951,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2008,
+          "chapters": null,
+          "mal": null,
+          "title": "Casshern Sins"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 168408,
+          "relation": "ALTERNATIVE",
+          "format": "MANGA",
+          "year": 2023,
+          "chapters": 26,
+          "mal": null,
+          "title": "Casshern R"
+        }
+      ]
+    },
+    {
+      "anime": 9941,
+      "startYear": 2011,
+      "verdict": "multi_source_with_issues",
+      "reason": "several_serialized_sources",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 57203,
+          "relation": "ADAPTATION",
+          "format": "ONE_SHOT",
+          "year": 2011,
+          "chapters": 1,
+          "mal": 27203,
+          "title": "Tiger & Bunny"
+        },
+        {
+          "comic": 57921,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2011,
+          "chapters": null,
+          "mal": 27921,
+          "title": "TIGER & BUNNY Comic Anthology"
+        },
+        {
+          "comic": 59553,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2011,
+          "chapters": 38,
+          "mal": 29553,
+          "title": "Tiger & Bunny"
+        },
+        {
+          "comic": 62297,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2011,
+          "chapters": 42,
+          "mal": 32297,
+          "title": "TIGER & BUNNY THE COMIC"
+        },
+        {
+          "comic": 89838,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2011,
+          "chapters": 86,
+          "mal": 63731,
+          "title": "TIGER & BUNNY Koushiki Anthology"
+        },
+        {
+          "comic": 90011,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2012,
+          "chapters": 8,
+          "mal": 64607,
+          "title": "TIGER&BUNNY: The Beginning"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": []
+    },
+    {
+      "anime": 96,
+      "startYear": 1994,
+      "verdict": "multi_source_with_issues",
+      "reason": "one_serialized_plus_one_shots",
+      "issues": [
+        "duplicate_mal_id"
+      ],
+      "sources": [
+        {
+          "comic": 33510,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1994,
+          "chapters": 13,
+          "mal": 3510,
+          "title": "Mobile Fighter G Gundam"
+        },
+        {
+          "comic": 180108,
+          "relation": "ADAPTATION",
+          "format": "ONE_SHOT",
+          "year": 1994,
+          "chapters": 1,
+          "mal": null,
+          "title": "Kidou Butouden G Gundam: Shouen no Hate"
+        }
+      ],
+      "laterAdaptations": [
+        {
+          "comic": 131323,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2010,
+          "chapters": 14,
+          "mal": 124776,
+          "title": "Choukyuu! Kidou Butouden G Gundam: Domon Hourou-hen"
+        },
+        {
+          "comic": 131433,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2011,
+          "chapters": 16,
+          "mal": 124776,
+          "title": "Choukyuu! Kidou Butouden G Gundam: Shinjuku - Touhou Fuhai!"
+        },
+        {
+          "comic": 131454,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2013,
+          "chapters": 21,
+          "mal": 124776,
+          "title": "Choukyuu! Kidou Butouden G Gundam: Bakunetsu - Neo Hong Kong!"
+        },
+        {
+          "comic": 131637,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2014,
+          "chapters": 16,
+          "mal": 124776,
+          "title": "Choukyuu! Kidou Butouden G Gundam: Saishuu Kessen-hen"
+        }
+      ],
+      "otherEdges": [
+        {
+          "comic": 84123,
+          "relation": "OTHER",
+          "format": "MANGA",
+          "year": 2011,
+          "chapters": 34,
+          "mal": 54123,
+          "title": "Gundam EXA"
+        },
+        {
+          "comic": 117779,
+          "relation": "OTHER",
+          "format": "MANGA",
+          "year": 2014,
+          "chapters": 35,
+          "mal": 169632,
+          "title": "Gundam EXA VS"
+        },
+        {
+          "comic": 150708,
+          "relation": "PREQUEL",
+          "format": "MANGA",
+          "year": 1996,
+          "chapters": null,
+          "mal": null,
+          "title": "Kidou Butou Gaiden: Gundam Fight 7th"
+        },
+        {
+          "comic": 166592,
+          "relation": "SEQUEL",
+          "format": "ONE_SHOT",
+          "year": 1995,
+          "chapters": 1,
+          "mal": null,
+          "title": "Kidou Butouden G Gundam Gaiden: The Next Generation"
+        }
+      ]
+    },
+    {
+      "anime": 185939,
+      "startYear": 2025,
+      "verdict": "multi_source_with_issues",
+      "reason": "several_serialized_sources",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 195037,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2025,
+          "chapters": null,
+          "mal": 180000,
+          "title": "Hibi wa Sugiredo Meshi Umashi"
+        },
+        {
+          "comic": 219057,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2026,
+          "chapters": 12,
+          "mal": null,
+          "title": "Hibi wa Sugiredo Meshi Umashi Koushiki Comic Anthology"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": []
+    },
+    {
+      "anime": 184639,
+      "startYear": 2025,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 190343,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2025,
+          "chapters": null,
+          "mal": 177704,
+          "title": "Anne Shirley"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 40282,
+          "relation": "ALTERNATIVE",
+          "format": "MANGA",
+          "year": 1997,
+          "chapters": 18,
+          "mal": 10282,
+          "title": "Akage no Anne"
+        },
+        {
+          "comic": 48347,
+          "relation": "ALTERNATIVE",
+          "format": "MANGA",
+          "year": 1998,
+          "chapters": 6,
+          "mal": 18347,
+          "title": "Anne no Seishun"
+        },
+        {
+          "comic": 49473,
+          "relation": "ALTERNATIVE",
+          "format": "MANGA",
+          "year": 1998,
+          "chapters": 6,
+          "mal": 19473,
+          "title": "Anne no Aijou"
+        },
+        {
+          "comic": 146007,
+          "relation": "ALTERNATIVE",
+          "format": "MANGA",
+          "year": 1977,
+          "chapters": null,
+          "mal": null,
+          "title": "Akage no Anne"
+        }
+      ]
+    },
+    {
+      "anime": 97903,
+      "startYear": 2017,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 109891,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2017,
+          "chapters": null,
+          "mal": 104273,
+          "title": "Sakura Quest"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 110751,
+          "relation": "SIDE_STORY",
+          "format": "MANGA",
+          "year": 2017,
+          "chapters": 16,
+          "mal": 108610,
+          "title": "Sakura Quest Gaiden: Oribe Ririko no Gyoumu Nippou"
+        }
+      ]
+    },
+    {
+      "anime": 198376,
+      "startYear": 2026,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 215743,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2026,
+          "chapters": null,
+          "mal": null,
+          "title": "BanG Dream! Yume∞Mita: Arale∞Araburation"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 214201,
+          "relation": "SPIN_OFF",
+          "format": "MANGA",
+          "year": 2026,
+          "chapters": 3,
+          "mal": null,
+          "title": "Magical Physical☆Kululu"
+        }
+      ]
+    },
+    {
+      "anime": 6172,
+      "startYear": 2009,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 143181,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2009,
+          "chapters": null,
+          "mal": null,
+          "title": "Layton Kyouju to Eien no Utahime"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 43042,
+          "relation": "SPIN_OFF",
+          "format": "MANGA",
+          "year": 2008,
+          "chapters": 42,
+          "mal": 13042,
+          "title": "Layton Kyouju to Yukai na Jiken"
+        },
+        {
+          "comic": 142732,
+          "relation": "SPIN_OFF",
+          "format": "MANGA",
+          "year": 2009,
+          "chapters": null,
+          "mal": null,
+          "title": "Layton Kyouju to Mayoi no Mori"
+        },
+        {
+          "comic": 143180,
+          "relation": "SPIN_OFF",
+          "format": "MANGA",
+          "year": 2013,
+          "chapters": null,
+          "mal": null,
+          "title": "Layton Kyouju to Chiisana Nazo"
+        }
+      ]
+    },
+    {
+      "anime": 1650,
+      "startYear": 1974,
+      "verdict": "multi_source_with_issues",
+      "reason": "several_serialized_sources",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 63333,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1974,
+          "chapters": 21,
+          "mal": 33333,
+          "title": "Uchuu Senkan Yamato"
+        },
+        {
+          "comic": 63335,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1974,
+          "chapters": null,
+          "mal": 33335,
+          "title": "Uchuu Senkan Yamato"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 61937,
+          "relation": "SEQUEL",
+          "format": "MANGA",
+          "year": 2000,
+          "chapters": null,
+          "mal": 31937,
+          "title": "Shin Uchuu Senkan Yamato"
+        },
+        {
+          "comic": 63337,
+          "relation": "ALTERNATIVE",
+          "format": "MANGA",
+          "year": 1974,
+          "chapters": 6,
+          "mal": 33337,
+          "title": "Space Battleship Yamato"
+        }
+      ]
+    },
+    {
+      "anime": 111,
+      "startYear": 1999,
+      "verdict": "multi_source_with_issues",
+      "reason": "several_serialized_sources",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 30172,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1999,
+          "chapters": 11,
+          "mal": 172,
+          "title": "Corrector Yui"
+        },
+        {
+          "comic": 48411,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1999,
+          "chapters": null,
+          "mal": 18411,
+          "title": "Corrector Yui"
+        },
+        {
+          "comic": 48412,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2000,
+          "chapters": null,
+          "mal": 18412,
+          "title": "Corrector Yui Ver.2"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": []
+    },
+    {
+      "anime": 1264,
+      "startYear": 1988,
+      "verdict": "multi_source_with_issues",
+      "reason": "several_serialized_sources",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 56394,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1988,
+          "chapters": 10,
+          "mal": 26394,
+          "title": "Yoroiden Samurai Troopers"
+        },
+        {
+          "comic": 78593,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1988,
+          "chapters": null,
+          "mal": 48593,
+          "title": "Shin Yoroiden Samurai Troopers"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": []
+    },
+    {
+      "anime": 1069,
+      "startYear": 1977,
+      "verdict": "multi_source_with_issues",
+      "reason": "several_serialized_sources",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 136399,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1977,
+          "chapters": null,
+          "mal": null,
+          "title": "Chou Denji Machine Voltes V"
+        },
+        {
+          "comic": 193860,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1977,
+          "chapters": 12,
+          "mal": null,
+          "title": "Chou Denji Machine Voltes V"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 138644,
+          "relation": "CHARACTER",
+          "format": "MANGA",
+          "year": 2010,
+          "chapters": 40,
+          "mal": 100756,
+          "title": "God Bird"
+        },
+        {
+          "comic": 138742,
+          "relation": "CHARACTER",
+          "format": "MANGA",
+          "year": 2001,
+          "chapters": 12,
+          "mal": 100754,
+          "title": "Chou Denji Taisen Victory Five"
+        }
+      ]
+    },
+    {
+      "anime": 2598,
+      "startYear": 1984,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 149793,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1984,
+          "chapters": null,
+          "mal": null,
+          "title": "Juunsenki L-Gaim"
+        }
+      ],
+      "laterAdaptations": [
+        {
+          "comic": 150092,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2002,
+          "chapters": 7,
+          "mal": null,
+          "title": "Juunsenki L-Gaim: Under the Sunz"
+        }
+      ],
+      "otherEdges": []
+    },
+    {
+      "anime": 598,
+      "startYear": 2000,
+      "verdict": "multi_source_with_issues",
+      "reason": "several_serialized_sources",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 31485,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2000,
+          "chapters": null,
+          "mal": 1485,
+          "title": "Kikaider 02"
+        },
+        {
+          "comic": 34750,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1972,
+          "chapters": 86,
+          "mal": 4750,
+          "title": "Jinzou Ningen Kikaider"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": []
+    },
+    {
+      "anime": 171080,
+      "startYear": 2024,
+      "verdict": "multi_source_with_issues",
+      "reason": "several_serialized_sources",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 177018,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2024,
+          "chapters": null,
+          "mal": null,
+          "title": "Himitsu no AiPri"
+        },
+        {
+          "comic": 177019,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2024,
+          "chapters": 102,
+          "mal": 169942,
+          "title": "Himitsu no AiPri: Full Color Osarai 4-koma"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": []
+    },
+    {
+      "anime": 1835,
+      "startYear": 2006,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 52734,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2007,
+          "chapters": null,
+          "mal": 22734,
+          "title": "Ryuusei no Rockman"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 52559,
+          "relation": "CHARACTER",
+          "format": "MANGA",
+          "year": 1997,
+          "chapters": 14,
+          "mal": 22559,
+          "title": "Rockman 8"
+        }
+      ]
+    },
+    {
+      "anime": 160831,
+      "startYear": 2023,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 171267,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2023,
+          "chapters": null,
+          "mal": null,
+          "title": "GAMERA: Rebirth"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 133935,
+          "relation": "CHARACTER",
+          "format": "ONE_SHOT",
+          "year": 1970,
+          "chapters": 1,
+          "mal": null,
+          "title": "Gamera Tai Daimajuu Jaiga"
+        },
+        {
+          "comic": 171268,
+          "relation": "SPIN_OFF",
+          "format": "MANGA",
+          "year": 2023,
+          "chapters": 7,
+          "mal": null,
+          "title": "GAMERA: Rebirth - Code Tersos"
+        }
+      ]
+    },
+    {
+      "anime": 471,
+      "startYear": 2005,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 39990,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2005,
+          "chapters": null,
+          "mal": 9990,
+          "title": "ToHeart2"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 159133,
+          "relation": "CHARACTER",
+          "format": "MANGA",
+          "year": 2001,
+          "chapters": null,
+          "mal": null,
+          "title": "ToHeart"
+        }
+      ]
+    },
+    {
+      "anime": 21409,
+      "startYear": 2016,
+      "verdict": "multi_source_with_issues",
+      "reason": "several_serialized_sources",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 132781,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2016,
+          "chapters": 40,
+          "mal": null,
+          "title": "King of Prism by Pretty Rhythm Comic Anthology"
+        },
+        {
+          "comic": 132788,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2016,
+          "chapters": 17,
+          "mal": null,
+          "title": "King of Prism by Pretty Rhythm: Dengeki Comic Anthology"
+        },
+        {
+          "comic": 132892,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2016,
+          "chapters": null,
+          "mal": null,
+          "title": "King of Prism by Pretty Rhythm: 4-koma Anthology Jisedai-hen"
+        },
+        {
+          "comic": 132894,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2016,
+          "chapters": null,
+          "mal": null,
+          "title": "King of Prism by Pretty Rhythm: 4-koma Kings"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": []
+    },
+    {
+      "anime": 5307,
+      "startYear": 2009,
+      "verdict": "multi_source_with_issues",
+      "reason": "several_serialized_sources",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 42626,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2009,
+          "chapters": null,
+          "mal": 12626,
+          "title": "Sora wo Kakeru Shoujo R"
+        },
+        {
+          "comic": 42627,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2009,
+          "chapters": null,
+          "mal": 12627,
+          "title": "Sora wo Kakeru Shoujo D"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": []
+    },
+    {
+      "anime": 187316,
+      "startYear": 2026,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 217946,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2026,
+          "chapters": null,
+          "mal": 195245,
+          "title": "Gensou Suikoden The Anime: Honmono no Eiyuu"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 30536,
+          "relation": "ALTERNATIVE",
+          "format": "MANGA",
+          "year": 2002,
+          "chapters": null,
+          "mal": 536,
+          "title": "Gensou Suikoden III: Unmei no Keishousha"
+        },
+        {
+          "comic": 39397,
+          "relation": "ALTERNATIVE",
+          "format": "MANGA",
+          "year": null,
+          "chapters": null,
+          "mal": 9397,
+          "title": "Gensou Suikoden V Anthology"
+        },
+        {
+          "comic": 49271,
+          "relation": "ALTERNATIVE",
+          "format": "MANGA",
+          "year": 2009,
+          "chapters": null,
+          "mal": 19271,
+          "title": "Gensou Suikoden II: Hiki Sakareshi Shukusei"
+        },
+        {
+          "comic": 50109,
+          "relation": "ALTERNATIVE",
+          "format": "MANGA",
+          "year": 2008,
+          "chapters": 40,
+          "mal": 20109,
+          "title": "Gensou Suikoden V: Reimei no Shiro"
+        },
+        {
+          "comic": 56217,
+          "relation": "ALTERNATIVE",
+          "format": "MANGA",
+          "year": 2009,
+          "chapters": 11,
+          "mal": 26217,
+          "title": "Gensou Suikoden: Uketsugareshi Monshou"
+        },
+        {
+          "comic": 189063,
+          "relation": "ALTERNATIVE",
+          "format": "MANGA",
+          "year": 2025,
+          "chapters": 6,
+          "mal": null,
+          "title": "Gensou Suikoden STAR LEAP: Hoshiboshi no Kiseki"
+        }
+      ]
+    },
+    {
+      "anime": 1603,
+      "startYear": 2006,
+      "verdict": "multi_source_with_issues",
+      "reason": "several_serialized_sources",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 55701,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2007,
+          "chapters": 16,
+          "mal": 25701,
+          "title": "Super Robot Taisen OG - Divine Wars - Record of ATX"
+        },
+        {
+          "comic": 58779,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2006,
+          "chapters": null,
+          "mal": 28779,
+          "title": "Super Robot Taisen OG - Divine Wars"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": []
+    },
+    {
+      "anime": 162312,
+      "startYear": 2023,
+      "verdict": "single_source_after_date_filter",
+      "reason": "other_adaptation_edges_are_later_comics",
+      "issues": [
+        "source_same_year_without_chapters"
+      ],
+      "sources": [
+        {
+          "comic": 219010,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2024,
+          "chapters": null,
+          "mal": null,
+          "title": "Chibi Godzilla no Gyakushuu"
+        }
+      ],
+      "laterAdaptations": [],
+      "otherEdges": [
+        {
+          "comic": 44160,
+          "relation": "PARENT",
+          "format": "MANGA",
+          "year": 1985,
+          "chapters": 6,
+          "mal": 14160,
+          "title": "Godzilla"
+        }
+      ]
+    }
+  ],
+  "singleRealSource": [],
+  "comicAdaptsAnime": [
+    {
+      "anime": 164212,
+      "startYear": 2024,
+      "verdict": "comic_adapts_anime",
+      "reason": "all_adaptation_edges_started_after_anime",
+      "issues": [],
+      "sources": [],
+      "laterAdaptations": [
+        {
+          "comic": 203892,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2026,
+          "chapters": null,
+          "mal": null,
+          "title": "Girls Band Cry: Secret Live"
+        },
+        {
+          "comic": 206731,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2026,
+          "chapters": null,
+          "mal": null,
+          "title": "GIRLS BAND CRY"
+        }
+      ],
+      "otherEdges": []
+    },
+    {
+      "anime": 85,
+      "startYear": 1985,
+      "verdict": "comic_adapts_anime",
+      "reason": "all_adaptation_edges_started_after_anime",
+      "issues": [],
+      "sources": [],
+      "laterAdaptations": [
+        {
+          "comic": 59391,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2011,
+          "chapters": null,
+          "mal": 29391,
+          "title": "Kidou Senshi Zeta Gundam: Define"
+        },
+        {
+          "comic": 129287,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2009,
+          "chapters": 5,
+          "mal": 81643,
+          "title": "Kidou Senshi Gundam U.C. Senki: Tsuioku no Char Aznable"
+        },
+        {
+          "comic": 147800,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1987,
+          "chapters": 10,
+          "mal": 148473,
+          "title": "Side Story of Gundam Z"
+        }
+      ],
+      "otherEdges": [
+        {
+          "comic": 61441,
+          "relation": "SIDE_STORY",
+          "format": "MANGA",
+          "year": 2005,
+          "chapters": 17,
+          "mal": 31441,
+          "title": "Kidou Senshi Z Gundam: Day After Tomorrow - Kai Shiden no Report Yori"
+        },
+        {
+          "comic": 82163,
+          "relation": "SIDE_STORY",
+          "format": "MANGA",
+          "year": 1984,
+          "chapters": 4,
+          "mal": 52163,
+          "title": "MS Senki Kidou Senshi Gundam 0079 Gaiden"
+        },
+        {
+          "comic": 126624,
+          "relation": "CHARACTER",
+          "format": "MANGA",
+          "year": 2020,
+          "chapters": null,
+          "mal": 132537,
+          "title": "Arasa OL Haman-sama"
+        },
+        {
+          "comic": 138344,
+          "relation": "CHARACTER",
+          "format": "MANGA",
+          "year": 2021,
+          "chapters": null,
+          "mal": 146554,
+          "title": "Kidou Senshi Gundam Pulitzer: Amuro Ray wa Kyokkou no Kanata e"
+        },
+        {
+          "comic": 147192,
+          "relation": "SIDE_STORY",
+          "format": "MANGA",
+          "year": 1988,
+          "chapters": 5,
+          "mal": null,
+          "title": "Shin MS Senki Kidou Senshi Gundam Tanpenshuu"
+        },
+        {
+          "comic": 147460,
+          "relation": "CHARACTER",
+          "format": "MANGA",
+          "year": 2013,
+          "chapters": 7,
+          "mal": null,
+          "title": "Kidou Senshi Gundam UC: Niji ni Norenakatta Otoko"
+        }
+      ]
+    },
+    {
+      "anime": 9963,
+      "startYear": 2011,
+      "verdict": "comic_adapts_anime",
+      "reason": "all_adaptation_edges_started_after_anime",
+      "issues": [],
+      "sources": [],
+      "laterAdaptations": [
+        {
+          "comic": 136327,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2014,
+          "chapters": null,
+          "mal": null,
+          "title": "Gekijouban Meitantei Conan: Chinmoku no 15-fun"
+        },
+        {
+          "comic": 218559,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 2021,
+          "chapters": 8,
+          "mal": 167477,
+          "title": "Meitantei Conan: Chinmoku no Quarter"
+        }
+      ],
+      "otherEdges": []
+    },
+    {
+      "anime": 2291,
+      "startYear": 1985,
+      "verdict": "comic_adapts_anime",
+      "reason": "all_adaptation_edges_started_after_anime",
+      "issues": [],
+      "sources": [],
+      "laterAdaptations": [
+        {
+          "comic": 79629,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1988,
+          "chapters": 5,
+          "mal": 175311,
+          "title": "Ougon no Senshi ICZER-ONE"
+        },
+        {
+          "comic": 93544,
+          "relation": "ADAPTATION",
+          "format": "MANGA",
+          "year": 1988,
+          "chapters": 10,
+          "mal": 84209,
+          "title": "Minna Genki Kai!!"
+        }
+      ],
+      "otherEdges": []
+    }
+  ],
+  "adaptationAfterAnime": [
+    {
+      "anime": 75,
+      "animeYear": 2004,
+      "comic": 94094,
+      "comicYear": 2014,
+      "comicTitle": "Soukyuu no Fafner: Dead Aggressor",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 76,
+      "animeYear": 2004,
+      "comic": 89876,
+      "comicYear": 2013,
+      "comicTitle": "Original Chronicle Mahou Shoujo Lyrical Nanoha The 1st",
+      "format": "MANGA",
+      "chapters": 28
+    },
+    {
+      "anime": 80,
+      "animeYear": 1979,
+      "comic": 30206,
+      "comicYear": 1992,
+      "comicTitle": "Kidou Senshi Gundam 0079",
+      "format": "MANGA",
+      "chapters": 72
+    },
+    {
+      "anime": 84,
+      "animeYear": 1991,
+      "comic": 43420,
+      "comicYear": 2000,
+      "comicTitle": "Mobile Suit Gundam 0083: Hero of Stardust",
+      "format": "MANGA",
+      "chapters": 8
+    },
+    {
+      "anime": 85,
+      "animeYear": 1985,
+      "comic": 59391,
+      "comicYear": 2011,
+      "comicTitle": "Kidou Senshi Zeta Gundam: Define",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 85,
+      "animeYear": 1985,
+      "comic": 129287,
+      "comicYear": 2009,
+      "comicTitle": "Kidou Senshi Gundam U.C. Senki: Tsuioku no Char Aznable",
+      "format": "MANGA",
+      "chapters": 5
+    },
+    {
+      "anime": 85,
+      "animeYear": 1985,
+      "comic": 147800,
+      "comicYear": 1987,
+      "comicTitle": "Side Story of Gundam Z",
+      "format": "MANGA",
+      "chapters": 10
+    },
+    {
+      "anime": 87,
+      "animeYear": 1988,
+      "comic": 90921,
+      "comicYear": 1998,
+      "comicTitle": "Kidou Senshi Gundam: Gyakushuu no Char",
+      "format": "MANGA",
+      "chapters": 4
+    },
+    {
+      "anime": 88,
+      "animeYear": 1991,
+      "comic": 212247,
+      "comicYear": 2024,
+      "comicTitle": "Kidou Senshi Gundam F91: Eternal Wind",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 90,
+      "animeYear": 1995,
+      "comic": 54679,
+      "comicYear": 2010,
+      "comicTitle": "Shin Kidou Senki Gundam W: Endless Waltz - Haisha-tachi no Eikou",
+      "format": "MANGA",
+      "chapters": 85
+    },
+    {
+      "anime": 91,
+      "animeYear": 1997,
+      "comic": 54679,
+      "comicYear": 2010,
+      "comicTitle": "Shin Kidou Senki Gundam W: Endless Waltz - Haisha-tachi no Eikou",
+      "format": "MANGA",
+      "chapters": 85
+    },
+    {
+      "anime": 96,
+      "animeYear": 1994,
+      "comic": 131323,
+      "comicYear": 2010,
+      "comicTitle": "Choukyuu! Kidou Butouden G Gundam: Domon Hourou-hen",
+      "format": "MANGA",
+      "chapters": 14
+    },
+    {
+      "anime": 96,
+      "animeYear": 1994,
+      "comic": 131433,
+      "comicYear": 2011,
+      "comicTitle": "Choukyuu! Kidou Butouden G Gundam: Shinjuku - Touhou Fuhai!",
+      "format": "MANGA",
+      "chapters": 16
+    },
+    {
+      "anime": 96,
+      "animeYear": 1994,
+      "comic": 131454,
+      "comicYear": 2013,
+      "comicTitle": "Choukyuu! Kidou Butouden G Gundam: Bakunetsu - Neo Hong Kong!",
+      "format": "MANGA",
+      "chapters": 21
+    },
+    {
+      "anime": 96,
+      "animeYear": 1994,
+      "comic": 131637,
+      "comicYear": 2014,
+      "comicTitle": "Choukyuu! Kidou Butouden G Gundam: Saishuu Kessen-hen",
+      "format": "MANGA",
+      "chapters": 16
+    },
+    {
+      "anime": 97,
+      "animeYear": 2003,
+      "comic": 60207,
+      "comicYear": 2011,
+      "comicTitle": "Last Exile: Sunadokei no Tabibito",
+      "format": "MANGA",
+      "chapters": 11
+    },
+    {
+      "anime": 166,
+      "animeYear": 2004,
+      "comic": 40226,
+      "comicYear": 2006,
+      "comicTitle": "Samurai 7",
+      "format": "MANGA",
+      "chapters": 7
+    },
+    {
+      "anime": 196,
+      "animeYear": 2003,
+      "comic": 30741,
+      "comicYear": 2005,
+      "comicTitle": "Onegai☆Twins",
+      "format": "MANGA",
+      "chapters": 10
+    },
+    {
+      "anime": 228,
+      "animeYear": 2005,
+      "comic": 47987,
+      "comicYear": 2008,
+      "comicTitle": "Shin Jigoku Shoujo",
+      "format": "MANGA",
+      "chapters": 10
+    },
+    {
+      "anime": 235,
+      "animeYear": 1996,
+      "comic": 112094,
+      "comicYear": 2019,
+      "comicTitle": "Meitantei Conan: Keisatsu Gakkou-hen - Wild Police Story",
+      "format": "MANGA",
+      "chapters": 13
+    },
+    {
+      "anime": 256,
+      "animeYear": 2002,
+      "comic": 30366,
+      "comicYear": 2004,
+      "comicTitle": "Hoshi no Koe",
+      "format": "MANGA",
+      "chapters": 10
+    },
+    {
+      "anime": 293,
+      "animeYear": 1999,
+      "comic": 41203,
+      "comicYear": 2001,
+      "comicTitle": "Dejiko no Champion Cup Gekijou",
+      "format": "MANGA",
+      "chapters": 6
+    },
+    {
+      "anime": 293,
+      "animeYear": 1999,
+      "comic": 42447,
+      "comicYear": 2001,
+      "comicTitle": "Di Gi Charat Dejiko★Adventure",
+      "format": "MANGA",
+      "chapters": 51
+    },
+    {
+      "anime": 433,
+      "animeYear": 2004,
+      "comic": 37247,
+      "comicYear": 2006,
+      "comicTitle": "Kumo no Mukou, Yakusoku no Basho",
+      "format": "MANGA",
+      "chapters": 8
+    },
+    {
+      "anime": 467,
+      "animeYear": 2002,
+      "comic": 61935,
+      "comicYear": 2009,
+      "comicTitle": "Koukaku Kidoutai: Stand Alone Complex",
+      "format": "MANGA",
+      "chapters": 42
+    },
+    {
+      "anime": 467,
+      "animeYear": 2002,
+      "comic": 93023,
+      "comicYear": 2013,
+      "comicTitle": "Koukaku Kidoutai: Stand Alone Complex - The Laughing Man",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 478,
+      "animeYear": 2005,
+      "comic": 68717,
+      "comicYear": 2009,
+      "comicTitle": "Sousei no Aquarion - Kokuu no Tenshi",
+      "format": "MANGA",
+      "chapters": 29
+    },
+    {
+      "anime": 527,
+      "animeYear": 1997,
+      "comic": 52572,
+      "comicYear": 2001,
+      "comicTitle": "Satoshi to Pikachu",
+      "format": "MANGA",
+      "chapters": 36
+    },
+    {
+      "anime": 539,
+      "animeYear": 1992,
+      "comic": 30855,
+      "comicYear": 1994,
+      "comicTitle": "Tenchi Muyo! Ryououki",
+      "format": "MANGA",
+      "chapters": 80
+    },
+    {
+      "anime": 629,
+      "animeYear": 1996,
+      "comic": 39806,
+      "comicYear": 1999,
+      "comicTitle": "Mahoutsukai Tai!",
+      "format": "MANGA",
+      "chapters": 26
+    },
+    {
+      "anime": 732,
+      "animeYear": 1985,
+      "comic": 33988,
+      "comicYear": 2007,
+      "comicTitle": "Vampire Hunter D",
+      "format": "MANGA",
+      "chapters": 8
+    },
+    {
+      "anime": 763,
+      "animeYear": 1999,
+      "comic": 84281,
+      "comicYear": 2013,
+      "comicTitle": "Zoids SS",
+      "format": "MANGA",
+      "chapters": 12
+    },
+    {
+      "anime": 779,
+      "animeYear": 1997,
+      "comic": 163552,
+      "comicYear": 2014,
+      "comicTitle": "Meitantei Conan: Tokei Jikake no Matenrou",
+      "format": "MANGA",
+      "chapters": 4
+    },
+    {
+      "anime": 949,
+      "animeYear": 1988,
+      "comic": 62811,
+      "comicYear": 2010,
+      "comicTitle": "Top wo Nerae! GunBuster",
+      "format": "MANGA",
+      "chapters": 30
+    },
+    {
+      "anime": 997,
+      "animeYear": 1994,
+      "comic": 38552,
+      "comicYear": 2004,
+      "comicTitle": "Bishoujo Senshi Sailor Moon: Short Stories",
+      "format": "MANGA",
+      "chapters": 10
+    },
+    {
+      "anime": 1002,
+      "animeYear": 2004,
+      "comic": 31593,
+      "comicYear": 2006,
+      "comicTitle": "Top wo Nerae 2!",
+      "format": "MANGA",
+      "chapters": 4
+    },
+    {
+      "anime": 1064,
+      "animeYear": 2001,
+      "comic": 38772,
+      "comicYear": 2003,
+      "comicTitle": "Mazinkaiser",
+      "format": "MANGA",
+      "chapters": 7
+    },
+    {
+      "anime": 1278,
+      "animeYear": 1995,
+      "comic": 38552,
+      "comicYear": 2004,
+      "comicTitle": "Bishoujo Senshi Sailor Moon: Short Stories",
+      "format": "MANGA",
+      "chapters": 10
+    },
+    {
+      "anime": 1366,
+      "animeYear": 2003,
+      "comic": 218562,
+      "comicYear": 2016,
+      "comicTitle": "Meitantei Conan Meikyuu no Crossroad",
+      "format": "MANGA",
+      "chapters": 8
+    },
+    {
+      "anime": 1367,
+      "animeYear": 2004,
+      "comic": 216456,
+      "comicYear": 2024,
+      "comicTitle": "Meitantei Conan: Ginyoku no Magician",
+      "format": "MANGA",
+      "chapters": 8
+    },
+    {
+      "anime": 1506,
+      "animeYear": 2006,
+      "comic": 216461,
+      "comicYear": 2026,
+      "comicTitle": "Meitantei Conan: Tantei-tachi no Requiem",
+      "format": "MANGA",
+      "chapters": 8
+    },
+    {
+      "anime": 1565,
+      "animeYear": 2006,
+      "comic": 161785,
+      "comicYear": 2008,
+      "comicTitle": "Pocket Monsters: Diamond and Pearl",
+      "format": "MANGA",
+      "chapters": 29
+    },
+    {
+      "anime": 1575,
+      "animeYear": 2006,
+      "comic": 108187,
+      "comicYear": 2018,
+      "comicTitle": "Code Geass: Hangyaku no Lelouch Re;",
+      "format": "MANGA",
+      "chapters": 15
+    },
+    {
+      "anime": 1689,
+      "animeYear": 2007,
+      "comic": 53419,
+      "comicYear": 2010,
+      "comicTitle": "Byousoku 5 Centimeter",
+      "format": "MANGA",
+      "chapters": 11
+    },
+    {
+      "anime": 1709,
+      "animeYear": 2001,
+      "comic": 114227,
+      "comicYear": 2019,
+      "comicTitle": "Pocket Monsters: Mewtwo! Ware wa Koko ni Ari",
+      "format": "MANGA",
+      "chapters": 6
+    },
+    {
+      "anime": 1735,
+      "animeYear": 2007,
+      "comic": 70549,
+      "comicYear": 2012,
+      "comicTitle": "NARUTO: Road to Ninja",
+      "format": "ONE_SHOT",
+      "chapters": 1
+    },
+    {
+      "anime": 1913,
+      "animeYear": 1994,
+      "comic": 30444,
+      "comicYear": 1997,
+      "comicTitle": "BAD COMPANY",
+      "format": "MANGA",
+      "chapters": 10
+    },
+    {
+      "anime": 2001,
+      "animeYear": 2007,
+      "comic": 54659,
+      "comicYear": 2009,
+      "comicTitle": "Tengen Toppa Gurren Lagann: Rasen Shounentan",
+      "format": "MANGA",
+      "chapters": 5
+    },
+    {
+      "anime": 2246,
+      "animeYear": 2007,
+      "comic": 94624,
+      "comicYear": 2013,
+      "comicTitle": "Mononoke: Umibouzu",
+      "format": "MANGA",
+      "chapters": 13
+    },
+    {
+      "anime": 2246,
+      "animeYear": 2007,
+      "comic": 109884,
+      "comicYear": 2015,
+      "comicTitle": "Mononoke: Zashiki Warashi",
+      "format": "MANGA",
+      "chapters": 6
+    },
+    {
+      "anime": 2252,
+      "animeYear": 1972,
+      "comic": 115068,
+      "comicYear": 1998,
+      "comicTitle": "Toushin Devilman",
+      "format": "MANGA",
+      "chapters": 7
+    },
+    {
+      "anime": 2257,
+      "animeYear": 1981,
+      "comic": 134110,
+      "comicYear": 2021,
+      "comicTitle": "Get truth: Taiyou no Kiba Dougram",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 2291,
+      "animeYear": 1985,
+      "comic": 79629,
+      "comicYear": 1988,
+      "comicTitle": "Ougon no Senshi ICZER-ONE",
+      "format": "MANGA",
+      "chapters": 5
+    },
+    {
+      "anime": 2291,
+      "animeYear": 1985,
+      "comic": 93544,
+      "comicYear": 1988,
+      "comicTitle": "Minna Genki Kai!!",
+      "format": "MANGA",
+      "chapters": 10
+    },
+    {
+      "anime": 2321,
+      "animeYear": 1992,
+      "comic": 34538,
+      "comicYear": 2007,
+      "comicTitle": "Giant Robo: Chikyuu no Moetsukiru Hi",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 2449,
+      "animeYear": 2005,
+      "comic": 93023,
+      "comicYear": 2013,
+      "comicTitle": "Koukaku Kidoutai: Stand Alone Complex - The Laughing Man",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 2598,
+      "animeYear": 1984,
+      "comic": 150092,
+      "comicYear": 2002,
+      "comicTitle": "Juunsenki L-Gaim: Under the Sunz",
+      "format": "MANGA",
+      "chapters": 7
+    },
+    {
+      "anime": 2904,
+      "animeYear": 2008,
+      "comic": 108187,
+      "comicYear": 2018,
+      "comicTitle": "Code Geass: Hangyaku no Lelouch Re;",
+      "format": "MANGA",
+      "chapters": 15
+    },
+    {
+      "anime": 3167,
+      "animeYear": 2008,
+      "comic": 49478,
+      "comicYear": 2010,
+      "comicTitle": "Eve no Jikan",
+      "format": "MANGA",
+      "chapters": 29
+    },
+    {
+      "anime": 4198,
+      "animeYear": 1975,
+      "comic": 113640,
+      "comicYear": 2016,
+      "comicTitle": "Kotetsu Jeeg Hiryuden",
+      "format": "MANGA",
+      "chapters": 7
+    },
+    {
+      "anime": 4985,
+      "animeYear": 2010,
+      "comic": 89876,
+      "comicYear": 2013,
+      "comicTitle": "Original Chronicle Mahou Shoujo Lyrical Nanoha The 1st",
+      "format": "MANGA",
+      "chapters": 28
+    },
+    {
+      "anime": 5022,
+      "animeYear": 1979,
+      "comic": 213688,
+      "comicYear": 2026,
+      "comicTitle": "Toushi Gordian",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 6115,
+      "animeYear": 2009,
+      "comic": 143594,
+      "comicYear": 2013,
+      "comicTitle": "Lupin III vs Meitantei Conan",
+      "format": "MANGA",
+      "chapters": 3
+    },
+    {
+      "anime": 6421,
+      "animeYear": 2009,
+      "comic": 188032,
+      "comicYear": 2021,
+      "comicTitle": "Hagane no Renkinjutsushi: 20th ANNIVERSARY BOOK",
+      "format": "MANGA",
+      "chapters": 10
+    },
+    {
+      "anime": 6460,
+      "animeYear": 1997,
+      "comic": 215902,
+      "comicYear": 2015,
+      "comicTitle": "Crayon Shin-chan: Ankoku Tamatama Daitsuiseki",
+      "format": "MANGA",
+      "chapters": 9
+    },
+    {
+      "anime": 6547,
+      "animeYear": 2010,
+      "comic": 101892,
+      "comicYear": 2017,
+      "comicTitle": "Angel Beats! The Last Operation",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 9963,
+      "animeYear": 2011,
+      "comic": 136327,
+      "comicYear": 2014,
+      "comicTitle": "Gekijouban Meitantei Conan: Chinmoku no 15-fun",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 9963,
+      "animeYear": 2011,
+      "comic": 218559,
+      "comicYear": 2021,
+      "comicTitle": "Meitantei Conan: Chinmoku no Quarter",
+      "format": "MANGA",
+      "chapters": 8
+    },
+    {
+      "anime": 10721,
+      "animeYear": 2011,
+      "comic": 88512,
+      "comicYear": 2013,
+      "comicTitle": "Mawaru Penguindrum",
+      "format": "MANGA",
+      "chapters": 34
+    },
+    {
+      "anime": 11663,
+      "animeYear": 2011,
+      "comic": 54656,
+      "comicYear": 2014,
+      "comicTitle": "Hakuouki Shinsengumi Kitan: Sweet School Life",
+      "format": "MANGA",
+      "chapters": 18
+    },
+    {
+      "anime": 14349,
+      "animeYear": 2013,
+      "comic": 96202,
+      "comicYear": 2015,
+      "comicTitle": "Little Witch Academia: Tsukiyo no Oukan",
+      "format": "MANGA",
+      "chapters": 5
+    },
+    {
+      "anime": 14735,
+      "animeYear": 2013,
+      "comic": 123075,
+      "comicYear": 2020,
+      "comicTitle": "Meitantei Conan: Sekkai no Private Eye",
+      "format": "MANGA",
+      "chapters": 8
+    },
+    {
+      "anime": 14837,
+      "animeYear": 2013,
+      "comic": 86508,
+      "comicYear": 2015,
+      "comicTitle": "Dragon Ball Super",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 18619,
+      "animeYear": 2014,
+      "comic": 117007,
+      "comicYear": 2019,
+      "comicTitle": "Girls & Panzer: Avanti! Anzio Koukou",
+      "format": "MANGA",
+      "chapters": 16
+    },
+    {
+      "anime": 19383,
+      "animeYear": 2013,
+      "comic": 182945,
+      "comicYear": 2015,
+      "comicTitle": "Yami Shibai",
+      "format": "MANGA",
+      "chapters": 8
+    },
+    {
+      "anime": 20590,
+      "animeYear": 2014,
+      "comic": 113114,
+      "comicYear": 2016,
+      "comicTitle": "Shingeki no Bahamut: TWIN HEADS",
+      "format": "MANGA",
+      "chapters": 15
+    },
+    {
+      "anime": 20794,
+      "animeYear": 2014,
+      "comic": 104797,
+      "comicYear": 2016,
+      "comicTitle": "Aikatsu! Go! Go! Go!",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 20843,
+      "animeYear": 2015,
+      "comic": 119367,
+      "comicYear": 2020,
+      "comicTitle": "SHOW BY ROCK!!",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 21646,
+      "animeYear": 2015,
+      "comic": 216450,
+      "comicYear": 2022,
+      "comicTitle": "Meitantei Conan: Gouka no Himawari",
+      "format": "MANGA",
+      "chapters": 8
+    },
+    {
+      "anime": 98505,
+      "animeYear": 2017,
+      "comic": 113223,
+      "comicYear": 2019,
+      "comicTitle": "Princess Principal",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 98514,
+      "animeYear": 2018,
+      "comic": 135321,
+      "comicYear": 2021,
+      "comicTitle": "Uma Musume: Pretty Derby Anthology Comic STAR",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 145442,
+      "animeYear": 2013,
+      "comic": 126135,
+      "comicYear": 2016,
+      "comicTitle": "Bibliomania",
+      "format": "MANGA",
+      "chapters": 12
+    },
+    {
+      "anime": 164212,
+      "animeYear": 2024,
+      "comic": 203892,
+      "comicYear": 2026,
+      "comicTitle": "Girls Band Cry: Secret Live",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 164212,
+      "animeYear": 2024,
+      "comic": 206731,
+      "comicYear": 2026,
+      "comicTitle": "GIRLS BAND CRY",
+      "format": "MANGA",
+      "chapters": null
+    },
+    {
+      "anime": 189068,
+      "animeYear": 2022,
+      "comic": 201610,
+      "comicYear": 2025,
+      "comicTitle": "Ginga Tokkyuu Milky☆Subway",
+      "format": "MANGA",
+      "chapters": null
+    }
+  ],
+  "duplicateMal": [
+    {
+      "mal": 124776,
+      "comics": [
+        131323,
+        131433,
+        131454,
+        131637
+      ]
+    }
+  ]
+}

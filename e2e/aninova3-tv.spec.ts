@@ -90,6 +90,9 @@ test.describe('AniNova 3.0 TV UX', () => {
 
   test('фокус заметен на тёмном фоне', async ({ page }) => {
     await page.goto(`${HOME}?tv=1`);
+    /* Ждём включения TV-режима: без этого первый ArrowDown иногда приходит
+       раньше инициализации навигатора (флейк B1-D, воспроизводился ~1/10). */
+    await expect(page.locator('.a3')).toHaveAttribute('data-tv', 'true');
     await page.keyboard.press('ArrowDown');
     const outline = await page.locator('.a3-logo').evaluate((el) => {
       const s = getComputedStyle(el);

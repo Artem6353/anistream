@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-11-22T03:49:31.143Z",
+  "generatedAt": "2026-11-22T19:29:16.137Z",
   "note": "Очередь редакционной проверки: сначала SOURCE-произведения с наибольшим числом аниме-связей. Полный список кандидатов — в aninova3-b1c-metadata-candidates.json; здесь только то, что требует рук и первая тысяча очереди.",
   "counts": {
-    "candidate": 2198,
+    "candidate": 2170,
     "notFound": 5,
     "noMalId": 174,
     "nameMismatch": 67,
@@ -2145,14 +2145,6 @@
       3,
       "Судьба/Великий приказ: Рицука Фудзимару не понимает этого",
       "https://shikimori.one/mangas/154711-fate-grand-order-fujimaru-ritsuka-wa-wakaranai"
-    ],
-    [
-      177019,
-      169942,
-      "SOURCE",
-      3,
-      "",
-      "https://shikimori.one/mangas/169942-himitsu-no-aipri-full-color-osarai-4-koma"
     ],
     [
       30004,
@@ -8009,6 +8001,14 @@
       1,
       "Храбрая десятка",
       "https://shikimori.one/mangas/8850-brave-10"
+    ],
+    [
+      38930,
+      8930,
+      "SOURCE",
+      1,
+      "Слишком! Везунчик",
+      "https://shikimori.one/mangas/8930-tottemo-luckyman"
     ]
   ],
   "needsReviewColumns": [
@@ -8081,6 +8081,13 @@
       147957,
       "NAME_MISMATCH",
       "Lee Du-Na!",
+      null
+    ],
+    [
+      177019,
+      169942,
+      "NO_RU_TITLE",
+      "Himitsu no AiPri: Full Color Osarai 4-koma",
       null
     ],
     [
@@ -8357,6 +8364,20 @@
       null
     ],
     [
+      41203,
+      11203,
+      "NO_RU_TITLE",
+      "Dejiko no Champion Cup Gekijou",
+      null
+    ],
+    [
+      42884,
+      12884,
+      "NO_RU_TITLE",
+      "Kiddy GiRL-AND Pure",
+      null
+    ],
+    [
       43420,
       13420,
       "NAME_MISMATCH",
@@ -8385,10 +8406,31 @@
       null
     ],
     [
+      50417,
+      20417,
+      "NO_RU_TITLE",
+      "Giant Gorg",
+      null
+    ],
+    [
       51419,
       21419,
       "NAME_MISMATCH",
       "No Zo Ki A Na",
+      null
+    ],
+    [
+      51486,
+      21486,
+      "NO_RU_TITLE",
+      "Night Wizard Variable Witch",
+      null
+    ],
+    [
+      54553,
+      24553,
+      "NO_RU_TITLE",
+      "Kiruminzu",
       null
     ],
     [
@@ -8399,10 +8441,38 @@
       null
     ],
     [
+      55633,
+      25633,
+      "NO_RU_TITLE",
+      "Petit Eva Bokura Tanken Doukoukai",
+      null
+    ],
+    [
+      55701,
+      25701,
+      "NO_RU_TITLE",
+      "Super Robot Taisen OG - Divine Wars - Record of ATX",
+      null
+    ],
+    [
+      58777,
+      28777,
+      "NO_RU_TITLE",
+      "Super Robot Taisen OG - The Inspector - Record of ATX",
+      null
+    ],
+    [
       60861,
       30861,
       "NAME_MISMATCH",
       "Mobile Suit Gundam AGE: Story of the Beginning",
+      null
+    ],
+    [
+      63335,
+      33335,
+      "NO_RU_TITLE",
+      "Uchuu Senkan Yamato",
       null
     ],
     [
@@ -8427,10 +8497,24 @@
       null
     ],
     [
+      79551,
+      49551,
+      "NO_RU_TITLE",
+      "Saint Seiya Ω",
+      null
+    ],
+    [
       79629,
       175311,
       "NOT_FOUND",
       "Ougon no Senshi ICZER-ONE",
+      null
+    ],
+    [
+      84281,
+      54281,
+      "NO_RU_TITLE",
+      "Zoids SS",
       null
     ],
     [
@@ -8494,6 +8578,20 @@
       114530,
       "NAME_MISMATCH",
       "Naje Tteuneun Dal",
+      null
+    ],
+    [
+      92727,
+      78885,
+      "NO_RU_TITLE",
+      "Ange Vierge: Linkage",
+      null
+    ],
+    [
+      93544,
+      84209,
+      "NO_RU_TITLE",
+      "Minna Genki Kai!!",
       null
     ],
     [
@@ -8599,6 +8697,13 @@
       null,
       "NO_MAL_ID",
       "Sasaki-kun ga Judan Tometa",
+      null
+    ],
+    [
+      102022,
+      101815,
+      "NO_RU_TITLE",
+      "Patalliro Saiyuki!",
       null
     ],
     [
@@ -8781,6 +8886,13 @@
       null,
       "NO_MAL_ID",
       "Pikachu Tankentai",
+      null
+    ],
+    [
+      114364,
+      165043,
+      "NO_RU_TITLE",
+      "Daisuki ♡ Pocket Monsters",
       null
     ],
     [
@@ -9064,6 +9176,13 @@
       null
     ],
     [
+      133139,
+      112386,
+      "NO_RU_TITLE",
+      "Itsuka Hataraku Onii-san!",
+      null
+    ],
+    [
       133558,
       null,
       "NO_MAL_ID",
@@ -9089,6 +9208,13 @@
       null,
       "NO_MAL_ID",
       "Romance Dawn",
+      null
+    ],
+    [
+      135321,
+      168324,
+      "NO_RU_TITLE",
+      "Uma Musume: Pretty Derby Anthology Comic STAR",
       null
     ],
     [
@@ -9155,6 +9281,20 @@
       null
     ],
     [
+      141045,
+      112127,
+      "NO_RU_TITLE",
+      "Gekijouban Pocket Monsters: Kimi ni Kimeta! Remix",
+      null
+    ],
+    [
+      141101,
+      156510,
+      "NO_RU_TITLE",
+      "Hawks: SOOTHE",
+      null
+    ],
+    [
       141232,
       null,
       "NO_MAL_ID",
@@ -9187,6 +9327,13 @@
       null,
       "NO_MAL_ID",
       "Pokonyan",
+      null
+    ],
+    [
+      143176,
+      170787,
+      "NO_RU_TITLE",
+      "Delicious Party♡Precure",
       null
     ],
     [
@@ -9229,6 +9376,13 @@
       null,
       "NO_MAL_ID",
       "Kidou Senshi Gundam MS IGLOO: Mokushiroku 0079",
+      null
+    ],
+    [
+      147800,
+      148473,
+      "NO_RU_TITLE",
+      "Side Story of Gundam Z",
       null
     ],
     [
@@ -9313,6 +9467,13 @@
       null,
       "NO_MAL_ID",
       "Capybara-san",
+      null
+    ],
+    [
+      157824,
+      131960,
+      "NO_RU_TITLE",
+      "Eiga Youkai Watch: Shadowside - Oni-ou no Fukkatsu",
       null
     ],
     [
@@ -9467,6 +9628,13 @@
       null,
       "NO_MAL_ID",
       "Pocket Monsters: Pucchigumi SP",
+      null
+    ],
+    [
+      185975,
+      178501,
+      "NO_RU_TITLE",
+      "Kimi to Idol Precure♪ Precure Collection",
       null
     ],
     [
@@ -9680,6 +9848,27 @@
       null
     ],
     [
+      216205,
+      196631,
+      "NO_RU_TITLE",
+      "Mahou Shoujo Madoka☆Magica: Walpurgis no Kaiten",
+      null
+    ],
+    [
+      216457,
+      189412,
+      "NO_RU_TITLE",
+      "Meitantei Conan: Kurogane no Submarine",
+      null
+    ],
+    [
+      216459,
+      192588,
+      "NO_RU_TITLE",
+      "Meitantei Conan: 100-man Dollar no Michishirube",
+      null
+    ],
+    [
       216461,
       null,
       "NO_MAL_ID",
@@ -9691,6 +9880,13 @@
       null,
       "NO_MAL_ID",
       "Sayonara Lara",
+      null
+    ],
+    [
+      217946,
+      195245,
+      "NO_RU_TITLE",
+      "Gensou Suikoden The Anime: Honmono no Eiyuu",
       null
     ],
     [

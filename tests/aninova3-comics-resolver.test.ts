@@ -9,7 +9,7 @@ import {
 } from '@/lib/aninova3/comics/source-links';
 import { canOpenReader, comicDisplayTitle, isPubliclyReadable } from '@/lib/aninova3/comics/publication';
 import type { ComicWork } from '@/lib/aninova3/comics/model';
-import { FIXTURE_EDITORIALS, FIXTURE_GRAPH, FIXTURE_TITLE_LOOKUP } from './fixtures/aninova3-comics';
+import { FIXTURE_EDITORIALS, FIXTURE_GRAPH, FIXTURE_TITLE_LOOKUP, fixtureTitle } from './fixtures/aninova3-comics';
 
 /** B1-C.1/B1-C.3: разрешение связей в обе стороны на fixture-графе. */
 
@@ -111,6 +111,68 @@ describe('манга → аниме-адаптации', () => {
   it('манга без адаптаций не даёт пустых карточек', () => {
     const comic = comicById('comic:anilist:900003');
     expect(resolveComicAdaptations(comic, deps)).toEqual([]);
+  });
+});
+
+describe('направление связи по датам (B1-D)', () => {
+  /* AniList ставит ADAPTATION в обе стороны: манга 2026 года и аниме 2024 года
+     связаны одинаково с мангой 1999 года и аниме 2002 года. Различает дата. */
+  const timeGraph = buildSourceGraph({
+    meta: { generatedAt: 'fixture', generator: 'FIXTURE', note: 'direction' },
+    comics: [
+      { anilist: 920001, mal: 820001, format: 'MANGA', country: 'JP', titleOriginal: 'Older Source', year: 1999, chapters: 700 },
+      { anilist: 920002, mal: 820002, format: 'MANGA', country: 'JP', titleOriginal: 'Later Spin', year: 2026, chapters: 12 },
+      { anilist: 920003, mal: 820003, format: 'MANGA', country: 'JP', titleOriginal: 'Same Year Source', year: 2015, chapters: 40 },
+    ],
+    edges: [
+      { anime: 3001, comic: 920001, raw: 'ADAPTATION', observedAt: 'fixture' },
+      { anime: 3001, comic: 920002, raw: 'ADAPTATION', observedAt: 'fixture' },
+      { anime: 3002, comic: 920003, raw: 'ADAPTATION', observedAt: 'fixture' },
+      { anime: 3002, comic: 920002, raw: 'ADAPTATION', observedAt: 'fixture' },
+    ],
+  });
+  const timeStore = buildComicStore(timeGraph, []);
+  const timeDeps = { graph: timeGraph, store: timeStore, animeYear: 2014 };
+
+  it('манга, вышедшая после аниме, не считается первоисточником', () => {
+    const links = resolveAnimeSources(3001, timeDeps);
+    const older = links.find((l) => l.comic.id === 'comic:anilist:920001');
+    const later = links.find((l) => l.comic.id === 'comic:anilist:920002');
+    expect(older?.role).toBe('SOURCE');
+    expect(older?.direction).toBe('comic-is-source');
+    expect(later?.role).toBe('ADAPTATION');
+    expect(later?.direction).toBe('comic-adapts-anime');
+    expect(older?.primary).toBe(true);
+    expect(later?.primary).toBe(false);
+  });
+
+  it('манга в год выхода аниме или годом позже остаётся первоисточником', () => {
+    const links = resolveAnimeSources(3002, timeDeps);
+    const sameYear = links.find((l) => l.comic.id === 'comic:anilist:920003');
+    expect(sameYear?.role).toBe('SOURCE');
+    expect(sameYear?.direction).toBe('comic-is-source');
+  });
+
+  it('без года аниме решает только relationType', () => {
+    const links = resolveAnimeSources(3001, { graph: timeGraph, store: timeStore });
+    expect(links.find((l) => l.comic.id === 'comic:anilist:920002')?.role).toBe('SOURCE');
+  });
+
+  it('на странице комикса аниме-оригинал подписан как первоисточник', () => {
+    const comic = timeStore.byId.get('comic:anilist:920002');
+    if (!comic) throw new Error('fixture отсутствует');
+    const links = resolveComicAdaptations(comic, {
+      graph: timeGraph,
+      store: timeStore,
+      titles: {
+        get: (id: number) =>
+          id === 3001
+            ? fixtureTitle({ anilistId: 3001, slug: 'older-anime', ru: 'Старое аниме', romaji: 'Older Anime', year: 2014 })
+            : undefined,
+      },
+    });
+    const older = links.find((l) => l.anime.anilistId === 3001);
+    expect(older?.direction).toBe('comic-adapts-anime');
   });
 });
 

@@ -61,6 +61,15 @@ const readJson = (file, fallback) => {
   }
 };
 
+/** Относительные пути Shikimori (`/system/mangas/...`) превращаем в полные URL. */
+function absoluteUrl(url) {
+  if (!url) return null;
+  const text = String(url).trim();
+  if (!text) return null;
+  if (/^https?:\/\//i.test(text)) return text;
+  return `https://shikimori.one${text.startsWith('/') ? '' : '/'}${text}`;
+}
+
 /** Грубая нормализация для sanity-check: латиница/цифры, без пунктуации. */
 function norm(text) {
   return String(text ?? '')
@@ -180,7 +189,15 @@ async function main() {
       /* Дополнительная защита: Shikimori сам сообщает MAL id — он обязан совпасть. */
       const malOk = !d.myanimelist_id || Number(d.myanimelist_id) === Number(mal);
       const nameOk = titleMatches(d.name, row.comic);
-      const status = !idMatches || !malOk ? 'ID_MISMATCH' : nameOk ? 'CANDIDATE' : 'NAME_MISMATCH';
+      const hasRu = Boolean(String(d.russian ?? '').trim());
+      /* Кандидат без русского названия — не кандидат: показывать нечего. */
+      const status = !idMatches || !malOk
+        ? 'ID_MISMATCH'
+        : !hasRu
+          ? 'NO_RU_TITLE'
+          : nameOk
+            ? 'CANDIDATE'
+            : 'NAME_MISMATCH';
       progress[key] = {
         anilist: row.comic.anilist,
         mal,
@@ -190,7 +207,7 @@ async function main() {
         name: d.name ?? null,
         titleRu: d.russian ?? null,
         /* Официальное название русской лицензии — внутреннее свидетельство, не публичный текст. */
-        licenseNameRu: d.license_name_ru ?? null,
+        licenseNameRu: String(d.license_name_ru ?? '').trim() || null,
         licensors: Array.isArray(d.licensors)
           ? d.licensors.map((l) => (typeof l === 'string' ? l : (l?.name ?? null))).filter(Boolean)
           : [],
@@ -207,7 +224,8 @@ async function main() {
         year: d.aired_on ? Number(String(d.aired_on).slice(0, 4)) : null,
         volumes: d.volumes ?? null,
         chapters: d.chapters ?? null,
-        cover: d.image?.original ?? d.image?.preview ?? null,
+        /* Shikimori отдаёт относительный путь: без домена ссылка битая. */
+        cover: absoluteUrl(d.image?.original ?? d.image?.preview ?? null),
         score: d.score ?? null,
         url: d.url ? `https://shikimori.one${d.url}` : null,
         descriptionRu: d.description ? String(d.description).replace(/\[[^\]]*\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 600) : null,
@@ -234,6 +252,7 @@ async function main() {
     scope: SCOPE,
     total: candidates.length,
     candidate: candidates.filter((c) => c.status === 'CANDIDATE').length,
+    noRuTitle: candidates.filter((c) => c.status === 'NO_RU_TITLE').length,
     withRuLicenseName: candidates.filter((c) => c.status === 'CANDIDATE' && c.licenseNameRu).length,
     withRuDescription: candidates.filter((c) => c.status === 'CANDIDATE' && c.descriptionRu).length,
     withCover: candidates.filter((c) => c.status === 'CANDIDATE' && c.cover).length,
@@ -294,7 +313,7 @@ async function main() {
       .map((c) => [c.anilist, c.mal, c.priority, c.animeCount, c.titleRu, c.url]),
     needsReviewColumns: ['anilist', 'mal', 'priority', 'animeCount', 'candidateTitleRu', 'sourceUrl'],
     problems: candidates
-      .filter((c) => ['NOT_FOUND', 'NO_MAL_ID', 'NAME_MISMATCH', 'ID_MISMATCH', 'ERROR'].includes(c.status))
+      .filter((c) => ['NOT_FOUND', 'NO_MAL_ID', 'NO_RU_TITLE', 'NAME_MISMATCH', 'ID_MISMATCH', 'ERROR'].includes(c.status))
       .map((c) => [c.anilist, c.mal ?? null, c.status, c.titleOriginal, c.error ?? null]),
     problemsColumns: ['anilist', 'mal', 'status', 'titleOriginal', 'error'],
   };

@@ -12,7 +12,7 @@
  */
 import type { Title } from '@/lib/types';
 import type { ComicSourceEvidence, ComicWork, LinkedAnime, LinkedComic, WorkRelationKind } from './model';
-import { RELATION_PRIORITY, invertRelation } from './model';
+import { RELATION_PRIORITY, comicAdaptsAnime, invertRelation } from './model';
 import { comicStore, type ComicStore } from './store';
 import { EMPTY_SOURCE_GRAPH, loadSourceGraph, type SourceGraph } from './source-graph';
 
@@ -38,6 +38,12 @@ export interface AdaptationResolution {
 }
 
 export interface ResolverDeps {
+  /**
+   * Год начала аниме. Нужен, чтобы отличить первоисточник от комикса по аниме:
+   * AniList ставит `ADAPTATION` в обе стороны, и без дат манга 2026 года
+   * выглядела бы первоисточником аниме 2024 года.
+   */
+  animeYear?: number | null;
   graph?: SourceGraph;
   store?: ComicStore;
   titles?: TitleLookup;
@@ -126,14 +132,24 @@ export function resolveAnimeSourcesDetailed(animeAniListId: number, input: Resol
       skipped.push({ evidence: row, reason: 'comic_not_found' });
       continue;
     }
+    /* Даты важнее ярлыка AniList: комикс, вышедший существенно позже аниме,
+       не первоисточник, а комикс по аниме. */
+    const adaptsAnime = comicAdaptsAnime(comic.year, input.animeYear);
+    const wasSource = row.role === 'SOURCE';
+    const role: WorkRelationKind = adaptsAnime && wasSource ? 'ADAPTATION' : row.role;
+    /* Направление имеет смысл только для отношения экранизации: продолжение,
+       вышедшее позже, — не «комикс по аниме», а продолжение. */
+    const direction = wasSource ? (adaptsAnime ? ('comic-adapts-anime' as const) : ('comic-is-source' as const)) : null;
+
     const existing = byComic.get(comic.id);
     if (!existing) {
-      byComic.set(comic.id, { comic, role: row.role, primary: false, evidence: row.evidence });
+      byComic.set(comic.id, { comic, role, primary: false, evidence: row.evidence, direction });
       continue;
     }
-    if (strongerRole(row.role, existing.role)) {
-      existing.role = row.role;
+    if (strongerRole(role, existing.role)) {
+      existing.role = role;
       existing.evidence = row.evidence;
+      existing.direction = direction;
     }
   }
 
@@ -192,15 +208,27 @@ export function resolveComicAdaptationsDetailed(
       skipped.push({ evidence: row, reason: 'anime_not_found' });
       continue;
     }
-    const role = invertRelation(row.role);
+    /* Обратное направление считается по тем же датам: если комикс вышел позже,
+       то оригинал — аниме, и на странице комикса оно подписано соответвенно. */
+    /* row.role === 'SOURCE' — это ребро экранизации; для страницы комикса оно
+       инвертируется, но кто оригинал, всё равно решают даты. */
+    const adaptationEdge = row.role === 'SOURCE';
+    const adaptsAnime = adaptationEdge && comicAdaptsAnime(comic.year, anime.year);
+    const role: WorkRelationKind = adaptationEdge ? (adaptsAnime ? 'SOURCE' : 'ADAPTATION') : invertRelation(row.role);
+    const direction = adaptationEdge
+      ? adaptsAnime
+        ? ('comic-adapts-anime' as const)
+        : ('comic-is-source' as const)
+      : null;
     const existing = byAnime.get(anime.anilistId);
     if (!existing) {
-      byAnime.set(anime.anilistId, { anime, role, primary: false, evidence: row.evidence });
+      byAnime.set(anime.anilistId, { anime, role, primary: false, evidence: row.evidence, direction });
       continue;
     }
     if (strongerRole(role, existing.role)) {
       existing.role = role;
       existing.evidence = row.evidence;
+      existing.direction = direction;
     }
   }
 

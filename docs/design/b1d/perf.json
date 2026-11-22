@@ -1,0 +1,183 @@
+{
+  "generatedAt": "2026-11-22T19:40:01.303Z",
+  "base": "http://127.0.0.1:3103",
+  "note": "Локальные значения (Chromium без троттлинга, холодный кэш на каждый маршрут, медиана из 3 прогонов), не production-метрики",
+  "routes": {
+    "animeWithSource": {
+      "url": "/preview/aninova-3/anime/naruto",
+      "domNodes": 553,
+      "htmlBytes": 123384,
+      "resourceCount": 56,
+      "jsBytesTransferred": 255340,
+      "cssBytesTransferred": 133478,
+      "totalBytesTransferred": 590925,
+      "ttfbMs": 22,
+      "domContentLoadedMs": 57,
+      "loadMs": 233,
+      "lcpMs": 172,
+      "cls": 0,
+      "sourceCards": 1,
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        172,
+        172,
+        168
+      ]
+    },
+    "animeMultiSource": {
+      "url": "/preview/aninova-3/anime/one-piece",
+      "domNodes": 574,
+      "htmlBytes": 133431,
+      "resourceCount": 56,
+      "jsBytesTransferred": 255340,
+      "cssBytesTransferred": 169684,
+      "totalBytesTransferred": 660623,
+      "ttfbMs": 22,
+      "domContentLoadedMs": 55,
+      "loadMs": 220,
+      "lcpMs": 160,
+      "cls": 0,
+      "sourceCards": 3,
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        176,
+        160,
+        156
+      ]
+    },
+    "animeManySources": {
+      "url": "/preview/aninova-3/anime/fujimoto-tatsuki-17-26",
+      "domNodes": 498,
+      "htmlBytes": 143051,
+      "resourceCount": 65,
+      "jsBytesTransferred": 255340,
+      "cssBytesTransferred": 86434,
+      "totalBytesTransferred": 695643,
+      "ttfbMs": 22,
+      "domContentLoadedMs": 59,
+      "loadMs": 227,
+      "lcpMs": 164,
+      "cls": 0,
+      "sourceCards": 10,
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        236,
+        160,
+        164
+      ]
+    },
+    "animeRelatedOnly": {
+      "url": "/preview/aninova-3/anime/trinity-blood",
+      "domNodes": 510,
+      "htmlBytes": 115777,
+      "resourceCount": 55,
+      "jsBytesTransferred": 255340,
+      "cssBytesTransferred": 124212,
+      "totalBytesTransferred": 548613,
+      "ttfbMs": 21,
+      "domContentLoadedMs": 145,
+      "loadMs": 229,
+      "lcpMs": 164,
+      "cls": 0,
+      "sourceCards": 1,
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        164,
+        160,
+        168
+      ]
+    },
+    "animeWithoutSource": {
+      "url": "/preview/aninova-3/anime/death-parade",
+      "domNodes": 401,
+      "htmlBytes": 95643,
+      "resourceCount": 57,
+      "jsBytesTransferred": 255340,
+      "cssBytesTransferred": 135230,
+      "totalBytesTransferred": 535049,
+      "ttfbMs": 19,
+      "domContentLoadedMs": 55,
+      "loadMs": 204,
+      "lcpMs": 144,
+      "cls": 0,
+      "sourceCards": 0,
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        152,
+        144,
+        144
+      ]
+    },
+    "comicWithAdaptations": {
+      "url": "/preview/aninova-3/comics/naruto",
+      "domNodes": 186,
+      "htmlBytes": 40410,
+      "resourceCount": 44,
+      "jsBytesTransferred": 282615,
+      "cssBytesTransferred": 63350,
+      "totalBytesTransferred": 439244,
+      "ttfbMs": 8,
+      "domContentLoadedMs": 37,
+      "loadMs": 173,
+      "lcpMs": 124,
+      "cls": 0,
+      "sourceCards": 0,
+      "adaptationCards": 3,
+      "runs": 3,
+      "lcpRuns": [
+        120,
+        124,
+        128
+      ]
+    },
+    "comicPendingTitle": {
+      "url": "/preview/aninova-3/comics/one-piece",
+      "domNodes": 233,
+      "htmlBytes": 69267,
+      "resourceCount": 55,
+      "jsBytesTransferred": 251372,
+      "cssBytesTransferred": 58780,
+      "totalBytesTransferred": 541034,
+      "ttfbMs": 13,
+      "domContentLoadedMs": 44,
+      "loadMs": 180,
+      "lcpMs": 136,
+      "cls": 0,
+      "sourceCards": 0,
+      "adaptationCards": 11,
+      "runs": 3,
+      "lcpRuns": [
+        168,
+        116,
+        136
+      ]
+    },
+    "comicsCatalog": {
+      "url": "/preview/aninova-3/comics",
+      "domNodes": 260,
+      "htmlBytes": 44010,
+      "resourceCount": 46,
+      "jsBytesTransferred": 251416,
+      "cssBytesTransferred": 37032,
+      "totalBytesTransferred": 324422,
+      "ttfbMs": 8,
+      "domContentLoadedMs": 37,
+      "loadMs": 174,
+      "lcpMs": 124,
+      "cls": 0,
+      "sourceCards": 0,
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        160,
+        116,
+        124
+      ]
+    }
+  }
+}

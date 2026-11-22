@@ -46,6 +46,8 @@
     "qa:e2e": "node scripts/qa-e2e.mjs",
     "report:b1c": "node scripts/run-b1c-report.mjs",
     "graph:b1c": "node scripts/aninova3-source-graph.mjs",
+    "graph:audit": "node scripts/aninova3-b1d-audit.mjs",
+    "ru:verify": "node scripts/aninova3-b1d-ru-verify.mjs",
     "ru:b1c": "node scripts/aninova3-ru-metadata.mjs"
   },
   "dependencies": {

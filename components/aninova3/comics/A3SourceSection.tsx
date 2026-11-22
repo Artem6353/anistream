@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { LinkedComic } from '@/lib/aninova3/comics/model';
-import { COMIC_KIND_LABELS, COMIC_STATUS_LABELS, RELATION_LABELS } from '@/lib/aninova3/comics/model';
+import { COMIC_KIND_LABELS, COMIC_STATUS_LABELS, animeSideRoleLabel } from '@/lib/aninova3/comics/model';
 import {
   canOpenReader,
   chaptersLine,
@@ -15,12 +15,6 @@ import {
 import { PosterArt } from '@/components/anime/PosterArt';
 
 const ROOT = '/preview/aninova-3';
-
-function cardRole(link: LinkedComic): string {
-  if (link.primary && link.role === 'SOURCE') return 'Основной первоисточник';
-  if (link.role === 'SOURCE') return 'Также первоисточник';
-  return RELATION_LABELS[link.role];
-}
 
 /**
  * Карточка оригинального произведения.
@@ -69,7 +63,7 @@ export function A3SourceCard({ link }: { link: LinkedComic }) {
       )}
 
       <div className="a3-source-card__body">
-        <p className="a3-source-card__role">{cardRole(link)}</p>
+        <p className="a3-source-card__role">{animeSideRoleLabel(link)}</p>
         <h3 className={`a3-source-card__title${title.pending ? ' is-pending' : ''}`}>
           {publishable && !title.pending ? (
             <Link href={href} data-a3-focusable data-a3-key={`comic:${comic.id}:title`}>
@@ -134,6 +128,8 @@ export function A3SourceSection({ links }: { links: LinkedComic[] }) {
   if (!links.length) return null;
   const hasSource = links.some((l) => l.role === 'SOURCE');
   const multi = links.length > 1;
+  /* Все карточки — комиксы, сделанные по аниме: заголовок «Первоисточник» здесь был бы ложью. */
+  const adaptsOnly = !hasSource && links.every((l) => l.direction === 'comic-adapts-anime');
   return (
     <section className="a3-source-section" aria-labelledby="a3-source-title">
       <div className="a3-section__head a3-section__head--inline">
@@ -146,7 +142,9 @@ export function A3SourceSection({ links }: { links: LinkedComic[] }) {
               ? multi
                 ? 'Подтверждённые по идентификатору AniList оригинальные произведения этого аниме.'
                 : 'Оригинальное произведение, по которому снято аниме. Связь подтверждена по идентификатору AniList, а не по совпадению названия.'
-              : 'Комиксы, подтверждённые по идентификатору AniList: первоисточник среди них не установлен.'}
+              : adaptsOnly
+                ? 'Комиксы, созданные по этому аниме: связь подтверждена по идентификатору AniList, а даты выхода показывают, что оригинал — аниме.'
+                : 'Комиксы, подтверждённые по идентификатору AniList: первоисточник среди них не установлен.'}
           </p>
         </div>
       </div>

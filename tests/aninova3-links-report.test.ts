@@ -51,21 +51,29 @@ interface AnimeLinkRow {
   anime: number;
   slug: string;
   ru: string;
+  year: number | null;
   source: string | null;
-  links: { comic: string; role: WorkRelationKind; primary: boolean }[];
+  links: { comic: string; role: WorkRelationKind; primary: boolean; direction: string | null; comicYear: number | null }[];
   skipped: { comic?: number; reason: string }[];
 }
 
 const animeRows: AnimeLinkRow[] = [];
 for (const animeId of graph.byAnime.keys()) {
   const title = animeById.get(animeId);
-  const { links, skipped } = resolveAnimeSourcesDetailed(animeId, { graph, store });
+  const { links, skipped } = resolveAnimeSourcesDetailed(animeId, { graph, store, animeYear: title?.year ?? null });
   animeRows.push({
     anime: animeId,
     slug: title?.slug ?? '',
     ru: title?.ru ?? '',
+    year: title?.year ?? null,
     source: title?.source ?? null,
-    links: links.map((l) => ({ comic: l.comic.id, role: l.role, primary: l.primary })),
+    links: links.map((l) => ({
+      comic: l.comic.id,
+      role: l.role,
+      primary: l.primary,
+      direction: l.direction,
+      comicYear: l.comic.year,
+    })),
     skipped: skipped.map((s) => ({ comic: s.evidence.comicAniListId, reason: s.reason })),
   });
 }
@@ -86,7 +94,26 @@ const skippedByReason: Record<string, number> = {};
 for (const row of animeRows) for (const s of row.skipped) skippedByReason[s.reason] = (skippedByReason[s.reason] ?? 0) + 1;
 
 const linksByRole: Record<string, number> = {};
-for (const row of animeRows) for (const link of row.links) linksByRole[link.role] = (linksByRole[link.role] ?? 0) + 1;
+const linksByDirection: Record<string, number> = {};
+for (const row of animeRows) {
+  for (const link of row.links) {
+    linksByRole[link.role] = (linksByRole[link.role] ?? 0) + 1;
+    const key = link.direction ?? 'unknown';
+    linksByDirection[key] = (linksByDirection[key] ?? 0) + 1;
+  }
+}
+
+/* B1-D: сколько карточек перестали быть «первоисточником», потому что комикс
+   вышел существенно позже аниме (это комикс по аниме, а не наоборот). */
+const reclassifiedByDate = animeRows.reduce(
+  (n, row) => n + row.links.filter((l) => l.direction === 'comic-adapts-anime').length,
+  0,
+);
+const sourcesAfterAnime = animeRows.flatMap((row) =>
+  row.links
+    .filter((l) => l.role === 'SOURCE' && l.comicYear && row.year && l.comicYear > row.year + 1)
+    .map((l) => ({ anime: row.anime, animeYear: row.year, comic: l.comic, comicYear: l.comicYear })),
+);
 
 const rawRelationTypes: Record<string, number> = {};
 for (const edge of graph.edges) {
@@ -176,6 +203,9 @@ const report = {
     skipped: skippedLinks,
     skippedByReason,
     byRole: linksByRole,
+    byDirection: linksByDirection,
+    reclassifiedByDate,
+    sourcesAfterAnimeCount: sourcesAfterAnime.length,
     animeWithoutConfirmedComic: animeRows.filter((r) => r.links.length === 0).length,
     animeWithOnlyRelated: animeWithOnlyRelated.length,
     animeWithMultiSource: multiSourceAnime.length,
@@ -300,6 +330,14 @@ describe('машинный отчёт B1-C', () => {
       expect(comic.publication.russianTitleVerified).toBe(comic.verification === 'EDITORIALLY_VERIFIED');
       expect(comic.publication.rightsVerified).toBe(false);
     }
+  });
+
+  it('ни один первоисточник не начинается существенно позже самого аниме', () => {
+    /* AniList ставит ADAPTATION в обе стороны; даты — единственный признак,
+       который отличает мангу-первоисточник от манги по аниме. */
+    expect(sourcesAfterAnime).toEqual([]);
+    expect(report.links.reclassifiedByDate).toBeGreaterThan(0);
+    expect(report.links.byDirection['comic-adapts-anime']).toBe(report.links.reclassifiedByDate);
   });
 
   it('у каждого аниме не более одного основного первоисточника, но все связи видны', () => {

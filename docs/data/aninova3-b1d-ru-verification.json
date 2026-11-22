@@ -1,0 +1,514 @@
+{
+  "generatedAt": "2026-11-22T19:30:40.055Z",
+  "inputs": {
+    "runtime": "lib\\aninova3\\comics\\metadata-candidates.json",
+    "full": "docs\\data\\aninova3-b1c-metadata-candidates.json",
+    "graphComics": 4100
+  },
+  "runtimeCandidates": {
+    "checked": 2170,
+    "problems": 0,
+    "problemSample": [],
+    "stats": {
+      "withCyrillicTitle": 2170,
+      "withLicenseName": 184,
+      "withDescription": 0,
+      "untranslatedTitle": 0,
+      "duplicateTitles": [
+        {
+          "title": "тигр и кролик",
+          "comics": [
+            57203,
+            59553,
+            62297
+          ]
+        },
+        {
+          "title": "суперкласс! мобильный воин джи-гандам",
+          "comics": [
+            131323,
+            131433,
+            131454,
+            131637
+          ]
+        }
+      ],
+      "malMismatch": 0,
+      "unknownComic": 0
+    }
+  },
+  "fullCandidates": {
+    "checked": 2444,
+    "problems": 2472,
+    "problemSample": [
+      {
+        "anilist": 42471,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 30044,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 30375,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 53390,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 65243,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 30013,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 30092,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 31859,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 85486,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 86559,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 87216,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 30081,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 31362,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 53627,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 74949,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 75757,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 30446,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 31292,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 38878,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 40978,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 41652,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 74347,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 74485,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 86635,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 98416,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 99091,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 30002,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 30012,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 30015,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 34608,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 43492,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 71049,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 85435,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 86399,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 98351,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 101517,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 30007,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 30026,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 30661,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 30696,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 31303,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 31600,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 32435,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 32629,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 33866,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 37519,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 41593,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 44110,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 46765,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      },
+      {
+        "anilist": 47552,
+        "field": "verification",
+        "issue": "not_a_candidate"
+      }
+    ],
+    "stats": {
+      "withCyrillicTitle": 2237,
+      "withLicenseName": 195,
+      "withDescription": 1496,
+      "untranslatedTitle": 179,
+      "duplicateTitles": [
+        {
+          "title": "undefined",
+          "comics": [
+            110884,
+            146465,
+            98282,
+            38552,
+            86958,
+            87140,
+            99069,
+            99090,
+            116943,
+            117896,
+            132897,
+            145235,
+            162848,
+            182659,
+            183426,
+            33920,
+            55482,
+            73903,
+            79629,
+            85763,
+            86159,
+            86727,
+            87028,
+            97600,
+            97900,
+            98713,
+            99401,
+            100115,
+            100343,
+            101151,
+            101237,
+            101592,
+            101784,
+            101785,
+            101955,
+            103028,
+            104264,
+            104797,
+            105586,
+            105925,
+            107411,
+            110167,
+            110170,
+            110338,
+            111548,
+            111630,
+            111634,
+            112132,
+            113485,
+            113640,
+            114207,
+            114363,
+            114523,
+            115081,
+            116683,
+            116975,
+            117062,
+            117546,
+            117681,
+            117834,
+            117993,
+            118854,
+            119351,
+            119367,
+            120069,
+            120313,
+            121256,
+            121612,
+            123608,
+            124142,
+            125826,
+            126135,
+            126233,
+            126244,
+            127348,
+            128395,
+            129672,
+            131252,
+            132181,
+            132212,
+            132781,
+            132788,
+            132892,
+            132894,
+            132972,
+            133558,
+            133700,
+            134110,
+            134184,
+            136126,
+            136259,
+            136327,
+            136399,
+            137278,
+            137331,
+            138781,
+            140098,
+            140294,
+            141232,
+            141313,
+            141612,
+            142903,
+            143181,
+            143902,
+            144924,
+            145267,
+            146167,
+            147349,
+            147825,
+            148167,
+            149793,
+            150092,
+            150265,
+            150455,
+            152129,
+            153089,
+            153549,
+            153920,
+            154077,
+            155423,
+            158215,
+            158814,
+            158910,
+            160791,
+            161785,
+            163811,
+            164498,
+            165565,
+            167056,
+            168859,
+            171267,
+            171951,
+            173933,
+            175976,
+            177018,
+            177133,
+            179533,
+            180108,
+            182218,
+            183961,
+            186242,
+            187388,
+            189404,
+            189873,
+            191930,
+            193860,
+            194709,
+            195950,
+            197023,
+            197024,
+            198825,
+            198835,
+            199993,
+            200024,
+            200232,
+            202214,
+            203852,
+            203892,
+            205732,
+            206731,
+            206732,
+            206974,
+            208903,
+            210295,
+            210896,
+            212489,
+            213688,
+            214728,
+            215743,
+            215902,
+            216461,
+            216864,
+            217998,
+            218300,
+            218423,
+            218980,
+            219010,
+            219040,
+            219057
+          ]
+        },
+        {
+          "title": "тигр и кролик",
+          "comics": [
+            57203,
+            59553,
+            62297
+          ]
+        },
+        {
+          "title": "суперкласс! мобильный воин джи-гандам",
+          "comics": [
+            131323,
+            131433,
+            131454,
+            131637
+          ]
+        }
+      ],
+      "malMismatch": 0,
+      "unknownComic": 0
+    }
+  },
+  "refetch": {
+    "requested": 0,
+    "checked": 0,
+    "mismatches": [],
+    "failed": []
+  },
+  "note": "CANDIDATE ≠ VERIFIED. Проверка подтверждает целостность и происхождение данных, но не делает их подтверждёнными и не даёт прав на публикацию."
+}

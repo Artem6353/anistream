@@ -148,6 +148,41 @@ test.describe('B1-C: страница Comics → аниме-адаптации',
     await expect(page.getByRole('link', { name: /Читать/ })).toHaveCount(0);
   });
 
+  test('кандидат русского названия не попадает в публичный HTML', async ({ page }) => {
+    /* У сборника «Wanted!» (AniList 30793) кандидат — «Разыскиваются!», а
+       оригинальное название содержит «Tanpenshuu». Ни то, ни другое не должно
+       оказаться в разметке: показ кандидата = выдача неподтверждённых данных. */
+    const res = await page.goto(`${ROOT}/comics/wanted-oda-eiichiro-tanpenshuu`);
+    expect(res?.status()).toBe(200);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Информация о русскоязычном издании уточняется');
+    /* Проверяем отображаемый текст и <title>, а не слаг URL: слаг — это
+       идентификатор маршрута, а не публикуемое название. */
+    const visible = `${await page.title()}
+${await page.locator('main').innerText()}`.toLowerCase();
+    expect(visible).not.toContain('разыскиваются');
+    expect(visible).not.toContain('tanpenshuu');
+    expect(visible).not.toContain('wanted');
+    /* Адаптации при этом видны: связь подтверждена, скрыта только метаинформация. */
+    await expect(page.locator('.a3-adaptation')).not.toHaveCount(0);
+  });
+
+  test('читалка закрыта для произведения без прав и глав', async ({ page }) => {
+    const res = await page.goto(`${ROOT}/comics/one-piece/read?chapter=1`);
+    expect(res?.status()).toBe(404);
+  });
+
+  test('каталог Comics не ссылается на непроверенные произведения', async ({ page }) => {
+    await page.goto(`${ROOT}/comics`);
+    const rows = page.locator('.a3-comicrow');
+    const count = await rows.count();
+    for (let i = 0; i < count; i++) {
+      const text = (await rows.nth(i).innerText()).toLowerCase();
+      expect(text).toContain('демо');
+      const href = await rows.nth(i).getAttribute('href');
+      if (href) expect(href).toBeTruthy();
+    }
+  });
+
   test('демо-каталог остаётся отдельным и помеченным', async ({ page }) => {
     await page.goto(`${ROOT}/comics`);
     await expect(page.locator('.a3-demo-note')).toContainText('Демонстрационный каталог');

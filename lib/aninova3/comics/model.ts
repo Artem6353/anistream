@@ -149,12 +149,34 @@ export interface ComicSourceEvidence {
   observedAt?: string;
 }
 
+/**
+ * Направление связи «аниме ↔ комикс», которого AniList сам не различает.
+ *
+ * `ADAPTATION` в обе стороны означает только «эти два произведения связаны
+ * экранизацией»; кто из них первоисточник, решает дата начала:
+ *  - комикс вышел до (или одновременно с) аниме → первоисточник аниме;
+ *  - комикс вышел существенно позже → это комикс по аниме (манга-адаптация).
+ * B1-D: на реальных данных это 85 рёбер, которые B1-C показывал как «первоисточник».
+ */
+export type ComicDirection = 'comic-is-source' | 'comic-adapts-anime' | null;
+
+/** Допуск в годах: манга может стартовать в год выхода аниме или на следующий. */
+export const SOURCE_YEAR_TOLERANCE = 1;
+
+/** Комикс вышел настолько позже аниме, что первоисточником быть не может. */
+export function comicAdaptsAnime(comicYear: number | null | undefined, animeYear: number | null | undefined): boolean {
+  if (!comicYear || !animeYear) return false;
+  return comicYear > animeYear + SOURCE_YEAR_TOLERANCE;
+}
+
 export interface LinkedComic {
   comic: ComicWork;
   role: WorkRelationKind;
   /** Основной первоисточник: визуально выделяется. */
   primary: boolean;
   evidence: ComicSourceEvidence['evidence'];
+  /** Кто здесь оригинал: подтверждено датами, а не порядком в ответе API. */
+  direction: ComicDirection;
 }
 
 export interface LinkedAnime {
@@ -162,6 +184,21 @@ export interface LinkedAnime {
   role: WorkRelationKind;
   primary: boolean;
   evidence: ComicSourceEvidence['evidence'];
+  direction: ComicDirection;
+}
+
+/** Подпись роли комикса на странице аниме. */
+export function animeSideRoleLabel(link: Pick<LinkedComic, 'role' | 'primary' | 'direction'>): string {
+  if (link.primary && link.role === 'SOURCE') return 'Основной первоисточник';
+  if (link.role === 'SOURCE') return 'Также первоисточник';
+  if (link.direction === 'comic-adapts-anime') return 'Комикс по аниме';
+  return RELATION_LABELS[link.role];
+}
+
+/** Подпись роли аниме на странице комикса. */
+export function comicSideRoleLabel(link: Pick<LinkedAnime, 'role' | 'direction'>): string {
+  if (link.direction === 'comic-adapts-anime') return 'Оригинальный сериал';
+  return RELATION_LABELS[link.role];
 }
 
 /** Причина, по которой объект нельзя показать как читаемый (внутренние документы прав сюда не попадают). */

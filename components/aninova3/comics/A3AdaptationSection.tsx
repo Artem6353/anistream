@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { LinkedAnime } from '@/lib/aninova3/comics/model';
-import { RELATION_LABELS } from '@/lib/aninova3/comics/model';
+import { comicSideRoleLabel } from '@/lib/aninova3/comics/model';
 import { TYPE_LABELS } from '@/lib/labels';
 import { PosterArt } from '@/components/anime/PosterArt';
 
@@ -44,7 +44,7 @@ export function A3AdaptationSection({ links }: { links: LinkedAnime[] }) {
               />
             </span>
             <span className="a3-adaptation__body">
-              <span className="a3-adaptation__role">{RELATION_LABELS[link.role]}</span>
+              <span className="a3-adaptation__role">{comicSideRoleLabel(link)}</span>
               <span className="a3-adaptation__title">{link.anime.ru}</span>
               <span className="a3-adaptation__meta">
                 {TYPE_LABELS[link.anime.type]} · {link.anime.year}

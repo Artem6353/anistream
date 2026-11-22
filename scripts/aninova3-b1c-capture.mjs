@@ -18,8 +18,11 @@ import { chromium } from '@playwright/test';
 
 const ROOT = process.cwd();
 export const ROOT_PATH = '/preview/aninova-3';
-export const SHOTS = path.join(ROOT, 'docs', 'design', 'b1c', 'screens');
-export const PERF_OUT = path.join(ROOT, 'docs', 'design', 'b1c', 'perf.json');
+/* Каталог артефактов задаётся переменной окружения: B1-D пишет свои замеры
+   отдельно и не перезаписывает результаты предыдущего этапа. */
+const ARTIFACTS = process.env.B1_CAPTURE_DIR || path.join('docs', 'design', 'b1c');
+export const SHOTS = path.join(ROOT, ARTIFACTS, 'screens');
+export const PERF_OUT = path.join(ROOT, ARTIFACTS, 'perf.json');
 
 export const ROUTES = {
   animeWithSource: `${ROOT_PATH}/anime/naruto`,
