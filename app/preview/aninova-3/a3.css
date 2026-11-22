@@ -2630,3 +2630,337 @@
 .a3-results__tools {
   flex-wrap: wrap;
 }
+
+/* ── B1-C: первоисточники и адаптации ─────────────────────── */
+.a3-source-section {
+  margin: 8px 0 34px;
+  padding-top: 22px;
+  border-top: 1px solid var(--a3-line);
+}
+.a3-source-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.a3-source-card {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--a3-line);
+  border-radius: var(--a3-r-lg);
+  background: var(--a3-bg-elev);
+}
+.a3-source-card.is-readable {
+  border-color: color-mix(in srgb, var(--a3-accent) 48%, var(--a3-line));
+  background: color-mix(in srgb, var(--a3-accent) 5%, var(--a3-bg-elev));
+}
+.a3-source-card__cover {
+  display: block;
+  width: 112px;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: var(--a3-r);
+  background: var(--a3-surface-2);
+}
+.a3-source-card__cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.a3-source-card__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+.a3-source-card__role {
+  margin: 0;
+  color: var(--a3-accent);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.a3-source-card__title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.25;
+}
+.a3-source-card__title a {
+  color: var(--a3-text);
+  text-decoration: none;
+}
+.a3-source-card__title a:hover {
+  text-decoration: underline;
+}
+.a3-source-card__original {
+  margin: 0;
+  color: var(--a3-muted);
+  font-size: 12px;
+}
+.a3-source-card__meta,
+.a3-source-card__chapters,
+.a3-source-card__reason {
+  margin: 0;
+  color: var(--a3-muted);
+  font-size: 12.5px;
+}
+.a3-source-card__chapters {
+  color: var(--a3-text);
+}
+.a3-source-card__reason {
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.a3-source-card__cta {
+  margin-top: 6px;
+}
+.a3-adaptations {
+  margin: 8px 0 34px;
+  padding-top: 22px;
+  border-top: 1px solid var(--a3-line);
+}
+.a3-adaptation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.a3-adaptation {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--a3-line);
+  border-radius: var(--a3-r);
+  background: var(--a3-bg-elev);
+  color: var(--a3-text);
+  text-decoration: none;
+}
+.a3-adaptation:hover {
+  border-color: color-mix(in srgb, var(--a3-accent) 45%, var(--a3-line));
+}
+.a3-adaptation__art {
+  display: block;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--a3-surface-2);
+}
+.a3-adaptation__art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.a3-adaptation__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.a3-adaptation__role {
+  color: var(--a3-accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.a3-adaptation__title {
+  font-weight: 650;
+  line-height: 1.3;
+}
+.a3-adaptation__meta {
+  color: var(--a3-muted);
+  font-size: 12px;
+}
+.a3-comic__cover {
+  flex: 0 0 240px;
+  width: 240px;
+  overflow: hidden;
+  border-radius: var(--a3-r);
+  background: var(--a3-surface-2);
+  align-self: flex-start;
+}
+.a3-comic__cover img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.a3-comic__orig {
+  margin: -4px 0 6px;
+  color: var(--a3-muted);
+  font-size: 13px;
+}
+.a3-comic__authors {
+  margin: 0 0 10px;
+  color: var(--a3-text);
+  font-size: 14px;
+}
+.a3-comic__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 12px 0 0;
+  color: var(--a3-muted);
+  font-size: 13px;
+}
+.a3-publication-state {
+  display: grid;
+  gap: 3px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--a3-warn) 35%, var(--a3-line));
+  border-radius: var(--a3-r);
+  background: color-mix(in srgb, var(--a3-warn) 7%, transparent);
+  color: var(--a3-text);
+  font-size: 13px;
+}
+.a3-publication-state strong {
+  color: var(--a3-warn);
+}
+.a3-publication-state span {
+  color: var(--a3-muted);
+}
+.a3[data-tv='true'] .a3-source-card {
+  grid-template-columns: 190px minmax(0, 1fr);
+  padding: 18px;
+  gap: 22px;
+}
+.a3[data-tv='true'] .a3-source-card__cover {
+  width: 190px;
+}
+.a3[data-tv='true'] .a3-source-card__title {
+  font-size: 28px;
+}
+.a3[data-tv='true'] .a3-source-card__meta,
+.a3[data-tv='true'] .a3-source-card__chapters {
+  font-size: 18px;
+}
+.a3[data-tv='true'] .a3-source-card__reason {
+  font-size: 16px;
+}
+.a3[data-tv='true'] .a3-source-card:focus-within {
+  outline: 4px solid var(--a3-focus);
+  outline-offset: 4px;
+  border-radius: var(--a3-r-lg);
+}
+.a3[data-tv='true'] .a3-adaptation {
+  grid-template-columns: 100px minmax(0, 1fr);
+  padding: 16px;
+}
+.a3[data-tv='true'] .a3-adaptation__title {
+  font-size: 24px;
+}
+.a3[data-tv='true'] .a3-adaptation__meta {
+  font-size: 17px;
+}
+.a3[data-tv='true'] .a3-comic__cover {
+  flex-basis: 360px;
+  width: 360px;
+}
+
+@media (max-width: 640px) {
+  .a3-source-grid,
+  .a3-adaptation-grid {
+    grid-template-columns: 1fr;
+  }
+  .a3-source-card {
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 12px;
+    padding: 10px;
+  }
+  .a3-source-card__cover {
+    width: 88px;
+  }
+  .a3-source-card__title {
+    font-size: 16px;
+  }
+  .a3-comic__cover {
+    flex-basis: 132px;
+    width: 132px;
+  }
+  .a3-comic__hero {
+    gap: 16px;
+  }
+}
+
+/* ── B1-C: уточнения карточек первоисточника ──────────────────
+   Блок добавляет только новые состояния (основной первоисточник, флаг
+   непроверенного названия, статичная глава) и не переопределяет токены A+C. */
+.a3-source-grid--multi {
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+}
+.a3-source-card {
+  position: relative;
+  min-width: 0;
+}
+.a3-source-card.is-primary {
+  border-color: color-mix(in srgb, var(--a3-accent) 62%, var(--a3-line));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--a3-accent) 9%, var(--a3-bg-elev)),
+    var(--a3-bg-elev) 72%
+  );
+}
+.a3-source-card.is-primary .a3-source-card__role {
+  color: var(--a3-accent);
+}
+.a3-source-card__flag {
+  display: inline-block;
+  margin: 0;
+  padding: 2px 7px;
+  border: 1px solid color-mix(in srgb, var(--a3-warn) 45%, var(--a3-line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--a3-warn) 10%, transparent);
+  color: var(--a3-warn);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.a3-source-card__chapters--ok {
+  color: var(--a3-ok);
+}
+.a3-chapter--static {
+  color: var(--a3-muted);
+  cursor: default;
+}
+.a3-adaptation.is-primary {
+  border-color: color-mix(in srgb, var(--a3-accent) 55%, var(--a3-line));
+  background: color-mix(in srgb, var(--a3-accent) 6%, var(--a3-bg-elev));
+}
+.a3-adaptation:focus-visible,
+.a3-adaptation:hover {
+  outline: none;
+  border-color: var(--a3-accent);
+}
+.a3[data-tv='true'] .a3-source-card__flag {
+  font-size: 16px;
+  padding: 4px 12px;
+}
+.a3[data-tv='true'] .a3-source-card.is-primary,
+.a3[data-tv='true'] .a3-adaptation.is-primary {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--a3-accent) 55%, transparent);
+}
+@media (max-width: 900px) {
+  .a3-source-grid--multi {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .a3-source-card__flag {
+    font-size: 10.5px;
+  }
+  .a3-source-card__cta {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+  .a3-adaptation__title {
+    font-size: 15px;
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "generatedAt": "2026-11-20",
+    "generator": "manual-record",
+    "api": "https://graphql.anilist.co",
+    "animeQueried": 1,
+    "edgesKept": 1,
+    "note": "Снимок подтверждённых relation-рёбер аниме → комикс. Запись Naruto зафиксирована в B1-C.0 как наблюдение публичного relation-графа (AniList Media 20 → ADAPTATION → Media 30011, MANGA). Полный снимок по всему каталогу строится только скриптом scripts/aninova3-source-graph.mjs и требует разрешённого сетевого доступа; сам preview внешних запросов не делает.",
+    "verificationCommand": "node scripts/aninova3-source-graph.mjs --verify",
+    "relationTypeMap": {
+      "ADAPTATION": "SOURCE",
+      "SEQUEL": "SEQUEL",
+      "PREQUEL": "PREQUEL",
+      "SIDE_STORY": "SPIN_OFF",
+      "SPIN_OFF": "SPIN_OFF",
+      "ALTERNATIVE": "ALTERNATIVE",
+      "PARENT": "RELATED",
+      "OTHER": "RELATED",
+      "SUMMARY": "RELATED",
+      "CHARACTER": "RELATED",
+      "COMPILATION": "RELATED",
+      "FULL_STORY": "RELATED",
+      "UNKNOWN": "RELATED"
+    }
+  },
+  "comics": [
+    {
+      "anilist": 30011,
+      "mal": 11,
+      "kind": "manga",
+      "country": "JP",
+      "titleOriginal": "NARUTO",
+      "titleNative": "NARUTO -ナルト-",
+      "year": 1999,
+      "status": "FINISHED",
+      "chapters": 700,
+      "volumes": 72,
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/manga/cover/large/nx30011-9yUF1dXWgDOx.jpg",
+      "authors": ["Masashi Kishimoto"]
+    }
+  ],
+  "edges": [
+    {
+      "anime": 20,
+      "comic": 30011,
+      "raw": "ADAPTATION",
+      "observedAt": "2026-11-20",
+      "note": "AniList Media 20 (NARUTO, ANIME) → relationType ADAPTATION → Media 30011 (NARUTO, MANGA, MAL 11)"
+    }
+  ]
+}

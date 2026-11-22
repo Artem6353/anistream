@@ -11,6 +11,8 @@ import { A3Bookmark } from '@/components/aninova3/A3Bookmark';
 import { A3Resume } from '@/components/aninova3/A3Resume';
 import { A3Rail } from '@/components/aninova3/A3Rail';
 import { A3Card } from '@/components/aninova3/A3Card';
+import { A3SourceSection } from '@/components/aninova3/comics/A3SourceSection';
+import { resolveAnimeSources } from '@/lib/aninova3/comics/source-links';
 import { IconPlay, IconStar } from '@/components/ui/icons';
 
 const ROOT = '/preview/aninova-3';
@@ -35,6 +37,7 @@ export default async function A3AnimePage({ params }: Props) {
   const shown = Math.min(12, released);
   const more = Math.min(30, released) - shown;
   const similar = similarTitles(title, 10);
+  const sourceLinks = resolveAnimeSources(title.anilistId);
   const wide = isProxiable(title.banner) ? title.banner : null;
   const firstEpisode = released > 0 ? `${ROOT}/anime/${title.slug}/1` : `${ROOT}/anime/${title.slug}`;
   const facts: [string, string | null][] = [
@@ -176,6 +179,10 @@ export default async function A3AnimePage({ params }: Props) {
             </div>
           ) : null}
         </aside>
+      </div>
+
+      <div className="a3-wrap">
+        <A3SourceSection links={sourceLinks} />
       </div>
 
       {similar.length ? (

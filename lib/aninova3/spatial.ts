@@ -81,6 +81,11 @@ export function isNavigable(el: HTMLElement): boolean {
   if (el.hasAttribute('disabled')) return false;
   if (el.getAttribute('aria-hidden') === 'true') return false;
   if (el.tabIndex < 0 && !el.hasAttribute('data-a3-focusable')) return false;
+  /* B1-C: содержимое закрытого <details> лежит в DOM с ненулевым rect (Chrome
+     держит его в layout-дереве для анимации раскрытия), но focus() на него не
+     срабатывает. Без этой проверки пульт «залипал» на последней видимой серии,
+     потому что следующей кандидаткой была скрытая серия 13. */
+  if (el.closest('details:not([open])') && !el.closest('summary')) return false;
   const style = window.getComputedStyle(el);
   if (style.visibility === 'hidden' || style.display === 'none') return false;
   const r = el.getBoundingClientRect();

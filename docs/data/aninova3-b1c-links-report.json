@@ -1,0 +1,153 @@
+{
+  "generatedAt": "2026-11-21T22:19:22.727Z",
+  "scope": "B1-C preview · реальные данные каталога и снимок relation-графа",
+  "catalog": {
+    "titles": 8033,
+    "animeWithSourceMangaType": 733,
+    "animeWithAnySourceType": 1499
+  },
+  "graph": {
+    "generatedAt": "2026-11-20",
+    "generator": "manual-record",
+    "edges": 1,
+    "comics": 1,
+    "animeWithEdges": 1
+  },
+  "links": {
+    "resolved": 1,
+    "skipped": 0,
+    "skippedByReason": {},
+    "animeWithoutConfirmedComic": 0,
+    "primaryPerAnimeOk": true
+  },
+  "comics": {
+    "total": 1,
+    "russianTitleVerified": 1,
+    "russianMetadataVerified": 1,
+    "rightsVerified": 0,
+    "publiclyReadable": 0,
+    "readerReady": 0
+  },
+  "needsManualReview": [
+    {
+      "id": "comic:anilist:30011",
+      "slug": "naruto",
+      "title": "Наруто",
+      "kind": "manga",
+      "anilist": 30011,
+      "mal": 11,
+      "status": "PENDING_VERIFICATION",
+      "russianTitleVerified": true,
+      "russianMetadataVerified": true,
+      "rightsVerified": false,
+      "ruChapters": 0,
+      "publiclyReadable": false,
+      "readerReady": false,
+      "issues": [
+        "pending_verification",
+        "rights_unverified",
+        "no_ru_chapters"
+      ]
+    }
+  ],
+  "excludedFromReading": [
+    {
+      "id": "comic:anilist:30011",
+      "slug": "naruto",
+      "title": "Наруто",
+      "kind": "manga",
+      "anilist": 30011,
+      "mal": 11,
+      "status": "PENDING_VERIFICATION",
+      "russianTitleVerified": true,
+      "russianMetadataVerified": true,
+      "rightsVerified": false,
+      "ruChapters": 0,
+      "publiclyReadable": false,
+      "readerReady": false,
+      "issues": [
+        "pending_verification",
+        "rights_unverified",
+        "no_ru_chapters"
+      ]
+    }
+  ],
+  "comicDetails": [
+    {
+      "id": "comic:anilist:30011",
+      "slug": "naruto",
+      "title": "Наруто",
+      "kind": "manga",
+      "anilist": 30011,
+      "mal": 11,
+      "status": "PENDING_VERIFICATION",
+      "russianTitleVerified": true,
+      "russianMetadataVerified": true,
+      "rightsVerified": false,
+      "ruChapters": 0,
+      "publiclyReadable": false,
+      "readerReady": false,
+      "issues": [
+        "pending_verification",
+        "rights_unverified",
+        "no_ru_chapters"
+      ]
+    }
+  ],
+  "adaptations": {
+    "resolved": 1,
+    "comicsWithAdaptations": 1
+  },
+  "animeDetails": [
+    {
+      "anime": 20,
+      "slug": "naruto",
+      "ru": "Наруто",
+      "source": "MANGA",
+      "links": [
+        {
+          "comic": "comic:anilist:30011",
+          "role": "SOURCE",
+          "primary": true
+        }
+      ],
+      "skipped": []
+    }
+  ],
+  "narutoChain": {
+    "anime": {
+      "anilist": 20,
+      "slug": "naruto",
+      "ru": "Наруто",
+      "source": "MANGA"
+    },
+    "relationEdgesInCatalog": 10,
+    "catalogRelationTypes": [
+      "SEQUEL",
+      "SIDE_STORY",
+      "SUMMARY"
+    ],
+    "comicAniListIdInCatalogRelations": false,
+    "confirmedComic": {
+      "anilist": 30011,
+      "mal": 11,
+      "slug": "naruto",
+      "titleRu": "Наруто",
+      "publication": {
+        "status": "PENDING_VERIFICATION",
+        "russianTitleVerified": true,
+        "russianMetadataVerified": true,
+        "rightsVerified": false,
+        "verificationBasis": "editorial",
+        "verifiedAt": "2026-11-20"
+      },
+      "issues": [
+        "pending_verification",
+        "rights_unverified",
+        "no_ru_chapters"
+      ],
+      "canRead": false
+    },
+    "stoppedAt": "publication"
+  }
+}
