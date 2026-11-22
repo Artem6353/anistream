@@ -1,5 +1,5 @@
 import type { ComicChapter, ComicWork, PublicationIssue } from './model';
-import { PENDING_TITLE_TEXT } from './model';
+import { PENDING_TITLE_TEXT, hasPublicRussianTitle } from './model';
 
 /**
  * Публичные правила B1-C.
@@ -13,6 +13,7 @@ import { PENDING_TITLE_TEXT } from './model';
  * 5. Отсутствующие главы не генерируются: chapters = [] значит «читать нечего».
  */
 export function isPublicRuChapter(chapter: ComicChapter): boolean {
+  if (chapter.availability === 'hidden') return false;
   return chapter.language === 'ru' && Number.isFinite(chapter.number) && chapter.number > 0 && chapter.pages > 0;
 }
 
@@ -68,10 +69,11 @@ export function isPublishableEntry(comic: ComicWork): boolean {
 /**
  * Публичное название.
  *
- * Русское название показывается ТОЛЬКО после редакционной проверки. Если его
- * нет, публичная часть получает нейтральный текст, а не оригинальное/иностранное
- * название в качестве подмены (правило §9.2 B1-C). Оригинальные названия
- * остаются во внутренних данных для сопоставления.
+ * Русское название показывается, когда оно проверено: редакционно
+ * (`EDITORIALLY_VERIFIED`) или по источнику с совпавшими идентификаторами
+ * (`SOURCE_VERIFIED`, B1-E). Если проверенного названия нет, публичная часть
+ * получает нейтральный текст, а не оригинальное/иностранное название в качестве
+ * подмены (правило §9.2 B1-C). Оригинальные названия остаются внутренними.
  */
 export function comicDisplayTitle(comic: ComicWork): {
   text: string;
@@ -79,10 +81,15 @@ export function comicDisplayTitle(comic: ComicWork): {
   pending: boolean;
   verification: ComicWork['verification'];
 } {
-  if (comic.publication.russianTitleVerified && comic.titleRu) {
+  if (hasPublicRussianTitle(comic.verification) && comic.titleRu) {
     return { text: comic.titleRu, russian: true, pending: false, verification: comic.verification };
   }
   return { text: PENDING_TITLE_TEXT, russian: false, pending: true, verification: comic.verification };
+}
+
+/** Название для внутреннего сопоставления: никогда не подменяет публичное. */
+export function comicInternalTitle(comic: ComicWork): string {
+  return comic.titleOriginal;
 }
 
 /** Публичная читалка B1-B для демо остаётся, но не выдаётся за реальные права/главы. */
@@ -95,7 +102,7 @@ export const PUBLICATION_ISSUE_LABELS: Record<PublicationIssue, string> = {
   pending_verification: 'ожидает проверки',
   rejected: 'публикация запрещена',
   expired: 'разрешение истекло',
-  title_unverified: 'русское название не проверено',
+  title_unverified: 'русское название не подтверждено редакцией',
   metadata_unverified: 'русские метаданные не проверены',
   rights_unverified: 'права не подтверждены',
   no_ru_chapters: 'нет доступных русских глав',
@@ -118,6 +125,13 @@ export function pluralRu(count: number, forms: [string, string, string]): string
   if (last === 1) return forms[0];
   if (last >= 2 && last <= 4) return forms[1];
   return forms[2];
+}
+
+/** Строка про объём: только проверенные значения, без выдуманных чисел. */
+export function volumeLine(comic: ComicWork): string | null {
+  const chapters = comic.totalChaptersKnown;
+  if (!chapters || chapters <= 0) return null;
+  return `${chapters} ${pluralRu(chapters, ['глава', 'главы', 'глав'])} в источнике`;
 }
 
 export function chaptersLine(comic: ComicWork): string {

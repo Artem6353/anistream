@@ -18,8 +18,18 @@ import type {
   ComicTitleCandidate,
   ComicVerification,
   ComicWork,
+  WorkRelationKind,
 } from './model';
-import { comicInternalId, comicKindFrom, comicStatusFrom, loadSourceGraph, type RawGraphComic, type SourceGraph } from './source-graph';
+import { hasPublicRussianTitle } from './model';
+import {
+  comicInternalId,
+  comicKindFrom,
+  comicStatusFrom,
+  loadSourceGraph,
+  relationFromRaw,
+  type RawGraphComic,
+  type SourceGraph,
+} from './source-graph';
 import { findEditorialComic, type EditorialComic } from './source-data';
 
 /**
@@ -60,12 +70,68 @@ export function setTitleCandidatesForTesting(candidates: Map<number, ComicTitleC
   CANDIDATE_CACHE = candidates;
 }
 
+/**
+ * Проверенные русскоязычные метаданные (scripts/aninova3-b1e-metadata-verify.mjs).
+ *
+ * `SOURCE_VERIFIED` — русское название сверено по совпавшим идентификаторам
+ * AniList → MAL → Shikimori. Это отдельное состояние: оно даёт право показать
+ * русское название в каталоге, но не даёт ни редакционного статуса, ни прав.
+ */
+export interface VerifiedMetadataRecord {
+  status: ComicVerification;
+  mal?: number | null;
+  shikimoriId?: number | null;
+  titleRu?: string | null;
+  licenseNameRu?: string | null;
+  genres?: string[];
+  kind?: string | null;
+  year?: number | null;
+  volumes?: number | null;
+  chapters?: number | null;
+  cover?: string | null;
+  sourceUrl?: string | null;
+  checkedAt?: string | null;
+  defects?: string[];
+  animeIds?: number[];
+}
+
+interface RuntimeVerified {
+  meta?: { generatedAt?: string; source?: string; checkedLive?: boolean };
+  records?: Record<string, VerifiedMetadataRecord>;
+}
+
+const VERIFIED_FILE = () => path.join(process.cwd(), 'lib', 'aninova3', 'comics', 'metadata-verified.json');
+
+let VERIFIED_CACHE: Map<number, VerifiedMetadataRecord> | null = null;
+
+export function loadVerifiedMetadata(): Map<number, VerifiedMetadataRecord> {
+  if (VERIFIED_CACHE) return VERIFIED_CACHE;
+  VERIFIED_CACHE = new Map();
+  try {
+    const raw = JSON.parse(readFileSync(VERIFIED_FILE(), 'utf8')) as RuntimeVerified;
+    for (const [key, row] of Object.entries(raw.records ?? {})) {
+      const anilist = Number(key);
+      if (!Number.isFinite(anilist) || !row?.status) continue;
+      VERIFIED_CACHE.set(anilist, row);
+    }
+  } catch {
+    /* Файла нет — реестр работает без проверенных метаданных (нейтральные названия). */
+  }
+  return VERIFIED_CACHE;
+}
+
+export function setVerifiedMetadataForTesting(records: Map<number, VerifiedMetadataRecord> | null): void {
+  VERIFIED_CACHE = records;
+}
+
 export interface ComicStore {
   list: ComicWork[];
   bySlug: Map<string, ComicWork>;
   byId: Map<string, ComicWork>;
   byAniList: Map<number, ComicWork>;
   byMal: Map<number, ComicWork>;
+  /** Старые адреса (слаг из оригинального названия) → произведение, для редиректа. */
+  legacySlug: Map<string, ComicWork>;
   /** Внешние id, которые встречаются у разных произведений: такие id не разрешают связь. */
   duplicates: { anilist: number[]; mal: number[] };
   /** Сколько произведений в графе вообще. */
@@ -91,11 +157,17 @@ export function slugifyTitle(input: string): string {
     .slice(0, 64);
 }
 
-function comicSlug(raw: RawGraphComic, taken: Set<string>): string {
-  const base = slugifyTitle(raw.titleOriginal || raw.titleNative || '') || `comic-${raw.anilist}`;
+/**
+ * Слаг маршрута.
+ *
+ * Публичный слаг строится из русского названия и только при проверенных
+ * метаданных. Иначе используется нейтральный `comic-<anilistId>`: адрес не должен
+ * раскрывать оригинальное иностранное название непроверенного произведения.
+ */
+function comicSlug(raw: RawGraphComic, titleRu: string, published: boolean, taken: Set<string>): string {
+  const base = published ? slugifyTitle(titleRu) || `comic-${raw.anilist}` : `comic-${raw.anilist}`;
   if (!taken.has(base)) return base;
-  const withId = `${base}-${raw.anilist}`;
-  return withId;
+  return `${base}-${raw.anilist}`;
 }
 
 /**
@@ -109,32 +181,39 @@ function coalesceComic(
   raw: RawGraphComic,
   editorial: EditorialComic | undefined,
   candidate?: ComicTitleCandidate,
+  verified?: VerifiedMetadataRecord,
 ): ComicWork {
   const kind: ComicKind = editorial?.kind ?? comicKindFrom(raw.format, raw.country);
   const status: ComicPublishingStatus = editorial?.status ?? comicStatusFrom(raw.status);
   const authorsVerified = Boolean(editorial?.authorsVerified);
   const authors = authorsVerified && editorial?.authorsRu?.length ? editorial.authorsRu : (raw.authors ?? []);
+  /* Статус русских метаданных: редакция важнее автоматической сверки, сверка —
+     важнее «сырого» кандидата. Права здесь не участвуют вообще. */
   const verification: ComicVerification = editorial?.russianTitleVerified
     ? 'EDITORIALLY_VERIFIED'
-    : candidate
-      ? 'CANDIDATE'
-      : 'UNVERIFIED';
+    : verified
+      ? verified.status
+      : candidate
+        ? 'CANDIDATE'
+        : 'UNVERIFIED';
+  const published = hasPublicRussianTitle(verification);
+  const verifiedTitle = published ? (verified?.titleRu ?? '').trim() : '';
 
   return {
     id: comicInternalId(raw.anilist),
     /* slug подставляется в buildComicStore: он зависит от соседей по реестру. */
     slug: '',
-    titleRu: editorial?.titleRu?.trim() || '',
+    titleRu: editorial?.titleRu?.trim() || verifiedTitle,
     titleOriginal: raw.titleNative?.trim() || raw.titleOriginal,
     kind,
     authors,
     authorsVerified,
     year: editorial?.year ?? raw.year ?? null,
     status,
-    cover: editorial?.cover ?? raw.cover ?? null,
+    cover: editorial?.cover ?? verified?.cover ?? raw.cover ?? null,
     descriptionRu: editorial?.descriptionRu ?? null,
     chapters: editorial?.chapters ?? [],
-    totalChaptersKnown: raw.chapters ?? null,
+    totalChaptersKnown: raw.chapters ?? verified?.chapters ?? null,
     externalIds: {
       anilist: raw.anilist,
       mal: raw.mal,
@@ -150,6 +229,32 @@ function coalesceComic(
       verifiedAt: editorial?.verifiedAt,
     },
     verification,
+    metadata: editorial
+      ? {
+          status: 'EDITORIALLY_VERIFIED',
+          source: 'editorial',
+          sourceUrl: null,
+          checkedAt: editorial.verifiedAt ?? null,
+          licenseNameRu: null,
+          licenseClaimSource: null,
+          officialPublisherConfirmed: true,
+        }
+      : verified
+        ? {
+            status: verified.status,
+            source: 'shikimori.one',
+            sourceUrl: verified.sourceUrl ?? null,
+            checkedAt: verified.checkedAt ?? null,
+            licenseNameRu: verified.licenseNameRu ?? null,
+            licenseClaimSource: verified.licenseNameRu ? 'shikimori-license-field' : null,
+            /* Заявка Shikimori — не подтверждение издателя. */
+            officialPublisherConfirmed: false,
+            defects: verified.defects ?? [],
+          }
+        : null,
+    genres: published ? (verified?.genres ?? []) : [],
+    roles: [],
+    animeIds: verified?.animeIds ?? [],
     titleRuCandidate: candidate ?? null,
     provenance: editorial
       ? { source: 'editorial', observedAt: editorial.verifiedAt, verification: 'editorial' }
@@ -162,10 +267,28 @@ export function buildComicStore(
   graph: SourceGraph,
   editorials?: EditorialComic[],
   candidates: Map<number, ComicTitleCandidate> = new Map(),
+  verified: Map<number, VerifiedMetadataRecord> = new Map(),
 ): ComicStore {
   const taken = new Set<string>();
   const seen = new Set<number>();
   const list: ComicWork[] = [];
+  const legacyCandidates: [string, ComicWork][] = [];
+
+  /* Роли и аниме-связи считаются один раз из того же графа: страница каталога
+     не должна ходить по 5748 рёбрам на каждый рендер. */
+  const rolesByComic = new Map<number, WorkRelationKind[]>();
+  const animeIdsByComic = new Map<number, number[]>();
+  for (const edge of graph.edges) {
+    const role = relationFromRaw(edge.rawRelation);
+    const roles = rolesByComic.get(edge.comicAniListId ?? -1) ?? [];
+    if (!roles.includes(role)) roles.push(role);
+    rolesByComic.set(edge.comicAniListId ?? -1, roles);
+    if (edge.rawRelation === 'ADAPTATION') {
+      const ids = animeIdsByComic.get(edge.comicAniListId ?? -1) ?? [];
+      if (!ids.includes(edge.animeAniListId)) ids.push(edge.animeAniListId);
+      animeIdsByComic.set(edge.comicAniListId ?? -1, ids);
+    }
+  }
 
   /* Порядок детерминирован: сорт по AniList id, чтобы slug-коллизии разрешались
      одинаково в любом процессе и в любом тесте. */
@@ -174,10 +297,22 @@ export function buildComicStore(
     if (seen.has(raw.anilist)) continue;
     seen.add(raw.anilist);
     const editorial = editorials ? editorials.find((e) => e.anilist === raw.anilist) : findEditorialComic(raw.anilist);
-    const comic = coalesceComic(raw, editorial, candidates.get(raw.anilist));
-    comic.slug = comicSlug(raw, taken);
+    const comic = coalesceComic(raw, editorial, candidates.get(raw.anilist), verified.get(raw.anilist));
+    comic.roles = rolesByComic.get(raw.anilist) ?? [];
+    if (!comic.animeIds.length) comic.animeIds = animeIdsByComic.get(raw.anilist) ?? [];
+    comic.slug = comicSlug(raw, comic.titleRu, hasPublicRussianTitle(comic.verification), taken);
     taken.add(comic.slug);
+    const legacyBase = slugifyTitle(raw.titleOriginal ?? raw.titleNative ?? '');
+    if (legacyBase) legacyCandidates.push([legacyBase, comic]);
     list.push(comic);
+  }
+
+  /* Совместимость со старыми ссылками: прежний слаг строился из оригинального
+     названия AniList, поэтому ключ берём из сырых данных графа, а не из
+     `titleOriginal` (там может лежать нативное название). Публично он не используется. */
+  const legacySlug = new Map<string, ComicWork>();
+  for (const [legacy, comic] of legacyCandidates) {
+    if (!taken.has(legacy) && !legacySlug.has(legacy)) legacySlug.set(legacy, comic);
   }
 
   const bySlug = new Map(list.map((c) => [c.slug, c]));
@@ -202,14 +337,19 @@ export function buildComicStore(
     mal: [...malSeen.entries()].filter(([, n]) => n > 1).map(([id]) => id),
   };
 
-  return { list, bySlug, byId, byAniList, byMal, duplicates, graphTotal: graph.comics.length };
+  return { list, bySlug, byId, byAniList, byMal, duplicates, legacySlug, graphTotal: graph.comics.length };
 }
 
 let CACHE: ComicStore | null = null;
 
 export function comicStore(): ComicStore {
-  if (!CACHE) CACHE = buildComicStore(loadSourceGraph(), undefined, loadTitleCandidates());
+  if (!CACHE) CACHE = buildComicStore(loadSourceGraph(), undefined, loadTitleCandidates(), loadVerifiedMetadata());
   return CACHE;
+}
+
+/** Поиск по старому слагу: нужен только для безопасного перенаправления. */
+export function getComicByLegacySlug(slug: string): ComicWork | null {
+  return comicStore().legacySlug.get(slug) ?? null;
 }
 
 /** Только для тестов/скриптов: подменить реестр в процессе. */

@@ -1,0 +1,183 @@
+{
+  "generatedAt": "2026-11-22T22:33:44.970Z",
+  "base": "http://127.0.0.1:3103",
+  "note": "Локальные значения (Chromium без троттлинга, холодный кэш на каждый маршрут, медиана из 3 прогонов), не production-метрики",
+  "routes": {
+    "animeWithSource": {
+      "url": "/preview/aninova-3/anime/naruto",
+      "domNodes": 547,
+      "htmlBytes": 122482,
+      "resourceCount": 56,
+      "jsBytesTransferred": 254230,
+      "cssBytesTransferred": 133665,
+      "totalBytesTransferred": 589741,
+      "ttfbMs": 21,
+      "domContentLoadedMs": 57,
+      "loadMs": 221,
+      "lcpMs": 160,
+      "cls": 0,
+      "sourceCards": 1,
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        160,
+        168,
+        160
+      ]
+    },
+    "animeMultiSource": {
+      "url": "/preview/aninova-3/anime/one-piece",
+      "domNodes": 570,
+      "htmlBytes": 132300,
+      "resourceCount": 57,
+      "jsBytesTransferred": 254230,
+      "cssBytesTransferred": 169871,
+      "totalBytesTransferred": 661994,
+      "ttfbMs": 21,
+      "domContentLoadedMs": 59,
+      "loadMs": 214,
+      "lcpMs": 152,
+      "cls": 0,
+      "sourceCards": 3,
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        152,
+        156,
+        148
+      ]
+    },
+    "animeManySources": {
+      "url": "/preview/aninova-3/anime/fujimoto-tatsuki-17-26",
+      "domNodes": 494,
+      "htmlBytes": 142846,
+      "resourceCount": 65,
+      "jsBytesTransferred": 254230,
+      "cssBytesTransferred": 86621,
+      "totalBytesTransferred": 695846,
+      "ttfbMs": 21,
+      "domContentLoadedMs": 70,
+      "loadMs": 215,
+      "lcpMs": 152,
+      "cls": 0,
+      "sourceCards": 10,
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        152,
+        152,
+        168
+      ]
+    },
+    "animeRelatedOnly": {
+      "url": "/preview/aninova-3/anime/trinity-blood",
+      "domNodes": 504,
+      "htmlBytes": 115321,
+      "resourceCount": 56,
+      "jsBytesTransferred": 254230,
+      "cssBytesTransferred": 124399,
+      "totalBytesTransferred": 548291,
+      "ttfbMs": 21,
+      "domContentLoadedMs": 50,
+      "loadMs": 216,
+      "lcpMs": 160,
+      "cls": 0,
+      "sourceCards": 1,
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        152,
+        164,
+        160
+      ]
+    },
+    "animeWithoutSource": {
+      "url": "/preview/aninova-3/anime/death-parade",
+      "domNodes": 402,
+      "htmlBytes": 95765,
+      "resourceCount": 56,
+      "jsBytesTransferred": 254230,
+      "cssBytesTransferred": 135417,
+      "totalBytesTransferred": 533636,
+      "ttfbMs": 21,
+      "domContentLoadedMs": 51,
+      "loadMs": 196,
+      "lcpMs": 140,
+      "cls": 0,
+      "sourceCards": 0,
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        184,
+        140,
+        136
+      ]
+    },
+    "comicWithAdaptations": {
+      "url": "/preview/aninova-3/comics/naruto",
+      "domNodes": 186,
+      "htmlBytes": 41549,
+      "resourceCount": 50,
+      "jsBytesTransferred": 281486,
+      "cssBytesTransferred": 63219,
+      "totalBytesTransferred": 447704,
+      "ttfbMs": 10,
+      "domContentLoadedMs": 35,
+      "loadMs": 172,
+      "lcpMs": 116,
+      "cls": 0,
+      "sourceCards": 0,
+      "adaptationCards": 3,
+      "runs": 3,
+      "lcpRuns": [
+        116,
+        116,
+        128
+      ]
+    },
+    "comicPendingTitle": {
+      "url": "/preview/aninova-3/comics/van-pis",
+      "domNodes": 247,
+      "htmlBytes": 71719,
+      "resourceCount": 60,
+      "jsBytesTransferred": 250247,
+      "cssBytesTransferred": 59165,
+      "totalBytesTransferred": 547738,
+      "ttfbMs": 21,
+      "domContentLoadedMs": 48,
+      "loadMs": 184,
+      "lcpMs": 128,
+      "cls": 0,
+      "sourceCards": 0,
+      "adaptationCards": 11,
+      "runs": 3,
+      "lcpRuns": [
+        128,
+        180,
+        128
+      ]
+    },
+    "comicsCatalog": {
+      "url": "/preview/aninova-3/comics",
+      "domNodes": 553,
+      "htmlBytes": 152410,
+      "resourceCount": 84,
+      "jsBytesTransferred": 250246,
+      "cssBytesTransferred": 37219,
+      "totalBytesTransferred": 413936,
+      "ttfbMs": 15,
+      "domContentLoadedMs": 46,
+      "loadMs": 205,
+      "lcpMs": 140,
+      "cls": 0,
+      "sourceCards": 0,
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        156,
+        140,
+        140
+      ]
+    }
+  }
+}

@@ -44,7 +44,22 @@ export interface ComicChapter {
    */
   pageImages?: string[];
   publishedAt?: string;
+  /**
+   * B1-E: поля для будущего подключения глав. Сейчас ни одна глава не подключена,
+   * но контракт зафиксирован, чтобы читалка не появилась без прав.
+   */
+  /** Источник главы: только разрешённый источник, не «найдено в сети». */
+  source?: ChapterSource;
+  /** Дата проверки прав именно на эту главу (или на произведение, если указано). */
+  rightsVerifiedAt?: string | null;
+  /** Скрытая глава не попадает в публичную читалку даже при наличии страниц. */
+  availability?: 'public' | 'hidden';
+  /** Когда глава последний раз менялась — для журнала изменений. */
+  updatedAt?: string | null;
 }
+
+/** Разрешённые источники глав: пиратские сайты сюда не входят по определению. */
+export type ChapterSource = 'licensed-publisher' | 'authorized-partner' | 'editorial-demo';
 
 export interface ComicPublication {
   status: PublicationStatus;
@@ -57,8 +72,47 @@ export interface ComicPublication {
   verifiedAt?: string;
 }
 
-/** Уровень проверки произведения. Отделён от публикационного статуса. */
-export type ComicVerification = 'UNVERIFIED' | 'CANDIDATE' | 'EDITORIALLY_VERIFIED';
+/**
+ * Статус русскоязычных метаданных произведения. Отделён от публикационного статуса.
+ *
+ * `SOURCE_VERIFIED` — русское название сверено с источником по совпавшим
+ * идентификаторам (AniList → MAL → Shikimori). Это НЕ редакционное подтверждение
+ * и НЕ официальное название лицензии, и тем более не права на публикацию.
+ */
+export type ComicVerification =
+  | 'UNVERIFIED'
+  | 'CANDIDATE'
+  | 'SOURCE_VERIFIED'
+  | 'EDITORIALLY_VERIFIED'
+  | 'NAME_MISMATCH'
+  | 'NO_RU_TITLE'
+  | 'NOT_FOUND'
+  | 'PENDING_REVIEW';
+
+/** Статусы, при которых русское название можно показывать публично. */
+export const PUBLIC_TITLE_STATUSES: readonly ComicVerification[] = ['SOURCE_VERIFIED', 'EDITORIALLY_VERIFIED'];
+
+export function hasPublicRussianTitle(status: ComicVerification): boolean {
+  return PUBLIC_TITLE_STATUSES.includes(status);
+}
+
+/**
+ * Происхождение русскоязычных метаданных.
+ *
+ * `officialPublisherConfirmed` всегда false, пока название не сверено с сайтом
+ * правообладателя/издателя: поле Shikimori `license_name_ru` — заявка третьей
+ * стороны, а не подтверждение лицензии.
+ */
+export interface ComicMetadataEvidence {
+  status: ComicVerification;
+  source: string;
+  sourceUrl: string | null;
+  checkedAt: string | null;
+  licenseNameRu?: string | null;
+  licenseClaimSource?: string | null;
+  officialPublisherConfirmed: boolean;
+  defects?: string[];
+}
 
 /** Нейтральный текст вместо непроверенного русского названия (см. §9.2 ТЗ B1-C). */
 export const PENDING_TITLE_TEXT = 'Информация о русскоязычном издании уточняется';
@@ -107,8 +161,16 @@ export interface ComicWork {
   totalChaptersKnown?: number | null;
   externalIds: ComicExternalIds;
   publication: ComicPublication;
-  /** Уровень проверки: непроверено / автоматический кандидат / редакционная сверка. */
+  /** Уровень проверки русскоязычных метаданных (см. ComicVerification). */
   verification: ComicVerification;
+  /** Происхождение русских метаданных: источник, ссылка, дата проверки. */
+  metadata: ComicMetadataEvidence | null;
+  /** Русские жанры из источника — только если метаданные проверены. */
+  genres: string[];
+  /** Роли этого произведения во всех рёбрах графа. */
+  roles: WorkRelationKind[];
+  /** AniList id аниме, для которых это произведение — ребро ADAPTATION. */
+  animeIds: number[];
   /** Внутренний кандидат русского названия — только для ревью, не для UI. */
   titleRuCandidate?: ComicTitleCandidate | null;
   provenance: ComicProvenance;

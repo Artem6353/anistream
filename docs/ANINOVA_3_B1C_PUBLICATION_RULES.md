@@ -39,19 +39,23 @@ canOpenReader = isPubliclyReadable && hasReaderSource(comic); // есть хот
 Флаги (`ComicPublication`): `russianTitleVerified`, `russianMetadataVerified`, `rightsVerified`,
 плюс `verificationBasis` (`anilist-relation|editorial|fixture`) и `verifiedAt` для аудита.
 
-## 2.1. Три уровня проверки данных (отдельно от прав)
+## 2.1. Уровни проверки данных (отдельно от прав)
 
 | Уровень | Как получается | Что видно в UI |
 |---|---|---|
 | `EDITORIALLY_VERIFIED` | редакционная запись в `source-data.ts`: `russianTitleVerified: true` | русское название и проверенные метаданные |
-| `CANDIDATE` | найден автоматически (Shikimori по MAL id), лежит в `metadata-candidates.json` | нейтральный текст, кандидат **не** показывается |
+| `SOURCE_VERIFIED` (B1-E) | массовая сверка по id: AniList → MAL → Shikimori, `id`/`myanimelist_id` совпали, русский текст качественный (`metadata-verified.json`) | русское название и метаданные источника; в каталоге — карточка |
+| `PENDING_REVIEW` | дубликат названия или спорный текст | нейтральный текст, запись не в каталоге |
+| `CANDIDATE` | найден автоматически, но сверку не прошёл | нейтральный текст, кандидат **не** показывается |
+| `NAME_MISMATCH` / `NO_RU_TITLE` / `NOT_FOUND` | источник не подтвердил название | нейтральный текст |
 | `UNVERIFIED` | данных нет | нейтральный текст |
 
 Правила:
 
-1. Кандидат **не** включает `russianTitleVerified`, `russianMetadataVerified`, `rightsVerified` и не влияет на публикацию.
-2. Автоматически найденное название нельзя объявлять проверенным — перенос в `EDITORIALLY_VERIFIED` только вручную.
-3. Связь с аниме при этом остаётся подтверждённой: она основана на id из relation-графа, а не на названии.
+1. Любой автоматический уровень **не** включает `russianTitleVerified`, `russianMetadataVerified`, `rightsVerified` и не влияет на читалку.
+2. `SOURCE_VERIFIED` ≠ `EDITORIALLY_VERIFIED`: сверка по источнику не редакционное подтверждение, перенос в редакцию только вручную.
+3. Лицензионное название из Shikimori — заявка источника: `officialPublisherConfirmed` остаётся `false`, пока название не сверено с сайтом издателя.
+4. Связь с аниме при этом остаётся подтверждённой: она основана на id из relation-графа, а не на названии.
 
 ## 2.2. Публичное название непроверенного произведения
 
@@ -67,7 +71,9 @@ comicDisplayTitle(comic) →
 Нейтральное состояние — не заглушка: карточка по-прежнему показывает обложку, вид, год, статус,
 роль связи и честное состояние публикации.
 
-Текущий срез: `EDITORIALLY_VERIFIED` 1 (Наруто), `CANDIDATE` 2169, `UNVERIFIED` 1930.
+Текущий срез (B1-E): `EDITORIALLY_VERIFIED` 1 (Наруто), `SOURCE_VERIFIED` 2136, `PENDING_REVIEW` 33,
+`NAME_MISMATCH` 67, `NO_RU_TITLE` 28, `UNVERIFIED` 1835 (из 4100 связанных произведений).
+В информационный каталог допущены 2137; прав и русских глав — 0.
 
 ## 3. Главы
 

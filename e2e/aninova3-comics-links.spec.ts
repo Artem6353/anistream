@@ -89,8 +89,15 @@ test.describe('B1-C: страница аниме → первоисточник'
     /* Основной — сериализованная манга, а не ваншот-прототип. */
     await expect(cards.first()).toHaveClass(/is-primary/);
     await expect(cards.first()).toContainText('Манга');
-    /* Ни одно название не сверено редакцией — латиницы в карточках нет. */
-    await expect(section.getByText('Информация о русскоязычном издании уточняется')).toHaveCount(3);
+    /* B1-E: названия сверены по источнику, поэтому в карточках русский текст,
+       а где сверки нет — нейтральная заглушка. Латиницы как замены быть не должно. */
+    const titles = await section.locator('.a3-source-card__title').allInnerTexts();
+    expect(titles.length).toBe(3);
+    for (const text of titles) {
+      if (text.includes('Информация о русскоязычном издании уточняется')) continue;
+      expect(text).toMatch(/[а-яё]/i);
+      expect(text).not.toMatch(/[a-z]{4,}/i);
+    }
     await expect(section.getByRole('link', { name: 'Читать мангу' })).toHaveCount(0);
   });
 
@@ -148,7 +155,7 @@ test.describe('B1-C: страница аниме → первоисточник'
     const section = page.locator('.a3-source-section');
     await expect(section.getByRole('heading', { name: 'Связанные комиксы' })).toBeVisible();
     await expect(section).toContainText('Связанное произведение');
-    await expect(section).toContainText('Направление связи не подтверждено');
+    await expect(section).toContainText('роль этого комикса не установлена');
     const href = await section.locator('.a3-source-card a.a3-link').first().getAttribute('href');
     expect(href).toBeTruthy();
 
@@ -185,30 +192,49 @@ test.describe('B1-C: страница Comics → аниме-адаптации',
     await expect(page.getByRole('heading', { level: 1, name: 'Наруто' })).toBeVisible();
   });
 
-  test('непроверенное произведение не показывает иностранное название', async ({ page }) => {
+  test('страница произведения показывает русское название без читалки', async ({ page }) => {
+    /* B1-E: у One Piece название сверено по источнику (AniList → MAL → Shikimori),
+       но прав и глав по-прежнему нет: карточка информационная. */
     await page.goto(`${ROOT}/comics/one-piece`);
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Информация о русскоязычном издании уточняется');
-    /* Оригинальное название не подставляется вместо русского. */
-    await expect(page.locator('.a3-comic__orig')).toHaveCount(0);
+    const heading = page.getByRole('heading', { level: 1 });
+    const text = await heading.innerText();
+    expect(text).toMatch(/[а-яё]/i);
+    expect(text).not.toMatch(/[a-z]{4,}/i);
+    /* Оригинальное название может быть подписью под русским, но не заменой ему. */
+    const orig = page.locator('.a3-comic__orig');
+    if (await orig.count()) expect(await orig.first().innerText()).not.toBe(text);
     await expect(page.getByRole('link', { name: /Читать/ })).toHaveCount(0);
+    await expect(page.locator('.a3-publication-state')).toContainText('Публикация недоступна');
   });
 
-  test('кандидат русского названия не попадает в публичный HTML', async ({ page }) => {
-    /* У сборника «Wanted!» (AniList 30793) кандидат — «Разыскиваются!», а
-       оригинальное название содержит «Tanpenshuu». Ни то, ни другое не должно
-       оказаться в разметке: показ кандидата = выдача неподтверждённых данных. */
-    const res = await page.goto(`${ROOT}/comics/wanted-oda-eiichiro-tanpenshuu`);
+  test('неподтверждённое русское название не попадает в публичный HTML', async ({ page }) => {
+    /* Берём реальную запись, у которой метаданные НЕ прошли сверку: её название
+       не должно появиться ни в тексте, ни в <title>, ни в адресе. */
+    const record = neutralRecord();
+    const res = await page.goto(`${ROOT}/comics/${record.slug}`);
     expect(res?.status()).toBe(200);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Информация о русскоязычном издании уточняется');
-    /* Проверяем отображаемый текст и <title>, а не слаг URL: слаг — это
-       идентификатор маршрута, а не публикуемое название. */
+    /* Проверяем то, что публикуется о самом произведении: заголовок вкладки,
+       хлебные крошки и блок сведений. Секция аниме-адаптаций показывает названия
+       аниме и к названию комикса отношения не имеет. */
     const visible = `${await page.title()}
-${await page.locator('main').innerText()}`.toLowerCase();
-    expect(visible).not.toContain('разыскиваются');
-    expect(visible).not.toContain('tanpenshuu');
-    expect(visible).not.toContain('wanted');
+${await page.locator('.a3-breadcrumbs').innerText()}
+${await page.locator('.a3-comic__info').innerText()}
+${page.url()}`.toLowerCase();
+    if (record.titleRu) expect(visible).not.toContain(record.titleRu.toLowerCase().slice(0, 12));
+    if (record.titleOriginal) expect(visible).not.toContain(record.titleOriginal.toLowerCase().slice(0, 10));
+    /* Слаг нейтральный: только comic-<anilistId>. */
+    expect(record.slug).toMatch(/^comic-\d+$/);
     /* Адаптации при этом видны: связь подтверждена, скрыта только метаинформация. */
     await expect(page.locator('.a3-adaptation')).not.toHaveCount(0);
+  });
+
+  test('старая ссылка из оригинального названия перенаправляется на канонический адрес', async ({ page }) => {
+    const record = legacyRecord();
+    await page.goto(`${ROOT}/comics/${record.legacySlug}`);
+    await page.waitForURL((url) => !url.pathname.endsWith(record.legacySlug));
+    expect(page.url()).toMatch(/\/preview\/aninova-3\/comics\/[a-z0-9-]+$/);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
   test('читалка закрыта для произведения без прав и глав', async ({ page }) => {
@@ -216,23 +242,62 @@ ${await page.locator('main').innerText()}`.toLowerCase();
     expect(res?.status()).toBe(404);
   });
 
-  test('каталог Comics не ссылается на непроверенные произведения', async ({ page }) => {
+  test('каталог показывает только проверенные русские названия', async ({ page }) => {
     await page.goto(`${ROOT}/comics`);
-    const rows = page.locator('.a3-comicrow');
+    const rows = page.locator('.a3-comics > ul.a3-comiclist > li .a3-comicrow');
     const count = await rows.count();
+    expect(count).toBeGreaterThan(10);
+    expect(count).toBeLessThanOrEqual(24);
     for (let i = 0; i < count; i++) {
-      const text = (await rows.nth(i).innerText()).toLowerCase();
-      expect(text).toContain('демо');
-      const href = await rows.nth(i).getAttribute('href');
-      if (href) expect(href).toBeTruthy();
+      const row = rows.nth(i);
+      const title = await row.locator('.a3-comicrow__title').innerText();
+      expect(title.trim().length).toBeGreaterThan(0);
+      /* Русское название: кириллица есть, латиницы в нём нет. */
+      expect(title).toMatch(/[а-яё]/i);
+      expect(title).not.toMatch(/[a-z]{4,}/i);
+      const href = await row.getAttribute('href');
+      expect(href).toMatch(/\/comics\/(comic-\d+|[a-z0-9-]+)$/);
+      await expect(row.locator('.a3-comicrow__lang')).toHaveText('RU');
     }
   });
 
-  test('демо-каталог остаётся отдельным и помеченным', async ({ page }) => {
+  test('демо-примеры остаются отдельными и помеченными', async ({ page }) => {
     await page.goto(`${ROOT}/comics`);
-    await expect(page.locator('.a3-demo-note')).toContainText('Демонстрационный каталог');
-    await expect(page.locator('.a3-comicrow')).toHaveCount(8);
-    await expect(page.locator('.a3-comicrow').first()).toContainText('RU');
+    const demo = page.locator('.a3-comics__demo');
+    await expect(demo).toContainText('Демонстрационные примеры');
+    await expect(demo.locator('.a3-comicrow')).toHaveCount(8);
+    await expect(demo.locator('.a3-comicrow').first()).toContainText('демо');
+  });
+
+  test('поиск по русскому названию и фильтр роли работают на сервере', async ({ page }) => {
+    const record = verifiedRecord();
+    const word = record.titleRu.split(/\s+/)[0];
+    await page.goto(`${ROOT}/comics?q=${encodeURIComponent(word)}`);
+    const rows = page.locator('.a3-comics > ul.a3-comiclist > li .a3-comicrow');
+    await expect(rows.first()).toBeVisible();
+    const texts = await rows.allInnerTexts();
+    expect(texts.length).toBeGreaterThan(0);
+    expect(texts.join(' ').toLowerCase()).toContain(word.toLowerCase());
+
+    await page.goto(`${ROOT}/comics?role=source`);
+    await expect(page.locator('nav[aria-label="Роль произведения"] .a3-chip.is-on')).toContainText('Первоисточник аниме');
+    const roleRows = page.locator('.a3-comics > ul.a3-comiclist > li .a3-comicrow');
+    await expect(roleRows.first()).toContainText('Первоисточник аниме');
+  });
+
+  test('пагинация каталога не повторяет записи', async ({ page }) => {
+    await page.goto(`${ROOT}/comics`);
+    const hrefs = async () =>
+      page.locator('.a3-comics > ul.a3-comiclist > li .a3-comicrow').evaluateAll((nodes) =>
+        nodes.map((n) => n.getAttribute('href') ?? ''),
+      );
+    const first = await hrefs();
+    await expect(page.locator('.a3-pager')).toBeVisible();
+    await page.locator('.a3-pager a[rel="next"]').click();
+    await page.waitForURL(/page=2/);
+    const second = await hrefs();
+    expect(second.length).toBeGreaterThan(0);
+    expect(second.some((href) => first.includes(href))).toBe(false);
   });
 });
 
@@ -314,3 +379,64 @@ test.describe('B1-C: адаптивность новых блоков', () => {
     });
   }
 });
+
+/* --- Реальные данные этапа: тесты берут записи из проверенного файла, ---
+   --- чтобы проверять именно то, что собрал скрипт сверки.               --- */
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+interface VerifiedRow {
+  status: string;
+  mal: number | null;
+  titleRu: string | null;
+  sourceUrl: string | null;
+  animeIds: number[];
+}
+
+interface CatalogData {
+  verified: Map<number, VerifiedRow>;
+  graph: { comics: { anilist: number; titleOriginal?: string }[] };
+}
+
+let DATA: CatalogData | null = null;
+
+function data(): CatalogData {
+  if (DATA) return DATA;
+  const root = process.cwd();
+  const raw = JSON.parse(readFileSync(path.join(root, 'lib/aninova3/comics/metadata-verified.json'), 'utf8'));
+  const graph = JSON.parse(readFileSync(path.join(root, 'lib/aninova3/comics/source-graph.json'), 'utf8'));
+  DATA = {
+    verified: new Map(Object.entries(raw.records as Record<string, VerifiedRow>).map(([k, v]) => [Number(k), v])),
+    graph,
+  };
+  return DATA;
+}
+
+function verifiedRecord(): { anilist: number; titleRu: string; slug: string } {
+  for (const [anilist, row] of data().verified) {
+    if (row.status !== 'SOURCE_VERIFIED' || !row.titleRu || !row.animeIds.length) continue;
+    if (!data().graph.comics.some((c) => c.anilist === anilist)) continue;
+    return { anilist, titleRu: row.titleRu, slug: `comic-${anilist}` };
+  }
+  throw new Error('в проверенных данных нет первоисточника с русским названием');
+}
+
+function neutralRecord(): { anilist: number; slug: string; titleRu: string | null; titleOriginal: string | null } {
+  for (const [anilist, row] of data().verified) {
+    if (row.status !== 'NAME_MISMATCH' && row.status !== 'PENDING_REVIEW') continue;
+    if (!row.animeIds.length) continue;
+    const comic = data().graph.comics.find((c) => c.anilist === anilist);
+    if (!comic?.titleOriginal) continue;
+    return { anilist, slug: `comic-${anilist}`, titleRu: row.titleRu, titleOriginal: comic.titleOriginal };
+  }
+  throw new Error('в данных нет неподтверждённой записи');
+}
+
+function legacyRecord(): { legacySlug: string } {
+  /* Старый слаг строился транслитом оригинального названия: сборник «Wanted!»
+     (AniList 30793) — известный случай из B1-C. */
+  const anilist = 30793;
+  const comic = data().graph.comics.find((c) => c.anilist === anilist);
+  if (!comic) throw new Error('нет произведения 30793');
+  return { legacySlug: 'wanted-oda-eiichiro-tanpenshuu' };
+}

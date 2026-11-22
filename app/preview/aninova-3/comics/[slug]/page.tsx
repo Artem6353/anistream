@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { titleById } from '@/lib/catalog';
 import { demoChapters, findDemoComic } from '@/lib/aninova3/comics-demo';
-import { getComicBySlug } from '@/lib/aninova3/comics/store';
+import { getComicByLegacySlug, getComicBySlug } from '@/lib/aninova3/comics/store';
+import { catalogRoleFor, CATALOG_ROLE_LABELS } from '@/lib/aninova3/comics/catalog';
 import { resolveComicAdaptations } from '@/lib/aninova3/comics/source-links';
 import { COMIC_KIND_LABELS, COMIC_STATUS_LABELS } from '@/lib/aninova3/comics/model';
 import {
@@ -13,6 +14,7 @@ import {
   isPublishableEntry,
   publicRuChapters,
   publicationSummary,
+  volumeLine,
 } from '@/lib/aninova3/comics/publication';
 import { A3Cover } from '@/components/aninova3/A3Cover';
 import { A3AdaptationSection } from '@/components/aninova3/comics/A3AdaptationSection';
@@ -29,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const demo = findDemoComic(slug);
   if (demo) return { title: demo.title, robots: { index: false, follow: false } };
-  const comic = getComicBySlug(slug);
+  const comic = getComicBySlug(slug) ?? getComicByLegacySlug(slug);
   return { title: comic ? comicDisplayTitle(comic).text : 'Комикс не найден', robots: { index: false, follow: false } };
 }
 
@@ -39,9 +41,16 @@ export default async function A3ComicPage({ params }: Props) {
   if (demo) return <DemoComicPage slug={slug} />;
 
   const comic = getComicBySlug(slug);
-  if (!comic) notFound();
+  if (!comic) {
+    /* Старые ссылки на слаг из оригинального названия ведут на канонический адрес:
+       сам слаг больше не строится из иностранного названия. */
+    const legacy = getComicByLegacySlug(slug);
+    if (!legacy) notFound();
+    redirect(`${ROOT}/comics/${legacy.slug}`);
+  }
 
   const adaptations = resolveComicAdaptations(comic, { titles: titleById });
+  const role = catalogRoleFor(comic, (id) => titleById.get(id));
   const ruChapters = publicRuChapters(comic);
   const readable = canOpenReader(comic);
   const publishable = isPublishableEntry(comic);
@@ -68,22 +77,52 @@ export default async function A3ComicPage({ params }: Props) {
         </div>
         <div className="a3-comic__info">
           <p className="a3-kicker">
-            {COMIC_KIND_LABELS[comic.kind]} · {comic.year ?? 'год уточняется'} · {COMIC_STATUS_LABELS[comic.status]}
+            {CATALOG_ROLE_LABELS[role]} · {COMIC_KIND_LABELS[comic.kind]} ·{' '}
+            {comic.year ?? 'год уточняется'} · {COMIC_STATUS_LABELS[comic.status]}
           </p>
           <h1 className="a3-h1">{title.text}</h1>
           {title.pending ? (
             <p className="a3-muted">Подтверждённая связь с аниме есть, но русскоязычное издание пока не сверено.</p>
+          ) : comic.verification === 'SOURCE_VERIFIED' ? (
+            <p className="a3-muted">
+              Название и метаданные сверены с источником по идентификатору. Прав на публикацию и русских глав нет.
+            </p>
+          ) : null}
+          {/* Лицензионное название источника показываем только когда название
+              произведения само подтверждено: иначе это чужая заявка. */}
+          {comic.metadata?.licenseNameRu && !title.pending ? (
+            <p className="a3-muted">Название русской лицензии по данным источника: {comic.metadata.licenseNameRu}</p>
           ) : null}
           {comic.titleOriginal && !title.pending && comic.titleOriginal !== title.text ? (
             <p className="a3-comic__orig">{comic.titleOriginal}</p>
           ) : null}
-          {comic.authorsVerified && comic.authors.length ? (
-            <p className="a3-comic__authors">{comic.authors.join(', ')}</p>
+          {comic.authors.length ? <p className="a3-comic__authors">{comic.authors.join(', ')}</p> : null}
+          {comic.genres.length ? (
+            <div className="a3-chips a3-chips--inline">
+              {comic.genres.slice(0, 6).map((genre) => (
+                <Link
+                  key={genre}
+                  className="a3-chip a3-chip--sm"
+                  href={`${ROOT}/comics?genre=${encodeURIComponent(genre)}`}
+                  data-a3-focusable
+                >
+                  {genre}
+                </Link>
+              ))}
+            </div>
           ) : null}
           {comic.descriptionRu ? <p className="a3-prose">{comic.descriptionRu}</p> : null}
           <div className="a3-comic__facts">
             <span>{chaptersLine(comic)}</span>
-            {comic.totalChaptersKnown ? <span>Известно глав: {comic.totalChaptersKnown}</span> : null}
+            {volumeLine(comic) ? <span>{volumeLine(comic)}</span> : null}
+            {comic.metadata?.sourceUrl ? (
+              <span>
+                Метаданные:{' '}
+                <a className="a3-link" href={comic.metadata.sourceUrl} rel="nofollow noopener noreferrer" target="_blank">
+                  источник
+                </a>
+              </span>
+            ) : null}
             <span>Права: {comic.publication.rightsVerified ? 'подтверждены' : 'не подтверждены'}</span>
           </div>
           {readable ? (

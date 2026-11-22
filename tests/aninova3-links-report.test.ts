@@ -3,8 +3,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Title } from '@/lib/types';
 import type { ComicKind, ComicWork, WorkRelationKind } from '@/lib/aninova3/comics/model';
-import { PENDING_TITLE_TEXT } from '@/lib/aninova3/comics/model';
-import { buildComicStore, loadTitleCandidates } from '@/lib/aninova3/comics/store';
+import { PENDING_TITLE_TEXT, hasPublicRussianTitle } from '@/lib/aninova3/comics/model';
+import { buildComicStore, loadTitleCandidates, loadVerifiedMetadata } from '@/lib/aninova3/comics/store';
 import { loadSourceGraph } from '@/lib/aninova3/comics/source-graph';
 import {
   resolveAnimeSourcesDetailed,
@@ -42,7 +42,8 @@ function titlesLookup(catalog: Title[]): TitleLookup {
 const catalog = loadCatalog();
 const graph = loadSourceGraph();
 const candidates = loadTitleCandidates();
-const store = buildComicStore(graph, EDITORIAL_COMICS, candidates);
+const verified = loadVerifiedMetadata();
+const store = buildComicStore(graph, EDITORIAL_COMICS, candidates, verified);
 const lookup = titlesLookup(catalog);
 
 const animeById = new Map(catalog.map((t) => [t.anilistId, t]));
@@ -188,6 +189,10 @@ const comicStats = (comic: ComicWork) => ({
   mal: comic.externalIds.mal,
   verification: comic.verification,
   hasRussianCandidate: Boolean(comic.titleRuCandidate?.title),
+  titleFromSource: comic.metadata?.source ?? null,
+  licenseClaimed: Boolean(comic.metadata?.licenseNameRu),
+  catalogEligible: hasPublicRussianTitle(comic.verification) && !comic.isDemo,
+  genres: comic.genres.length,
   status: comic.publication.status,
   russianTitleVerified: comic.publication.russianTitleVerified,
   russianMetadataVerified: comic.publication.russianMetadataVerified,
@@ -278,6 +283,15 @@ const report = {
     readerReady: comicRows.filter((c) => c.readerReady).length,
     pendingTitleNeutral: comicRows.filter((c) => c.titlePending).length,
     pendingTitleText: PENDING_TITLE_TEXT,
+    /* B1-E: проверенное по источнику название — отдельный уровень, не редакция. */
+    sourceVerified: comicRows.filter((c) => c.verification === 'SOURCE_VERIFIED').length,
+    pendingReview: comicRows.filter((c) => c.verification === 'PENDING_REVIEW').length,
+    nameMismatch: comicRows.filter((c) => c.verification === 'NAME_MISMATCH').length,
+    noRuTitle: comicRows.filter((c) => c.verification === 'NO_RU_TITLE').length,
+    notFoundOnSource: comicRows.filter((c) => c.verification === 'NOT_FOUND').length,
+    licenseClaimed: comicRows.filter((c) => c.licenseClaimed).length,
+    catalogEligible: comicRows.filter((c) => c.catalogEligible).length,
+    withGenres: comicRows.filter((c) => c.genres > 0).length,
   },
   needsManualReviewCount: reviews.length,
   needsManualReviewIds: reviews.slice(0, 2000).map((c) => c.id),
@@ -353,7 +367,9 @@ describe('машинный отчёт B1-C', () => {
 
   it('непроверенное русское название не утекает в публичное поле', () => {
     for (const comic of store.list) {
-      if (comic.publication.russianTitleVerified) continue;
+      /* Публичное название допустимо только при проверенном статусе (редакция
+         или сверка по источнику), иначе — нейтральный текст. */
+      if (hasPublicRussianTitle(comic.verification)) continue;
       expect(comic.titleRu).toBe('');
       expect(comicDisplayTitle(comic).text).toBe(PENDING_TITLE_TEXT);
     }
@@ -376,6 +392,29 @@ describe('машинный отчёт B1-C', () => {
       expect(comic.publication.russianTitleVerified).toBe(comic.verification === 'EDITORIALLY_VERIFIED');
       expect(comic.publication.rightsVerified).toBe(false);
     }
+  });
+
+  it('проверенное по источнику название не даёт ни редакции, ни прав, ни глав', () => {
+    const sourceVerified = store.list.filter((c) => c.verification === 'SOURCE_VERIFIED');
+    expect(sourceVerified.length).toBeGreaterThan(0);
+    for (const comic of sourceVerified) {
+      expect(comic.publication.russianTitleVerified).toBe(false);
+      expect(comic.publication.russianMetadataVerified).toBe(false);
+      expect(comic.publication.rightsVerified).toBe(false);
+      expect(comic.metadata?.officialPublisherConfirmed).toBe(false);
+      expect(comicDisplayTitle(comic).pending).toBe(false);
+      expect(isPubliclyReadable(comic)).toBe(false);
+      expect(canOpenReader(comic)).toBe(false);
+    }
+  });
+
+  it('в каталог попадают только произведения с проверенным русским названием', () => {
+    for (const comic of store.list) {
+      const eligible = hasPublicRussianTitle(comic.verification) && !comic.isDemo;
+      expect(comicDisplayTitle(comic).pending).toBe(!eligible);
+    }
+    expect(report.comics.catalogEligible).toBeGreaterThan(0);
+    expect(report.comics.publiclyReadable).toBe(0);
   });
 
   it('ни один первоисточник не начинается существенно позже самого аниме', () => {
