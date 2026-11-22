@@ -21,8 +21,13 @@ test('скриншоты и замеры preview-маршрутов B1-C', async
   const { shots, perf } = result;
 
   expect(shots).toBeGreaterThan(0);
-  /* Аниме с первоисточником действительно отрисовало карточку, а без — ни одной. */
+  /* Аниме с первоисточником действительно отрисовало карточку, без связей — ни одной. */
   expect(perf.routes.animeWithSource.sourceCards).toBeGreaterThan(0);
   expect(perf.routes.animeWithoutSource.sourceCards).toBe(0);
+  /* Несколько первоисточников и связь без первоисточника — оба состояния существуют. */
+  expect(perf.routes.animeMultiSource.sourceCards).toBeGreaterThan(1);
+  expect(perf.routes.animeManySources.sourceCards).toBeGreaterThan(3);
+  expect(perf.routes.animeRelatedOnly.sourceCards).toBeGreaterThan(0);
   expect(perf.routes.comicWithAdaptations.adaptationCards).toBeGreaterThan(0);
+  expect(perf.routes.comicPendingTitle.adaptationCards).toBeGreaterThan(0);
 });

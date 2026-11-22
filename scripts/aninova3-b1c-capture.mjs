@@ -23,8 +23,12 @@ export const PERF_OUT = path.join(ROOT, 'docs', 'design', 'b1c', 'perf.json');
 
 export const ROUTES = {
   animeWithSource: `${ROOT_PATH}/anime/naruto`,
-  animeWithoutSource: `${ROOT_PATH}/anime/one-piece`,
+  animeMultiSource: `${ROOT_PATH}/anime/one-piece`,
+  animeManySources: `${ROOT_PATH}/anime/fujimoto-tatsuki-17-26`,
+  animeRelatedOnly: `${ROOT_PATH}/anime/trinity-blood`,
+  animeWithoutSource: `${ROOT_PATH}/anime/death-parade`,
   comicWithAdaptations: `${ROOT_PATH}/comics/naruto`,
+  comicPendingTitle: `${ROOT_PATH}/comics/one-piece`,
   comicsCatalog: `${ROOT_PATH}/comics`,
 };
 
@@ -68,6 +72,13 @@ export const SHOT_LIST = [
   { name: 'anime-source-tv-1920', url: ROUTES.animeWithSource, width: 1920, height: 1080, tv: true, section: '.a3-source-section' },
   { name: 'anime-source-4k-3840', url: ROUTES.animeWithSource, width: 3840, height: 2160, section: '.a3-source-section' },
   { name: 'anime-without-source-1440', url: ROUTES.animeWithoutSource, width: 1440, height: 1000, section: '.a3-anime__body' },
+  /* Реальные случаи полного снимка графа. */
+  { name: 'anime-multi-source-desktop-1440', url: ROUTES.animeMultiSource, width: 1440, height: 1200, section: '.a3-source-section' },
+  { name: 'anime-multi-source-mobile-390', url: ROUTES.animeMultiSource, width: 390, height: 1200, fullPage: true },
+  { name: 'anime-many-sources-desktop-1440', url: ROUTES.animeManySources, width: 1440, height: 1400, section: '.a3-source-section' },
+  { name: 'anime-many-sources-mobile-360', url: ROUTES.animeManySources, width: 360, height: 1400, fullPage: true },
+  { name: 'anime-related-only-desktop-1440', url: ROUTES.animeRelatedOnly, width: 1440, height: 1000, section: '.a3-source-section' },
+  { name: 'comics-pending-title-1440', url: ROUTES.comicPendingTitle, width: 1440, height: 1000 },
   { name: 'comics-adaptations-desktop-1440', url: ROUTES.comicWithAdaptations, width: 1440, height: 1000, section: '.a3-adaptations' },
   { name: 'comics-adaptation-mobile-390', url: ROUTES.comicWithAdaptations, width: 390, height: 900, fullPage: true },
   { name: 'comics-adaptation-tv-1920', url: ROUTES.comicWithAdaptations, width: 1920, height: 1080, tv: true, section: '.a3-adaptations' },

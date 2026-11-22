@@ -71,8 +71,12 @@ export default async function A3ComicPage({ params }: Props) {
             {COMIC_KIND_LABELS[comic.kind]} · {comic.year ?? 'год уточняется'} · {COMIC_STATUS_LABELS[comic.status]}
           </p>
           <h1 className="a3-h1">{title.text}</h1>
-          {title.russian ? null : <p className="a3-source-card__flag">Русское название не подтверждено</p>}
-          {comic.titleOriginal !== title.text ? <p className="a3-comic__orig">{comic.titleOriginal}</p> : null}
+          {title.pending ? (
+            <p className="a3-muted">Подтверждённая связь с аниме есть, но русскоязычное издание пока не сверено.</p>
+          ) : null}
+          {comic.titleOriginal && !title.pending && comic.titleOriginal !== title.text ? (
+            <p className="a3-comic__orig">{comic.titleOriginal}</p>
+          ) : null}
           {comic.authorsVerified && comic.authors.length ? (
             <p className="a3-comic__authors">{comic.authors.join(', ')}</p>
           ) : null}

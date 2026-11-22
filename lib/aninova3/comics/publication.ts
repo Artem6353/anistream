@@ -1,4 +1,5 @@
 import type { ComicChapter, ComicWork, PublicationIssue } from './model';
+import { PENDING_TITLE_TEXT } from './model';
 
 /**
  * Публичные правила B1-C.
@@ -65,12 +66,23 @@ export function isPublishableEntry(comic: ComicWork): boolean {
 }
 
 /**
- * Публичное название. Русское показывается только когда оно проверено;
- * иначе честно выводится оригинальное, без подмены языка.
+ * Публичное название.
+ *
+ * Русское название показывается ТОЛЬКО после редакционной проверки. Если его
+ * нет, публичная часть получает нейтральный текст, а не оригинальное/иностранное
+ * название в качестве подмены (правило §9.2 B1-C). Оригинальные названия
+ * остаются во внутренних данных для сопоставления.
  */
-export function comicDisplayTitle(comic: ComicWork): { text: string; russian: boolean } {
-  if (comic.publication.russianTitleVerified && comic.titleRu) return { text: comic.titleRu, russian: true };
-  return { text: comic.titleOriginal || comic.titleRu, russian: false };
+export function comicDisplayTitle(comic: ComicWork): {
+  text: string;
+  russian: boolean;
+  pending: boolean;
+  verification: ComicWork['verification'];
+} {
+  if (comic.publication.russianTitleVerified && comic.titleRu) {
+    return { text: comic.titleRu, russian: true, pending: false, verification: comic.verification };
+  }
+  return { text: PENDING_TITLE_TEXT, russian: false, pending: true, verification: comic.verification };
 }
 
 /** Публичная читалка B1-B для демо остаётся, но не выдаётся за реальные права/главы. */
@@ -98,13 +110,23 @@ export function publicationSummary(comic: ComicWork): string {
 }
 
 /** Короткая строка про главы для карточки. Никогда не обещает больше, чем есть. */
+/** Русское склонение по числу: 1 глава, 2 главы, 5 глав. */
+export function pluralRu(count: number, forms: [string, string, string]): string {
+  const abs = Math.abs(Math.trunc(count)) % 100;
+  const last = abs % 10;
+  if (abs > 10 && abs < 20) return forms[2];
+  if (last === 1) return forms[0];
+  if (last >= 2 && last <= 4) return forms[1];
+  return forms[2];
+}
+
 export function chaptersLine(comic: ComicWork): string {
   const ru = publicRuChapters(comic);
   if (ru.length) {
-    return `${ru.length} ${ru.length === 1 ? 'глава' : 'глав'} на русском`;
+    return `${ru.length} ${pluralRu(ru.length, ['глава', 'главы', 'глав'])} на русском`;
   }
   if (comic.totalChaptersKnown) {
-    return `Русских глав нет · известно ${comic.totalChaptersKnown} глав`;
+    return `Русских глав нет · известно ${comic.totalChaptersKnown} ${pluralRu(comic.totalChaptersKnown, ['глава', 'главы', 'глав'])}`;
   }
   return 'Русских глав нет';
 }

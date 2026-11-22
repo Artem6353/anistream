@@ -45,7 +45,8 @@
     "check:db-size": "node scripts/check-db-size.mjs",
     "qa:e2e": "node scripts/qa-e2e.mjs",
     "report:b1c": "node scripts/run-b1c-report.mjs",
-    "graph:b1c": "node scripts/aninova3-source-graph.mjs"
+    "graph:b1c": "node scripts/aninova3-source-graph.mjs",
+    "ru:b1c": "node scripts/aninova3-ru-metadata.mjs"
   },
   "dependencies": {
     "@sentry/browser": "^11.0.0",

@@ -92,6 +92,19 @@ function strongerRole(next: WorkRelationKind, current: WorkRelationKind): boolea
 }
 
 /**
+ * Вес произведения как первоисточника.
+ *
+ * Сериализованное произведение (манга/манхва/маньхуа/вебтун) важнее ваншота:
+ * у One Piece три ADAPTATION-ребра, но первоисточник — манга, а «Romance Dawn» —
+ * прототип-ваншот. Меньше — выше в списке.
+ */
+function sourceWeight(comic: ComicWork): number {
+  const prototype = comic.kind === 'comic' ? 1 : 0;
+  const oneShot = comic.totalChaptersKnown === 1 && comic.chapters.length === 0 ? 0.5 : 0;
+  return prototype + oneShot;
+}
+
+/**
  * Аниме → подтверждённые комиксы.
  * Возвращает и связи, и отброшенные рёбра с причиной (для внутреннего отчёта).
  */
@@ -129,6 +142,10 @@ export function resolveAnimeSourcesDetailed(animeAniListId: number, input: Resol
     if (b.role === 'SOURCE' && a.role !== 'SOURCE') return 1;
     const byPriority = RELATION_PRIORITY[b.role] - RELATION_PRIORITY[a.role];
     if (byPriority) return byPriority;
+    const byWeight = sourceWeight(a.comic) - sourceWeight(b.comic);
+    if (byWeight) return byWeight;
+    const byChapters = (b.comic.totalChaptersKnown ?? 0) - (a.comic.totalChaptersKnown ?? 0);
+    if (byChapters) return byChapters;
     return (a.comic.externalIds.anilist ?? 0) - (b.comic.externalIds.anilist ?? 0);
   });
 

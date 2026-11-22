@@ -10,9 +10,55 @@
  * Реестр строится один раз на процесс. Никаких запросов в БД, внешних API и
  * чтения полного каталога аниме на каждый рендер: только Map-индексы.
  */
-import type { ComicKind, ComicPublishingStatus, ComicWork } from './model';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import type {
+  ComicKind,
+  ComicPublishingStatus,
+  ComicTitleCandidate,
+  ComicVerification,
+  ComicWork,
+} from './model';
 import { comicInternalId, comicKindFrom, comicStatusFrom, loadSourceGraph, type RawGraphComic, type SourceGraph } from './source-graph';
 import { findEditorialComic, type EditorialComic } from './source-data';
+
+/**
+ * Кандидаты русских метаданных (scripts/aninova3-ru-metadata.mjs).
+ * Это ТОЛЬКО кандидаты: публично они не выводятся, пока редакция не подтвердит
+ * название (см. publication.ts → comicDisplayTitle).
+ */
+interface RuntimeCandidates {
+  meta?: { generatedAt?: string; counts?: Record<string, number> };
+  candidates?: { anilist: number; titleRu: string | null; name?: string | null; sourceUrl?: string | null; fetchedAt?: string }[];
+}
+
+const CANDIDATES_FILE = () => path.join(process.cwd(), 'lib', 'aninova3', 'comics', 'metadata-candidates.json');
+
+let CANDIDATE_CACHE: Map<number, ComicTitleCandidate> | null = null;
+
+export function loadTitleCandidates(): Map<number, ComicTitleCandidate> {
+  if (CANDIDATE_CACHE) return CANDIDATE_CACHE;
+  CANDIDATE_CACHE = new Map();
+  try {
+    const raw = JSON.parse(readFileSync(CANDIDATES_FILE(), 'utf8')) as RuntimeCandidates;
+    for (const row of raw.candidates ?? []) {
+      if (!row?.anilist || !row.titleRu) continue;
+      CANDIDATE_CACHE.set(row.anilist, {
+        title: row.titleRu,
+        source: 'shikimori',
+        url: row.sourceUrl ?? null,
+        fetchedAt: row.fetchedAt ?? raw.meta?.generatedAt ?? '',
+      });
+    }
+  } catch {
+    /* Файла нет — работаем без кандидатов, UI останется в нейтральном состоянии. */
+  }
+  return CANDIDATE_CACHE;
+}
+
+export function setTitleCandidatesForTesting(candidates: Map<number, ComicTitleCandidate> | null): void {
+  CANDIDATE_CACHE = candidates;
+}
 
 export interface ComicStore {
   list: ComicWork[];
@@ -52,17 +98,33 @@ function comicSlug(raw: RawGraphComic, taken: Set<string>): string {
   return withId;
 }
 
-function coalesceComic(raw: RawGraphComic, editorial: EditorialComic | undefined): ComicWork {
+/**
+ * Сводит сырой граф, редакционную проверку и автоматического кандидата.
+ *
+ * Ключевое правило: `titleRu` — это ПУБЛИЧНОЕ название, и оно заполняется
+ * русским текстом только при редакционной проверке. Автоматический кандидат
+ * кладётся в `titleRuCandidate` (внутреннее поле) и в UI не попадает.
+ */
+function coalesceComic(
+  raw: RawGraphComic,
+  editorial: EditorialComic | undefined,
+  candidate?: ComicTitleCandidate,
+): ComicWork {
   const kind: ComicKind = editorial?.kind ?? comicKindFrom(raw.format, raw.country);
   const status: ComicPublishingStatus = editorial?.status ?? comicStatusFrom(raw.status);
   const authorsVerified = Boolean(editorial?.authorsVerified);
   const authors = authorsVerified && editorial?.authorsRu?.length ? editorial.authorsRu : (raw.authors ?? []);
+  const verification: ComicVerification = editorial?.russianTitleVerified
+    ? 'EDITORIALLY_VERIFIED'
+    : candidate
+      ? 'CANDIDATE'
+      : 'UNVERIFIED';
 
   return {
     id: comicInternalId(raw.anilist),
     /* slug подставляется в buildComicStore: он зависит от соседей по реестру. */
     slug: '',
-    titleRu: editorial?.titleRu?.trim() || raw.titleOriginal,
+    titleRu: editorial?.titleRu?.trim() || '',
     titleOriginal: raw.titleNative?.trim() || raw.titleOriginal,
     kind,
     authors,
@@ -87,6 +149,8 @@ function coalesceComic(raw: RawGraphComic, editorial: EditorialComic | undefined
       verificationBasis: editorial ? 'editorial' : 'anilist-relation',
       verifiedAt: editorial?.verifiedAt,
     },
+    verification,
+    titleRuCandidate: candidate ?? null,
     provenance: editorial
       ? { source: 'editorial', observedAt: editorial.verifiedAt, verification: 'editorial' }
       : { source: 'anilist-relation', verification: 'recorded' },
@@ -94,7 +158,11 @@ function coalesceComic(raw: RawGraphComic, editorial: EditorialComic | undefined
 }
 
 /** Чистая сборка реестра: подходит и для рантайма, и для тестов/скриптов. */
-export function buildComicStore(graph: SourceGraph, editorials?: EditorialComic[]): ComicStore {
+export function buildComicStore(
+  graph: SourceGraph,
+  editorials?: EditorialComic[],
+  candidates: Map<number, ComicTitleCandidate> = new Map(),
+): ComicStore {
   const taken = new Set<string>();
   const seen = new Set<number>();
   const list: ComicWork[] = [];
@@ -106,7 +174,7 @@ export function buildComicStore(graph: SourceGraph, editorials?: EditorialComic[
     if (seen.has(raw.anilist)) continue;
     seen.add(raw.anilist);
     const editorial = editorials ? editorials.find((e) => e.anilist === raw.anilist) : findEditorialComic(raw.anilist);
-    const comic = coalesceComic(raw, editorial);
+    const comic = coalesceComic(raw, editorial, candidates.get(raw.anilist));
     comic.slug = comicSlug(raw, taken);
     taken.add(comic.slug);
     list.push(comic);
@@ -140,7 +208,7 @@ export function buildComicStore(graph: SourceGraph, editorials?: EditorialComic[
 let CACHE: ComicStore | null = null;
 
 export function comicStore(): ComicStore {
-  if (!CACHE) CACHE = buildComicStore(loadSourceGraph());
+  if (!CACHE) CACHE = buildComicStore(loadSourceGraph(), undefined, loadTitleCandidates());
   return CACHE;
 }
 

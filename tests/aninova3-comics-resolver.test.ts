@@ -74,7 +74,7 @@ describe('аниме → первоисточник', () => {
     const comic = comicById('comic:anilist:900001');
     expect(isPubliclyReadable(comic)).toBe(true);
     expect(canOpenReader(comic)).toBe(true);
-    expect(comicDisplayTitle(comic)).toEqual({ text: 'Тестовая манга', russian: true });
+    expect(comicDisplayTitle(comic)).toMatchObject({ text: 'Тестовая манга', russian: true, pending: false });
   });
 });
 
@@ -111,6 +111,42 @@ describe('манга → аниме-адаптации', () => {
   it('манга без адаптаций не даёт пустых карточек', () => {
     const comic = comicById('comic:anilist:900003');
     expect(resolveComicAdaptations(comic, deps)).toEqual([]);
+  });
+});
+
+describe('несколько первоисточников (реальный случай One Piece)', () => {
+  /* AniList отдаёт три ADAPTATION-ребра: манга, сборник ваншотов и прототип
+     («Romance Dawn», ONE_SHOT). Связи подтверждены все, но основной первоисточник
+     один — сериализованная манга. */
+  const multiGraph = buildSourceGraph({
+    meta: { generatedAt: 'fixture', generator: 'FIXTURE', note: 'multi' },
+    comics: [
+      { anilist: 910001, mal: 810001, format: 'MANGA', country: 'JP', titleOriginal: 'Long Manga', chapters: 1100 },
+      { anilist: 910002, mal: 810002, format: 'ONE_SHOT', country: 'JP', titleOriginal: 'Prototype One Shot', chapters: 1 },
+      { anilist: 910003, mal: 810003, format: 'MANGA', country: 'JP', titleOriginal: 'Alternative Manga' },
+    ],
+    edges: [
+      { anime: 2001, comic: 910002, raw: 'ADAPTATION', observedAt: 'fixture' },
+      { anime: 2001, comic: 910001, raw: 'ADAPTATION', observedAt: 'fixture' },
+    ],
+  });
+  const multiStore = buildComicStore(multiGraph, []);
+  const multiDeps = { graph: multiGraph, store: multiStore, titles: FIXTURE_TITLE_LOOKUP };
+
+  it('показывает все подтверждённые произведения, основной — сериализованная манга', () => {
+    const links = resolveAnimeSources(2001, multiDeps);
+    expect(links).toHaveLength(2);
+    expect(links.every((l) => l.role === 'SOURCE')).toBe(true);
+    expect(links.filter((l) => l.primary)).toHaveLength(1);
+    expect(links[0].comic.id).toBe('comic:anilist:910001');
+    expect(links[0].primary).toBe(true);
+    expect(links[1].comic.id).toBe('comic:anilist:910002');
+  });
+
+  it('ваншот не отбирает роль основного первоисточника у манги', () => {
+    const links = resolveAnimeSources(2001, multiDeps);
+    const primary = links.find((l) => l.primary);
+    expect(primary?.comic.kind).toBe('manga');
   });
 });
 

@@ -59,16 +59,73 @@ test.describe('B1-C: страница аниме → первоисточник'
     const adapt = page.locator('.a3-adaptations');
     await expect(adapt).toBeVisible();
     await expect(adapt).toContainText('Аниме-адаптации');
-    await expect(adapt.locator('.a3-adaptation')).toHaveCount(1);
-    await expect(adapt.locator('.a3-adaptation')).toContainText('Наруто');
+    /* У манги Наруто несколько подтверждённых адаптаций (сериал, Shippuuden, фильм),
+       поэтому проверяем состав, а не жёсткое число. */
+    const cards = adapt.locator('.a3-adaptation');
+    expect(await cards.count()).toBeGreaterThanOrEqual(1);
+    await expect(cards.first()).toContainText('Наруто');
+    await expect(cards.first()).toHaveClass(/is-primary|/);
     await expect(page.locator('.a3-publication-state')).toContainText('Публикация недоступна');
   });
 
-  test('страница аниме без первоисточника не показывает пустую секцию', async ({ page }) => {
-    await page.goto(`${ROOT}/anime/one-piece`);
+  test('страница аниме без единой связи не показывает пустую секцию', async ({ page }) => {
+    /* Оригинальный сериал: ни одного ребра в снимке графа. */
+    await page.goto(`${ROOT}/anime/death-parade`);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.locator('.a3-source-section')).toHaveCount(0);
     await expect(page.getByText('манга не найдена', { exact: false })).toHaveCount(0);
+  });
+
+  test('несколько первоисточников показываются все, основной один', async ({ page }) => {
+    /* One Piece в AniList: манга + сборник ваншотов + прототип «Romance Dawn». */
+    await page.goto(`${ROOT}/anime/one-piece`);
+    const section = page.locator('.a3-source-section');
+    await expect(section.getByRole('heading', { name: 'Первоисточник' })).toBeVisible();
+    const cards = section.locator('.a3-source-card');
+    await expect(cards).toHaveCount(3);
+    await expect(section.locator('.a3-source-card.is-primary')).toHaveCount(1);
+    await expect(section.getByText('Основной первоисточник')).toHaveCount(1);
+    await expect(section.getByText('Также первоисточник')).toHaveCount(2);
+    /* Основной — сериализованная манга, а не ваншот-прототип. */
+    await expect(cards.first()).toHaveClass(/is-primary/);
+    await expect(cards.first()).toContainText('Манга');
+    /* Ни одно название не сверено редакцией — латиницы в карточках нет. */
+    await expect(section.getByText('Информация о русскоязычном издании уточняется')).toHaveCount(3);
+    await expect(section.getByRole('link', { name: 'Читать мангу' })).toHaveCount(0);
+  });
+
+  test('десять первоисточников не ломают сетку и не дают горизонтального скролла', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`${ROOT}/anime/fujimoto-tatsuki-17-26`);
+    await expect(page.locator('.a3-source-card')).toHaveCount(10);
+    const wide = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(wide).toBeLessThanOrEqual(1);
+
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.reload();
+    const narrow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(narrow).toBeLessThanOrEqual(1);
+    const outside = await page.evaluate(() => {
+      const section = document.querySelector('.a3-source-section');
+      const box = section?.getBoundingClientRect();
+      if (!box) return Number.POSITIVE_INFINITY;
+      let worst = 0;
+      for (const card of document.querySelectorAll('.a3-source-card')) {
+        const r = card.getBoundingClientRect();
+        worst = Math.max(worst, r.right - box.right, box.left - r.left);
+      }
+      return worst;
+    });
+    expect(outside).toBeLessThanOrEqual(1);
+  });
+
+  test('связь без первоисточника называется «Связанные комиксы»', async ({ page }) => {
+    /* У Trinity Blood есть только ALTERNATIVE-связь с мангой. */
+    await page.goto(`${ROOT}/anime/trinity-blood`);
+    const section = page.locator('.a3-source-section');
+    await expect(section.getByRole('heading', { name: 'Связанные комиксы' })).toBeVisible();
+    await expect(section.getByRole('heading', { name: 'Первоисточник' })).toHaveCount(0);
+    await expect(section).toContainText('первоисточник среди них не установлен');
   });
 });
 
@@ -81,6 +138,14 @@ test.describe('B1-C: страница Comics → аниме-адаптации',
     await adapt.click();
     await page.waitForURL(/\/preview\/aninova-3\/anime\/naruto$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Наруто' })).toBeVisible();
+  });
+
+  test('непроверенное произведение не показывает иностранное название', async ({ page }) => {
+    await page.goto(`${ROOT}/comics/one-piece`);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Информация о русскоязычном издании уточняется');
+    /* Оригинальное название не подставляется вместо русского. */
+    await expect(page.locator('.a3-comic__orig')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /Читать/ })).toHaveCount(0);
   });
 
   test('демо-каталог остаётся отдельным и помеченным', async ({ page }) => {
@@ -154,7 +219,14 @@ test.describe('B1-C: адаптивность новых блоков', () => {
   for (const width of [360, 390, 430, 768, 1024, 1280, 1440, 1920, 3840]) {
     test(`нет горизонтального переполнения на ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      for (const url of [ANIME, COMIC, `${ROOT}/comics`]) {
+      for (const url of [
+        ANIME,
+        COMIC,
+        `${ROOT}/comics`,
+        `${ROOT}/anime/one-piece`,
+        `${ROOT}/anime/fujimoto-tatsuki-17-26`,
+        `${ROOT}/comics/one-piece`,
+      ]) {
         await page.goto(url);
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         expect(overflow, `${url} @ ${width}`).toBeLessThanOrEqual(1);

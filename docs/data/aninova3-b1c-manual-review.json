@@ -1,0 +1,9753 @@
+{
+  "generatedAt": "2026-11-22T03:13:58.331Z",
+  "note": "Очередь редакционной проверки: сначала SOURCE-произведения с наибольшим числом аниме-связей. Полный список кандидатов — в aninova3-b1c-metadata-candidates.json; здесь только то, что требует рук и первая тысяча очереди.",
+  "counts": {
+    "candidate": 2198,
+    "notFound": 5,
+    "noMalId": 174,
+    "nameMismatch": 67,
+    "idMismatch": 0,
+    "error": 0
+  },
+  "needsReview": [
+    [
+      42471,
+      12471,
+      "SOURCE",
+      25,
+      "Длинные истории о Дораэмоне",
+      "https://shikimori.one/mangas/12471-daichouhen-doraemon"
+    ],
+    [
+      30044,
+      44,
+      "SOURCE",
+      20,
+      "Гинтама",
+      "https://shikimori.one/mangas/z44-gintama"
+    ],
+    [
+      30375,
+      375,
+      "SOURCE",
+      14,
+      "Инициал Ди",
+      "https://shikimori.one/mangas/375-initial-d"
+    ],
+    [
+      53390,
+      23390,
+      "SOURCE",
+      13,
+      "Атака титанов",
+      "https://shikimori.one/mangas/23390-shingeki-no-kyojin"
+    ],
+    [
+      65243,
+      35243,
+      "SOURCE",
+      13,
+      "Волейбол!!",
+      "https://shikimori.one/mangas/z35243-haikyuu"
+    ],
+    [
+      30013,
+      13,
+      "SOURCE",
+      11,
+      "Ван-Пис",
+      "https://shikimori.one/mangas/z13-one-piece"
+    ],
+    [
+      30092,
+      92,
+      "SOURCE",
+      11,
+      "Красавица-воин Сейлор Мун",
+      "https://shikimori.one/mangas/92-bishoujo-senshi-sailor-moon"
+    ],
+    [
+      31859,
+      1859,
+      "SOURCE",
+      10,
+      "Тетрадь дружбы Нацумэ",
+      "https://shikimori.one/mangas/1859-natsume-yuujinchou"
+    ],
+    [
+      85486,
+      75989,
+      "SOURCE",
+      10,
+      "Моя геройская академия",
+      "https://shikimori.one/mangas/75989-boku-no-hero-academia"
+    ],
+    [
+      86559,
+      85968,
+      "SOURCE",
+      10,
+      "Золотое божество",
+      "https://shikimori.one/mangas/85968-golden-kamuy"
+    ],
+    [
+      87216,
+      96792,
+      "SOURCE",
+      10,
+      "Клинок, рассекающий демонов",
+      "https://shikimori.one/mangas/z96792-kimetsu-no-yaiba"
+    ],
+    [
+      30081,
+      81,
+      "SOURCE",
+      9,
+      "Ария",
+      "https://shikimori.one/mangas/81-aria"
+    ],
+    [
+      31362,
+      1362,
+      "SOURCE",
+      9,
+      "Наброски Хидамари",
+      "https://shikimori.one/mangas/1362-hidamari-sketch"
+    ],
+    [
+      53627,
+      23627,
+      "SOURCE",
+      9,
+      "Трусливый велосипедист",
+      "https://shikimori.one/mangas/z23627-yowamushi-pedal"
+    ],
+    [
+      74949,
+      44949,
+      "SOURCE",
+      9,
+      "Теннис",
+      "https://shikimori.one/mangas/44949-teekyuu"
+    ],
+    [
+      75757,
+      45757,
+      "SOURCE",
+      9,
+      "Повар-боец Сома",
+      "https://shikimori.one/mangas/45757-shokugeki-no-souma"
+    ],
+    [
+      30446,
+      446,
+      "SOURCE",
+      8,
+      "Моя богиня!",
+      "https://shikimori.one/mangas/446-aa-megami-sama"
+    ],
+    [
+      31292,
+      1292,
+      "SOURCE",
+      8,
+      "Вы арестованы!",
+      "https://shikimori.one/mangas/1292-taiho-shichau-zo"
+    ],
+    [
+      38878,
+      8878,
+      "SOURCE",
+      8,
+      "Хеталия и страны Оси",
+      "https://shikimori.one/mangas/8878-hetalia-axis-powers"
+    ],
+    [
+      40978,
+      10978,
+      "SOURCE",
+      8,
+      "Мэйджор",
+      "https://shikimori.one/mangas/10978-major"
+    ],
+    [
+      41652,
+      11652,
+      "SOURCE",
+      8,
+      "Баскетбол Куроко",
+      "https://shikimori.one/mangas/11652-kuroko-no-basket"
+    ],
+    [
+      74347,
+      44347,
+      "SOURCE",
+      8,
+      "Ванпанчмен",
+      "https://shikimori.one/mangas/z44347-one-punch-man"
+    ],
+    [
+      74485,
+      44485,
+      "SOURCE",
+      8,
+      "Семь смертных грехов",
+      "https://shikimori.one/mangas/44485-nanatsu-no-taizai"
+    ],
+    [
+      86635,
+      90125,
+      "SOURCE",
+      8,
+      "Госпожа Кагуя: в любви как на войне",
+      "https://shikimori.one/mangas/90125-kaguya-sama-wa-kokurasetai-tensai-tachi-no-renai-zunousen"
+    ],
+    [
+      98416,
+      103897,
+      "SOURCE",
+      8,
+      "Доктор Стоун",
+      "https://shikimori.one/mangas/z103897-dr-stone"
+    ],
+    [
+      30002,
+      2,
+      "SOURCE",
+      7,
+      "Берсерк",
+      "https://shikimori.one/mangas/2-berserk"
+    ],
+    [
+      30012,
+      12,
+      "SOURCE",
+      7,
+      "Блич",
+      "https://shikimori.one/mangas/z12-bleach"
+    ],
+    [
+      30015,
+      15,
+      "SOURCE",
+      7,
+      "Волшебный учитель Нэгима!",
+      "https://shikimori.one/mangas/15-mahou-sensei-negima"
+    ],
+    [
+      34608,
+      4608,
+      "SOURCE",
+      7,
+      "Сломанный меч",
+      "https://shikimori.one/mangas/4608-break-blade"
+    ],
+    [
+      43492,
+      13492,
+      "SOURCE",
+      7,
+      "Синий экзорцист",
+      "https://shikimori.one/mangas/13492-ao-no-exorcist"
+    ],
+    [
+      71049,
+      41049,
+      "SOURCE",
+      7,
+      "Манящие горы",
+      "https://shikimori.one/mangas/41049-yama-no-susume"
+    ],
+    [
+      85435,
+      61189,
+      "SOURCE",
+      7,
+      "Невеста чародея",
+      "https://shikimori.one/mangas/61189-mahoutsukai-no-yome"
+    ],
+    [
+      86399,
+      87609,
+      "SOURCE",
+      7,
+      "О моём перерождении в слизь",
+      "https://shikimori.one/mangas/z87609-tensei-shitara-slime-datta-ken"
+    ],
+    [
+      98351,
+      94376,
+      "SOURCE",
+      7,
+      "Лагерь на свежем воздухе",
+      "https://shikimori.one/mangas/94376-yuru-camp"
+    ],
+    [
+      101517,
+      113138,
+      "SOURCE",
+      7,
+      "Магическая битва",
+      "https://shikimori.one/mangas/113138-jujutsu-kaisen"
+    ],
+    [
+      30007,
+      7,
+      "SOURCE",
+      6,
+      "Первый шаг",
+      "https://shikimori.one/mangas/7-hajime-no-ippo"
+    ],
+    [
+      30026,
+      26,
+      "SOURCE",
+      6,
+      "Охотник х Охотник",
+      "https://shikimori.one/mangas/z26-hunter-x-hunter"
+    ],
+    [
+      30661,
+      661,
+      "SOURCE",
+      6,
+      "Прощай, унылый учитель",
+      "https://shikimori.one/mangas/661-sayonara-zetsubou-sensei"
+    ],
+    [
+      30696,
+      696,
+      "SOURCE",
+      6,
+      "Боевой дворецкий Хаятэ!",
+      "https://shikimori.one/mangas/696-hayate-no-gotoku"
+    ],
+    [
+      31303,
+      1303,
+      "SOURCE",
+      6,
+      "Завтрашний Джо",
+      "https://shikimori.one/mangas/1303-ashita-no-joe"
+    ],
+    [
+      31600,
+      1600,
+      "SOURCE",
+      6,
+      "Чёрный Джек",
+      "https://shikimori.one/mangas/1600-black-jack"
+    ],
+    [
+      32435,
+      2435,
+      "SOURCE",
+      6,
+      "Карандаш Син-тяна",
+      "https://shikimori.one/mangas/2435-crayon-shin-chan"
+    ],
+    [
+      32629,
+      2629,
+      "SOURCE",
+      6,
+      "Сёстры Минами",
+      "https://shikimori.one/mangas/2629-minami-ke"
+    ],
+    [
+      33866,
+      3866,
+      "SOURCE",
+      6,
+      "Тёмный дворецкий",
+      "https://shikimori.one/mangas/z3866-kuroshitsuji"
+    ],
+    [
+      37519,
+      7519,
+      "SOURCE",
+      6,
+      "Одному лишь Богу ведомый мир",
+      "https://shikimori.one/mangas/z7519-kami-nomi-zo-shiru-sekai"
+    ],
+    [
+      41593,
+      11593,
+      "SOURCE",
+      6,
+      "Лилии на ветру",
+      "https://shikimori.one/mangas/z11593-yuru-yuri"
+    ],
+    [
+      44110,
+      14110,
+      "SOURCE",
+      6,
+      "Члены школьного совета",
+      "https://shikimori.one/mangas/14110-seitokai-yakuindomo"
+    ],
+    [
+      46765,
+      16765,
+      "SOURCE",
+      6,
+      "Царство",
+      "https://shikimori.one/mangas/16765-kingdom"
+    ],
+    [
+      47552,
+      17552,
+      "SOURCE",
+      6,
+      "Деревенская глубинка",
+      "https://shikimori.one/mangas/z17552-non-non-biyori"
+    ],
+    [
+      57823,
+      27823,
+      "SOURCE",
+      6,
+      "Некогда вечный",
+      "https://shikimori.one/mangas/27823-towa-no-quon"
+    ],
+    [
+      69883,
+      39883,
+      "SOURCE",
+      6,
+      "Класс убийц",
+      "https://shikimori.one/mangas/z39883-ansatsu-kyoushitsu"
+    ],
+    [
+      79865,
+      49865,
+      "SOURCE",
+      6,
+      "Нелюдь",
+      "https://shikimori.one/mangas/49865-ajin"
+    ],
+    [
+      85307,
+      56529,
+      "SOURCE",
+      6,
+      "Великий из бродячих псов",
+      "https://shikimori.one/mangas/56529-bungou-stray-dogs"
+    ],
+    [
+      86303,
+      80119,
+      "SOURCE",
+      6,
+      "Дракон-горничная госпожи Кобаяси",
+      "https://shikimori.one/mangas/80119-kobayashi-san-chi-no-maid-dragon"
+    ],
+    [
+      86551,
+      91941,
+      "SOURCE",
+      6,
+      "Созданный в Бездне",
+      "https://shikimori.one/mangas/z91941-made-in-abyss"
+    ],
+    [
+      99943,
+      108407,
+      "SOURCE",
+      6,
+      "Девушка на час",
+      "https://shikimori.one/mangas/108407-kanojo-okarishimasu"
+    ],
+    [
+      100230,
+      103851,
+      "SOURCE",
+      6,
+      "Пять невест",
+      "https://shikimori.one/mangas/103851-5-toubun-no-hanayome"
+    ],
+    [
+      30009,
+      9,
+      "SOURCE",
+      5,
+      "Хроника крыльев",
+      "https://shikimori.one/mangas/9-tsubasa-reservoir-chronicle"
+    ],
+    [
+      30022,
+      22,
+      "SOURCE",
+      5,
+      "Бродяга Кэнсин",
+      "https://shikimori.one/mangas/22-rurouni-kenshin-meiji-kenkaku-romantan"
+    ],
+    [
+      30023,
+      23,
+      "SOURCE",
+      5,
+      "Ранма 1/2",
+      "https://shikimori.one/mangas/23-ranma"
+    ],
+    [
+      30042,
+      42,
+      "SOURCE",
+      5,
+      "Драконий жемчуг",
+      "https://shikimori.one/mangas/42-dragon-ball"
+    ],
+    [
+      30102,
+      102,
+      "SOURCE",
+      5,
+      "Корзинка фруктов",
+      "https://shikimori.one/mangas/102-fruits-basket"
+    ],
+    [
+      30106,
+      106,
+      "SOURCE",
+      5,
+      "Сакура — собирательница карт",
+      "https://shikimori.one/mangas/106-cardcaptor-sakura"
+    ],
+    [
+      30304,
+      304,
+      "SOURCE",
+      5,
+      "Несносные пришельцы",
+      "https://shikimori.one/mangas/304-urusei-yatsura"
+    ],
+    [
+      30418,
+      418,
+      "SOURCE",
+      5,
+      "Мастер муси",
+      "https://shikimori.one/mangas/418-mushishi"
+    ],
+    [
+      30598,
+      598,
+      "SOURCE",
+      5,
+      "Хвост Феи",
+      "https://shikimori.one/mangas/598-fairy-tail"
+    ],
+    [
+      31045,
+      1045,
+      "SOURCE",
+      5,
+      "Святой Сэйя",
+      "https://shikimori.one/mangas/1045-saint-seiya"
+    ],
+    [
+      31062,
+      1062,
+      "SOURCE",
+      5,
+      "Космические приключения Кобры",
+      "https://shikimori.one/mangas/1062-cobra"
+    ],
+    [
+      31325,
+      1325,
+      "SOURCE",
+      5,
+      "Жар-птица (1967)",
+      "https://shikimori.one/mangas/1325-hi-no-tori"
+    ],
+    [
+      31397,
+      1397,
+      "SOURCE",
+      5,
+      "Милый дом Чи",
+      "https://shikimori.one/mangas/1397-chi-s-sweet-home"
+    ],
+    [
+      37948,
+      7948,
+      "SOURCE",
+      5,
+      "Бей эйс!",
+      "https://shikimori.one/mangas/7948-ace-wo-nerae"
+    ],
+    [
+      42965,
+      12965,
+      "SOURCE",
+      5,
+      "Новый принц тенниса",
+      "https://shikimori.one/mangas/12965-shin-tennis-no-oujisama"
+    ],
+    [
+      43001,
+      13001,
+      "SOURCE",
+      5,
+      "Кэйон!",
+      "https://shikimori.one/mangas/13001-k-on"
+    ],
+    [
+      52519,
+      22519,
+      "SOURCE",
+      5,
+      "Любовные неприятности: Тьма",
+      "https://shikimori.one/mangas/22519-to-love-ru-darkness"
+    ],
+    [
+      66113,
+      36113,
+      "SOURCE",
+      5,
+      "Хладнокровный Хозуки",
+      "https://shikimori.one/mangas/36113-hoozuki-no-reitetsu"
+    ],
+    [
+      66131,
+      36131,
+      "SOURCE",
+      5,
+      "Судьба/Девочка-волшебница Иллия 3",
+      "https://shikimori.one/mangas/z36131-fate-kaleid-liner-prisma-illya-3rei"
+    ],
+    [
+      67755,
+      37755,
+      "SOURCE",
+      5,
+      "Ох уж этот экстрасенс Сайки Кусуо!",
+      "https://shikimori.one/mangas/37755-saiki-kusuo-no-nan"
+    ],
+    [
+      74279,
+      44279,
+      "SOURCE",
+      5,
+      "Дропкик злого духа",
+      "https://shikimori.one/mangas/44279-jashin-chan-dropkick"
+    ],
+    [
+      79835,
+      49835,
+      "SOURCE",
+      5,
+      "Заказывали кролика?",
+      "https://shikimori.one/mangas/49835-gochuumon-wa-usagi-desu-ka"
+    ],
+    [
+      86265,
+      72025,
+      "SOURCE",
+      5,
+      "Кэнган Асура",
+      "https://shikimori.one/mangas/72025-kengan-ashura"
+    ],
+    [
+      87347,
+      79085,
+      "SOURCE",
+      5,
+      "Дарованный",
+      "https://shikimori.one/mangas/79085-given"
+    ],
+    [
+      98808,
+      104937,
+      "SOURCE",
+      5,
+      "Нет лекарства для моего брата!",
+      "https://shikimori.one/mangas/104937-kuai-ba-wo-ge-dai-zou"
+    ],
+    [
+      99402,
+      111580,
+      "SOURCE",
+      5,
+      "Изгой",
+      "https://shikimori.one/mangas/111580-yi-ren-zhi-xia"
+    ],
+    [
+      100948,
+      108461,
+      "SOURCE",
+      5,
+      "Хвост Феи S",
+      "https://shikimori.one/mangas/108461-fairy-tail-s"
+    ],
+    [
+      101177,
+      112589,
+      "SOURCE",
+      5,
+      "Унеси меня на Луну",
+      "https://shikimori.one/mangas/112589-tonikaku-kawaii"
+    ],
+    [
+      125178,
+      130167,
+      "SOURCE",
+      5,
+      "Нидзиён: Живая любовь! Клуб идолов старшей школы Нидзигасаки — Ёнкома",
+      "https://shikimori.one/mangas/130167-nijiyon-love-live-nijigasaki-gakuen-school-idol-doukoukai-yonkoma"
+    ],
+    [
+      131253,
+      159325,
+      "SOURCE",
+      5,
+      "Мифические звери",
+      "https://shikimori.one/mangas/159325-you-shou-yan"
+    ],
+    [
+      30010,
+      10,
+      "SOURCE",
+      4,
+      "Триплексоголик",
+      "https://shikimori.one/mangas/10-xxxholic"
+    ],
+    [
+      30049,
+      49,
+      "SOURCE",
+      4,
+      "Принц тенниса",
+      "https://shikimori.one/mangas/49-tennis-no-oujisama"
+    ],
+    [
+      30054,
+      54,
+      "SOURCE",
+      4,
+      "Югио!",
+      "https://shikimori.one/mangas/54-yu-gi-oh"
+    ],
+    [
+      30160,
+      160,
+      "SOURCE",
+      4,
+      "Школьный переполох",
+      "https://shikimori.one/mangas/160-school-rumble"
+    ],
+    [
+      30371,
+      371,
+      "SOURCE",
+      4,
+      "Клубничный зефир",
+      "https://shikimori.one/mangas/371-ichigo-mashimaro"
+    ],
+    [
+      30438,
+      438,
+      "SOURCE",
+      4,
+      "Люпен III",
+      "https://shikimori.one/mangas/438-lupin-iii"
+    ],
+    [
+      30510,
+      510,
+      "SOURCE",
+      4,
+      "Саюки: Перезарядка",
+      "https://shikimori.one/mangas/510-saiyuuki-reload"
+    ],
+    [
+      30735,
+      735,
+      "SOURCE",
+      4,
+      "Пираты «Чёрной лагуны»",
+      "https://shikimori.one/mangas/735-black-lagoon"
+    ],
+    [
+      30872,
+      872,
+      "SOURCE",
+      4,
+      "Невероятное приключение ДжоДжо — Часть 3: Рыцари звёздной пыли",
+      "https://shikimori.one/mangas/872-jojo-no-kimyou-na-bouken-part-3-stardust-crusaders"
+    ],
+    [
+      30873,
+      873,
+      "SOURCE",
+      4,
+      "Сэкирэй",
+      "https://shikimori.one/mangas/873-sekirei"
+    ],
+    [
+      31023,
+      1023,
+      "SOURCE",
+      4,
+      "Призрак в доспехах",
+      "https://shikimori.one/mangas/1023-koukaku-kidoutai-the-ghost-in-the-shell"
+    ],
+    [
+      31032,
+      1032,
+      "SOURCE",
+      4,
+      "Дораэмон",
+      "https://shikimori.one/mangas/1032-doraemon"
+    ],
+    [
+      31061,
+      1061,
+      "SOURCE",
+      4,
+      "Детектив Конан",
+      "https://shikimori.one/mangas/1061-meitantei-conan"
+    ],
+    [
+      31133,
+      1133,
+      "SOURCE",
+      4,
+      "Дорохедоро",
+      "https://shikimori.one/mangas/1133-dorohedoro"
+    ],
+    [
+      31149,
+      1149,
+      "SOURCE",
+      4,
+      "Кулак Северной звезды",
+      "https://shikimori.one/mangas/1149-hokuto-no-ken"
+    ],
+    [
+      31474,
+      1474,
+      "SOURCE",
+      4,
+      "Человек-дьявол",
+      "https://shikimori.one/mangas/1474-devilman"
+    ],
+    [
+      31789,
+      1789,
+      "SOURCE",
+      4,
+      "Капитан Цубаса",
+      "https://shikimori.one/mangas/1789-captain-tsubasa"
+    ],
+    [
+      31804,
+      1804,
+      "SOURCE",
+      4,
+      "Волшебник Кайто",
+      "https://shikimori.one/mangas/1804-magic-kaito"
+    ],
+    [
+      32060,
+      2060,
+      "SOURCE",
+      4,
+      "Вишнёвый квартет",
+      "https://shikimori.one/mangas/2060-yozakura-quartet"
+    ],
+    [
+      32845,
+      2845,
+      "SOURCE",
+      4,
+      "Человек-мускул",
+      "https://shikimori.one/mangas/2845-kinnikuman"
+    ],
+    [
+      33044,
+      3044,
+      "SOURCE",
+      4,
+      "Работа!!",
+      "https://shikimori.one/mangas/3044-working"
+    ],
+    [
+      33243,
+      3243,
+      "SOURCE",
+      4,
+      "Адская девочка",
+      "https://shikimori.one/mangas/3243-jigoku-shoujo"
+    ],
+    [
+      37776,
+      7776,
+      "SOURCE",
+      4,
+      "Некий научный Рейлган",
+      "https://shikimori.one/mangas/7776-toaru-majutsu-no-index-gaiden-toaru-kagaku-no-railgun"
+    ],
+    [
+      38144,
+      8144,
+      "SOURCE",
+      4,
+      "Утраченное небесами",
+      "https://shikimori.one/mangas/8144-sora-no-otoshimono"
+    ],
+    [
+      38157,
+      8157,
+      "SOURCE",
+      4,
+      "Очень приятно, Бог",
+      "https://shikimori.one/mangas/8157-kamisama-hajimemashita"
+    ],
+    [
+      40573,
+      10573,
+      "SOURCE",
+      4,
+      "Лучшая в мире первая любовь",
+      "https://shikimori.one/mangas/10573-sekaiichi-hatsukoi-onodera-ritsu-no-baai"
+    ],
+    [
+      40884,
+      10884,
+      "SOURCE",
+      4,
+      "Путь аса",
+      "https://shikimori.one/mangas/z10884-diamond-no-ace"
+    ],
+    [
+      43801,
+      13801,
+      "SOURCE",
+      4,
+      "Скитальцы",
+      "https://shikimori.one/mangas/13801-drifters"
+    ],
+    [
+      54692,
+      24692,
+      "SOURCE",
+      4,
+      "Бездомный бог",
+      "https://shikimori.one/mangas/24692-noragami"
+    ],
+    [
+      56036,
+      26036,
+      "SOURCE",
+      4,
+      "Золотая мозаика",
+      "https://shikimori.one/mangas/26036-kiniro-mosaic"
+    ],
+    [
+      59117,
+      29117,
+      "SOURCE",
+      4,
+      "Флейта в рюкзаке",
+      "https://shikimori.one/mangas/29117-recorder-to-randoseru"
+    ],
+    [
+      61499,
+      31499,
+      "SOURCE",
+      4,
+      "Притворная любовь",
+      "https://shikimori.one/mangas/z31499-nisekoi"
+    ],
+    [
+      67683,
+      37683,
+      "SOURCE",
+      4,
+      "Мобильный воин Гандам: Удар молнии",
+      "https://shikimori.one/mangas/37683-kidou-senshi-gundam-thunderbolt"
+    ],
+    [
+      73661,
+      43661,
+      "SOURCE",
+      4,
+      "Последний Серафим",
+      "https://shikimori.one/mangas/43661-owari-no-seraph"
+    ],
+    [
+      78151,
+      48151,
+      "SOURCE",
+      4,
+      "Импульс мира",
+      "https://shikimori.one/mangas/48151-world-trigger"
+    ],
+    [
+      85189,
+      60783,
+      "SOURCE",
+      4,
+      "Моб Психо 100",
+      "https://shikimori.one/mangas/z60783-mob-psycho-100"
+    ],
+    [
+      85533,
+      78537,
+      "SOURCE",
+      4,
+      "Озорная Такаги",
+      "https://shikimori.one/mangas/78537-karakai-jouzu-no-takagi-san"
+    ],
+    [
+      86310,
+      91037,
+      "SOURCE",
+      4,
+      "Пламенная бригада пожарных",
+      "https://shikimori.one/mangas/91037-enen-no-shouboutai"
+    ],
+    [
+      86508,
+      89734,
+      "SOURCE",
+      4,
+      "Драконий жемчуг: Супер",
+      "https://shikimori.one/mangas/89734-dragon-ball-super"
+    ],
+    [
+      86778,
+      91641,
+      "SOURCE",
+      4,
+      "Клетки за работой",
+      "https://shikimori.one/mangas/91641-hataraku-saibou"
+    ],
+    [
+      86954,
+      92079,
+      "SOURCE",
+      4,
+      "Ниндзя Нобунаги",
+      "https://shikimori.one/mangas/92079-nobunaga-no-shinobi"
+    ],
+    [
+      87395,
+      70345,
+      "SOURCE",
+      4,
+      "Необъятный океан",
+      "https://shikimori.one/mangas/70345-grand-blue"
+    ],
+    [
+      91981,
+      74267,
+      "SOURCE",
+      4,
+      "Загадочный Джокер",
+      "https://shikimori.one/mangas/74267-kaitou-joker"
+    ],
+    [
+      98587,
+      103701,
+      "SOURCE",
+      4,
+      "Выдающиеся звери",
+      "https://shikimori.one/mangas/103701-beastars"
+    ],
+    [
+      99324,
+      104241,
+      "SOURCE",
+      4,
+      "Добро пожаловать в ад, Ирума!",
+      "https://shikimori.one/mangas/104241-mairimashita-iruma-kun"
+    ],
+    [
+      101557,
+      112807,
+      "SOURCE",
+      4,
+      "Опасность в моём сердце",
+      "https://shikimori.one/mangas/112807-boku-no-kokoro-no-yabai-yatsu"
+    ],
+    [
+      102244,
+      107935,
+      "SOURCE",
+      4,
+      "Дневник Ятогамэ",
+      "https://shikimori.one/mangas/107935-yatogame-chan-kansatsu-nikki"
+    ],
+    [
+      102988,
+      104565,
+      "SOURCE",
+      4,
+      "Токийские мстители",
+      "https://shikimori.one/mangas/104565-tokyo-revengers"
+    ],
+    [
+      105778,
+      116778,
+      "SOURCE",
+      4,
+      "Человек-бензопила",
+      "https://shikimori.one/mangas/116778-chainsaw-man"
+    ],
+    [
+      107098,
+      110485,
+      "SOURCE",
+      4,
+      "Повесть о конце света",
+      "https://shikimori.one/mangas/110485-shuumatsu-no-walk-re"
+    ],
+    [
+      108547,
+      115955,
+      "SOURCE",
+      4,
+      "Лазурный путь: Малый вперёд!",
+      "https://shikimori.one/mangas/115955-azur-lane-bisoku-zenshin"
+    ],
+    [
+      108556,
+      119161,
+      "SOURCE",
+      4,
+      "Семья шпиона",
+      "https://shikimori.one/mangas/119161-spy-x-family"
+    ],
+    [
+      108862,
+      132828,
+      "SOURCE",
+      4,
+      "Я в тебе не сомневаюсь",
+      "https://shikimori.one/mangas/132828-liang-bu-yi"
+    ],
+    [
+      111258,
+      118568,
+      "SOURCE",
+      4,
+      "Одинокий рокер!",
+      "https://shikimori.one/mangas/118568-bocchi-the-rock"
+    ],
+    [
+      117195,
+      126146,
+      "SOURCE",
+      4,
+      "Ребёнок идола",
+      "https://shikimori.one/mangas/126146-oshi-no-ko"
+    ],
+    [
+      118367,
+      127243,
+      "SOURCE",
+      4,
+      "Улица всех святых",
+      "https://shikimori.one/mangas/127243-1031-wan-sheng-jie"
+    ],
+    [
+      120760,
+      127907,
+      "SOURCE",
+      4,
+      "Кайдзю номер восемь",
+      "https://shikimori.one/mangas/127907-kaijuu-8-gou"
+    ],
+    [
+      146783,
+      154728,
+      "SOURCE",
+      4,
+      "Пуниру — милая слизь",
+      "https://shikimori.one/mangas/154728-puniru-wa-kawaii-slime"
+    ],
+    [
+      30011,
+      11,
+      "SOURCE",
+      3,
+      "Наруто",
+      "https://shikimori.one/mangas/z11-naruto"
+    ],
+    [
+      30020,
+      20,
+      "SOURCE",
+      3,
+      "Хикару и го",
+      "https://shikimori.one/mangas/20-hikaru-no-go"
+    ],
+    [
+      30074,
+      74,
+      "SOURCE",
+      3,
+      "Эйр Гир",
+      "https://shikimori.one/mangas/74-air-gear"
+    ],
+    [
+      30075,
+      75,
+      "SOURCE",
+      3,
+      "Темнее, чем индиго",
+      "https://shikimori.one/mangas/75-ai-yori-aoshi"
+    ],
+    [
+      30084,
+      84,
+      "SOURCE",
+      3,
+      "Таинственная игра",
+      "https://shikimori.one/mangas/84-fushigi-yuugi"
+    ],
+    [
+      30098,
+      98,
+      "SOURCE",
+      3,
+      "Девы Розена",
+      "https://shikimori.one/mangas/98-rozen-maiden"
+    ],
+    [
+      30111,
+      111,
+      "SOURCE",
+      3,
+      "Махороматик",
+      "https://shikimori.one/mangas/111-mahoromatic"
+    ],
+    [
+      30149,
+      149,
+      "SOURCE",
+      3,
+      "Блейм!",
+      "https://shikimori.one/mangas/149-blame"
+    ],
+    [
+      30214,
+      214,
+      "SOURCE",
+      3,
+      "Мобильный воин Гандам: Происхождение",
+      "https://shikimori.one/mangas/214-kidou-senshi-gundam-the-origin"
+    ],
+    [
+      30348,
+      348,
+      "SOURCE",
+      3,
+      "Гэнсикэн",
+      "https://shikimori.one/mangas/348-genshiken"
+    ],
+    [
+      30390,
+      390,
+      "SOURCE",
+      3,
+      "Сержант Кэроро",
+      "https://shikimori.one/mangas/390-keroro-gunsou"
+    ],
+    [
+      30419,
+      419,
+      "SOURCE",
+      3,
+      "Нодамэ Кантабиле",
+      "https://shikimori.one/mangas/419-nodame-cantabile"
+    ],
+    [
+      30554,
+      554,
+      "SOURCE",
+      3,
+      "Токио Мяу Мяу",
+      "https://shikimori.one/mangas/554-tokyo-mew-mew"
+    ],
+    [
+      30564,
+      564,
+      "SOURCE",
+      3,
+      "Ганц",
+      "https://shikimori.one/mangas/564-gantz"
+    ],
+    [
+      30582,
+      582,
+      "SOURCE",
+      3,
+      "Детское время",
+      "https://shikimori.one/mangas/582-kodomo-no-jikan"
+    ],
+    [
+      30611,
+      611,
+      "SOURCE",
+      3,
+      "Ублюдок!! Сокрушитель тьмы",
+      "https://shikimori.one/mangas/611-bastard-ankoku-no-hakaishin"
+    ],
+    [
+      30671,
+      671,
+      "SOURCE",
+      3,
+      "Любовные неприятности",
+      "https://shikimori.one/mangas/671-to-love-ru"
+    ],
+    [
+      30676,
+      676,
+      "SOURCE",
+      3,
+      "Инуяся",
+      "https://shikimori.one/mangas/z676-inuyasha"
+    ],
+    [
+      30703,
+      703,
+      "SOURCE",
+      3,
+      "Триган",
+      "https://shikimori.one/mangas/703-trigun"
+    ],
+    [
+      30704,
+      704,
+      "SOURCE",
+      3,
+      "Триган: Максимум",
+      "https://shikimori.one/mangas/704-trigun-maximum"
+    ],
+    [
+      30728,
+      728,
+      "SOURCE",
+      3,
+      "Могучий Атом",
+      "https://shikimori.one/mangas/728-tetsuwan-atom"
+    ],
+    [
+      30765,
+      765,
+      "SOURCE",
+      3,
+      "Чистая романтика",
+      "https://shikimori.one/mangas/765-junjou-romantica"
+    ],
+    [
+      30792,
+      792,
+      "SOURCE",
+      3,
+      "Городской охотник",
+      "https://shikimori.one/mangas/792-city-hunter"
+    ],
+    [
+      30855,
+      855,
+      "SOURCE",
+      3,
+      "Тэнти — лишний! Рё-о-ки",
+      "https://shikimori.one/mangas/855-tenchi-muyou-ryououki"
+    ],
+    [
+      30912,
+      912,
+      "SOURCE",
+      3,
+      "Томиэ",
+      "https://shikimori.one/mangas/912-tomie"
+    ],
+    [
+      30988,
+      988,
+      "SOURCE",
+      3,
+      "Сильнейший в истории ученик Кэнъити",
+      "https://shikimori.one/mangas/988-shijou-saikyou-no-deshi-kenichi"
+    ],
+    [
+      30994,
+      994,
+      "SOURCE",
+      3,
+      "Замахнись сильнее",
+      "https://shikimori.one/mangas/994-ookiku-furikabutte"
+    ],
+    [
+      31009,
+      1009,
+      "SOURCE",
+      3,
+      "Мёд и клевер",
+      "https://shikimori.one/mangas/1009-hachimitsu-to-clover"
+    ],
+    [
+      31044,
+      1044,
+      "SOURCE",
+      3,
+      "Адский учитель Нубэ",
+      "https://shikimori.one/mangas/1044-jigoku-sensei-nube"
+    ],
+    [
+      31048,
+      1048,
+      "SOURCE",
+      3,
+      "Отныне Мао, король демонов!",
+      "https://shikimori.one/mangas/1048-kyou-kara-ma-no-tsuku-jiyuugyou"
+    ],
+    [
+      31407,
+      1407,
+      "SOURCE",
+      3,
+      "Капризы Апельсиновой улицы",
+      "https://shikimori.one/mangas/1407-kimagure-orange-road"
+    ],
+    [
+      31551,
+      1551,
+      "SOURCE",
+      3,
+      "Робот Геттер",
+      "https://shikimori.one/mangas/1551-getter-robo"
+    ],
+    [
+      31567,
+      1567,
+      "SOURCE",
+      3,
+      "Госпожа Умница",
+      "https://shikimori.one/mangas/1567-haikara-san-ga-tooru"
+    ],
+    [
+      31608,
+      1608,
+      "SOURCE",
+      3,
+      "Гайвер",
+      "https://shikimori.one/mangas/1608-kyoushoku-soukou-guyver"
+    ],
+    [
+      31631,
+      1631,
+      "SOURCE",
+      3,
+      "Яйба",
+      "https://shikimori.one/mangas/1631-yaiba"
+    ],
+    [
+      31932,
+      1932,
+      "SOURCE",
+      3,
+      "Кошачий глаз",
+      "https://shikimori.one/mangas/1932-cat-s-eye"
+    ],
+    [
+      32895,
+      2895,
+      "SOURCE",
+      3,
+      "Рояль в лесу",
+      "https://shikimori.one/mangas/2895-piano-no-mori"
+    ],
+    [
+      33317,
+      3317,
+      "SOURCE",
+      3,
+      "Адепт святого знака",
+      "https://shikimori.one/mangas/3317-seikon-no-qwaser"
+    ],
+    [
+      33378,
+      3378,
+      "SOURCE",
+      3,
+      "Достучаться до тебя",
+      "https://shikimori.one/mangas/3378-kimi-ni-todoke"
+    ],
+    [
+      34080,
+      4080,
+      "SOURCE",
+      3,
+      "Волшебный круг Гуру-Гуру",
+      "https://shikimori.one/mangas/4080-mahoujin-guruguru"
+    ],
+    [
+      34571,
+      4571,
+      "SOURCE",
+      3,
+      "Красноволосая принцесса Белоснежка",
+      "https://shikimori.one/mangas/4571-akagami-no-shirayuki-hime"
+    ],
+    [
+      35115,
+      5115,
+      "SOURCE",
+      3,
+      "Космический пират капитан Харлок",
+      "https://shikimori.one/mangas/5115-uchuu-kaizoku-captain-herlock"
+    ],
+    [
+      35157,
+      5157,
+      "SOURCE",
+      3,
+      "Боец Баки II",
+      "https://shikimori.one/mangas/5157-baki-new-grappler-baki"
+    ],
+    [
+      35451,
+      5451,
+      "SOURCE",
+      3,
+      "Человек-мускул 2",
+      "https://shikimori.one/mangas/5451-kinnikuman-ii-sei"
+    ],
+    [
+      37186,
+      7186,
+      "SOURCE",
+      3,
+      "Макен-Ки!",
+      "https://shikimori.one/mangas/7186-maken-ki"
+    ],
+    [
+      37747,
+      7747,
+      "SOURCE",
+      3,
+      "Усио и Тора",
+      "https://shikimori.one/mangas/7747-ushio-to-tora"
+    ],
+    [
+      37760,
+      7760,
+      "SOURCE",
+      3,
+      "Баки — сын Великана",
+      "https://shikimori.one/mangas/7760-hanma-baki"
+    ],
+    [
+      38483,
+      8483,
+      "SOURCE",
+      3,
+      "Город, в котором ты живёшь",
+      "https://shikimori.one/mangas/8483-kimi-no-iru-machi"
+    ],
+    [
+      38571,
+      8571,
+      "SOURCE",
+      3,
+      "Истинный Робот Геттер",
+      "https://shikimori.one/mangas/8571-shin-getter-robo"
+    ],
+    [
+      38773,
+      8773,
+      "SOURCE",
+      3,
+      "Мазингер Зет",
+      "https://shikimori.one/mangas/8773-mazinger-z"
+    ],
+    [
+      39711,
+      9711,
+      "SOURCE",
+      3,
+      "Бакуман",
+      "https://shikimori.one/mangas/9711-bakuman"
+    ],
+    [
+      40282,
+      10282,
+      "SOURCE",
+      3,
+      "Энн из  Зелёных Крыш",
+      "https://shikimori.one/mangas/10282-akage-no-anne"
+    ],
+    [
+      40499,
+      10499,
+      "SOURCE",
+      3,
+      "Щелкунчик Китаро",
+      "https://shikimori.one/mangas/10499-gegege-no-kitarou"
+    ],
+    [
+      41061,
+      11061,
+      "SOURCE",
+      3,
+      "Амантю!",
+      "https://shikimori.one/mangas/11061-amanchu"
+    ],
+    [
+      41425,
+      11425,
+      "SOURCE",
+      3,
+      "Боец Баки",
+      "https://shikimori.one/mangas/11425-grappler-baki"
+    ],
+    [
+      42671,
+      12671,
+      "SOURCE",
+      3,
+      "Вторжение Кальмарки",
+      "https://shikimori.one/mangas/z12671-shinryaku-ika-musume"
+    ],
+    [
+      42994,
+      12994,
+      "SOURCE",
+      3,
+      "Фронт кровавой блокады",
+      "https://shikimori.one/mangas/12994-kekkai-sensen"
+    ],
+    [
+      43245,
+      13245,
+      "SOURCE",
+      3,
+      "Яркая Тихая",
+      "https://shikimori.one/mangas/13245-chihayafuru"
+    ],
+    [
+      43558,
+      13558,
+      "SOURCE",
+      3,
+      "Риннэ: Меж двух миров",
+      "https://shikimori.one/mangas/13558-kyoukai-no-rinne"
+    ],
+    [
+      43723,
+      13723,
+      "SOURCE",
+      3,
+      "Рыцари Сидонии",
+      "https://shikimori.one/mangas/z13723-sidonia-no-kishi"
+    ],
+    [
+      44231,
+      14231,
+      "SOURCE",
+      3,
+      "Состязание на ринге",
+      "https://shikimori.one/mangas/14231-ring-ni-kakero"
+    ],
+    [
+      44369,
+      14369,
+      "SOURCE",
+      3,
+      "Цугумомо",
+      "https://shikimori.one/mangas/14369-tsugumomo"
+    ],
+    [
+      47641,
+      17641,
+      "SOURCE",
+      3,
+      "Отвязная троица",
+      "https://shikimori.one/mangas/17641-mitsudomoe"
+    ],
+    [
+      47706,
+      17706,
+      "SOURCE",
+      3,
+      "Больше, чем возлюбленные",
+      "https://shikimori.one/mangas/17706-super-lovers"
+    ],
+    [
+      51235,
+      21235,
+      "SOURCE",
+      3,
+      "Для сердца 2: Другие дни",
+      "https://shikimori.one/mangas/21235-to-heart-2-another-days"
+    ],
+    [
+      51307,
+      21307,
+      "SOURCE",
+      3,
+      "Дело ведёт юный детектив Киндаити: Продолжение 2",
+      "https://shikimori.one/mangas/21307-kindaichi-shounen-no-jikenbo-shin-series"
+    ],
+    [
+      51525,
+      21525,
+      "SOURCE",
+      3,
+      "Йона на заре",
+      "https://shikimori.one/mangas/21525-akatsuki-no-yona"
+    ],
+    [
+      52114,
+      22114,
+      "SOURCE",
+      3,
+      "Явись, Азазель!",
+      "https://shikimori.one/mangas/22114-yondemasu-yo-azazel-san"
+    ],
+    [
+      54294,
+      24294,
+      "SOURCE",
+      3,
+      "Неудержимая юность",
+      "https://shikimori.one/mangas/z24294-ao-haru-ride"
+    ],
+    [
+      54822,
+      24822,
+      "SOURCE",
+      3,
+      "Тринити: Семеро магов",
+      "https://shikimori.one/mangas/24822-trinity-seven-7-nin-no-mashotsukai"
+    ],
+    [
+      55861,
+      25861,
+      "SOURCE",
+      3,
+      "Симфония морской стали",
+      "https://shikimori.one/mangas/25861-aoki-hagane-no-arpeggio"
+    ],
+    [
+      56704,
+      26704,
+      "SOURCE",
+      3,
+      "Сёва-Гэнроку: Двойное самоубийство по ракуго",
+      "https://shikimori.one/mangas/26704-shouwa-genroku-rakugo-shinjuu"
+    ],
+    [
+      59887,
+      29887,
+      "SOURCE",
+      3,
+      "Сервамп",
+      "https://shikimori.one/mangas/29887-servamp"
+    ],
+    [
+      59983,
+      29983,
+      "SOURCE",
+      3,
+      "Дворянство",
+      "https://shikimori.one/mangas/29983-noblesse"
+    ],
+    [
+      60575,
+      30575,
+      "SOURCE",
+      3,
+      "Тигровая маска",
+      "https://shikimori.one/mangas/30575-tiger-mask"
+    ],
+    [
+      62913,
+      32913,
+      "SOURCE",
+      3,
+      "Ультрамен",
+      "https://shikimori.one/mangas/32913-ultraman"
+    ],
+    [
+      63327,
+      33327,
+      "SOURCE",
+      3,
+      "Токийский гуль",
+      "https://shikimori.one/mangas/33327-tokyo-ghoul"
+    ],
+    [
+      65003,
+      35003,
+      "SOURCE",
+      3,
+      "Ямада-кун и семь ведьм",
+      "https://shikimori.one/mangas/z35003-yamada-kun-to-7-nin-no-majo"
+    ],
+    [
+      66213,
+      36213,
+      "SOURCE",
+      3,
+      "Повседневная жизнь с девушкой-монстром",
+      "https://shikimori.one/mangas/36213-monster-musume-no-iru-nichijou"
+    ],
+    [
+      66619,
+      36619,
+      "SOURCE",
+      3,
+      "Шутки чокнутой столицы",
+      "https://shikimori.one/mangas/36619-kyousou-giga"
+    ],
+    [
+      67563,
+      37563,
+      "SOURCE",
+      3,
+      "Терраформирование",
+      "https://shikimori.one/mangas/37563-terra-formars"
+    ],
+    [
+      74501,
+      44501,
+      "SOURCE",
+      3,
+      "Девчонка не промах",
+      "https://shikimori.one/mangas/44501-high-score-girl"
+    ],
+    [
+      76716,
+      46716,
+      "SOURCE",
+      3,
+      "Месть Масамунэ!",
+      "https://shikimori.one/mangas/46716-masamune-kun-no-revenge"
+    ],
+    [
+      79967,
+      49967,
+      "SOURCE",
+      3,
+      "Моя жена — президент студенческого совета!",
+      "https://shikimori.one/mangas/49967-okusama-ga-seitokaichou"
+    ],
+    [
+      80133,
+      50133,
+      "SOURCE",
+      3,
+      "Двуличная сестрёнка Умару!",
+      "https://shikimori.one/mangas/50133-himouto-umaru-chan"
+    ],
+    [
+      85136,
+      13856,
+      "SOURCE",
+      3,
+      "Судьба/Девочка-волшебница Иллия 2",
+      "https://shikimori.one/mangas/z13856-fate-kaleid-liner-prisma-illya-2wei"
+    ],
+    [
+      85601,
+      80469,
+      "SOURCE",
+      3,
+      "Облачный смех: Гайдэн",
+      "https://shikimori.one/mangas/80469-donten-ni-warau-gaiden"
+    ],
+    [
+      85697,
+      62509,
+      "SOURCE",
+      3,
+      "Новая игра!",
+      "https://shikimori.one/mangas/62509-new-game"
+    ],
+    [
+      85793,
+      73603,
+      "SOURCE",
+      3,
+      "Безумный азарт",
+      "https://shikimori.one/mangas/73603-kakegurui"
+    ],
+    [
+      86082,
+      85781,
+      "SOURCE",
+      3,
+      "Подземелье вкусностей",
+      "https://shikimori.one/mangas/85781-dungeon-meshi"
+    ],
+    [
+      86123,
+      86337,
+      "SOURCE",
+      3,
+      "Чёрный клевер",
+      "https://shikimori.one/mangas/z86337-black-clover"
+    ],
+    [
+      86569,
+      92559,
+      "SOURCE",
+      3,
+      "Путь аса: Акт II",
+      "https://shikimori.one/mangas/z92559-diamond-no-ace-act-ii"
+    ],
+    [
+      86600,
+      61009,
+      "SOURCE",
+      3,
+      "Дни",
+      "https://shikimori.one/mangas/61009-days"
+    ],
+    [
+      87005,
+      95016,
+      "SOURCE",
+      3,
+      "Попсовый эпос",
+      "https://shikimori.one/mangas/95016-poputepipikku"
+    ],
+    [
+      87010,
+      95212,
+      "SOURCE",
+      3,
+      "Осомацу-сан",
+      "https://shikimori.one/mangas/z95212-osomatsu-san"
+    ],
+    [
+      87142,
+      97699,
+      "SOURCE",
+      3,
+      "Завтра суббота",
+      "https://shikimori.one/mangas/97699-ashita-wa-doyoubi"
+    ],
+    [
+      97830,
+      102343,
+      "SOURCE",
+      3,
+      "Для тебя, Бессмертный",
+      "https://shikimori.one/mangas/102343-fumetsu-no-anata-e"
+    ],
+    [
+      98235,
+      103890,
+      "SOURCE",
+      3,
+      "Мы не можем учиться!",
+      "https://shikimori.one/mangas/103890-bokutachi-wa-benkyou-ga-dekinai"
+    ],
+    [
+      98842,
+      105084,
+      "SOURCE",
+      3,
+      "Туалетный мальчик Ханако",
+      "https://shikimori.one/mangas/105084-jibaku-shounen-hanako-kun"
+    ],
+    [
+      100238,
+      107908,
+      "SOURCE",
+      3,
+      "MF Призрак",
+      "https://shikimori.one/mangas/107908-mf-ghost"
+    ],
+    [
+      100293,
+      110029,
+      "SOURCE",
+      3,
+      "Смертоносный герцог и его чёрная горничная",
+      "https://shikimori.one/mangas/110029-shinigami-bocchan-to-kuro-maid"
+    ],
+    [
+      101233,
+      112922,
+      "SOURCE",
+      3,
+      "Путь домохозяина",
+      "https://shikimori.one/mangas/112922-gokushufudou"
+    ],
+    [
+      102841,
+      106175,
+      "SOURCE",
+      3,
+      "Ангел спустился ко мне!",
+      "https://shikimori.one/mangas/106175-watashi-ni-tenshi-ga-maiorita"
+    ],
+    [
+      103810,
+      107676,
+      "SOURCE",
+      3,
+      "Танец мечей: Цветочный круг",
+      "https://shikimori.one/mangas/107676-touken-ranbu-hanamaru"
+    ],
+    [
+      105321,
+      124182,
+      "SOURCE",
+      3,
+      "Психопаспорт: Грешники системы — Преступление и наказание",
+      "https://shikimori.one/mangas/124182-psycho-pass-sinners-of-the-system-case-1-tsumi-to-bachi"
+    ],
+    [
+      106064,
+      116880,
+      "SOURCE",
+      3,
+      "Раб спецотряда демонического города",
+      "https://shikimori.one/mangas/116880-mato-seihei-no-slave"
+    ],
+    [
+      106130,
+      114745,
+      "SOURCE",
+      3,
+      "Синяя тюрьма: Блю Лок",
+      "https://shikimori.one/mangas/114745-blue-lock"
+    ],
+    [
+      106343,
+      89713,
+      "SOURCE",
+      3,
+      "Штурмовые ведьмы: 501-й отряд поднимается в небо!",
+      "https://shikimori.one/mangas/89713-strike-witches-501-butai-hasshin-shimasu"
+    ],
+    [
+      111149,
+      121426,
+      "SOURCE",
+      3,
+      "Операция: Семейка Ёдзакура",
+      "https://shikimori.one/mangas/121426-yozakura-san-chi-no-daisakusen"
+    ],
+    [
+      111771,
+      110154,
+      "SOURCE",
+      3,
+      "Новый мастер кулинарии",
+      "https://shikimori.one/mangas/110154-shin-chuuka-ichiban"
+    ],
+    [
+      114416,
+      123681,
+      "SOURCE",
+      3,
+      "Сто девушек, которые очень-очень-очень-очень-очень сильно тебя любят",
+      "https://shikimori.one/mangas/123681-kimi-no-koto-ga-daidaidaidaidaisuki-na-100-nin-no-kanojo"
+    ],
+    [
+      114791,
+      123956,
+      "SOURCE",
+      3,
+      "Нежить и Неудача",
+      "https://shikimori.one/mangas/123956-undead-unluck"
+    ],
+    [
+      114960,
+      124085,
+      "SOURCE",
+      3,
+      "Магия и мускулы",
+      "https://shikimori.one/mangas/124085-mashle"
+    ],
+    [
+      118586,
+      126287,
+      "SOURCE",
+      3,
+      "Провожающая в последний путь Фрирен",
+      "https://shikimori.one/mangas/126287-sousou-no-frieren"
+    ],
+    [
+      119247,
+      133431,
+      "SOURCE",
+      3,
+      "Девушки-пони: Серая Золушка",
+      "https://shikimori.one/mangas/133431-uma-musume-cinderella-gray"
+    ],
+    [
+      122063,
+      130331,
+      "SOURCE",
+      3,
+      "Рубеж Шангри-Ла: Любитель игрошлака бросает вызов топ-игре",
+      "https://shikimori.one/mangas/130331-shangri-la-frontier-kusoge-hunter-kamige-ni-idoman-to-su"
+    ],
+    [
+      123413,
+      66085,
+      "SOURCE",
+      3,
+      "Местные идолы",
+      "https://shikimori.one/mangas/66085-futsuu-no-joshikousei-ga-locodol-yattemita"
+    ],
+    [
+      125116,
+      131924,
+      "SOURCE",
+      3,
+      "Меч и жезл Вистории",
+      "https://shikimori.one/mangas/131924-tsue-to-tsurugi-no-wistoria"
+    ],
+    [
+      125828,
+      131334,
+      "SOURCE",
+      3,
+      "Дни Сакамото",
+      "https://shikimori.one/mangas/131334-sakamoto-days"
+    ],
+    [
+      132029,
+      135496,
+      "SOURCE",
+      3,
+      "Дандадан",
+      "https://shikimori.one/mangas/135496-dandadan"
+    ],
+    [
+      132604,
+      142014,
+      "SOURCE",
+      3,
+      "Вечера с кошкой",
+      "https://shikimori.one/mangas/142014-yoru-wa-neko-to-issho"
+    ],
+    [
+      147108,
+      154711,
+      "SOURCE",
+      3,
+      "Судьба/Великий приказ: Рицука Фудзимару не понимает этого",
+      "https://shikimori.one/mangas/154711-fate-grand-order-fujimaru-ritsuka-wa-wakaranai"
+    ],
+    [
+      177019,
+      169942,
+      "SOURCE",
+      3,
+      "",
+      "https://shikimori.one/mangas/169942-himitsu-no-aipri-full-color-osarai-4-koma"
+    ],
+    [
+      30004,
+      4,
+      "SOURCE",
+      2,
+      "Путевые заметки о поездке за покупками в Йокогаму",
+      "https://shikimori.one/mangas/4-yokohama-kaidashi-kikou"
+    ],
+    [
+      30008,
+      8,
+      "SOURCE",
+      2,
+      "В поисках полной луны",
+      "https://shikimori.one/mangas/8-full-moon-wo-sagashite"
+    ],
+    [
+      30021,
+      21,
+      "SOURCE",
+      2,
+      "Тетрадь смерти",
+      "https://shikimori.one/mangas/z21-death-note"
+    ],
+    [
+      30024,
+      24,
+      "SOURCE",
+      2,
+      "Ди Грэй-мен",
+      "https://shikimori.one/mangas/24-d-gray-man"
+    ],
+    [
+      30050,
+      50,
+      "SOURCE",
+      2,
+      "Король-шаман",
+      "https://shikimori.one/mangas/50-shaman-king"
+    ],
+    [
+      30051,
+      51,
+      "SOURCE",
+      2,
+      "Слэм-данк",
+      "https://shikimori.one/mangas/z51-slam-dunk"
+    ],
+    [
+      30053,
+      53,
+      "SOURCE",
+      2,
+      "Отчёт о буйстве духов",
+      "https://shikimori.one/mangas/53-yuu-yuu-hakusho"
+    ],
+    [
+      30057,
+      57,
+      "SOURCE",
+      2,
+      "Для тебя во всём цвету",
+      "https://shikimori.one/mangas/57-hanazakari-no-kimitachi-e"
+    ],
+    [
+      30091,
+      91,
+      "SOURCE",
+      2,
+      "Мармеладный мальчик",
+      "https://shikimori.one/mangas/91-marmalade-boy"
+    ],
+    [
+      30099,
+      99,
+      "SOURCE",
+      2,
+      "Кредит зомби",
+      "https://shikimori.one/mangas/99-zombie-loan"
+    ],
+    [
+      30101,
+      101,
+      "SOURCE",
+      2,
+      "Чара-хранители!",
+      "https://shikimori.one/mangas/101-shugo-chara"
+    ],
+    [
+      30117,
+      117,
+      "SOURCE",
+      2,
+      ".хак//Легенда сумеречного браслета",
+      "https://shikimori.one/mangas/117-hack-tasogare-no-udewa-densetsu"
+    ],
+    [
+      30119,
+      119,
+      "SOURCE",
+      2,
+      "Рыцари магии",
+      "https://shikimori.one/mangas/119-magic-knight-rayearth"
+    ],
+    [
+      30124,
+      124,
+      "SOURCE",
+      2,
+      "Аква",
+      "https://shikimori.one/mangas/124-aqua"
+    ],
+    [
+      30267,
+      267,
+      "SOURCE",
+      2,
+      "Хеллсинг",
+      "https://shikimori.one/mangas/267-hellsing"
+    ],
+    [
+      30325,
+      325,
+      "SOURCE",
+      2,
+      "Браво, девушки!",
+      "https://shikimori.one/mangas/325-girls-bravo"
+    ],
+    [
+      30393,
+      393,
+      "SOURCE",
+      2,
+      "Дело ведёт юный детектив Киндаити",
+      "https://shikimori.one/mangas/393-kindaichi-shounen-no-jikenbo-file-series"
+    ],
+    [
+      30423,
+      423,
+      "SOURCE",
+      2,
+      "Мелодия Русалки: Пити Пити Питч",
+      "https://shikimori.one/mangas/423-pichi-pichi-pitch-mermaid-melody"
+    ],
+    [
+      30424,
+      424,
+      "SOURCE",
+      2,
+      "Принцесса чудовищ",
+      "https://shikimori.one/mangas/424-kaibutsu-oujo"
+    ],
+    [
+      30429,
+      429,
+      "SOURCE",
+      2,
+      "Сладкая руна",
+      "https://shikimori.one/mangas/429-sugar-sugar-rune"
+    ],
+    [
+      30509,
+      509,
+      "SOURCE",
+      2,
+      "Саюки",
+      "https://shikimori.one/mangas/509-saiyuuki"
+    ],
+    [
+      30584,
+      584,
+      "SOURCE",
+      2,
+      "Дневник будущего",
+      "https://shikimori.one/mangas/584-mirai-nikki"
+    ],
+    [
+      30585,
+      585,
+      "SOURCE",
+      2,
+      "Блудный сын",
+      "https://shikimori.one/mangas/585-hourou-musuko"
+    ],
+    [
+      30618,
+      618,
+      "SOURCE",
+      2,
+      "Рыцарь-вампир",
+      "https://shikimori.one/mangas/618-vampire-knight"
+    ],
+    [
+      30642,
+      642,
+      "SOURCE",
+      2,
+      "Сага о Винланде",
+      "https://shikimori.one/mangas/642-vinland-saga"
+    ],
+    [
+      30658,
+      658,
+      "SOURCE",
+      2,
+      "Клинок Бессмертного",
+      "https://shikimori.one/mangas/658-mugen-no-juunin"
+    ],
+    [
+      30660,
+      660,
+      "SOURCE",
+      2,
+      "Роза Версаля",
+      "https://shikimori.one/mangas/z660-versailles-no-bara"
+    ],
+    [
+      30664,
+      664,
+      "SOURCE",
+      2,
+      "Акира",
+      "https://shikimori.one/mangas/664-akira"
+    ],
+    [
+      30668,
+      668,
+      "SOURCE",
+      2,
+      "Яблочное зёрнышко",
+      "https://shikimori.one/mangas/668-appleseed"
+    ],
+    [
+      30681,
+      681,
+      "SOURCE",
+      2,
+      "Лунная миля",
+      "https://shikimori.one/mangas/681-moonlight-mile"
+    ],
+    [
+      30724,
+      724,
+      "SOURCE",
+      2,
+      "Страна песков",
+      "https://shikimori.one/mangas/724-sand-land"
+    ],
+    [
+      30729,
+      729,
+      "SOURCE",
+      2,
+      "Эмма",
+      "https://shikimori.one/mangas/729-emma"
+    ],
+    [
+      30759,
+      759,
+      "SOURCE",
+      2,
+      "Морская невеста",
+      "https://shikimori.one/mangas/z759-seto-no-hanayome"
+    ],
+    [
+      30780,
+      780,
+      "SOURCE",
+      2,
+      "Тейк Мун",
+      "https://shikimori.one/mangas/780-take-moon"
+    ],
+    [
+      30796,
+      796,
+      "SOURCE",
+      2,
+      "Доктор Сламп",
+      "https://shikimori.one/mangas/796-dr-slump"
+    ],
+    [
+      30848,
+      848,
+      "SOURCE",
+      2,
+      "Мастер Китон",
+      "https://shikimori.one/mangas/848-master-keaton"
+    ],
+    [
+      30853,
+      853,
+      "SOURCE",
+      2,
+      "Явара!",
+      "https://shikimori.one/mangas/853-yawara"
+    ],
+    [
+      30871,
+      871,
+      "SOURCE",
+      2,
+      "Драгон Квест: Приключения Дая",
+      "https://shikimori.one/mangas/871-dragon-quest-dai-no-daibouken"
+    ],
+    [
+      30894,
+      894,
+      "SOURCE",
+      2,
+      "Розарио + Вампир",
+      "https://shikimori.one/mangas/894-rosario-to-vampire"
+    ],
+    [
+      30895,
+      895,
+      "SOURCE",
+      2,
+      "Стальная тревога! Сигма",
+      "https://shikimori.one/mangas/895-full-metal-panic-sigma"
+    ],
+    [
+      30944,
+      944,
+      "SOURCE",
+      2,
+      "Мастер кулинарии",
+      "https://shikimori.one/mangas/944-chuuka-ichiban"
+    ],
+    [
+      31047,
+      1047,
+      "SOURCE",
+      2,
+      "Святой Сэйя: Потерянный холст",
+      "https://shikimori.one/mangas/z1047-saint-seiya-the-lost-canvas-meiou-shinwa"
+    ],
+    [
+      31111,
+      1111,
+      "SOURCE",
+      2,
+      "Будда",
+      "https://shikimori.one/mangas/1111-buddha"
+    ],
+    [
+      31155,
+      1155,
+      "SOURCE",
+      2,
+      "Спой для меня «Вчера»",
+      "https://shikimori.one/mangas/1155-yesterday-wo-utatte"
+    ],
+    [
+      31223,
+      1223,
+      "SOURCE",
+      2,
+      "Принцесса-вампир Мию",
+      "https://shikimori.one/mangas/1223-vampire-miyu"
+    ],
+    [
+      31224,
+      1224,
+      "SOURCE",
+      2,
+      "Мартовский лев",
+      "https://shikimori.one/mangas/1224-3-gatsu-no-lion"
+    ],
+    [
+      31245,
+      1245,
+      "SOURCE",
+      2,
+      "Баклажаны",
+      "https://shikimori.one/mangas/1245-nasu"
+    ],
+    [
+      31298,
+      1298,
+      "SOURCE",
+      2,
+      "Голго-13",
+      "https://shikimori.one/mangas/1298-golgo-13"
+    ],
+    [
+      31363,
+      1363,
+      "SOURCE",
+      2,
+      "Голубые цветы",
+      "https://shikimori.one/mangas/1363-aoi-hana"
+    ],
+    [
+      31414,
+      1414,
+      "SOURCE",
+      2,
+      "Скет Данс",
+      "https://shikimori.one/mangas/1414-sket-dance"
+    ],
+    [
+      31469,
+      1469,
+      "SOURCE",
+      2,
+      "Стеклянная маска",
+      "https://shikimori.one/mangas/z1469-glass-no-kamen"
+    ],
+    [
+      31517,
+      1517,
+      "SOURCE",
+      2,
+      "Невероятное приключение ДжоДжо — Часть 1: Призрачная кровь",
+      "https://shikimori.one/mangas/1517-jojo-no-kimyou-na-bouken-part-1-phantom-blood"
+    ],
+    [
+      31528,
+      1528,
+      "SOURCE",
+      2,
+      "Код Гиас: Восставший Лелуш",
+      "https://shikimori.one/mangas/1528-code-geass-hangyaku-no-lelouch"
+    ],
+    [
+      31639,
+      1639,
+      "SOURCE",
+      2,
+      "Киборг 009",
+      "https://shikimori.one/mangas/1639-cyborg-009"
+    ],
+    [
+      31658,
+      1658,
+      "SOURCE",
+      2,
+      "Дороро",
+      "https://shikimori.one/mangas/1658-dororo"
+    ],
+    [
+      31705,
+      1705,
+      "SOURCE",
+      2,
+      "Спригган",
+      "https://shikimori.one/mangas/1705-spriggan"
+    ],
+    [
+      31706,
+      1706,
+      "SOURCE",
+      2,
+      "Невероятное приключение ДжоДжо — Часть 7: Гонка «Стальной шар»",
+      "https://shikimori.one/mangas/1706-jojo-no-kimyou-na-bouken-part-7-steel-ball-run"
+    ],
+    [
+      31722,
+      1722,
+      "SOURCE",
+      2,
+      "Сегодня в 5-Б классе",
+      "https://shikimori.one/mangas/1722-kyou-no-5-no-2"
+    ],
+    [
+      31771,
+      1771,
+      "SOURCE",
+      2,
+      "Император джунглей",
+      "https://shikimori.one/mangas/z1771-jungle-taitei"
+    ],
+    [
+      31788,
+      1788,
+      "SOURCE",
+      2,
+      "Шафл!",
+      "https://shikimori.one/mangas/1788-shuffle"
+    ],
+    [
+      31908,
+      1908,
+      "SOURCE",
+      2,
+      "Предел первой любви",
+      "https://shikimori.one/mangas/1908-hatsukoi-limited"
+    ],
+    [
+      31925,
+      1925,
+      "SOURCE",
+      2,
+      "Бюро паранормальных расследований Мухё и Родзи",
+      "https://shikimori.one/mangas/1925-muhyo-to-rouji-no-mahouritsu-soudan-jimusho"
+    ],
+    [
+      32970,
+      2970,
+      "SOURCE",
+      2,
+      "Сельскохозяйственные истории",
+      "https://shikimori.one/mangas/2970-moyashimon"
+    ],
+    [
+      33009,
+      3009,
+      "SOURCE",
+      2,
+      "Невероятное приключение ДжоДжо — Часть 6: Каменный океан",
+      "https://shikimori.one/mangas/3009-jojo-no-kimyou-na-bouken-part-6-stone-ocean"
+    ],
+    [
+      33048,
+      3048,
+      "SOURCE",
+      2,
+      "Поцелуй сестёр",
+      "https://shikimori.one/mangas/3048-kiss-x-sis"
+    ],
+    [
+      33082,
+      3082,
+      "SOURCE",
+      2,
+      "Мелочи жизни",
+      "https://shikimori.one/mangas/3082-nichijou"
+    ],
+    [
+      33254,
+      3254,
+      "SOURCE",
+      2,
+      "Могучая Бёрди II",
+      "https://shikimori.one/mangas/3254-tetsuwan-birdy"
+    ],
+    [
+      33526,
+      3526,
+      "SOURCE",
+      2,
+      "Судьба/Девочка-волшебница Иллия",
+      "https://shikimori.one/mangas/z3526-fate-kaleid-liner-prisma-illya"
+    ],
+    [
+      33713,
+      3713,
+      "SOURCE",
+      2,
+      "Бармен",
+      "https://shikimori.one/mangas/3713-bartender"
+    ],
+    [
+      33728,
+      3728,
+      "SOURCE",
+      2,
+      "Летняя буря!",
+      "https://shikimori.one/mangas/3728-natsu-no-arashi"
+    ],
+    [
+      33826,
+      3826,
+      "SOURCE",
+      2,
+      "Горничные Ханаукё",
+      "https://shikimori.one/mangas/3826-hanaukyou-maid-tai"
+    ],
+    [
+      33965,
+      3965,
+      "SOURCE",
+      2,
+      "Зона восемьдесят восемь",
+      "https://shikimori.one/mangas/3965-area-88"
+    ],
+    [
+      34611,
+      4611,
+      "SOURCE",
+      2,
+      "Ёрмунганд",
+      "https://shikimori.one/mangas/4611-jormungand"
+    ],
+    [
+      35158,
+      5158,
+      "SOURCE",
+      2,
+      "Мононокэ",
+      "https://shikimori.one/mangas/5158-mononoke"
+    ],
+    [
+      35548,
+      5548,
+      "SOURCE",
+      2,
+      "Восходящий удар",
+      "https://shikimori.one/mangas/5548-rising-impact"
+    ],
+    [
+      35664,
+      5664,
+      "SOURCE",
+      2,
+      "Внук Нурарихёна",
+      "https://shikimori.one/mangas/5664-nurarihyon-no-mago"
+    ],
+    [
+      35724,
+      5724,
+      "SOURCE",
+      2,
+      "Не приставай ко мне!!",
+      "https://shikimori.one/mangas/5724-amaenaide-yo"
+    ],
+    [
+      35911,
+      5911,
+      "SOURCE",
+      2,
+      "Заморозка",
+      "https://shikimori.one/mangas/5911-freezing"
+    ],
+    [
+      36228,
+      6228,
+      "SOURCE",
+      2,
+      "Принцесса немёртвых",
+      "https://shikimori.one/mangas/6228-shikabane-hime"
+    ],
+    [
+      36310,
+      6310,
+      "SOURCE",
+      2,
+      "Саки",
+      "https://shikimori.one/mangas/6310-saki"
+    ],
+    [
+      36778,
+      6778,
+      "SOURCE",
+      2,
+      "Игрушка Астаротты",
+      "https://shikimori.one/mangas/6778-rotte-no-omocha"
+    ],
+    [
+      37342,
+      7342,
+      "SOURCE",
+      2,
+      "Мария † Холик",
+      "https://shikimori.one/mangas/7342-maria-holic"
+    ],
+    [
+      37887,
+      7887,
+      "SOURCE",
+      2,
+      "Торико",
+      "https://shikimori.one/mangas/7887-toriko"
+    ],
+    [
+      38070,
+      8070,
+      "SOURCE",
+      2,
+      "Ёко из Сэнгоку",
+      "https://shikimori.one/mangas/8070-sengoku-youko"
+    ],
+    [
+      38300,
+      8300,
+      "SOURCE",
+      2,
+      "Первые шаги",
+      "https://shikimori.one/mangas/8300-baby-steps"
+    ],
+    [
+      38341,
+      8341,
+      "SOURCE",
+      2,
+      "Код: Крушитель",
+      "https://shikimori.one/mangas/8341-code-breaker"
+    ],
+    [
+      38557,
+      8557,
+      "SOURCE",
+      2,
+      "Ты и я",
+      "https://shikimori.one/mangas/z8557-kimi-to-boku"
+    ],
+    [
+      38947,
+      8947,
+      "SOURCE",
+      2,
+      "Пресвятые отроки",
+      "https://shikimori.one/mangas/8947-saint-oniisan"
+    ],
+    [
+      39705,
+      776,
+      "SOURCE",
+      2,
+      "Галактический экспресс 999",
+      "https://shikimori.one/mangas/776-ginga-tetsudou-999"
+    ],
+    [
+      40010,
+      10010,
+      "SOURCE",
+      2,
+      "Вельзепуз",
+      "https://shikimori.one/mangas/10010-beelzebub"
+    ],
+    [
+      40270,
+      10270,
+      "SOURCE",
+      2,
+      "Карнавал",
+      "https://shikimori.one/mangas/10270-karneval"
+    ],
+    [
+      40386,
+      10386,
+      "SOURCE",
+      2,
+      "Великолепный кондитер",
+      "https://shikimori.one/mangas/10386-yume-iro-p-tissi-re"
+    ],
+    [
+      40447,
+      10447,
+      "SOURCE",
+      2,
+      "Робот Геттер Го",
+      "https://shikimori.one/mangas/10447-getter-robo-go"
+    ],
+    [
+      41243,
+      11243,
+      "SOURCE",
+      2,
+      "В этом уголке мира",
+      "https://shikimori.one/mangas/11243-kono-sekai-no-katasumi-ni"
+    ],
+    [
+      41767,
+      11767,
+      "SOURCE",
+      2,
+      "Скажи: «Я люблю тебя»",
+      "https://shikimori.one/mangas/11767-suki-tte-ii-na-yo"
+    ],
+    [
+      42552,
+      12552,
+      "SOURCE",
+      2,
+      "Астро-боец Санред",
+      "https://shikimori.one/mangas/12552-tentai-senshi-sunred"
+    ],
+    [
+      42629,
+      12629,
+      "SOURCE",
+      2,
+      "Аки и Сора",
+      "https://shikimori.one/mangas/12629-aki-sora"
+    ],
+    [
+      43254,
+      13254,
+      "SOURCE",
+      2,
+      "Волшебница Рурумо",
+      "https://shikimori.one/mangas/13254-majimoji-rurumo"
+    ],
+    [
+      43544,
+      13544,
+      "SOURCE",
+      2,
+      "Исчезновение Юки Нагато",
+      "https://shikimori.one/mangas/13544-nagato-yuki-chan-no-shoushitsu"
+    ],
+    [
+      43634,
+      13634,
+      "SOURCE",
+      2,
+      "Уроки современного искусства",
+      "https://shikimori.one/mangas/13634-ga-geijutsuka-art-design-class"
+    ],
+    [
+      43949,
+      13949,
+      "SOURCE",
+      2,
+      "Ящик предложений Мэдаки",
+      "https://shikimori.one/mangas/z13949-medaka-box"
+    ],
+    [
+      44018,
+      14018,
+      "SOURCE",
+      2,
+      "Искусственный отбор",
+      "https://shikimori.one/mangas/14018-triage-x"
+    ],
+    [
+      44154,
+      14154,
+      "SOURCE",
+      2,
+      "Под мостом над Аракавой",
+      "https://shikimori.one/mangas/14154-arakawa-under-the-bridge"
+    ],
+    [
+      44721,
+      14721,
+      "SOURCE",
+      2,
+      "Дефрагментация!",
+      "https://shikimori.one/mangas/14721-d-frag"
+    ],
+    [
+      44790,
+      14790,
+      "SOURCE",
+      2,
+      "Маги",
+      "https://shikimori.one/mangas/14790-magi"
+    ],
+    [
+      45539,
+      15539,
+      "SOURCE",
+      2,
+      "Эпоха смут",
+      "https://shikimori.one/mangas/15539-sengoku-basara"
+    ],
+    [
+      46542,
+      16542,
+      "SOURCE",
+      2,
+      "Пострелушки!",
+      "https://shikimori.one/mangas/16542-upotte"
+    ],
+    [
+      46922,
+      16922,
+      "SOURCE",
+      2,
+      "Школьные няни",
+      "https://shikimori.one/mangas/16922-gakuen-babysitters"
+    ],
+    [
+      47111,
+      17111,
+      "SOURCE",
+      2,
+      "Дело ведёт юный детектив Киндаити: Серия коротких расследований",
+      "https://shikimori.one/mangas/17111-kindaichi-shounen-no-jikenbo-short-file-series"
+    ],
+    [
+      47149,
+      17149,
+      "SOURCE",
+      2,
+      "Дело ведёт юный детектив Киндаити: Продолжение",
+      "https://shikimori.one/mangas/17149-kindaichi-shounen-no-jikenbo-case-series"
+    ],
+    [
+      47257,
+      17257,
+      "SOURCE",
+      2,
+      "Мальчик-горничная",
+      "https://shikimori.one/mangas/17257-shounen-maid"
+    ],
+    [
+      47394,
+      17394,
+      "SOURCE",
+      2,
+      "Любовь цыплёнка",
+      "https://shikimori.one/mangas/17394-hiyokoi"
+    ],
+    [
+      48472,
+      18472,
+      "SOURCE",
+      2,
+      "Прикончи меня, детка",
+      "https://shikimori.one/mangas/18472-kill-me-baby"
+    ],
+    [
+      48753,
+      18753,
+      "SOURCE",
+      2,
+      "Кошачий суп. Удон",
+      "https://shikimori.one/mangas/18753-nekojiru-udon"
+    ],
+    [
+      49745,
+      19745,
+      "SOURCE",
+      2,
+      "Одиннадцать глаз",
+      "https://shikimori.one/mangas/19745-11eyes-tsumi-to-batsu-to-aganai-no-shoujo"
+    ],
+    [
+      49896,
+      19896,
+      "SOURCE",
+      2,
+      "Ведьма за работой",
+      "https://shikimori.one/mangas/19896-witch-craft-works"
+    ],
+    [
+      50647,
+      20647,
+      "SOURCE",
+      2,
+      "Термы Рима",
+      "https://shikimori.one/mangas/20647-thermae-romae"
+    ],
+    [
+      50855,
+      20855,
+      "SOURCE",
+      2,
+      "Канал А",
+      "https://shikimori.one/mangas/20855-a-channel"
+    ],
+    [
+      51614,
+      21614,
+      "SOURCE",
+      2,
+      "Кровавый парень",
+      "https://shikimori.one/mangas/21614-blood-lad"
+    ],
+    [
+      52707,
+      22707,
+      "SOURCE",
+      2,
+      "Небеса: Астрономический клуб старшей школы Эбисугава",
+      "https://shikimori.one/mangas/22707-ebiten-kouritsu-ebisugawa-koukou-tenmon-bu"
+    ],
+    [
+      52962,
+      22962,
+      "SOURCE",
+      2,
+      "Молчаливая Морита",
+      "https://shikimori.one/mangas/22962-morita-san-wa-mukuchi"
+    ],
+    [
+      53689,
+      23689,
+      "SOURCE",
+      2,
+      "Инари, лисицы и волшебная любовь",
+      "https://shikimori.one/mangas/23689-inari-konkon-koi-iroha"
+    ],
+    [
+      54567,
+      24567,
+      "SOURCE",
+      2,
+      "Великий Мусаси",
+      "https://shikimori.one/mangas/24567-super-fishing-grander-musashi"
+    ],
+    [
+      54679,
+      24679,
+      "SOURCE",
+      2,
+      "Новый мобильный воин Гандам: Дубль-вэ — Бесконечный вальс. Слава проигравшим",
+      "https://shikimori.one/mangas/24679-shin-kidou-senki-gundam-wing-endless-waltz-haisha-tachi-no-eikou"
+    ],
+    [
+      55081,
+      25081,
+      "SOURCE",
+      2,
+      "Любовная сцена!",
+      "https://shikimori.one/mangas/25081-love-stage"
+    ],
+    [
+      55096,
+      25096,
+      "SOURCE",
+      2,
+      "Серебряная ложка",
+      "https://shikimori.one/mangas/25096-gin-no-saji"
+    ],
+    [
+      55297,
+      25297,
+      "SOURCE",
+      2,
+      "Школа-тюрьма",
+      "https://shikimori.one/mangas/25297-prison-school"
+    ],
+    [
+      55450,
+      25450,
+      "SOURCE",
+      2,
+      "Великий небесный дракон Гайкинг",
+      "https://shikimori.one/mangas/25450-daikuu-maryuu-gaiking"
+    ],
+    [
+      56486,
+      26486,
+      "SOURCE",
+      2,
+      "Королева Эмеральда",
+      "https://shikimori.one/mangas/26486-queen-emeraldas"
+    ],
+    [
+      56531,
+      26531,
+      "SOURCE",
+      2,
+      "Полусломанная музыкальная шкатулка",
+      "https://shikimori.one/mangas/26531-kowarekake-no-orgel"
+    ],
+    [
+      58091,
+      28091,
+      "SOURCE",
+      2,
+      "Мой сосед Сэки",
+      "https://shikimori.one/mangas/28091-tonari-no-seki-kun"
+    ],
+    [
+      58449,
+      28449,
+      "SOURCE",
+      2,
+      "Певчая птица крыльями не машет",
+      "https://shikimori.one/mangas/28449-saezuru-tori-wa-habatakanai"
+    ],
+    [
+      58697,
+      28697,
+      "SOURCE",
+      2,
+      "Приказ, изменивший мир",
+      "https://shikimori.one/mangas/28697-big-order"
+    ],
+    [
+      58825,
+      28825,
+      "SOURCE",
+      2,
+      "Волчица и чёрный принц",
+      "https://shikimori.one/mangas/28825-ookami-shoujo-to-kuro-ouji"
+    ],
+    [
+      59211,
+      29211,
+      "SOURCE",
+      2,
+      "Ежемесячное сёдзё Нодзаки",
+      "https://shikimori.one/mangas/29211-gekkan-shoujo-nozaki-kun"
+    ],
+    [
+      59859,
+      29859,
+      "SOURCE",
+      2,
+      "Саки: Сторона-А",
+      "https://shikimori.one/mangas/29859-saki-achiga-hen-episode-of-side-a"
+    ],
+    [
+      59899,
+      29899,
+      "SOURCE",
+      2,
+      "Тиби-Идолмастер",
+      "https://shikimori.one/mangas/29899-puchimas-petit-idolm-ster"
+    ],
+    [
+      61337,
+      31337,
+      "SOURCE",
+      2,
+      "Рёв байков!",
+      "https://shikimori.one/mangas/31337-bakuon"
+    ],
+    [
+      61441,
+      31441,
+      "SOURCE",
+      2,
+      "Мобильный воин Гандам Зета: Послезавтра — Из отчета Кая Сидэна",
+      "https://shikimori.one/mangas/31441-kidou-senshi-z-gundam-day-after-tomorrow-kai-shiden-no-report-yori"
+    ],
+    [
+      64377,
+      34377,
+      "SOURCE",
+      2,
+      "Тёмная сторона Брюнхильды",
+      "https://shikimori.one/mangas/z34377-gokukoku-no-brynhildr"
+    ],
+    [
+      65573,
+      35573,
+      "SOURCE",
+      2,
+      "Орендж",
+      "https://shikimori.one/mangas/35573-orange"
+    ],
+    [
+      66717,
+      36717,
+      "SOURCE",
+      2,
+      "Истребители насекомых: На поле боя!",
+      "https://shikimori.one/mangas/36717-joujuu-senjin-mushibugyou"
+    ],
+    [
+      67815,
+      37815,
+      "SOURCE",
+      2,
+      "Микс",
+      "https://shikimori.one/mangas/37815-mix"
+    ],
+    [
+      68105,
+      38105,
+      "SOURCE",
+      2,
+      "Сияние утра и Касэ",
+      "https://shikimori.one/mangas/38105-kase-san-series"
+    ],
+    [
+      69291,
+      39291,
+      "SOURCE",
+      2,
+      "Радужные дни",
+      "https://shikimori.one/mangas/39291-nijiiro-days"
+    ],
+    [
+      70437,
+      40437,
+      "SOURCE",
+      2,
+      "Гигантский робот",
+      "https://shikimori.one/mangas/40437-giant-robo"
+    ],
+    [
+      70481,
+      40481,
+      "SOURCE",
+      2,
+      "Сёстры Омуро",
+      "https://shikimori.one/mangas/40481-oomuro-ke"
+    ],
+    [
+      70549,
+      40549,
+      "SOURCE",
+      2,
+      "Наруто: Путь ниндзя",
+      "https://shikimori.one/mangas/z40549-road-to-ninja-naruto-the-movie"
+    ],
+    [
+      72279,
+      42279,
+      "SOURCE",
+      2,
+      "Измерение W",
+      "https://shikimori.one/mangas/42279-dimension-w"
+    ],
+    [
+      72451,
+      42451,
+      "SOURCE",
+      2,
+      "Хоримия",
+      "https://shikimori.one/mangas/42451-horimiya"
+    ],
+    [
+      73915,
+      43915,
+      "SOURCE",
+      2,
+      "Легенды и герои 2",
+      "https://shikimori.one/mangas/43915-feng-shen-ji-ii"
+    ],
+    [
+      74489,
+      44489,
+      "SOURCE",
+      2,
+      "Страна самоцветов",
+      "https://shikimori.one/mangas/44489-houseki-no-kuni"
+    ],
+    [
+      75143,
+      45143,
+      "SOURCE",
+      2,
+      "Задержи этот звук!",
+      "https://shikimori.one/mangas/45143-kono-oto-tomare"
+    ],
+    [
+      75353,
+      45353,
+      "SOURCE",
+      2,
+      "Формула жизни",
+      "https://shikimori.one/mangas/45353-yuyushiki"
+    ],
+    [
+      78025,
+      48025,
+      "SOURCE",
+      2,
+      "Маги: Приключение Синдбада",
+      "https://shikimori.one/mangas/48025-magi-sinbad-no-bouken"
+    ],
+    [
+      80767,
+      50767,
+      "SOURCE",
+      2,
+      "Реальная девушка",
+      "https://shikimori.one/mangas/50767-real-girl"
+    ],
+    [
+      81233,
+      51233,
+      "SOURCE",
+      2,
+      "Сказание об Арслане (2013)",
+      "https://shikimori.one/mangas/51233-arslan-senki"
+    ],
+    [
+      81267,
+      51267,
+      "SOURCE",
+      2,
+      "Инугами и Нэкояма",
+      "https://shikimori.one/mangas/51267-inugami-san-to-nekoyama-san"
+    ],
+    [
+      85135,
+      56805,
+      "SOURCE",
+      2,
+      "Форма голоса",
+      "https://shikimori.one/mangas/z56805-koe-no-katachi"
+    ],
+    [
+      85151,
+      57765,
+      "SOURCE",
+      2,
+      "Хранитель вечности",
+      "https://shikimori.one/mangas/57765-uq-holder"
+    ],
+    [
+      85310,
+      66685,
+      "SOURCE",
+      2,
+      "Сказание об обручальных кольцах",
+      "https://shikimori.one/mangas/66685-kekkon-yubiwa-monogatari"
+    ],
+    [
+      85338,
+      63183,
+      "SOURCE",
+      2,
+      "Двенадцать лет",
+      "https://shikimori.one/mangas/63183-12-sai"
+    ],
+    [
+      85392,
+      62723,
+      "SOURCE",
+      2,
+      "Бездомный бог: Экстра",
+      "https://shikimori.one/mangas/62723-noragami-shuuishuu"
+    ],
+    [
+      85408,
+      73575,
+      "SOURCE",
+      2,
+      "Я не понимаю, что говорит мой муж",
+      "https://shikimori.one/mangas/73575-danna-ga-nani-wo-itteiru-ka-wakaranai-ken"
+    ],
+    [
+      85566,
+      78065,
+      "SOURCE",
+      2,
+      "Любовь и ложь",
+      "https://shikimori.one/mangas/z78065-koi-to-uso"
+    ],
+    [
+      85611,
+      81117,
+      "SOURCE",
+      2,
+      "Токийский гуль: Перерождение",
+      "https://shikimori.one/mangas/81117-tokyo-ghoul-re"
+    ],
+    [
+      85825,
+      83187,
+      "SOURCE",
+      2,
+      "Волшебный кондитер Косаки",
+      "https://shikimori.one/mangas/83187-magical-p-tissi-re-kosaki-chan"
+    ],
+    [
+      85849,
+      78523,
+      "SOURCE",
+      2,
+      "Повторная жизнь",
+      "https://shikimori.one/mangas/78523-relife"
+    ],
+    [
+      85892,
+      81707,
+      "SOURCE",
+      2,
+      "Тирания вооружённых девушек",
+      "https://shikimori.one/mangas/81707-busou-shoujo-machiavellianism"
+    ],
+    [
+      85929,
+      56505,
+      "SOURCE",
+      2,
+      "Кэйджо!!!!!!!!",
+      "https://shikimori.one/mangas/56505-keijo"
+    ],
+    [
+      85966,
+      75993,
+      "SOURCE",
+      2,
+      "Магазинчик  сладостей",
+      "https://shikimori.one/mangas/75993-dagashi-kashi"
+    ],
+    [
+      86056,
+      72299,
+      "SOURCE",
+      2,
+      "Путь Баки",
+      "https://shikimori.one/mangas/72299-baki-dou"
+    ],
+    [
+      86133,
+      87640,
+      "SOURCE",
+      2,
+      "Звучи, эуфониум! Добро пожаловать в клуб духового оркестра старшей школы Китауджи",
+      "https://shikimori.one/mangas/87640-hibike-euphonium-kitauji-koukou-suisougaku-bu-e-youkoso"
+    ],
+    [
+      86144,
+      87201,
+      "SOURCE",
+      2,
+      "Второй Мэйджор",
+      "https://shikimori.one/mangas/87201-major-2nd"
+    ],
+    [
+      86168,
+      7658,
+      "SOURCE",
+      2,
+      "Милашка Хани",
+      "https://shikimori.one/mangas/7658-cutie-honey"
+    ],
+    [
+      86229,
+      59961,
+      "SOURCE",
+      2,
+      "Синяя весна и механическая пушка",
+      "https://shikimori.one/mangas/59961-aoharu-x-kikanjuu"
+    ],
+    [
+      86287,
+      69737,
+      "SOURCE",
+      2,
+      "Девочка Вакаба",
+      "https://shikimori.one/mangas/69737-wakaba-girl"
+    ],
+    [
+      86517,
+      86633,
+      "SOURCE",
+      2,
+      "Большая разница",
+      "https://shikimori.one/mangas/86633-danchigai"
+    ],
+    [
+      86539,
+      89724,
+      "SOURCE",
+      2,
+      "Мне надоело быть девочкой-волшебницей",
+      "https://shikimori.one/mangas/89724-mahou-shoujo-nante-mou-ii-desukara"
+    ],
+    [
+      86568,
+      93753,
+      "SOURCE",
+      2,
+      "Мемуары Ванитаса",
+      "https://shikimori.one/mangas/93753-vanitas-no-karte"
+    ],
+    [
+      86579,
+      67401,
+      "SOURCE",
+      2,
+      "Угрюмый заклинатель духов",
+      "https://shikimori.one/mangas/67401-fukigen-na-mononokean"
+    ],
+    [
+      86623,
+      80841,
+      "SOURCE",
+      2,
+      "Хакумэй и Микоти",
+      "https://shikimori.one/mangas/80841-hakumei-to-mikochi"
+    ],
+    [
+      86648,
+      91711,
+      "SOURCE",
+      2,
+      "Линия Дьявола",
+      "https://shikimori.one/mangas/z91711-devils-line"
+    ],
+    [
+      86693,
+      93398,
+      "SOURCE",
+      2,
+      "Намбака",
+      "https://shikimori.one/mangas/93398-nanbaka"
+    ],
+    [
+      86717,
+      89087,
+      "SOURCE",
+      2,
+      "Так сложно любить отаку",
+      "https://shikimori.one/mangas/89087-wotaku-ni-koi-wa-muzukashii"
+    ],
+    [
+      86742,
+      69007,
+      "SOURCE",
+      2,
+      "В песках поющие китята",
+      "https://shikimori.one/mangas/69007-kujira-no-kora-wa-sajou-ni-utau"
+    ],
+    [
+      86770,
+      93972,
+      "SOURCE",
+      2,
+      "Девочка из Чужеземья",
+      "https://shikimori.one/mangas/93972-totsukuni-no-shoujo"
+    ],
+    [
+      86771,
+      95964,
+      "SOURCE",
+      2,
+      "Фронт кровавой блокады: Спина к спине",
+      "https://shikimori.one/mangas/95964-kekkai-sensen-back-2-back"
+    ],
+    [
+      86853,
+      76867,
+      "SOURCE",
+      2,
+      "Расскажи нам, Гяруко!",
+      "https://shikimori.one/mangas/76867-oshiete-galko-chan"
+    ],
+    [
+      86949,
+      93353,
+      "SOURCE",
+      2,
+      "Коро-сэнсэй Q!",
+      "https://shikimori.one/mangas/93353-koro-sensei-q"
+    ],
+    [
+      86994,
+      90423,
+      "SOURCE",
+      2,
+      "Жизнь без оружия",
+      "https://shikimori.one/mangas/90423-no-guns-life"
+    ],
+    [
+      87123,
+      80245,
+      "SOURCE",
+      2,
+      "Хеталия: Мировые звёзды",
+      "https://shikimori.one/mangas/80245-hetalia-world-stars"
+    ],
+    [
+      87178,
+      95210,
+      "SOURCE",
+      2,
+      "Боруто: Новое поколение Наруто",
+      "https://shikimori.one/mangas/95210-boruto-naruto-next-generations"
+    ],
+    [
+      87186,
+      98104,
+      "SOURCE",
+      2,
+      "Моя девушка — убеждённая извращенка-девственница",
+      "https://shikimori.one/mangas/98104-boku-no-kanojo-ga-majimesugiru-shojo-bitch-na-ken"
+    ],
+    [
+      87213,
+      96582,
+      "SOURCE",
+      2,
+      "Юна из гостиницы Юраги",
+      "https://shikimori.one/mangas/96582-yuragi-sou-no-yuuna-san"
+    ],
+    [
+      87315,
+      98938,
+      "SOURCE",
+      2,
+      "Моя первая гяру",
+      "https://shikimori.one/mangas/98938-hajimete-no-gal"
+    ],
+    [
+      87353,
+      88675,
+      "SOURCE",
+      2,
+      "Остров насекомых-гигантов",
+      "https://shikimori.one/mangas/88675-kyochuu-rettou"
+    ],
+    [
+      87377,
+      99528,
+      "SOURCE",
+      2,
+      "Влюблённые учёные и научное доказательство любви",
+      "https://shikimori.one/mangas/99528-rikei-ga-koi-ni-ochita-no-de-shoumei-shitemita"
+    ],
+    [
+      87401,
+      98379,
+      "SOURCE",
+      2,
+      "Великий из бродячих псов: Шуточные истории",
+      "https://shikimori.one/mangas/98379-bungou-stray-dogs-wan"
+    ],
+    [
+      87402,
+      92286,
+      "SOURCE",
+      2,
+      "Боруто: День, когда Наруто стал хокагэ",
+      "https://shikimori.one/mangas/92286-boruto-naruto-the-movie-tokubetsu-bangai-hen-naruto-ga-hokage-ni-natta-hi"
+    ],
+    [
+      87423,
+      100128,
+      "SOURCE",
+      2,
+      "Обещанный Неверленд",
+      "https://shikimori.one/mangas/z100128-yakusoku-no-neverland"
+    ],
+    [
+      88951,
+      59993,
+      "SOURCE",
+      2,
+      "Меч Гая",
+      "https://shikimori.one/mangas/59993-sword-gai"
+    ],
+    [
+      89876,
+      63901,
+      "SOURCE",
+      2,
+      "Первая лиричная волшебница Наноха: Оригинальные хроники",
+      "https://shikimori.one/mangas/63901-original-chronicle-mahou-shoujo-lyrical-nanoha-the-1st"
+    ],
+    [
+      90011,
+      64607,
+      "SOURCE",
+      2,
+      "Тигр и кролик: Начало",
+      "https://shikimori.one/mangas/64607-tiger-bunny-the-beginning"
+    ],
+    [
+      90765,
+      68021,
+      "SOURCE",
+      2,
+      "Угроза для парня №1",
+      "https://shikimori.one/mangas/z68021-dakaretai-otoko-1-i-ni-odosarete-imasu"
+    ],
+    [
+      91222,
+      70663,
+      "SOURCE",
+      2,
+      "История о мононокэ",
+      "https://shikimori.one/mangas/70663-mononogatari"
+    ],
+    [
+      92154,
+      75243,
+      "SOURCE",
+      2,
+      "Королевский репетитор",
+      "https://shikimori.one/mangas/75243-oushitsu-kyoushi-heine"
+    ],
+    [
+      93023,
+      80473,
+      "SOURCE",
+      2,
+      "Призрак в доспехах: Синдром одиночки — Смеющийся человек",
+      "https://shikimori.one/mangas/80473-koukaku-kidoutai-stand-alone-complex-the-laughing-man"
+    ],
+    [
+      94095,
+      86648,
+      "SOURCE",
+      2,
+      "Полноценная жизнь онлайн",
+      "https://shikimori.one/mangas/86648-net-juu-no-susume"
+    ],
+    [
+      95327,
+      90585,
+      "SOURCE",
+      2,
+      "Дело ведёт юный детектив Киндаити: Двадцатилетний юбилей",
+      "https://shikimori.one/mangas/90585-kindaichi-shounen-no-jikenbo-20-shuunen-kinen-series"
+    ],
+    [
+      97157,
+      98184,
+      "SOURCE",
+      2,
+      "Проект-Б: Иллюзорный скандал",
+      "https://shikimori.one/mangas/98184-b-project-mousou-scandal"
+    ],
+    [
+      97371,
+      99449,
+      "SOURCE",
+      2,
+      "Я стою на миллионах трупов",
+      "https://shikimori.one/mangas/99449-100-man-no-inochi-no-ue-ni-ore-wa-tatteiru"
+    ],
+    [
+      97418,
+      99678,
+      "SOURCE",
+      2,
+      "Давайте сыграем",
+      "https://shikimori.one/mangas/99678-asobi-asobase"
+    ],
+    [
+      97603,
+      94169,
+      "SOURCE",
+      2,
+      "Скрытые вещи",
+      "https://shikimori.one/mangas/94169-kakushigoto"
+    ],
+    [
+      97626,
+      100539,
+      "SOURCE",
+      2,
+      "Насколько тяжёлые гантели ты сможешь поднять?",
+      "https://shikimori.one/mangas/100539-dumbbell-nan-kilo-moteru"
+    ],
+    [
+      97827,
+      100274,
+      "SOURCE",
+      2,
+      "Зачем вы здесь, учитель?!",
+      "https://shikimori.one/mangas/100274-nande-koko-ni-sensei-ga"
+    ],
+    [
+      97842,
+      99949,
+      "SOURCE",
+      2,
+      "Моя геройская академия: Вне закона",
+      "https://shikimori.one/mangas/99949-vigilante-boku-no-hero-academia-illegals"
+    ],
+    [
+      97852,
+      99007,
+      "SOURCE",
+      2,
+      "У Коми проблемы с общением",
+      "https://shikimori.one/mangas/99007-komi-san-wa-comyushou-desu"
+    ],
+    [
+      98263,
+      100035,
+      "SOURCE",
+      2,
+      "Ателье колдовских колпаков",
+      "https://shikimori.one/mangas/100035-tongari-boushi-no-atelier"
+    ],
+    [
+      98370,
+      101396,
+      "SOURCE",
+      2,
+      "Сасаки и Мияно",
+      "https://shikimori.one/mangas/101396-sasaki-to-miyano"
+    ],
+    [
+      98544,
+      100323,
+      "SOURCE",
+      2,
+      "Патриотизм Мориарти",
+      "https://shikimori.one/mangas/100323-yuukoku-no-moriarty"
+    ],
+    [
+      98652,
+      99944,
+      "SOURCE",
+      2,
+      "Персона 5",
+      "https://shikimori.one/mangas/99944-persona-5"
+    ],
+    [
+      98686,
+      103939,
+      "SOURCE",
+      2,
+      "Непостижимая Ахарэн",
+      "https://shikimori.one/mangas/103939-aharen-san-wa-hakarenai"
+    ],
+    [
+      98831,
+      106759,
+      "SOURCE",
+      2,
+      "Алкоголь для супружеской пары",
+      "https://shikimori.one/mangas/106759-osake-wa-fuufu-ni-natte-kara"
+    ],
+    [
+      99323,
+      107021,
+      "SOURCE",
+      2,
+      "Формирование извращённой силы",
+      "https://shikimori.one/mangas/107021-dokyuu-hentai-hxeros"
+    ],
+    [
+      99779,
+      110074,
+      "SOURCE",
+      2,
+      "Детективы Футо",
+      "https://shikimori.one/mangas/110074-fuuto-tantei"
+    ],
+    [
+      99840,
+      104613,
+      "SOURCE",
+      2,
+      "Блейм! Электрические рыбаки, стратегия побега, иерархия опасности",
+      "https://shikimori.one/mangas/104613-blame-denki-ryoushi-kiken-kaisou-dasshutsu-sakusen"
+    ],
+    [
+      100143,
+      109840,
+      "SOURCE",
+      2,
+      "Питер Грилл и время мудреца",
+      "https://shikimori.one/mangas/109840-peter-grill-to-kenja-no-jikan"
+    ],
+    [
+      100174,
+      89604,
+      "SOURCE",
+      2,
+      "Закрыты в рамках. Геном [Прямая трансляция]",
+      "https://shikimori.one/mangas/89604-nakanohito-genome-jikkyouchuu"
+    ],
+    [
+      100572,
+      113400,
+      "SOURCE",
+      2,
+      "Этот вампир постоянно умирает",
+      "https://shikimori.one/mangas/113400-kyuuketsuki-sugu-shinu"
+    ],
+    [
+      100664,
+      110737,
+      "SOURCE",
+      2,
+      "Не издевайся, Нагаторо",
+      "https://shikimori.one/mangas/110737-ijiranaide-nagatoro-san"
+    ],
+    [
+      100758,
+      136793,
+      "SOURCE",
+      2,
+      "Избранные истории Дзюндзи Ито",
+      "https://shikimori.one/mangas/136793-itou-junji-jisen-kessakushuu"
+    ],
+    [
+      100868,
+      110301,
+      "SOURCE",
+      2,
+      "Смертельная игра мёртвой горы",
+      "https://shikimori.one/mangas/110301-dead-mount-death-play"
+    ],
+    [
+      100994,
+      112318,
+      "SOURCE",
+      2,
+      "Адский рай",
+      "https://shikimori.one/mangas/112318-jigokuraku"
+    ],
+    [
+      101311,
+      113010,
+      "SOURCE",
+      2,
+      "Истории монстров",
+      "https://shikimori.one/mangas/z113010-bakemonogatari"
+    ],
+    [
+      101583,
+      112268,
+      "SOURCE",
+      2,
+      "Эта фарфоровая кукла влюбилась",
+      "https://shikimori.one/mangas/112268-sono-bisque-doll-wa-koi-wo-suru"
+    ],
+    [
+      101724,
+      114417,
+      "SOURCE",
+      2,
+      "Удзаки хочет тусоваться!",
+      "https://shikimori.one/mangas/114417-uzaki-chan-wa-asobitai"
+    ],
+    [
+      101831,
+      106937,
+      "SOURCE",
+      2,
+      "Синий оркестр",
+      "https://shikimori.one/mangas/106937-ao-no-orchestra"
+    ],
+    [
+      101860,
+      114548,
+      "SOURCE",
+      2,
+      "Нулевой Эдем",
+      "https://shikimori.one/mangas/114548-edens-zero"
+    ],
+    [
+      101873,
+      113644,
+      "SOURCE",
+      2,
+      "Ориент",
+      "https://shikimori.one/mangas/113644-orient"
+    ],
+    [
+      102011,
+      8826,
+      "SOURCE",
+      2,
+      "Воспоминания о ней...",
+      "https://shikimori.one/mangas/8826-kanojo-no-omoide"
+    ],
+    [
+      102879,
+      111086,
+      "SOURCE",
+      2,
+      "Небесный отдел дизайна",
+      "https://shikimori.one/mangas/111086-tenchi-souzou-design-bu"
+    ],
+    [
+      103053,
+      122365,
+      "SOURCE",
+      2,
+      "Бэтмен-ниндзя",
+      "https://shikimori.one/mangas/122365-ninja-batman"
+    ],
+    [
+      103286,
+      114073,
+      "SOURCE",
+      2,
+      "Милое приключение Чи",
+      "https://shikimori.one/mangas/114073-kyou-no-koneko-no-chi"
+    ],
+    [
+      103811,
+      106378,
+      "SOURCE",
+      2,
+      "Танец мечей",
+      "https://shikimori.one/mangas/106378-katsugeki-touken-ranbu"
+    ],
+    [
+      104063,
+      115730,
+      "SOURCE",
+      2,
+      "Дом теней",
+      "https://shikimori.one/mangas/115730-shadows-house"
+    ],
+    [
+      104676,
+      116284,
+      "SOURCE",
+      2,
+      "Я пытался уговорить её в догэдза",
+      "https://shikimori.one/mangas/116284-dogeza-de-tanondemita"
+    ],
+    [
+      104714,
+      116028,
+      "SOURCE",
+      2,
+      "Зомбилэнд-Сага",
+      "https://shikimori.one/mangas/116028-zombieland-saga"
+    ],
+    [
+      104971,
+      115616,
+      "SOURCE",
+      2,
+      "Лазурный путь: Королевские приказы",
+      "https://shikimori.one/mangas/115616-azur-lane-queen-s-orders"
+    ],
+    [
+      104978,
+      109403,
+      "SOURCE",
+      2,
+      "Космический линкор Тирамису",
+      "https://shikimori.one/mangas/109403-uchuu-senkan-tiramis"
+    ],
+    [
+      106897,
+      126771,
+      "SOURCE",
+      2,
+      "Хорошенькое лекарство: Мерцание звёзд",
+      "https://shikimori.one/mangas/126771-star-twinkle-precure"
+    ],
+    [
+      106916,
+      113244,
+      "SOURCE",
+      2,
+      "Судьба/Великий приказ: В манге всё яснее!",
+      "https://shikimori.one/mangas/113244-manga-de-wakaru-fate-grand-order"
+    ],
+    [
+      107462,
+      108566,
+      "SOURCE",
+      2,
+      "Городская дьяволица",
+      "https://shikimori.one/mangas/108566-machikado-mazoku"
+    ],
+    [
+      107826,
+      116908,
+      "SOURCE",
+      2,
+      "Забвение бэттери",
+      "https://shikimori.one/mangas/116908-boukyaku-battery"
+    ],
+    [
+      107962,
+      114666,
+      "SOURCE",
+      2,
+      "Оккультные служащие полуночи",
+      "https://shikimori.one/mangas/114666-mayonaka-no-occult-koumuin"
+    ],
+    [
+      108187,
+      117984,
+      "SOURCE",
+      2,
+      "Код Гиас: Восставший Лелуш Re;",
+      "https://shikimori.one/mangas/117984-code-geass-hangyaku-no-lelouch-re"
+    ],
+    [
+      108946,
+      121303,
+      "SOURCE",
+      2,
+      "Тридцатилетний девственник может стать волшебником?",
+      "https://shikimori.one/mangas/121303-30-sai-made-doutei-dato-mahoutsukai-ni-nareru-rashii"
+    ],
+    [
+      109017,
+      120680,
+      "SOURCE",
+      2,
+      "Становясь волшебницей",
+      "https://shikimori.one/mangas/120680-mahou-shoujo-ni-akogarete"
+    ],
+    [
+      109122,
+      120643,
+      "SOURCE",
+      2,
+      "Храм: Никто не может жить в одиночестве",
+      "https://shikimori.one/mangas/120643-temple"
+    ],
+    [
+      109285,
+      118289,
+      "SOURCE",
+      2,
+      "Долой безделье!",
+      "https://shikimori.one/mangas/118289-skip-to-loafer"
+    ],
+    [
+      109310,
+      119375,
+      "SOURCE",
+      2,
+      "Время пыток, принцесса!",
+      "https://shikimori.one/mangas/119375-himesama-goumon-no-jikan-desu"
+    ],
+    [
+      109455,
+      121209,
+      "SOURCE",
+      2,
+      "Ханако, призрак с внеклассными историями",
+      "https://shikimori.one/mangas/121209-houkago-shounen-hanako-kun"
+    ],
+    [
+      109608,
+      118668,
+      "SOURCE",
+      2,
+      "Тёмное собрание",
+      "https://shikimori.one/mangas/118668-dark-gathering"
+    ],
+    [
+      110473,
+      121213,
+      "SOURCE",
+      2,
+      "Бессонница после школы",
+      "https://shikimori.one/mangas/121213-kimi-wa-houkago-insomnia"
+    ],
+    [
+      110785,
+      120974,
+      "SOURCE",
+      2,
+      "Соблазн 2,5-мерного измерения",
+      "https://shikimori.one/mangas/120974-2-5-jigen-no-ririsa"
+    ],
+    [
+      110909,
+      121197,
+      "SOURCE",
+      2,
+      "Стесняшка",
+      "https://shikimori.one/mangas/121197-shy"
+    ],
+    [
+      111233,
+      121480,
+      "SOURCE",
+      2,
+      "Песнь ночных сов",
+      "https://shikimori.one/mangas/121480-yofukashi-no-uta"
+    ],
+    [
+      112189,
+      34019,
+      "SOURCE",
+      2,
+      "Королева тысячелетия",
+      "https://shikimori.one/mangas/34019-shin-taketori-monogatari-1000-nen-joou"
+    ],
+    [
+      113114,
+      106801,
+      "SOURCE",
+      2,
+      "Ярость Бахамута: Две головы",
+      "https://shikimori.one/mangas/106801-shingeki-no-bahamut-twin-heads"
+    ],
+    [
+      114383,
+      123602,
+      "SOURCE",
+      2,
+      "Сведённые кукушкой",
+      "https://shikimori.one/mangas/123602-kakkou-no-iinazuke"
+    ],
+    [
+      114388,
+      121544,
+      "SOURCE",
+      2,
+      "Рейтинг короля",
+      "https://shikimori.one/mangas/121544-ousama-ranking"
+    ],
+    [
+      116266,
+      124940,
+      "SOURCE",
+      2,
+      "Мои девушки",
+      "https://shikimori.one/mangas/124940-kanojo-mo-kanojo"
+    ],
+    [
+      116827,
+      129370,
+      "SOURCE",
+      2,
+      "Сжечь ведьму",
+      "https://shikimori.one/mangas/129370-burn-the-witch"
+    ],
+    [
+      117662,
+      125725,
+      "SOURCE",
+      2,
+      "Тёмное прошлое перевоплощённой злодейки",
+      "https://shikimori.one/mangas/125725-tensei-akujo-no-kuro-rekishi"
+    ],
+    [
+      117785,
+      133362,
+      "SOURCE",
+      2,
+      "Доки, ты справишься!",
+      "https://shikimori.one/mangas/133362-ganbare-douki-chan"
+    ],
+    [
+      118288,
+      109302,
+      "SOURCE",
+      2,
+      "Поле битвы",
+      "https://shikimori.one/mangas/109302-senjou-manga-series"
+    ],
+    [
+      118371,
+      129621,
+      "SOURCE",
+      2,
+      "Медалистка",
+      "https://shikimori.one/mangas/129621-medalist"
+    ],
+    [
+      118570,
+      137982,
+      "SOURCE",
+      2,
+      "Моя сэмпай — парень?",
+      "https://shikimori.one/mangas/137982-senpai-wa-otokonoko"
+    ],
+    [
+      119968,
+      127436,
+      "SOURCE",
+      2,
+      "Тёмный демон",
+      "https://shikimori.one/mangas/127436-tougen-anki"
+    ],
+    [
+      122364,
+      128634,
+      "SOURCE",
+      2,
+      "Стать любимой собачкой",
+      "https://shikimori.one/mangas/128634-inu-ni-nattara-suki-na-hito-ni-hirowareta"
+    ],
+    [
+      122693,
+      138396,
+      "SOURCE",
+      2,
+      "Клеватесс: Король демонических зверей, младенец и герой-нежить",
+      "https://shikimori.one/mangas/138396-clevatess-majuu-no-ou-to-akago-to-shikabane-no-yuusha"
+    ],
+    [
+      123034,
+      137109,
+      "SOURCE",
+      2,
+      "Тусовщик Кунмин",
+      "https://shikimori.one/mangas/137109-paripi-koumei"
+    ],
+    [
+      124895,
+      130392,
+      "SOURCE",
+      2,
+      "Рон Камонохаси: Невменяемый детектив",
+      "https://shikimori.one/mangas/130392-kamonohashi-ron-no-kindan-suiri"
+    ],
+    [
+      125855,
+      132739,
+      "SOURCE",
+      2,
+      "В любом случае я влюблюсь в тебя",
+      "https://shikimori.one/mangas/132739-douse-koishite-shimaunda"
+    ],
+    [
+      127143,
+      132161,
+      "SOURCE",
+      2,
+      "Почему-то в моём доме поселилась куноити-отаку",
+      "https://shikimori.one/mangas/132161-neet-kunoichi-to-nazeka-dousei-hajimemashita"
+    ],
+    [
+      127564,
+      132129,
+      "SOURCE",
+      2,
+      "Боевой отряд «Полный провал»",
+      "https://shikimori.one/mangas/132129-sentai-daishikkaku"
+    ],
+    [
+      128666,
+      132845,
+      "SOURCE",
+      2,
+      "Юный лорд — мастер побега",
+      "https://shikimori.one/mangas/132845-nige-jouzu-no-wakagimi"
+    ],
+    [
+      128896,
+      133545,
+      "SOURCE",
+      2,
+      "Ведьмнадзор",
+      "https://shikimori.one/mangas/133545-witch-watch"
+    ],
+    [
+      129117,
+      128691,
+      "SOURCE",
+      2,
+      "Четыре всадника Апокалипсиса",
+      "https://shikimori.one/mangas/128691-mokushiroku-no-yonkishi"
+    ],
+    [
+      129287,
+      81643,
+      "SOURCE",
+      2,
+      "Мобильный воин Гандам: Хроники U.C. — Воспоминания Чара Азнабля",
+      "https://shikimori.one/mangas/81643-kidou-senshi-gundam-u-c-senki-tsuioku-no-char-aznable"
+    ],
+    [
+      129694,
+      133696,
+      "SOURCE",
+      2,
+      "Терраса кафе богинь",
+      "https://shikimori.one/mangas/133696-megami-no-cafe-terrace"
+    ],
+    [
+      132182,
+      135545,
+      "SOURCE",
+      2,
+      "Голубая шкатулка",
+      "https://shikimori.one/mangas/135545-ao-no-hako"
+    ],
+    [
+      134369,
+      136979,
+      "SOURCE",
+      2,
+      "Мэдака Куроива не понимает моей привлекательности",
+      "https://shikimori.one/mangas/136979-kuroiwa-medaka-ni-watashi-no-kawaii-ga-tsuujinai"
+    ],
+    [
+      135083,
+      133081,
+      "SOURCE",
+      2,
+      "Ветролом",
+      "https://shikimori.one/mangas/133081-wind-breaker"
+    ],
+    [
+      135395,
+      141572,
+      "SOURCE",
+      2,
+      "Звезда, что ярче солнца",
+      "https://shikimori.one/mangas/141572-taiyou-yori-mo-mabushii-hoshi"
+    ],
+    [
+      135427,
+      139086,
+      "SOURCE",
+      2,
+      "Отель для нелюдей",
+      "https://shikimori.one/mangas/139086-hotel-inhumans"
+    ],
+    [
+      136899,
+      141772,
+      "SOURCE",
+      2,
+      "Цугаи загробного мира",
+      "https://shikimori.one/mangas/141772-yomi-no-tsugai"
+    ],
+    [
+      138603,
+      141833,
+      "SOURCE",
+      2,
+      "Лето, когда погас свет",
+      "https://shikimori.one/mangas/141833-hikaru-ga-shinda-natsu"
+    ],
+    [
+      138883,
+      141087,
+      "SOURCE",
+      2,
+      "Синие Мибуро",
+      "https://shikimori.one/mangas/141087-ao-no-miburo"
+    ],
+    [
+      140482,
+      142224,
+      "SOURCE",
+      2,
+      "Компания «Маги-Люмьер»",
+      "https://shikimori.one/mangas/142224-kabushikigaisha-magi-lumi-re"
+    ],
+    [
+      140855,
+      141466,
+      "SOURCE",
+      2,
+      "Тикава: Что-то маленькое и милое",
+      "https://shikimori.one/mangas/141466-chiikawa-nanka-chiisakute-kawaii-yatsu"
+    ],
+    [
+      142779,
+      119326,
+      "SOURCE",
+      2,
+      "Супермалыш",
+      "https://shikimori.one/mangas/119326-perman"
+    ],
+    [
+      144946,
+      144180,
+      "SOURCE",
+      2,
+      "Гатиакута",
+      "https://shikimori.one/mangas/144180-gachiakuta"
+    ],
+    [
+      147329,
+      146211,
+      "SOURCE",
+      2,
+      "Брачный токсин",
+      "https://shikimori.one/mangas/146211-marriagetoxin"
+    ],
+    [
+      147863,
+      149973,
+      "SOURCE",
+      2,
+      "Даже у студсовета есть косяки!",
+      "https://shikimori.one/mangas/149973-seitokai-ni-mo-ana-wa-aru"
+    ],
+    [
+      147997,
+      147091,
+      "SOURCE",
+      2,
+      "Ты и я — полные противоположности",
+      "https://shikimori.one/mangas/147091-seihantai-na-kimi-to-boku"
+    ],
+    [
+      150440,
+      148054,
+      "SOURCE",
+      2,
+      "Дракон Рури",
+      "https://shikimori.one/mangas/148054-ruri-dragon"
+    ],
+    [
+      156486,
+      168633,
+      "SOURCE",
+      2,
+      "Возмездие раненой святой",
+      "https://shikimori.one/mangas/168633-kizu-darake-seijo-yori-houfuku-wo-komete"
+    ],
+    [
+      162552,
+      157795,
+      "SOURCE",
+      2,
+      "Табакошка",
+      "https://shikimori.one/mangas/157795-yani-neko"
+    ],
+    [
+      164572,
+      158508,
+      "SOURCE",
+      2,
+      "Эй, Томбо!",
+      "https://shikimori.one/mangas/158508-ooi-tonbo"
+    ],
+    [
+      165896,
+      158220,
+      "SOURCE",
+      2,
+      "Прогулки маленькой акулы",
+      "https://shikimori.one/mangas/158220-odekake-kozame"
+    ],
+    [
+      166742,
+      160303,
+      "SOURCE",
+      2,
+      "Ледяная стена",
+      "https://shikimori.one/mangas/160303-koori-no-jouheki"
+    ],
+    [
+      169272,
+      162964,
+      "SOURCE",
+      2,
+      "Полуночный мотив сердца",
+      "https://shikimori.one/mangas/162964-mayonaka-heart-tune"
+    ],
+    [
+      169928,
+      110242,
+      "SOURCE",
+      2,
+      "Патруль времени Бона",
+      "https://shikimori.one/mangas/110242-time-patrol-bon"
+    ],
+    [
+      184312,
+      174933,
+      "SOURCE",
+      2,
+      "Моя геройская академия: Проще простого",
+      "https://shikimori.one/mangas/174933-boku-no-hero-academia-a-piece-of-cake"
+    ],
+    [
+      190343,
+      177704,
+      "SOURCE",
+      2,
+      "Энн Ширли",
+      "https://shikimori.one/mangas/177704-anne-shirley"
+    ],
+    [
+      201610,
+      188768,
+      "SOURCE",
+      2,
+      "Галактический экспресс: Млечное метро",
+      "https://shikimori.one/mangas/188768-ginga-tokkyuu-milky-subway"
+    ],
+    [
+      30001,
+      1,
+      "SOURCE",
+      1,
+      "Монстр",
+      "https://shikimori.one/mangas/1-monster"
+    ],
+    [
+      30014,
+      14,
+      "SOURCE",
+      1,
+      "Рэйв Мастер",
+      "https://shikimori.one/mangas/14-rave"
+    ],
+    [
+      30016,
+      16,
+      "SOURCE",
+      1,
+      "Любовь и Хина",
+      "https://shikimori.one/mangas/16-love-hina"
+    ],
+    [
+      30017,
+      17,
+      "SOURCE",
+      1,
+      "С его стороны — с её стороны",
+      "https://shikimori.one/mangas/z17-kareshi-kanojo-no-jijou"
+    ],
+    [
+      30018,
+      18,
+      "SOURCE",
+      1,
+      "Детская игрушка",
+      "https://shikimori.one/mangas/18-kodomo-no-omocha"
+    ],
+    [
+      30019,
+      19,
+      "SOURCE",
+      1,
+      "Агентство по возврату утраченного",
+      "https://shikimori.one/mangas/19-getbackers"
+    ],
+    [
+      30028,
+      28,
+      "SOURCE",
+      1,
+      "Нана",
+      "https://shikimori.one/mangas/28-nana"
+    ],
+    [
+      30029,
+      29,
+      "SOURCE",
+      1,
+      "Райский поцелуй",
+      "https://shikimori.one/mangas/29-paradise-kiss"
+    ],
+    [
+      30030,
+      30,
+      "SOURCE",
+      1,
+      "Клуб свиданий старшей школы Оран",
+      "https://shikimori.one/mangas/30-ouran-koukou-host-club"
+    ],
+    [
+      30031,
+      31,
+      "SOURCE",
+      1,
+      "Трогательный комплекс",
+      "https://shikimori.one/mangas/31-lovely-complex"
+    ],
+    [
+      30033,
+      33,
+      "SOURCE",
+      1,
+      "Приставучий ангел",
+      "https://shikimori.one/mangas/33-pita-ten"
+    ],
+    [
+      30034,
+      34,
+      "SOURCE",
+      1,
+      "Ди-Ги Карат: Антология",
+      "https://shikimori.one/mangas/34-di-gi-charat-koushiki-comic-anthology"
+    ],
+    [
+      30035,
+      35,
+      "SOURCE",
+      1,
+      "Маленькая богиня Карин",
+      "https://shikimori.one/mangas/35-kamichama-karin"
+    ],
+    [
+      30036,
+      36,
+      "SOURCE",
+      1,
+      "Воровка-камикадзе Жанна",
+      "https://shikimori.one/mangas/36-kamikaze-kaitou-jeanne"
+    ],
+    [
+      30040,
+      40,
+      "SOURCE",
+      1,
+      "Чёрный кот",
+      "https://shikimori.one/mangas/40-black-cat"
+    ],
+    [
+      30041,
+      41,
+      "SOURCE",
+      1,
+      "Алхимическое оружие",
+      "https://shikimori.one/mangas/41-busou-renkin"
+    ],
+    [
+      30043,
+      43,
+      "SOURCE",
+      1,
+      "Айшилд  21",
+      "https://shikimori.one/mangas/43-eyeshield-21"
+    ],
+    [
+      30045,
+      45,
+      "SOURCE",
+      1,
+      "Стопроцентная клубничка",
+      "https://shikimori.one/mangas/45-ichigo-100"
+    ],
+    [
+      30047,
+      47,
+      "SOURCE",
+      1,
+      "Репетитор-киллер Реборн!",
+      "https://shikimori.one/mangas/47-katekyou-hitman-reborn"
+    ],
+    [
+      30052,
+      52,
+      "SOURCE",
+      1,
+      "Свисток!",
+      "https://shikimori.one/mangas/52-whistle"
+    ],
+    [
+      30055,
+      55,
+      "SOURCE",
+      1,
+      "Моя малышка",
+      "https://shikimori.one/mangas/55-aishiteruze-baby"
+    ],
+    [
+      30066,
+      66,
+      "SOURCE",
+      1,
+      "Дважды два — это Синобу",
+      "https://shikimori.one/mangas/66-ninin-ga-shinobuden"
+    ],
+    [
+      30070,
+      70,
+      "SOURCE",
+      1,
+      "Клинок зла",
+      "https://shikimori.one/mangas/70-bel-blatt"
+    ],
+    [
+      30072,
+      72,
+      "SOURCE",
+      1,
+      "Магический округ Абэнобаси",
+      "https://shikimori.one/mangas/72-abenobashi-mahou-shoutengai"
+    ],
+    [
+      30073,
+      73,
+      "SOURCE",
+      1,
+      "Небо и земля",
+      "https://shikimori.one/mangas/73-tenjou-tenge"
+    ],
+    [
+      30076,
+      76,
+      "SOURCE",
+      1,
+      "Малыш и я",
+      "https://shikimori.one/mangas/76-akachan-to-boku"
+    ],
+    [
+      30079,
+      79,
+      "SOURCE",
+      1,
+      "Красная река",
+      "https://shikimori.one/mangas/79-sora-wa-akai-kawa-no-hotori"
+    ],
+    [
+      30080,
+      80,
+      "SOURCE",
+      1,
+      "Арена ангелов",
+      "https://shikimori.one/mangas/80-angelic-layer"
+    ],
+    [
+      30083,
+      83,
+      "SOURCE",
+      1,
+      "Подозрительная Церера",
+      "https://shikimori.one/mangas/83-ayashi-no-ceres"
+    ],
+    [
+      30085,
+      85,
+      "SOURCE",
+      1,
+      "Адзуманга Дайо",
+      "https://shikimori.one/mangas/z85-azumanga-daioh"
+    ],
+    [
+      30087,
+      87,
+      "SOURCE",
+      1,
+      "Тактика",
+      "https://shikimori.one/mangas/87-tactics"
+    ],
+    [
+      30089,
+      89,
+      "SOURCE",
+      1,
+      "Девчонки!",
+      "https://shikimori.one/mangas/89-gals"
+    ],
+    [
+      30090,
+      90,
+      "SOURCE",
+      1,
+      "Нелюбимый",
+      "https://shikimori.one/mangas/90-loveless"
+    ],
+    [
+      30097,
+      97,
+      "SOURCE",
+      1,
+      "ДиарС",
+      "https://shikimori.one/mangas/97-dears"
+    ],
+    [
+      30105,
+      105,
+      "SOURCE",
+      1,
+      "Заградители",
+      "https://shikimori.one/mangas/105-kekkaishi"
+    ],
+    [
+      30107,
+      107,
+      "SOURCE",
+      1,
+      "Чобиты",
+      "https://shikimori.one/mangas/107-chobits"
+    ],
+    [
+      30114,
+      114,
+      "SOURCE",
+      1,
+      "Воздушные пираты",
+      "https://shikimori.one/mangas/114-erementar-gerad"
+    ],
+    [
+      30118,
+      118,
+      "SOURCE",
+      1,
+      "Кобато",
+      "https://shikimori.one/mangas/118-kobato"
+    ],
+    [
+      30128,
+      128,
+      "SOURCE",
+      1,
+      "Магазинчик ужасов",
+      "https://shikimori.one/mangas/128-petshop-of-horrors"
+    ],
+    [
+      30134,
+      134,
+      "SOURCE",
+      1,
+      "МАР — Роман о волшебном пробуждении",
+      "https://shikimori.one/mangas/134-m-r"
+    ],
+    [
+      30136,
+      136,
+      "SOURCE",
+      1,
+      "Пламя Рэкки",
+      "https://shikimori.one/mangas/136-rekka-no-honoo"
+    ],
+    [
+      30145,
+      145,
+      "SOURCE",
+      1,
+      "Бек",
+      "https://shikimori.one/mangas/145-beck"
+    ],
+    [
+      30155,
+      155,
+      "SOURCE",
+      1,
+      "Сила разума",
+      "https://shikimori.one/mangas/155-brain-powerd"
+    ],
+    [
+      30161,
+      161,
+      "SOURCE",
+      1,
+      "Бригадун",
+      "https://shikimori.one/mangas/161-brigadoon-marin-to-melan"
+    ],
+    [
+      30172,
+      172,
+      "SOURCE",
+      1,
+      "Корректор Юи",
+      "https://shikimori.one/mangas/172-corrector-yui"
+    ],
+    [
+      30173,
+      173,
+      "SOURCE",
+      1,
+      "Ковбой Бибоп",
+      "https://shikimori.one/mangas/173-cowboy-bebop"
+    ],
+    [
+      30174,
+      174,
+      "SOURCE",
+      1,
+      "Ковбой Бибоп: Падающая звезда",
+      "https://shikimori.one/mangas/174-shooting-star-bebop-cowboy-bebop"
+    ],
+    [
+      30176,
+      176,
+      "SOURCE",
+      1,
+      "Тёко, сестрёнка",
+      "https://shikimori.one/mangas/176-chocotto-sister"
+    ],
+    [
+      30191,
+      191,
+      "SOURCE",
+      1,
+      "Дзипанг",
+      "https://shikimori.one/mangas/191-zipang"
+    ],
+    [
+      30199,
+      199,
+      "SOURCE",
+      1,
+      "Лес русалок",
+      "https://shikimori.one/mangas/199-ningyo-series"
+    ],
+    [
+      30206,
+      206,
+      "SOURCE",
+      1,
+      "Мобильный воин Гандам 0079",
+      "https://shikimori.one/mangas/206-kidou-senshi-gundam-0079"
+    ],
+    [
+      30209,
+      209,
+      "SOURCE",
+      1,
+      "Кондитерская «Антиква»",
+      "https://shikimori.one/mangas/209-seiyou-kottou-yougashiten"
+    ],
+    [
+      30221,
+      221,
+      "SOURCE",
+      1,
+      "Василиск: Манускрипт ниндзя Кога",
+      "https://shikimori.one/mangas/221-basilisk-kouga-ninpouchou"
+    ],
+    [
+      30246,
+      246,
+      "SOURCE",
+      1,
+      "Принцесса, принцесса",
+      "https://shikimori.one/mangas/246-princess-princess"
+    ],
+    [
+      30257,
+      257,
+      "SOURCE",
+      1,
+      "Гибридный ребёнок",
+      "https://shikimori.one/mangas/257-hybrid-child"
+    ],
+    [
+      30274,
+      274,
+      "SOURCE",
+      1,
+      "Дафна: Тайна сияющих вод",
+      "https://shikimori.one/mangas/274-ai-hikari-to-mizu-no-daphne"
+    ],
+    [
+      30283,
+      283,
+      "SOURCE",
+      1,
+      "Большой О",
+      "https://shikimori.one/mangas/z283-the-big-o"
+    ],
+    [
+      30299,
+      299,
+      "SOURCE",
+      1,
+      "Кошачий апокалипсис",
+      "https://shikimori.one/mangas/299-cat-shit-one"
+    ],
+    [
+      30318,
+      318,
+      "SOURCE",
+      1,
+      "Хроники молодожёнов",
+      "https://shikimori.one/mangas/318-futari-ecchi"
+    ],
+    [
+      30320,
+      320,
+      "SOURCE",
+      1,
+      "Школа Элис",
+      "https://shikimori.one/mangas/320-gakuen-alice"
+    ],
+    [
+      30326,
+      326,
+      "SOURCE",
+      1,
+      "Закон Уэки",
+      "https://shikimori.one/mangas/326-ueki-no-housoku"
+    ],
+    [
+      30328,
+      328,
+      "SOURCE",
+      1,
+      "Гренадёр",
+      "https://shikimori.one/mangas/328-grenadier"
+    ],
+    [
+      30332,
+      332,
+      "SOURCE",
+      1,
+      "Гравитация",
+      "https://shikimori.one/mangas/332-gravitation"
+    ],
+    [
+      30336,
+      336,
+      "SOURCE",
+      1,
+      "Крутой учитель Онидзука",
+      "https://shikimori.one/mangas/336-gto"
+    ],
+    [
+      30338,
+      338,
+      "SOURCE",
+      1,
+      "Крестовый поход Хроно",
+      "https://shikimori.one/mangas/338-chrno-crusade"
+    ],
+    [
+      30339,
+      339,
+      "SOURCE",
+      1,
+      "Кромешная путяга",
+      "https://shikimori.one/mangas/339-sakigake-cromartie-koukou"
+    ],
+    [
+      30349,
+      349,
+      "SOURCE",
+      1,
+      "Новый мобильный воин Гандам: Дубль-вэ",
+      "https://shikimori.one/mangas/349-shin-kidou-senki-gundam-wing"
+    ],
+    [
+      30351,
+      351,
+      "SOURCE",
+      1,
+      "Мобильный воин Гандам: Поколение",
+      "https://shikimori.one/mangas/351-kidou-senshi-gundam-seed"
+    ],
+    [
+      30356,
+      356,
+      "SOURCE",
+      1,
+      "Неслыханная игра",
+      "https://shikimori.one/mangas/356-hatenkou-yuugi"
+    ],
+    [
+      30357,
+      357,
+      "SOURCE",
+      1,
+      "Волчий дождь",
+      "https://shikimori.one/mangas/357-wolf-s-rain"
+    ],
+    [
+      30359,
+      359,
+      "SOURCE",
+      1,
+      "Зойды: Хаотичный век",
+      "https://shikimori.one/mangas/359-kijuushin-seiki-zoids"
+    ],
+    [
+      30360,
+      360,
+      "SOURCE",
+      1,
+      "Горячий парень Джей",
+      "https://shikimori.one/mangas/360-heat-guy-j"
+    ],
+    [
+      30363,
+      363,
+      "SOURCE",
+      1,
+      "Зойды нового века",
+      "https://shikimori.one/mangas/363-zoids-shinseiki-zero"
+    ],
+    [
+      30366,
+      366,
+      "SOURCE",
+      1,
+      "Голос далёкой звезды",
+      "https://shikimori.one/mangas/366-hoshi-no-koe"
+    ],
+    [
+      30367,
+      367,
+      "SOURCE",
+      1,
+      "Гиперполиция",
+      "https://shikimori.one/mangas/367-hyper-police"
+    ],
+    [
+      30372,
+      372,
+      "SOURCE",
+      1,
+      "Сила тысячи",
+      "https://shikimori.one/mangas/372-ikkitousen"
+    ],
+    [
+      30382,
+      382,
+      "SOURCE",
+      1,
+      "Планета Короля Зверей",
+      "https://shikimori.one/mangas/382-juu-ou-sei"
+    ],
+    [
+      30387,
+      387,
+      "SOURCE",
+      1,
+      "Карин",
+      "https://shikimori.one/mangas/387-karin"
+    ],
+    [
+      30394,
+      394,
+      "SOURCE",
+      1,
+      "Джинг, король бандитов: Сумеречные рассказы",
+      "https://shikimori.one/mangas/394-king-of-bandit-jing"
+    ],
+    [
+      30395,
+      395,
+      "SOURCE",
+      1,
+      "Повелители терний",
+      "https://shikimori.one/mangas/395-ibara-no-ou"
+    ],
+    [
+      30401,
+      401,
+      "SOURCE",
+      1,
+      "Паразит",
+      "https://shikimori.one/mangas/401-kiseijuu"
+    ],
+    [
+      30406,
+      406,
+      "SOURCE",
+      1,
+      "Портрет малышки Козетты",
+      "https://shikimori.one/mangas/406-cossette-no-shouzou"
+    ],
+    [
+      30408,
+      408,
+      "SOURCE",
+      1,
+      "Мобильный воин Гандам: Судьба поколения",
+      "https://shikimori.one/mangas/408-kidou-senshi-gundam-seed-destiny"
+    ],
+    [
+      30414,
+      414,
+      "SOURCE",
+      1,
+      "Храни меня, леденец!",
+      "https://shikimori.one/mangas/414-mamotte-lollipop"
+    ],
+    [
+      30422,
+      422,
+      "SOURCE",
+      1,
+      "Семь обличий Ямато Надэсико",
+      "https://shikimori.one/mangas/422-yamato-nadeshiko-shichihenge"
+    ],
+    [
+      30426,
+      426,
+      "SOURCE",
+      1,
+      "Тыквенные ножницы",
+      "https://shikimori.one/mangas/426-pumpkin-scissors"
+    ],
+    [
+      30430,
+      430,
+      "SOURCE",
+      1,
+      "Судзука",
+      "https://shikimori.one/mangas/430-suzuka"
+    ],
+    [
+      30436,
+      436,
+      "SOURCE",
+      1,
+      "Спираль",
+      "https://shikimori.one/mangas/436-uzumaki"
+    ],
+    [
+      30441,
+      441,
+      "SOURCE",
+      1,
+      "Май-Химэ",
+      "https://shikimori.one/mangas/441-mai-hime"
+    ],
+    [
+      30442,
+      442,
+      "SOURCE",
+      1,
+      "Железобетон",
+      "https://shikimori.one/mangas/442-tekkon-kinkreet"
+    ],
+    [
+      30444,
+      444,
+      "SOURCE",
+      1,
+      "Плохая компания",
+      "https://shikimori.one/mangas/444-bad-company"
+    ],
+    [
+      30445,
+      445,
+      "SOURCE",
+      1,
+      "Крутой учитель Онидзука: Ранние годы",
+      "https://shikimori.one/mangas/445-shonan-junai-gumi"
+    ],
+    [
+      30448,
+      448,
+      "SOURCE",
+      1,
+      "Обитель ангелов",
+      "https://shikimori.one/mangas/448-tenshi-kinryouku"
+    ],
+    [
+      30449,
+      449,
+      "SOURCE",
+      1,
+      "Чудесные девчушки",
+      "https://shikimori.one/mangas/449-miracle-girls"
+    ],
+    [
+      30456,
+      456,
+      "SOURCE",
+      1,
+      "Монохромный фактор",
+      "https://shikimori.one/mangas/456-monochrome-factor"
+    ],
+    [
+      30457,
+      457,
+      "SOURCE",
+      1,
+      "Фаза луны",
+      "https://shikimori.one/mangas/457-tsukuyomi"
+    ],
+    [
+      30472,
+      472,
+      "SOURCE",
+      1,
+      "Джинг, король бандитов",
+      "https://shikimori.one/mangas/472-ou-dorobou-jing"
+    ],
+    [
+      30474,
+      474,
+      "SOURCE",
+      1,
+      "Миротворец на службе Синсэнгуми",
+      "https://shikimori.one/mangas/474-shinsengumi-imon-peace-maker"
+    ],
+    [
+      30475,
+      475,
+      "SOURCE",
+      1,
+      "Красотка",
+      "https://shikimori.one/mangas/475-peach-girl"
+    ],
+    [
+      30481,
+      481,
+      "SOURCE",
+      1,
+      "Странники",
+      "https://shikimori.one/mangas/481-planetes"
+    ],
+    [
+      30506,
+      506,
+      "SOURCE",
+      1,
+      "Воины-марионетки Джей",
+      "https://shikimori.one/mangas/506-saber-marionette-j"
+    ],
+    [
+      30508,
+      508,
+      "SOURCE",
+      1,
+      "Таинственная грабительница Сент-Тэйл",
+      "https://shikimori.one/mangas/508-kaitou-saint-tail"
+    ],
+    [
+      30512,
+      512,
+      "SOURCE",
+      1,
+      "Самурай Чамплу",
+      "https://shikimori.one/mangas/512-samurai-champloo"
+    ],
+    [
+      30513,
+      513,
+      "SOURCE",
+      1,
+      "Самурай Кё",
+      "https://shikimori.one/mangas/513-samurai-deeper-kyou"
+    ],
+    [
+      30528,
+      528,
+      "SOURCE",
+      1,
+      "Человек-череп",
+      "https://shikimori.one/mangas/528-skull-man"
+    ],
+    [
+      30534,
+      534,
+      "SOURCE",
+      1,
+      "Спираль: Логические цепи",
+      "https://shikimori.one/mangas/534-spiral-suiri-no-kizuna"
+    ],
+    [
+      30572,
+      572,
+      "SOURCE",
+      1,
+      "Дни Мидори",
+      "https://shikimori.one/mangas/572-midori-no-hibi"
+    ],
+    [
+      30583,
+      583,
+      "SOURCE",
+      1,
+      "Клеймор",
+      "https://shikimori.one/mangas/583-claymore"
+    ],
+    [
+      30587,
+      587,
+      "SOURCE",
+      1,
+      "Счастливая звезда",
+      "https://shikimori.one/mangas/587-lucky-star"
+    ],
+    [
+      30597,
+      597,
+      "SOURCE",
+      1,
+      "Нэгима?! Нео",
+      "https://shikimori.one/mangas/597-negima-neo"
+    ],
+    [
+      30610,
+      610,
+      "SOURCE",
+      1,
+      "Не сдавайся!",
+      "https://shikimori.one/mangas/z610-skip-beat"
+    ],
+    [
+      30624,
+      624,
+      "SOURCE",
+      1,
+      "Шифр",
+      "https://shikimori.one/mangas/624-cipher"
+    ],
+    [
+      30648,
+      648,
+      "SOURCE",
+      1,
+      "Псы: Пули и резня",
+      "https://shikimori.one/mangas/648-dogs-bullets-carnage"
+    ],
+    [
+      30649,
+      649,
+      "SOURCE",
+      1,
+      "Школа убийц",
+      "https://shikimori.one/mangas/649-gunslinger-girl"
+    ],
+    [
+      30651,
+      651,
+      "SOURCE",
+      1,
+      "Навсикая из Долины ветров",
+      "https://shikimori.one/mangas/651-kaze-no-tani-no-nausicaa"
+    ],
+    [
+      30653,
+      653,
+      "SOURCE",
+      1,
+      "Японская свежая выпечка",
+      "https://shikimori.one/mangas/653-yakitate-japan"
+    ],
+    [
+      30655,
+      655,
+      "SOURCE",
+      1,
+      "Пожалуйста, спасите мою Землю!",
+      "https://shikimori.one/mangas/655-boku-no-chikyuu-wo-mamotte"
+    ],
+    [
+      30659,
+      659,
+      "SOURCE",
+      1,
+      "Мифический детектив Локи",
+      "https://shikimori.one/mangas/659-matantei-loki"
+    ],
+    [
+      30662,
+      662,
+      "SOURCE",
+      1,
+      "3x3 глаза",
+      "https://shikimori.one/mangas/662-3x3-eyes"
+    ],
+    [
+      30663,
+      663,
+      "SOURCE",
+      1,
+      "Запись",
+      "https://shikimori.one/mangas/663-rec"
+    ],
+    [
+      30669,
+      669,
+      "SOURCE",
+      1,
+      "Школа мертвецов",
+      "https://shikimori.one/mangas/669-highschool-of-the-dead"
+    ],
+    [
+      30670,
+      670,
+      "SOURCE",
+      1,
+      "Наше",
+      "https://shikimori.one/mangas/670-bokurano"
+    ],
+    [
+      30672,
+      672,
+      "SOURCE",
+      1,
+      "Галактический ангел",
+      "https://shikimori.one/mangas/672-galaxy-angel"
+    ],
+    [
+      30674,
+      674,
+      "SOURCE",
+      1,
+      "Нейро Ногами — Детектив из Ада",
+      "https://shikimori.one/mangas/674-majin-tantei-nougami-neuro"
+    ],
+    [
+      30679,
+      679,
+      "SOURCE",
+      1,
+      "Галактический ангел 3",
+      "https://shikimori.one/mangas/679-galaxy-angel-3rd"
+    ],
+    [
+      30683,
+      683,
+      "SOURCE",
+      1,
+      "ДНК 2",
+      "https://shikimori.one/mangas/683-dna-dokoka-de-nakushita-aitsu-no-aitsu"
+    ],
+    [
+      30688,
+      688,
+      "SOURCE",
+      1,
+      "Доходный дом Иккоку",
+      "https://shikimori.one/mangas/688-maison-ikkoku"
+    ],
+    [
+      30695,
+      695,
+      "SOURCE",
+      1,
+      "Эксель-сага",
+      "https://shikimori.one/mangas/695-excel-saga"
+    ],
+    [
+      30697,
+      697,
+      "SOURCE",
+      1,
+      "Рыцари магии II",
+      "https://shikimori.one/mangas/697-magic-knight-rayearth-2"
+    ],
+    [
+      30698,
+      698,
+      "SOURCE",
+      1,
+      "Евангелион нового поколения",
+      "https://shikimori.one/mangas/698-shinseiki-evangelion"
+    ],
+    [
+      30709,
+      709,
+      "SOURCE",
+      1,
+      "Читай или мечтай",
+      "https://shikimori.one/mangas/709-r-o-d-read-or-dream"
+    ],
+    [
+      30717,
+      717,
+      "SOURCE",
+      1,
+      "Первосортные Рубаки",
+      "https://shikimori.one/mangas/717-slayers-premium"
+    ],
+    [
+      30720,
+      720,
+      "SOURCE",
+      1,
+      "Бамбуковый клинок",
+      "https://shikimori.one/mangas/720-bamboo-blade"
+    ],
+    [
+      30733,
+      733,
+      "SOURCE",
+      1,
+      "Котикамэ",
+      "https://shikimori.one/mangas/733-kochira-katsushikaku-kameari-kouenmae-hashutsujo"
+    ],
+    [
+      30736,
+      736,
+      "SOURCE",
+      1,
+      "Повелитель призраков",
+      "https://shikimori.one/mangas/736-shin-angyo-onshi"
+    ],
+    [
+      30741,
+      741,
+      "SOURCE",
+      1,
+      "Пожалуйста! Близнецы",
+      "https://shikimori.one/mangas/741-onegai-twins"
+    ],
+    [
+      30744,
+      744,
+      "SOURCE",
+      1,
+      "Махораба",
+      "https://shikimori.one/mangas/744-mahoraba"
+    ],
+    [
+      30745,
+      745,
+      "SOURCE",
+      1,
+      "Плутон",
+      "https://shikimori.one/mangas/745-pluto"
+    ],
+    [
+      30747,
+      747,
+      "SOURCE",
+      1,
+      "Кровь+",
+      "https://shikimori.one/mangas/747-blood"
+    ],
+    [
+      30751,
+      751,
+      "SOURCE",
+      1,
+      "Хеллсинг: Рассвет",
+      "https://shikimori.one/mangas/751-hellsing-the-dawn"
+    ],
+    [
+      30755,
+      755,
+      "SOURCE",
+      1,
+      "Ай — девушка с кассеты",
+      "https://shikimori.one/mangas/755-denei-shoujo"
+    ],
+    [
+      30756,
+      756,
+      "SOURCE",
+      1,
+      "Банановая рыба",
+      "https://shikimori.one/mangas/756-banana-fish"
+    ],
+    [
+      30768,
+      768,
+      "SOURCE",
+      1,
+      "Боевой ангел Алита",
+      "https://shikimori.one/mangas/768-gunnm"
+    ],
+    [
+      30773,
+      773,
+      "SOURCE",
+      1,
+      "Моя девушка — совершенное оружие",
+      "https://shikimori.one/mangas/773-saishuu-heiki-kanojo"
+    ],
+    [
+      30775,
+      775,
+      "SOURCE",
+      1,
+      "В своих ладонях он держал весну",
+      "https://shikimori.one/mangas/775-haru-wo-daiteita"
+    ],
+    [
+      30779,
+      779,
+      "SOURCE",
+      1,
+      "Касимаси: Девушка встречает девушку",
+      "https://shikimori.one/mangas/779-kashimashi-girl-meets-girl"
+    ],
+    [
+      30793,
+      793,
+      "SOURCE",
+      1,
+      "Разыскиваются!",
+      "https://shikimori.one/mangas/793-wanted"
+    ],
+    [
+      30838,
+      838,
+      "SOURCE",
+      1,
+      "Легенда об Ангеле",
+      "https://shikimori.one/mangas/838-angel-densetsu"
+    ],
+    [
+      30852,
+      852,
+      "SOURCE",
+      1,
+      "Бейблэйд",
+      "https://shikimori.one/mangas/852-bakuten-shoot-beyblade"
+    ],
+    [
+      30858,
+      858,
+      "SOURCE",
+      1,
+      "Электрический разряд Пикачу",
+      "https://shikimori.one/mangas/858-dengeki-pikachu"
+    ],
+    [
+      30868,
+      868,
+      "SOURCE",
+      1,
+      "Цирк марионеток",
+      "https://shikimori.one/mangas/868-karakuri-circus"
+    ],
+    [
+      30869,
+      869,
+      "SOURCE",
+      1,
+      "Златовласый Гаш Белл",
+      "https://shikimori.one/mangas/869-konjiki-no-gash"
+    ],
+    [
+      30874,
+      874,
+      "SOURCE",
+      1,
+      "Пожалуйста, учитель!",
+      "https://shikimori.one/mangas/874-onegai-teacher"
+    ],
+    [
+      30877,
+      877,
+      "SOURCE",
+      1,
+      "Сначала парни — потом цветы",
+      "https://shikimori.one/mangas/877-hana-yori-dango"
+    ],
+    [
+      30889,
+      889,
+      "SOURCE",
+      1,
+      "Инопланетяне в школе № 9",
+      "https://shikimori.one/mangas/889-alien-9"
+    ],
+    [
+      30908,
+      908,
+      "SOURCE",
+      1,
+      "Пожиратель душ",
+      "https://shikimori.one/mangas/908-soul-eater"
+    ],
+    [
+      30909,
+      909,
+      "SOURCE",
+      1,
+      "Рыба",
+      "https://shikimori.one/mangas/909-gyo-ugomeku-bukimi"
+    ],
+    [
+      30918,
+      918,
+      "SOURCE",
+      1,
+      "Потомки тьмы",
+      "https://shikimori.one/mangas/918-yami-no-matsuei"
+    ],
+    [
+      30920,
+      920,
+      "SOURCE",
+      1,
+      "Сион и король",
+      "https://shikimori.one/mangas/920-shion-no-ou-the-flowers-of-hard-blood"
+    ],
+    [
+      30923,
+      923,
+      "SOURCE",
+      1,
+      "Издалека",
+      "https://shikimori.one/mangas/923-kanata-kara"
+    ],
+    [
+      30930,
+      930,
+      "SOURCE",
+      1,
+      "Ута-Ката",
+      "https://shikimori.one/mangas/930-uta-kata"
+    ],
+    [
+      30931,
+      931,
+      "SOURCE",
+      1,
+      "Юная революционерка Утэна: Конец света юности",
+      "https://shikimori.one/mangas/z931-shoujo-kakumei-utena-adolescence-mokushiroku"
+    ],
+    [
+      30933,
+      933,
+      "SOURCE",
+      1,
+      "Эльфийская песнь",
+      "https://shikimori.one/mangas/z933-elfen-lied"
+    ],
+    [
+      30954,
+      954,
+      "SOURCE",
+      1,
+      "Смертоносная принцесса",
+      "https://shikimori.one/mangas/954-murder-princess"
+    ],
+    [
+      30956,
+      956,
+      "SOURCE",
+      1,
+      "Ультраманьяк",
+      "https://shikimori.one/mangas/956-ultra-maniac"
+    ],
+    [
+      30962,
+      962,
+      "SOURCE",
+      1,
+      "Нахальный ангел",
+      "https://shikimori.one/mangas/962-tenshi-na-konamaiki"
+    ],
+    [
+      30967,
+      967,
+      "SOURCE",
+      1,
+      "Куродзука",
+      "https://shikimori.one/mangas/967-kurozuka"
+    ],
+    [
+      30969,
+      969,
+      "SOURCE",
+      1,
+      "Жрица Луны, жрица Солнца",
+      "https://shikimori.one/mangas/969-kannazuki-no-miko"
+    ],
+    [
+      30973,
+      973,
+      "SOURCE",
+      1,
+      "Додзинси",
+      "https://shikimori.one/mangas/973-doujin-work"
+    ],
+    [
+      30974,
+      974,
+      "SOURCE",
+      1,
+      "Басара",
+      "https://shikimori.one/mangas/974-basara"
+    ],
+    [
+      30982,
+      982,
+      "SOURCE",
+      1,
+      "Тёмная богиня",
+      "https://shikimori.one/mangas/982-kurokami"
+    ],
+    [
+      31013,
+      1013,
+      "SOURCE",
+      1,
+      "Касание",
+      "https://shikimori.one/mangas/1013-touch"
+    ],
+    [
+      31014,
+      1014,
+      "SOURCE",
+      1,
+      "Х2",
+      "https://shikimori.one/mangas/1014-h2"
+    ],
+    [
+      31016,
+      1016,
+      "SOURCE",
+      1,
+      "Темнее чёрного",
+      "https://shikimori.one/mangas/1016-darker-than-black-kuro-no-keiyakusha"
+    ],
+    [
+      31031,
+      1031,
+      "SOURCE",
+      1,
+      "Это были мы",
+      "https://shikimori.one/mangas/1031-bokura-ga-ita"
+    ],
+    [
+      31037,
+      1037,
+      "SOURCE",
+      1,
+      "Эврика 7: Псалмы планет",
+      "https://shikimori.one/mangas/1037-koukyoushihen-eureka-seven"
+    ],
+    [
+      31051,
+      1051,
+      "SOURCE",
+      1,
+      "Золотая струна",
+      "https://shikimori.one/mangas/1051-kiniro-no-corda"
+    ],
+    [
+      31086,
+      1086,
+      "SOURCE",
+      1,
+      "Унесённый на остров Айран",
+      "https://shikimori.one/mangas/1086-nagasarete-airantou"
+    ],
+    [
+      31092,
+      1092,
+      "SOURCE",
+      1,
+      "Гокусэн",
+      "https://shikimori.one/mangas/1092-gokusen"
+    ],
+    [
+      31097,
+      1097,
+      "SOURCE",
+      1,
+      "Саюки: Истоки",
+      "https://shikimori.one/mangas/1097-saiyuuki-gaiden"
+    ],
+    [
+      31122,
+      1122,
+      "SOURCE",
+      1,
+      "Секреты Цубоми",
+      "https://shikimori.one/mangas/1122-naisho-no-tsubomi"
+    ],
+    [
+      31148,
+      1148,
+      "SOURCE",
+      1,
+      "Кулак Синего неба",
+      "https://shikimori.one/mangas/1148-souten-no-ken"
+    ],
+    [
+      31153,
+      1153,
+      "SOURCE",
+      1,
+      "Нарутару",
+      "https://shikimori.one/mangas/1153-narutaru-mukuro-naru-hoshi-tama-taru-ko"
+    ],
+    [
+      31183,
+      1183,
+      "SOURCE",
+      1,
+      "Перекрёстная игра",
+      "https://shikimori.one/mangas/1183-cross-game"
+    ],
+    [
+      31193,
+      1193,
+      "SOURCE",
+      1,
+      "Уровень Е",
+      "https://shikimori.one/mangas/1193-level-e"
+    ],
+    [
+      31199,
+      1199,
+      "SOURCE",
+      1,
+      "Тиран, который влюбился",
+      "https://shikimori.one/mangas/1199-koisuru-boukun"
+    ],
+    [
+      31207,
+      1207,
+      "SOURCE",
+      1,
+      "Достичь Терры",
+      "https://shikimori.one/mangas/1207-terra-e"
+    ],
+    [
+      31212,
+      1212,
+      "SOURCE",
+      1,
+      "Хроника Великой Битвы между Инь и Янь",
+      "https://shikimori.one/mangas/1212-onmyou-taisenki"
+    ],
+    [
+      31216,
+      1216,
+      "SOURCE",
+      1,
+      "Повесть о соседях",
+      "https://shikimori.one/mangas/1216-gokinjo-monogatari"
+    ],
+    [
+      31218,
+      1218,
+      "SOURCE",
+      1,
+      "Акаги, легенда маджонга",
+      "https://shikimori.one/mangas/1218-akagi-yami-ni-oritatta-tensai"
+    ],
+    [
+      31221,
+      1221,
+      "SOURCE",
+      1,
+      "Забить на последней секунде",
+      "https://shikimori.one/mangas/1221-buzzer-beater"
+    ],
+    [
+      31228,
+      1228,
+      "SOURCE",
+      1,
+      "Свадебный Персик",
+      "https://shikimori.one/mangas/1228-wedding-peach"
+    ],
+    [
+      31248,
+      1248,
+      "SOURCE",
+      1,
+      "Легенда о новой Белоснежке Притиар",
+      "https://shikimori.one/mangas/1248-shin-shirayuki-hime-densetsu-pretear"
+    ],
+    [
+      31271,
+      1271,
+      "SOURCE",
+      1,
+      "Спецкласс А",
+      "https://shikimori.one/mangas/1271-special-a"
+    ],
+    [
+      31299,
+      1299,
+      "SOURCE",
+      1,
+      "Хмурая луна",
+      "https://shikimori.one/mangas/1299-amatsuki"
+    ],
+    [
+      31302,
+      1302,
+      "SOURCE",
+      1,
+      "Умисё",
+      "https://shikimori.one/mangas/1302-kenkou-zenrakei-suieibu-umishou"
+    ],
+    [
+      31319,
+      1319,
+      "SOURCE",
+      1,
+      "Оружейницы",
+      "https://shikimori.one/mangas/1319-gunsmith-cats"
+    ],
+    [
+      31331,
+      1331,
+      "SOURCE",
+      1,
+      "Ветер любви",
+      "https://shikimori.one/mangas/1331-koi-kaze"
+    ],
+    [
+      31348,
+      1348,
+      "SOURCE",
+      1,
+      "Бастер",
+      "https://shikimori.one/mangas/1348-boukenou-beet"
+    ],
+    [
+      31349,
+      1349,
+      "SOURCE",
+      1,
+      "Седьмой дух",
+      "https://shikimori.one/mangas/1349-07-ghost"
+    ],
+    [
+      31351,
+      1351,
+      "SOURCE",
+      1,
+      "Переключатель",
+      "https://shikimori.one/mangas/1351-switch"
+    ],
+    [
+      31365,
+      1365,
+      "SOURCE",
+      1,
+      "Песня ветра и деревьев",
+      "https://shikimori.one/mangas/1365-kaze-to-ki-no-uta"
+    ],
+    [
+      31372,
+      1372,
+      "SOURCE",
+      1,
+      "Барон, кошачий лорд",
+      "https://shikimori.one/mangas/1372-baron-neko-no-danshaku"
+    ],
+    [
+      31376,
+      1376,
+      "SOURCE",
+      1,
+      "Псы: бездомные, воющие во тьме",
+      "https://shikimori.one/mangas/1376-dogs-stray-dogs-howling-in-the-dark"
+    ],
+    [
+      31388,
+      1388,
+      "SOURCE",
+      1,
+      "Кэнди-Кэнди",
+      "https://shikimori.one/mangas/1388-candy-candy"
+    ],
+    [
+      31428,
+      1428,
+      "SOURCE",
+      1,
+      "Киберэгоист Кайдзо",
+      "https://shikimori.one/mangas/1428-katte-ni-kaizou"
+    ],
+    [
+      31436,
+      1436,
+      "SOURCE",
+      1,
+      "Метрополис",
+      "https://shikimori.one/mangas/1436-metropolis"
+    ],
+    [
+      31448,
+      1448,
+      "SOURCE",
+      1,
+      "Он мой господин",
+      "https://shikimori.one/mangas/1448-kore-ga-watashi-no-goshujinsama"
+    ],
+    [
+      31458,
+      1458,
+      "SOURCE",
+      1,
+      "Золотой парень",
+      "https://shikimori.one/mangas/1458-golden-boy"
+    ],
+    [
+      31462,
+      1462,
+      "SOURCE",
+      1,
+      "Рассказы кукловода Сакона",
+      "https://shikimori.one/mangas/1462-karakurizoushi-ayatsuri-sakon"
+    ],
+    [
+      31475,
+      1475,
+      "SOURCE",
+      1,
+      "Леди-дьявол",
+      "https://shikimori.one/mangas/1475-devilman-lady"
+    ],
+    [
+      31485,
+      1485,
+      "SOURCE",
+      1,
+      "Кикайдер 02",
+      "https://shikimori.one/mangas/1485-kikaider-02"
+    ],
+    [
+      31503,
+      1503,
+      "SOURCE",
+      1,
+      "Проект АРМС",
+      "https://shikimori.one/mangas/1503-arms"
+    ],
+    [
+      31505,
+      1505,
+      "SOURCE",
+      1,
+      "Бoбoбo-бo Бo-бoбo",
+      "https://shikimori.one/mangas/1505-bobobo-bo-bo-bobo"
+    ],
+    [
+      31512,
+      1512,
+      "SOURCE",
+      1,
+      "Сердце ангела",
+      "https://shikimori.one/mangas/1512-angel-heart"
+    ],
+    [
+      31515,
+      1515,
+      "SOURCE",
+      1,
+      "Бао: Посетитель",
+      "https://shikimori.one/mangas/1515-baoh-raihousha"
+    ],
+    [
+      31526,
+      1526,
+      "SOURCE",
+      1,
+      "Внеземной малыш",
+      "https://shikimori.one/mangas/1526-daa-daa-daa"
+    ],
+    [
+      31534,
+      1534,
+      "SOURCE",
+      1,
+      "Зетмен",
+      "https://shikimori.one/mangas/1534-zetman"
+    ],
+    [
+      31540,
+      1540,
+      "SOURCE",
+      1,
+      "Голубое семя",
+      "https://shikimori.one/mangas/1540-aokushimitama-blue-seed"
+    ],
+    [
+      31593,
+      1593,
+      "SOURCE",
+      1,
+      "Дотянись до неба! 2",
+      "https://shikimori.one/mangas/1593-top-wo-nerae-2"
+    ],
+    [
+      31605,
+      1605,
+      "SOURCE",
+      1,
+      "Империя Альтаир",
+      "https://shikimori.one/mangas/1605-shoukoku-no-altair"
+    ],
+    [
+      31619,
+      1619,
+      "SOURCE",
+      1,
+      "Летопись войн острова Лодосс: Хроники героического рыцаря",
+      "https://shikimori.one/mangas/1619-lodoss-tou-senki-eiyuu-kishi-den"
+    ],
+    [
+      31630,
+      1630,
+      "SOURCE",
+      1,
+      "Невероятное приключение ДжоДжо — Часть 2: Склонность к битвам",
+      "https://shikimori.one/mangas/1630-jojo-no-kimyou-na-bouken-part-2-sentou-chouryuu"
+    ],
+    [
+      31643,
+      1643,
+      "SOURCE",
+      1,
+      "Неверный путь",
+      "https://shikimori.one/mangas/1643-asatte-no-houkou"
+    ],
+    [
+      31648,
+      1648,
+      "SOURCE",
+      1,
+      "Гуррен-Лаганн, пронзающий небеса",
+      "https://shikimori.one/mangas/z1648-tengen-toppa-gurren-lagann"
+    ],
+    [
+      31649,
+      1649,
+      "SOURCE",
+      1,
+      "Игра лжецов",
+      "https://shikimori.one/mangas/1649-liar-game"
+    ],
+    [
+      31659,
+      1659,
+      "SOURCE",
+      1,
+      "Хроники пяти звёзд",
+      "https://shikimori.one/mangas/1659-five-star-stories"
+    ],
+    [
+      31661,
+      1661,
+      "SOURCE",
+      1,
+      "Ромео и Джульетта",
+      "https://shikimori.one/mangas/1661-romeo-x-juliet"
+    ],
+    [
+      31665,
+      1665,
+      "SOURCE",
+      1,
+      "Небо",
+      "https://shikimori.one/mangas/1665-sola"
+    ],
+    [
+      31667,
+      1667,
+      "SOURCE",
+      1,
+      "Старшеклассницы",
+      "https://shikimori.one/mangas/1667-joshikousei-girls-high"
+    ],
+    [
+      31675,
+      1675,
+      "SOURCE",
+      1,
+      "Школа детективов Къю",
+      "https://shikimori.one/mangas/1675-tantei-gakuen-q"
+    ],
+    [
+      31688,
+      1688,
+      "SOURCE",
+      1,
+      "Мир будущего",
+      "https://shikimori.one/mangas/1688-kitarubeki-sekai"
+    ],
+    [
+      31690,
+      1690,
+      "SOURCE",
+      1,
+      "Богиня-школьница",
+      "https://shikimori.one/mangas/1690-kamichu"
+    ],
+    [
+      31721,
+      1721,
+      "SOURCE",
+      1,
+      "Владыка скрытого мира",
+      "https://shikimori.one/mangas/1721-nabari-no-ou"
+    ],
+    [
+      31735,
+      1735,
+      "SOURCE",
+      1,
+      "Детройт, город металла",
+      "https://shikimori.one/mangas/z1735-detroit-metal-city"
+    ],
+    [
+      31745,
+      1745,
+      "SOURCE",
+      1,
+      "Моя хранительница Химари",
+      "https://shikimori.one/mangas/1745-omamori-himari"
+    ],
+    [
+      31747,
+      1747,
+      "SOURCE",
+      1,
+      "Ниндзя Бой",
+      "https://shikimori.one/mangas/1747-igano-kabamaru"
+    ],
+    [
+      31748,
+      1748,
+      "SOURCE",
+      1,
+      "Вечернее сердцебиение",
+      "https://shikimori.one/mangas/1748-tokimeki-tonight"
+    ],
+    [
+      31773,
+      1773,
+      "SOURCE",
+      1,
+      "Железный котелок Жана",
+      "https://shikimori.one/mangas/1773-tetsunabe-no-jan"
+    ],
+    [
+      31791,
+      1791,
+      "SOURCE",
+      1,
+      "Капитан Цубаса: Дорога в 2002",
+      "https://shikimori.one/mangas/1791-captain-tsubasa-road-to-2002"
+    ],
+    [
+      31853,
+      1853,
+      "SOURCE",
+      1,
+      "Ангелы ада",
+      "https://shikimori.one/mangas/1853-hells-angels"
+    ],
+    [
+      31876,
+      1876,
+      "SOURCE",
+      1,
+      "Пушинка",
+      "https://shikimori.one/mangas/1876-hitohira"
+    ],
+    [
+      31910,
+      1910,
+      "SOURCE",
+      1,
+      "Те, кто охотятся на эльфов",
+      "https://shikimori.one/mangas/z1910-elf-wo-karu-mono-tachi"
+    ],
+    [
+      31926,
+      1926,
+      "SOURCE",
+      1,
+      "Загадочная девушка Х",
+      "https://shikimori.one/mangas/1926-nazo-no-kanojo-x"
+    ],
+    [
+      31936,
+      1936,
+      "SOURCE",
+      1,
+      "Новый мобильный воин Гандам: Дубль-вэ — Бесконечный вальс",
+      "https://shikimori.one/mangas/1936-shin-kidou-senki-gundam-wing-endless-waltz"
+    ],
+    [
+      31951,
+      1951,
+      "SOURCE",
+      1,
+      "Предательство знает моё имя",
+      "https://shikimori.one/mangas/1951-uragiri-wa-boku-no-namae-wo-shitteiru"
+    ],
+    [
+      32033,
+      2033,
+      "SOURCE",
+      1,
+      "Война зверобогов: Хроники героев",
+      "https://shikimori.one/mangas/2033-juushin-enbu"
+    ],
+    [
+      32387,
+      2387,
+      "SOURCE",
+      1,
+      "Приключения Дигимонов",
+      "https://shikimori.one/mangas/2387-digimon-adventure"
+    ],
+    [
+      32388,
+      2388,
+      "SOURCE",
+      1,
+      "Дигимон 02",
+      "https://shikimori.one/mangas/2388-digimon-zero-two"
+    ],
+    [
+      32569,
+      2569,
+      "SOURCE",
+      1,
+      "Я стану ангелом!",
+      "https://shikimori.one/mangas/2569-tenshi-ni-naru-mon"
+    ],
+    [
+      32585,
+      2585,
+      "SOURCE",
+      1,
+      "Клуб Эйкэн",
+      "https://shikimori.one/mangas/2585-eiken"
+    ],
+    [
+      32685,
+      2685,
+      "SOURCE",
+      1,
+      "Леди Джорджия",
+      "https://shikimori.one/mangas/2685-georgie"
+    ],
+    [
+      32700,
+      2700,
+      "SOURCE",
+      1,
+      "Моя богиня! Приключения мини-богинь",
+      "https://shikimori.one/mangas/2700-aa-megami-sama-chicchai-tte-koto-wa-benri-da-ne"
+    ],
+    [
+      32702,
+      2702,
+      "SOURCE",
+      1,
+      "Библиотека Кокоро",
+      "https://shikimori.one/mangas/2702-kokoro-toshokan"
+    ],
+    [
+      32720,
+      2720,
+      "SOURCE",
+      1,
+      "Ускорение",
+      "https://shikimori.one/mangas/2720-over-drive"
+    ],
+    [
+      32777,
+      2777,
+      "SOURCE",
+      1,
+      "В джунглях всё было хорошо, пока не пришла Гуу",
+      "https://shikimori.one/mangas/2777-jungle-wa-itsumo-hare-nochi-guu"
+    ],
+    [
+      32893,
+      2893,
+      "SOURCE",
+      1,
+      "Каннаги",
+      "https://shikimori.one/mangas/2893-kannagi"
+    ],
+    [
+      32913,
+      2913,
+      "SOURCE",
+      1,
+      "Рэй",
+      "https://shikimori.one/mangas/2913-ray"
+    ],
+    [
+      32921,
+      2921,
+      "SOURCE",
+      1,
+      "Президент студсовета — горничная!",
+      "https://shikimori.one/mangas/2921-kaichou-wa-maid-sama"
+    ],
+    [
+      32931,
+      2931,
+      "SOURCE",
+      1,
+      "Детское подразделение",
+      "https://shikimori.one/mangas/2931-kiddy-grade-reverse"
+    ],
+    [
+      32955,
+      2955,
+      "SOURCE",
+      1,
+      "Девушка влюбилась в старшую сестру",
+      "https://shikimori.one/mangas/2955-otome-wa-boku-ni-koishiteru"
+    ],
+    [
+      33006,
+      3006,
+      "SOURCE",
+      1,
+      "Невероятное приключение ДжоДжо — Часть 4: Несокрушимый алмаз",
+      "https://shikimori.one/mangas/3006-jojo-no-kimyou-na-bouken-part-4-diamond-wa-kudakenai"
+    ],
+    [
+      33008,
+      3008,
+      "SOURCE",
+      1,
+      "Невероятное приключение ДжоДжо — Часть 5: Золотой ветер",
+      "https://shikimori.one/mangas/3008-jojo-no-kimyou-na-bouken-part-5-ougon-no-kaze"
+    ],
+    [
+      33010,
+      3010,
+      "SOURCE",
+      1,
+      "Астробой: Могучий Атом",
+      "https://shikimori.one/mangas/3010-astro-boy-tetsuwan-atom"
+    ],
+    [
+      33022,
+      3022,
+      "SOURCE",
+      1,
+      "Надэсико",
+      "https://shikimori.one/mangas/3022-yuugeki-uchuu-senkan-nadesico"
+    ],
+    [
+      33031,
+      3031,
+      "SOURCE",
+      1,
+      "Сердца Пандоры",
+      "https://shikimori.one/mangas/3031-pandora-hearts"
+    ],
+    [
+      33041,
+      3041,
+      "SOURCE",
+      1,
+      "Югио! Новое поколение",
+      "https://shikimori.one/mangas/3041-yu-gi-oh-gx"
+    ],
+    [
+      33042,
+      3042,
+      "SOURCE",
+      1,
+      "А всё-таки город вертится",
+      "https://shikimori.one/mangas/z3042-soredemo-machi-wa-mawatteiru"
+    ],
+    [
+      33047,
+      3047,
+      "SOURCE",
+      1,
+      "Горничный в маске",
+      "https://shikimori.one/mangas/3047-kamen-no-maid-guy"
+    ],
+    [
+      33063,
+      3063,
+      "SOURCE",
+      1,
+      "Непобедимая разносчица рамэна",
+      "https://shikimori.one/mangas/3063-muteki-kanban-musume"
+    ],
+    [
+      33068,
+      3068,
+      "SOURCE",
+      1,
+      "Работяга",
+      "https://shikimori.one/mangas/3068-hataraki-man"
+    ],
+    [
+      33076,
+      3076,
+      "SOURCE",
+      1,
+      "Вассалорд",
+      "https://shikimori.one/mangas/3076-vassalord"
+    ],
+    [
+      33097,
+      3097,
+      "SOURCE",
+      1,
+      "Двойная Спика",
+      "https://shikimori.one/mangas/3097-futatsu-no-spica"
+    ],
+    [
+      33126,
+      3126,
+      "SOURCE",
+      1,
+      "Голос в темноте",
+      "https://shikimori.one/mangas/3126-yami-no-koe"
+    ],
+    [
+      33127,
+      3127,
+      "SOURCE",
+      1,
+      "Я люблю свою сестрёнку",
+      "https://shikimori.one/mangas/3127-boku-wa-imouto-ni-koi-wo-suru"
+    ],
+    [
+      33150,
+      3150,
+      "SOURCE",
+      1,
+      "Капитан Цубаса: Сильнейший противник! Голландская молодёжь",
+      "https://shikimori.one/mangas/3150-captain-tsubasa-world-youth-tokubetsu-hen-saikyou-no-teki-holland-youth"
+    ],
+    [
+      33167,
+      3167,
+      "SOURCE",
+      1,
+      "Маленькая снежная фея Сахарок",
+      "https://shikimori.one/mangas/3167-chicchana-yukitsukai-sugar"
+    ],
+    [
+      33168,
+      3168,
+      "SOURCE",
+      1,
+      "Какой прекрасный солнечный денёк!",
+      "https://shikimori.one/mangas/3168-hiatari-ryoukou"
+    ],
+    [
+      33174,
+      3174,
+      "SOURCE",
+      1,
+      "Железная связь",
+      "https://shikimori.one/mangas/3174-kurogane-communication"
+    ],
+    [
+      33204,
+      3204,
+      "SOURCE",
+      1,
+      "Драгонавт: Резонанс",
+      "https://shikimori.one/mangas/3204-dragonaut-the-resonance"
+    ],
+    [
+      33214,
+      3214,
+      "SOURCE",
+      1,
+      "Ёити завтрашнего дня",
+      "https://shikimori.one/mangas/3214-asu-no-yoichi"
+    ],
+    [
+      33230,
+      3230,
+      "SOURCE",
+      1,
+      "Фигура семнадцать",
+      "https://shikimori.one/mangas/3230-figure-17"
+    ],
+    [
+      33236,
+      3236,
+      "SOURCE",
+      1,
+      "Лиричная волшебница Наноха: Ас",
+      "https://shikimori.one/mangas/3236-mahou-shoujo-lyrical-nanoha-a-s"
+    ],
+    [
+      33238,
+      3238,
+      "SOURCE",
+      1,
+      "Кёсиро под вечным небом",
+      "https://shikimori.one/mangas/3238-kyoushirou-to-towa-no-sora"
+    ],
+    [
+      33239,
+      3239,
+      "SOURCE",
+      1,
+      "Полудракон",
+      "https://shikimori.one/mangas/3239-dragon-half"
+    ],
+    [
+      33269,
+      3269,
+      "SOURCE",
+      1,
+      "Предостережение для школьного председателя",
+      "https://shikimori.one/mangas/3269-seitokaichou-ni-chuukoku"
+    ],
+    [
+      33281,
+      3281,
+      "SOURCE",
+      1,
+      "Босоногий Гэн",
+      "https://shikimori.one/mangas/3281-hadashi-no-gen"
+    ],
+    [
+      33282,
+      3282,
+      "SOURCE",
+      1,
+      "В лес, где мерцают светлячки",
+      "https://shikimori.one/mangas/3282-hotarubi-no-mori-e"
+    ],
+    [
+      33367,
+      3367,
+      "SOURCE",
+      1,
+      "Команда мечты",
+      "https://shikimori.one/mangas/3367-ahiru-no-sora"
+    ],
+    [
+      33395,
+      3395,
+      "SOURCE",
+      1,
+      "Доминион: Танковая полиция",
+      "https://shikimori.one/mangas/3395-dominion"
+    ],
+    [
+      33396,
+      3396,
+      "SOURCE",
+      1,
+      "Чёрная магия",
+      "https://shikimori.one/mangas/3396-black-magic"
+    ],
+    [
+      33399,
+      3399,
+      "SOURCE",
+      1,
+      "Потэмаё",
+      "https://shikimori.one/mangas/3399-potemayo"
+    ],
+    [
+      33403,
+      3403,
+      "SOURCE",
+      1,
+      "Розарио + Вампир II",
+      "https://shikimori.one/mangas/3403-rosario-to-vampire-season-ii"
+    ],
+    [
+      33429,
+      3429,
+      "SOURCE",
+      1,
+      "Космическая Стеллвия",
+      "https://shikimori.one/mangas/3429-uchuu-no-stellvia"
+    ],
+    [
+      33459,
+      3459,
+      "SOURCE",
+      1,
+      "Девочка-пингвин",
+      "https://shikimori.one/mangas/3459-penguin-musume"
+    ],
+    [
+      33464,
+      3464,
+      "SOURCE",
+      1,
+      "Мама-четвероклассница",
+      "https://shikimori.one/mangas/3464-mama-wa-shougaku-4-nensei"
+    ],
+    [
+      33468,
+      3468,
+      "SOURCE",
+      1,
+      "Брошенный кролик",
+      "https://shikimori.one/mangas/3468-usagi-drop"
+    ],
+    [
+      33474,
+      3474,
+      "SOURCE",
+      1,
+      "Революция пузырьков",
+      "https://shikimori.one/mangas/3474-kirarin-revolution"
+    ],
+    [
+      33483,
+      3483,
+      "SOURCE",
+      1,
+      "История трёх царств",
+      "https://shikimori.one/mangas/3483-sangokushi"
+    ],
+    [
+      33489,
+      3489,
+      "SOURCE",
+      1,
+      "Бесконечное путешествие корабля Ривиас",
+      "https://shikimori.one/mangas/z3489-mugen-no-ryvius"
+    ],
+    [
+      33523,
+      3523,
+      "SOURCE",
+      1,
+      "Озорной поцелуй",
+      "https://shikimori.one/mangas/3523-itazura-na-kiss"
+    ],
+    [
+      33533,
+      3533,
+      "SOURCE",
+      1,
+      "Воздушный мастер",
+      "https://shikimori.one/mangas/3533-air-master"
+    ],
+    [
+      33572,
+      3572,
+      "SOURCE",
+      1,
+      "Кайдзи",
+      "https://shikimori.one/mangas/3572-tobaku-mokushiroku-kaiji"
+    ],
+    [
+      33573,
+      3573,
+      "SOURCE",
+      1,
+      "Кайдзи: Хроники нарушителя заповедей азартных игр",
+      "https://shikimori.one/mangas/3573-tobaku-hakairoku-kaiji"
+    ],
+    [
+      33638,
+      3638,
+      "SOURCE",
+      1,
+      "Стальной Лайнбаррель",
+      "https://shikimori.one/mangas/3638-kurogane-no-linebarrel"
+    ],
+    [
+      33692,
+      3692,
+      "SOURCE",
+      1,
+      "Маленькая принцесса Юси",
+      "https://shikimori.one/mangas/3692-puchi-puri-yuushi"
+    ],
+    [
+      33714,
+      3714,
+      "SOURCE",
+      1,
+      "Повесть о бедных сёстрах",
+      "https://shikimori.one/mangas/3714-binbou-shimai-monogatari"
+    ],
+    [
+      33716,
+      3716,
+      "SOURCE",
+      1,
+      "Эль Касадор",
+      "https://shikimori.one/mangas/3716-el-cazador"
+    ],
+    [
+      33822,
+      3822,
+      "SOURCE",
+      1,
+      "Миками — истребительница духов",
+      "https://shikimori.one/mangas/3822-gs-mikami-gokuraku-daisakusen"
+    ],
+    [
+      33868,
+      3868,
+      "SOURCE",
+      1,
+      "Одержимые смертью",
+      "https://shikimori.one/mangas/3868-shigurui"
+    ],
+    [
+      33886,
+      3886,
+      "SOURCE",
+      1,
+      "Молодо-зелено",
+      "https://shikimori.one/mangas/3886-mizuiro-jidai"
+    ],
+    [
+      33932,
+      3932,
+      "SOURCE",
+      1,
+      "Волшебный театр Омиси: Риски и Сэйфти",
+      "https://shikimori.one/mangas/3932-omishi-magical-theater-risky-safety"
+    ],
+    [
+      33986,
+      3986,
+      "SOURCE",
+      1,
+      "Страна чудес смертников",
+      "https://shikimori.one/mangas/3986-deadman-wonderland"
+    ],
+    [
+      33988,
+      3988,
+      "SOURCE",
+      1,
+      "Ди — охотник на вампиров",
+      "https://shikimori.one/mangas/3988-vampire-hunter-d"
+    ],
+    [
+      33989,
+      3989,
+      "SOURCE",
+      1,
+      "Этот ужасный и прекрасный мир",
+      "https://shikimori.one/mangas/3989-kono-minikuku-mo-utsukushii-sekai"
+    ],
+    [
+      34005,
+      4005,
+      "SOURCE",
+      1,
+      "Кулак Северной звезды: История Рао",
+      "https://shikimori.one/mangas/4005-hokuto-no-ken-raoh-gaiden"
+    ],
+    [
+      34010,
+      4010,
+      "SOURCE",
+      1,
+      "Легенда о Серебряном Клыке Уиде",
+      "https://shikimori.one/mangas/4010-ginga-densetsu-weed"
+    ],
+    [
+      34018,
+      4018,
+      "SOURCE",
+      1,
+      "Совершенно секретно",
+      "https://shikimori.one/mangas/4018-top-secret"
+    ],
+    [
+      34096,
+      4096,
+      "SOURCE",
+      1,
+      "Переулок животных",
+      "https://shikimori.one/mangas/4096-animal-yokochou"
+    ],
+    [
+      34105,
+      4105,
+      "SOURCE",
+      1,
+      "Холст 2",
+      "https://shikimori.one/mangas/4105-canvas-2-nijiiro-no-sketch"
+    ],
+    [
+      34116,
+      4116,
+      "SOURCE",
+      1,
+      "Лучший студсовет",
+      "https://shikimori.one/mangas/4116-gokujou-seitokai"
+    ],
+    [
+      34147,
+      4147,
+      "SOURCE",
+      1,
+      "Голодное сердце",
+      "https://shikimori.one/mangas/4147-hungry-heart"
+    ],
+    [
+      34153,
+      4153,
+      "SOURCE",
+      1,
+      "Кэмэко Делюкс!",
+      "https://shikimori.one/mangas/4153-kemeko-deluxe"
+    ],
+    [
+      34168,
+      4168,
+      "SOURCE",
+      1,
+      "Непоседливая Манаби!",
+      "https://shikimori.one/mangas/4168-gakuen-utopia-manabi-straight"
+    ],
+    [
+      34175,
+      4175,
+      "SOURCE",
+      1,
+      "Невезучая ведьма Дореми",
+      "https://shikimori.one/mangas/4175-ojamajo-doremi"
+    ],
+    [
+      34176,
+      4176,
+      "SOURCE",
+      1,
+      "Аргенто Сома",
+      "https://shikimori.one/mangas/4176-argento-soma"
+    ],
+    [
+      34186,
+      4186,
+      "SOURCE",
+      1,
+      "Гандам: Объединение",
+      "https://shikimori.one/mangas/z4186-turn-a-gundam"
+    ],
+    [
+      34222,
+      4222,
+      "SOURCE",
+      1,
+      "Удар!",
+      "https://shikimori.one/mangas/4222-shoot"
+    ],
+    [
+      34236,
+      4236,
+      "SOURCE",
+      1,
+      "Ярче предрассветной лазури",
+      "https://shikimori.one/mangas/4236-yoake-mae-yori-ruriiro-na"
+    ],
+    [
+      34328,
+      4328,
+      "SOURCE",
+      1,
+      "Момомо Сумомомо: Сильнейшая невеста на планете",
+      "https://shikimori.one/mangas/4328-sumomomo-momomo-chijou-saikyou-no-yome"
+    ],
+    [
+      34342,
+      4342,
+      "SOURCE",
+      1,
+      "Ния под семёркой",
+      "https://shikimori.one/mangas/4342-niea-under-7"
+    ],
+    [
+      34343,
+      4343,
+      "SOURCE",
+      1,
+      "Нео Анжелика",
+      "https://shikimori.one/mangas/4343-neo-angelique"
+    ],
+    [
+      34423,
+      4423,
+      "SOURCE",
+      1,
+      "Ооку: Внутренние покои",
+      "https://shikimori.one/mangas/4423-oooku"
+    ],
+    [
+      34519,
+      4519,
+      "SOURCE",
+      1,
+      "Граф Монте-Кристо",
+      "https://shikimori.one/mangas/4519-gankutsuou"
+    ],
+    [
+      34538,
+      4538,
+      "SOURCE",
+      1,
+      "Гигантский робот: День, когда Земля сгорела",
+      "https://shikimori.one/mangas/4538-giant-robo-chikyuu-no-moetsukiru-hi"
+    ],
+    [
+      34561,
+      4561,
+      "SOURCE",
+      1,
+      "Моккэ",
+      "https://shikimori.one/mangas/4561-mokke"
+    ],
+    [
+      34576,
+      4576,
+      "SOURCE",
+      1,
+      "Альбом рисунков",
+      "https://shikimori.one/mangas/4576-sketchbook"
+    ],
+    [
+      34584,
+      4584,
+      "SOURCE",
+      1,
+      "Я тихо прошепчу",
+      "https://shikimori.one/mangas/4584-sasameki-koto"
+    ],
+    [
+      34592,
+      4592,
+      "SOURCE",
+      1,
+      "Амон: Тёмная сторона Человека-дьявола",
+      "https://shikimori.one/mangas/4592-amon-devilman-mokushiroku"
+    ],
+    [
+      34607,
+      4607,
+      "SOURCE",
+      1,
+      "Легенды",
+      "https://shikimori.one/mangas/4607-legendz"
+    ],
+    [
+      34612,
+      4612,
+      "SOURCE",
+      1,
+      "Отверженные",
+      "https://shikimori.one/mangas/4612-needless"
+    ],
+    [
+      34617,
+      4617,
+      "SOURCE",
+      1,
+      "Человек-череп: Гэкига",
+      "https://shikimori.one/mangas/4617-kaiki-romanesque-gekiga-skull-man"
+    ],
+    [
+      34628,
+      4628,
+      "SOURCE",
+      1,
+      "Новые голоса в темноте",
+      "https://shikimori.one/mangas/4628-shin-yami-no-koe-kaidan"
+    ],
+    [
+      34750,
+      4750,
+      "SOURCE",
+      1,
+      "Искусственный гуманоид Кикайдер",
+      "https://shikimori.one/mangas/4750-jinzou-ningen-kikaida"
+    ],
+    [
+      34828,
+      4828,
+      "SOURCE",
+      1,
+      "Бесполезные зверушки",
+      "https://shikimori.one/mangas/4828-damekko-doubutsu"
+    ],
+    [
+      34945,
+      4945,
+      "SOURCE",
+      1,
+      "Легенда о Серебряном Клыке: Падающая звезда Гин",
+      "https://shikimori.one/mangas/4945-ginga-nagareboshi-gin"
+    ],
+    [
+      34998,
+      4998,
+      "SOURCE",
+      1,
+      "Ленточка Химэ",
+      "https://shikimori.one/mangas/4998-hime-chan-no-ribbon"
+    ],
+    [
+      35098,
+      5098,
+      "SOURCE",
+      1,
+      "Бинтё-тан",
+      "https://shikimori.one/mangas/5098-binchou-tan"
+    ],
+    [
+      35114,
+      5114,
+      "SOURCE",
+      1,
+      "Ван-Пис: Начало приключений",
+      "https://shikimori.one/mangas/5114-romance-dawn"
+    ],
+    [
+      35228,
+      5228,
+      "SOURCE",
+      1,
+      "Шёпот сердца",
+      "https://shikimori.one/mangas/5228-mimi-wo-sumaseba"
+    ],
+    [
+      35254,
+      5254,
+      "SOURCE",
+      1,
+      "Вперёд, школьник!",
+      "https://shikimori.one/mangas/5254-sakigake-otokojuku"
+    ],
+    [
+      35356,
+      5356,
+      "SOURCE",
+      1,
+      "Союз Серокрылых",
+      "https://shikimori.one/mangas/5356-old-home-no-haibane-tachi"
+    ],
+    [
+      35362,
+      5362,
+      "SOURCE",
+      1,
+      "Мирумо де Пон!",
+      "https://shikimori.one/mangas/5362-mirumo-de-pon"
+    ],
+    [
+      35380,
+      5380,
+      "SOURCE",
+      1,
+      "Чудные вещи",
+      "https://shikimori.one/mangas/5380-hyouge-mono"
+    ],
+    [
+      35405,
+      5405,
+      "SOURCE",
+      1,
+      "Собака директора",
+      "https://shikimori.one/mangas/5405-senmu-no-inu-takahashi-rumiko-kessakushuu"
+    ],
+    [
+      35418,
+      5418,
+      "SOURCE",
+      1,
+      "Макросс 7: Отбросы",
+      "https://shikimori.one/mangas/5418-macross-7-trash"
+    ],
+    [
+      35434,
+      5434,
+      "SOURCE",
+      1,
+      "Спидграфер",
+      "https://shikimori.one/mangas/5434-speed-grapher"
+    ],
+    [
+      35505,
+      5505,
+      "SOURCE",
+      1,
+      "История юного Ханады",
+      "https://shikimori.one/mangas/5505-hanada-shounen-shi"
+    ],
+    [
+      35600,
+      5600,
+      "SOURCE",
+      1,
+      "Красный сад",
+      "https://shikimori.one/mangas/5600-red-garden"
+    ],
+    [
+      35626,
+      5626,
+      "SOURCE",
+      1,
+      "Медсестра-ангел Ририка SOS",
+      "https://shikimori.one/mangas/5626-nurse-angel-ririka-sos"
+    ],
+    [
+      35655,
+      5655,
+      "SOURCE",
+      1,
+      "Дети моря",
+      "https://shikimori.one/mangas/5655-kaijuu-no-kodomo"
+    ],
+    [
+      35685,
+      5685,
+      "SOURCE",
+      1,
+      "Хаккэндэн: Легенда о восьми псах востока",
+      "https://shikimori.one/mangas/5685-hakkenden-touhou-hakken-ibun"
+    ],
+    [
+      35733,
+      5733,
+      "SOURCE",
+      1,
+      "Люпен III: Самые разыскиваемые",
+      "https://shikimori.one/mangas/5733-shin-lupin-iii"
+    ],
+    [
+      35744,
+      5744,
+      "SOURCE",
+      1,
+      "Пинг-понг",
+      "https://shikimori.one/mangas/5744-ping-pong"
+    ],
+    [
+      35750,
+      5750,
+      "SOURCE",
+      1,
+      "Беззаботные дни",
+      "https://shikimori.one/mangas/5750-dounika-naru-hibi"
+    ],
+    [
+      35821,
+      5821,
+      "SOURCE",
+      1,
+      "Восхитительные дети",
+      "https://shikimori.one/mangas/z5821-zettai-karen-children"
+    ],
+    [
+      35854,
+      5854,
+      "SOURCE",
+      1,
+      "Цветущая юность",
+      "https://shikimori.one/mangas/5854-hanasakeru-seishounen"
+    ],
+    [
+      36045,
+      6045,
+      "SOURCE",
+      1,
+      "Паталлиро!",
+      "https://shikimori.one/mangas/6045-patalliro"
+    ],
+    [
+      36404,
+      6404,
+      "SOURCE",
+      1,
+      "Чистый минимум",
+      "https://shikimori.one/mangas/6404-junjou-minimum"
+    ],
+    [
+      36732,
+      6732,
+      "SOURCE",
+      1,
+      "Мобильный воин Гандам 00",
+      "https://shikimori.one/mangas/6732-kidou-senshi-gundam-00"
+    ],
+    [
+      36784,
+      6784,
+      "SOURCE",
+      1,
+      "Клинок Маню",
+      "https://shikimori.one/mangas/6784-manyuu-hikenchou"
+    ],
+    [
+      36812,
+      6812,
+      "SOURCE",
+      1,
+      "С сегодняшнего дня!",
+      "https://shikimori.one/mangas/6812-kyou-kara-ore-wa"
+    ],
+    [
+      36865,
+      6865,
+      "SOURCE",
+      1,
+      "Майко 2010",
+      "https://shikimori.one/mangas/6865-maico-2010"
+    ],
+    [
+      36979,
+      6979,
+      "SOURCE",
+      1,
+      "В лабиринте чужеземных перекрёстков",
+      "https://shikimori.one/mangas/6979-ikoku-meiro-no-croisee"
+    ],
+    [
+      36999,
+      6999,
+      "SOURCE",
+      1,
+      "Уличный боец Альфа",
+      "https://shikimori.one/mangas/6999-street-fighter-alpha"
+    ],
+    [
+      37133,
+      7133,
+      "SOURCE",
+      1,
+      "Альпийская роза",
+      "https://shikimori.one/mangas/7133-alpen-rose"
+    ],
+    [
+      37172,
+      7172,
+      "SOURCE",
+      1,
+      "Властелин властелинов Рыцарь Рю",
+      "https://shikimori.one/mangas/7172-hao-taikei-ryu-knight"
+    ],
+    [
+      37238,
+      7238,
+      "SOURCE",
+      1,
+      "Макросс Фронтир",
+      "https://shikimori.one/mangas/7238-macross-frontier"
+    ],
+    [
+      37247,
+      7247,
+      "SOURCE",
+      1,
+      "За облаками",
+      "https://shikimori.one/mangas/y7247-kumo-no-mukou-yakusoku-no-basho"
+    ],
+    [
+      37270,
+      7270,
+      "SOURCE",
+      1,
+      "Красная шапочка Тятя",
+      "https://shikimori.one/mangas/7270-akazukin-chacha"
+    ],
+    [
+      37282,
+      7282,
+      "SOURCE",
+      1,
+      "Завтрашняя Надя",
+      "https://shikimori.one/mangas/7282-ashita-no-nadja"
+    ],
+    [
+      37330,
+      7330,
+      "SOURCE",
+      1,
+      "Ночная буря",
+      "https://shikimori.one/mangas/7330-arashi-no-yoru-ni"
+    ],
+    [
+      37429,
+      7429,
+      "SOURCE",
+      1,
+      "Хаигакура",
+      "https://shikimori.one/mangas/7429-haigakura"
+    ],
+    [
+      37438,
+      7438,
+      "SOURCE",
+      1,
+      "Звезда изгоев",
+      "https://shikimori.one/mangas/7438-outlaw-star"
+    ],
+    [
+      37482,
+      7482,
+      "SOURCE",
+      1,
+      "Радуга: Семеро из шестой камеры второго блока",
+      "https://shikimori.one/mangas/7482-rainbow-nisha-rokubou-no-shichinin"
+    ],
+    [
+      37546,
+      7546,
+      "SOURCE",
+      1,
+      "Гонщик Спиди",
+      "https://shikimori.one/mangas/7546-mach-gogogo"
+    ],
+    [
+      37577,
+      7577,
+      "SOURCE",
+      1,
+      "Вперёд! Школьная секция пинг-понга",
+      "https://shikimori.one/mangas/7577-ike-ina-chuu-takkyuubu"
+    ],
+    [
+      37627,
+      7627,
+      "SOURCE",
+      1,
+      "Танец на набережной вампиров",
+      "https://shikimori.one/mangas/7627-dance-in-the-vampire-bund"
+    ],
+    [
+      37634,
+      7634,
+      "SOURCE",
+      1,
+      "Школа вверх дном",
+      "https://shikimori.one/mangas/7634-high-school-kimengumi"
+    ],
+    [
+      37661,
+      7661,
+      "SOURCE",
+      1,
+      "Домоправительница Эбитю",
+      "https://shikimori.one/mangas/7661-oruchuban-ebichu"
+    ],
+    [
+      37700,
+      7700,
+      "SOURCE",
+      1,
+      "Дьявольский принц Энма",
+      "https://shikimori.one/mangas/7700-dororon-enma-kun"
+    ],
+    [
+      37703,
+      7703,
+      "SOURCE",
+      1,
+      "Благородный демон Энма",
+      "https://shikimori.one/mangas/7703-kikoushi-enma-nagai-go-kaiki-tanpenshuu"
+    ],
+    [
+      37728,
+      7728,
+      "SOURCE",
+      1,
+      "Девы Розена II",
+      "https://shikimori.one/mangas/7728-rozen-maiden-2008"
+    ],
+    [
+      37759,
+      7759,
+      "SOURCE",
+      1,
+      "Робот Геттер Джи",
+      "https://shikimori.one/mangas/7759-getter-robo-g"
+    ],
+    [
+      37949,
+      7949,
+      "SOURCE",
+      1,
+      "Дети рок-н-ролла",
+      "https://shikimori.one/mangas/7949-aishite-knight"
+    ],
+    [
+      38095,
+      8095,
+      "SOURCE",
+      1,
+      "Киборг Куро",
+      "https://shikimori.one/mangas/8095-cyborg-kuro-chan"
+    ],
+    [
+      38141,
+      8141,
+      "SOURCE",
+      1,
+      "Ты — хозяин, я — слуга",
+      "https://shikimori.one/mangas/8141-kimi-ga-aruji-de-shitsuji-ga-ore-de"
+    ],
+    [
+      38298,
+      8298,
+      "SOURCE",
+      1,
+      "Братья-гонщики Летс и Гоу",
+      "https://shikimori.one/mangas/8298-bakusou-kyoudai-let-s-go"
+    ],
+    [
+      38344,
+      8344,
+      "SOURCE",
+      1,
+      "Привет, Спанк!",
+      "https://shikimori.one/mangas/8344-ohayou-spank"
+    ],
+    [
+      38398,
+      8398,
+      "SOURCE",
+      1,
+      "Райдбэк",
+      "https://shikimori.one/mangas/8398-rideback"
+    ],
+    [
+      38442,
+      8442,
+      "SOURCE",
+      1,
+      "Мифический детектив Локи: Рагнарёк",
+      "https://shikimori.one/mangas/8442-matantei-loki-ragnarok"
+    ],
+    [
+      38482,
+      8482,
+      "SOURCE",
+      1,
+      "Хьякко",
+      "https://shikimori.one/mangas/8482-hyakko"
+    ],
+    [
+      38540,
+      8540,
+      "SOURCE",
+      1,
+      "Сумеречный разум: Рождение",
+      "https://shikimori.one/mangas/8540-night-head-genesis"
+    ],
+    [
+      38558,
+      8558,
+      "SOURCE",
+      1,
+      "Инопланетный робот Грендайзер",
+      "https://shikimori.one/mangas/8558-ufo-robo-grendizer"
+    ],
+    [
+      38584,
+      8584,
+      "SOURCE",
+      1,
+      "Театр Косукэ Масуды",
+      "https://shikimori.one/mangas/8584-masuda-kousuke-gekijou-gag-manga-biyori"
+    ],
+    [
+      38590,
+      8590,
+      "SOURCE",
+      1,
+      "Сексуальное коммандо: Масару — ты крут!",
+      "https://shikimori.one/mangas/8590-sexy-commando-gaiden-sugoi-yo-masaru-san"
+    ],
+    [
+      38597,
+      8597,
+      "SOURCE",
+      1,
+      "Дочь Двадцатиликого",
+      "https://shikimori.one/mangas/8597-nijuu-mensou-no-musume"
+    ],
+    [
+      38600,
+      8600,
+      "SOURCE",
+      1,
+      "Пылающий стадион для вышибал: Додж Дампэй",
+      "https://shikimori.one/mangas/8600-honoo-no-toukyuuji-dodge-danpei"
+    ],
+    [
+      38663,
+      8663,
+      "SOURCE",
+      1,
+      "Академия магии",
+      "https://shikimori.one/mangas/8663-magician-s-academy"
+    ],
+    [
+      38671,
+      8671,
+      "SOURCE",
+      1,
+      "Рубаки: Революция",
+      "https://shikimori.one/mangas/8671-slayers-revolution"
+    ],
+    [
+      38772,
+      8772,
+      "SOURCE",
+      1,
+      "Мазинкайзер",
+      "https://shikimori.one/mangas/8772-mazinkaiser"
+    ],
+    [
+      38795,
+      8795,
+      "SOURCE",
+      1,
+      "Паладин на поле",
+      "https://shikimori.one/mangas/8795-area-no-kishi"
+    ],
+    [
+      38820,
+      8820,
+      "SOURCE",
+      1,
+      "Гурман",
+      "https://shikimori.one/mangas/8820-oishinbo"
+    ],
+    [
+      38847,
+      8847,
+      "SOURCE",
+      1,
+      "Секрет Харуки Ногидзаки",
+      "https://shikimori.one/mangas/8847-nogizaka-haruka-no-himitsu"
+    ],
+    [
+      38850,
+      8850,
+      "SOURCE",
+      1,
+      "Храбрая десятка",
+      "https://shikimori.one/mangas/8850-brave-10"
+    ]
+  ],
+  "needsReviewColumns": [
+    "anilist",
+    "mal",
+    "priority",
+    "animeCount",
+    "candidateTitleRu",
+    "sourceUrl"
+  ],
+  "problems": [
+    [
+      99091,
+      111505,
+      "NAME_MISMATCH",
+      "Huyao Xiao Hongniang",
+      null
+    ],
+    [
+      105398,
+      121496,
+      "NAME_MISMATCH",
+      "Na Honjaman Level Up",
+      null
+    ],
+    [
+      110884,
+      null,
+      "NO_MAL_ID",
+      "Wan Jie Xian Zong",
+      null
+    ],
+    [
+      146465,
+      null,
+      "NO_MAL_ID",
+      "Shixiong a Shixiong Shizai Tai Wenjian Le",
+      null
+    ],
+    [
+      31709,
+      1709,
+      "NAME_MISMATCH",
+      "Tegami Bachi",
+      null
+    ],
+    [
+      55588,
+      25588,
+      "NAME_MISMATCH",
+      "Zhen Hun Jie",
+      null
+    ],
+    [
+      85316,
+      70801,
+      "NAME_MISMATCH",
+      "Dead Dead Demon's Dededededestruction",
+      null
+    ],
+    [
+      98282,
+      null,
+      "NO_MAL_ID",
+      "Getsuyoubi no Tawawa",
+      null
+    ],
+    [
+      113328,
+      147957,
+      "NAME_MISMATCH",
+      "Lee Du-Na!",
+      null
+    ],
+    [
+      30025,
+      25,
+      "NAME_MISMATCH",
+      "Hagane no Renkinjutsushi",
+      null
+    ],
+    [
+      30027,
+      27,
+      "NAME_MISMATCH",
+      "X",
+      null
+    ],
+    [
+      31075,
+      1075,
+      "NAME_MISMATCH",
+      "7SEEDS",
+      null
+    ],
+    [
+      38552,
+      null,
+      "NO_MAL_ID",
+      "Bishoujo Senshi Sailor Moon: Short Stories",
+      null
+    ],
+    [
+      46621,
+      16621,
+      "NAME_MISMATCH",
+      "Atashinchi",
+      null
+    ],
+    [
+      51157,
+      21157,
+      "NAME_MISMATCH",
+      "Hen Zemi",
+      null
+    ],
+    [
+      85143,
+      122663,
+      "NAME_MISMATCH",
+      "Sinui Tap",
+      null
+    ],
+    [
+      86958,
+      null,
+      "NO_MAL_ID",
+      "Wei, Kanjian Erduo La!",
+      null
+    ],
+    [
+      87140,
+      null,
+      "NO_MAL_ID",
+      "Yin Zhi Shoumuren",
+      null
+    ],
+    [
+      99069,
+      null,
+      "NO_MAL_ID",
+      "Ling Qi",
+      null
+    ],
+    [
+      99090,
+      null,
+      "NO_MAL_ID",
+      "Aishen Qiaokeli Jinxingshi",
+      null
+    ],
+    [
+      102796,
+      113835,
+      "NAME_MISMATCH",
+      "Biaoren",
+      null
+    ],
+    [
+      107279,
+      102256,
+      "NAME_MISMATCH",
+      "Aoashi",
+      null
+    ],
+    [
+      109369,
+      104809,
+      "NAME_MISMATCH",
+      "Dokonjou Gaeru",
+      null
+    ],
+    [
+      116943,
+      38835,
+      "NOT_FOUND",
+      "Umayon",
+      null
+    ],
+    [
+      117896,
+      null,
+      "NO_MAL_ID",
+      "Senyuu.",
+      null
+    ],
+    [
+      132897,
+      null,
+      "NO_MAL_ID",
+      "Yakunara Mug Cup Mo",
+      null
+    ],
+    [
+      145235,
+      null,
+      "NO_MAL_ID",
+      "Itou Junji Kyoufu Manga Collection",
+      null
+    ],
+    [
+      162848,
+      null,
+      "NO_MAL_ID",
+      "Fairy Gone",
+      null
+    ],
+    [
+      182659,
+      null,
+      "NO_MAL_ID",
+      "Isekai Suicide Squad",
+      null
+    ],
+    [
+      183426,
+      null,
+      "NO_MAL_ID",
+      "Cike Wu Liuqi",
+      null
+    ],
+    [
+      30094,
+      94,
+      "NAME_MISMATCH",
+      "D・N・ANGEL",
+      null
+    ],
+    [
+      30132,
+      132,
+      "NAME_MISMATCH",
+      "B't X",
+      null
+    ],
+    [
+      30517,
+      517,
+      "NAME_MISMATCH",
+      "Scryed",
+      null
+    ],
+    [
+      30818,
+      818,
+      "NAME_MISMATCH",
+      "I''s",
+      null
+    ],
+    [
+      31114,
+      1114,
+      "NAME_MISMATCH",
+      "Shinpi no Sekai El-Hazard",
+      null
+    ],
+    [
+      31419,
+      1419,
+      "NAME_MISMATCH",
+      "Onii-sama e...",
+      null
+    ],
+    [
+      31717,
+      1717,
+      "NAME_MISMATCH",
+      "Tonagura!",
+      null
+    ],
+    [
+      32389,
+      2389,
+      "NAME_MISMATCH",
+      "Shuma Baobei 03: Xun Shou Shi Zhi Wang",
+      null
+    ],
+    [
+      33002,
+      3002,
+      "NAME_MISMATCH",
+      "Pani Poni",
+      null
+    ],
+    [
+      33146,
+      3146,
+      "NAME_MISMATCH",
+      "O~i!  Ryoma",
+      null
+    ],
+    [
+      33438,
+      3438,
+      "NAME_MISMATCH",
+      "PSYЯEN",
+      null
+    ],
+    [
+      33502,
+      3502,
+      "NAME_MISMATCH",
+      "Shuma Baobei 04: Wuxian Didai",
+      null
+    ],
+    [
+      33510,
+      3510,
+      "NAME_MISMATCH",
+      "Mobile Fighter G Gundam",
+      null
+    ],
+    [
+      33602,
+      3602,
+      "NAME_MISMATCH",
+      "Koharu Biyori",
+      null
+    ],
+    [
+      33920,
+      null,
+      "NO_MAL_ID",
+      "Kishibe Rohan wa Ugokanai Episode 2: Mutsukabezaka",
+      null
+    ],
+    [
+      34227,
+      4227,
+      "NAME_MISMATCH",
+      "Tokko",
+      null
+    ],
+    [
+      35907,
+      5907,
+      "NAME_MISMATCH",
+      "Yugo",
+      null
+    ],
+    [
+      39990,
+      9990,
+      "NAME_MISMATCH",
+      "ToHeart2",
+      null
+    ],
+    [
+      43420,
+      13420,
+      "NAME_MISMATCH",
+      "Mobile Suit Gundam 0083: Hero of Stardust",
+      null
+    ],
+    [
+      46110,
+      16110,
+      "NAME_MISMATCH",
+      "Dragon Ball: Heya! Son Goku and His Friends Return!!",
+      null
+    ],
+    [
+      48606,
+      18606,
+      "NAME_MISMATCH",
+      "Steam Boy",
+      null
+    ],
+    [
+      50221,
+      20221,
+      "NAME_MISMATCH",
+      "After War Gundam X",
+      null
+    ],
+    [
+      51419,
+      21419,
+      "NAME_MISMATCH",
+      "No Zo Ki A Na",
+      null
+    ],
+    [
+      55482,
+      null,
+      "NO_MAL_ID",
+      "FAIRY TAIL × RAVE",
+      null
+    ],
+    [
+      60861,
+      30861,
+      "NAME_MISMATCH",
+      "Mobile Suit Gundam AGE: Story of the Beginning",
+      null
+    ],
+    [
+      66643,
+      36643,
+      "NAME_MISMATCH",
+      "Sabagebu!",
+      null
+    ],
+    [
+      73903,
+      null,
+      "NO_MAL_ID",
+      "Kishibe Rohan wa Ugokanai Episode 5: Fugou Mura",
+      null
+    ],
+    [
+      75461,
+      45461,
+      "NAME_MISMATCH",
+      "Kinokoinu",
+      null
+    ],
+    [
+      79629,
+      175311,
+      "NOT_FOUND",
+      "Ougon no Senshi ICZER-ONE",
+      null
+    ],
+    [
+      85235,
+      55163,
+      "NAME_MISMATCH",
+      "Gakkou Gurashi!",
+      null
+    ],
+    [
+      85612,
+      79061,
+      "NAME_MISMATCH",
+      "Hinomaru-Zumou",
+      null
+    ],
+    [
+      85763,
+      null,
+      "NO_MAL_ID",
+      "Mahou Shoujo",
+      null
+    ],
+    [
+      86159,
+      null,
+      "NO_MAL_ID",
+      "Genshiken Nidaime",
+      null
+    ],
+    [
+      86391,
+      63295,
+      "NAME_MISMATCH",
+      "Kumamiko: Girl Meets Bear",
+      null
+    ],
+    [
+      86727,
+      null,
+      "NO_MAL_ID",
+      "Zuobi Yishu",
+      null
+    ],
+    [
+      86848,
+      111202,
+      "NAME_MISMATCH",
+      "Oemo Jisangjuui",
+      null
+    ],
+    [
+      87028,
+      null,
+      "NO_MAL_ID",
+      "Yaojing Zhongzhi Shouce",
+      null
+    ],
+    [
+      87303,
+      114530,
+      "NAME_MISMATCH",
+      "Naje Tteuneun Dal",
+      null
+    ],
+    [
+      95410,
+      91050,
+      "NAME_MISMATCH",
+      "Shijian Zhipei Zhe",
+      null
+    ],
+    [
+      96366,
+      94268,
+      "NAME_MISMATCH",
+      "Shiyou Zhiguo",
+      null
+    ],
+    [
+      97600,
+      null,
+      "NO_MAL_ID",
+      "Yogen no Nayuta",
+      null
+    ],
+    [
+      97900,
+      null,
+      "NO_MAL_ID",
+      "Dragon Ball Minus: Hanatareta Unmei no Kodomo",
+      null
+    ],
+    [
+      98713,
+      null,
+      "NO_MAL_ID",
+      "Me ga Sametara Onnanoko ni Natteita Yamai",
+      null
+    ],
+    [
+      99401,
+      null,
+      "NO_MAL_ID",
+      "Shi Yi Chang'an: Wangye",
+      null
+    ],
+    [
+      100115,
+      null,
+      "NO_MAL_ID",
+      "Niwa ni wa Niwa Niwatori ga Ita.",
+      null
+    ],
+    [
+      100343,
+      null,
+      "NO_MAL_ID",
+      "Binan Koukou Chikyuu Boueibu LOVE! LOVE!",
+      null
+    ],
+    [
+      101151,
+      null,
+      "NO_MAL_ID",
+      "Shikong Shitu",
+      null
+    ],
+    [
+      101237,
+      null,
+      "NO_MAL_ID",
+      "Kishibe Rohan wa Ugokanai Episode 9: The Run",
+      null
+    ],
+    [
+      101417,
+      111322,
+      "NAME_MISMATCH",
+      "Rokuhoudou Yotsuiro Biyori",
+      null
+    ],
+    [
+      101592,
+      null,
+      "NO_MAL_ID",
+      "Imouto no Ane",
+      null
+    ],
+    [
+      101784,
+      null,
+      "NO_MAL_ID",
+      "Koi wa Moumoku",
+      null
+    ],
+    [
+      101785,
+      null,
+      "NO_MAL_ID",
+      "Shikaku",
+      null
+    ],
+    [
+      101955,
+      null,
+      "NO_MAL_ID",
+      "Sasaki-kun ga Judan Tometa",
+      null
+    ],
+    [
+      103028,
+      null,
+      "NO_MAL_ID",
+      "BURN THE WITCH",
+      null
+    ],
+    [
+      103995,
+      130538,
+      "NAME_MISMATCH",
+      "Yeosingangnim",
+      null
+    ],
+    [
+      104264,
+      null,
+      "NO_MAL_ID",
+      "Mezzo",
+      null
+    ],
+    [
+      104797,
+      null,
+      "NO_MAL_ID",
+      "Aikatsu! Go! Go! Go!",
+      null
+    ],
+    [
+      104973,
+      118646,
+      "NAME_MISMATCH",
+      "Geunyeoga Gongjakjeoro Gaya Haetdeon Sajeong",
+      null
+    ],
+    [
+      105180,
+      150855,
+      "NAME_MISMATCH",
+      "Hyaku M.",
+      null
+    ],
+    [
+      105586,
+      null,
+      "NO_MAL_ID",
+      "Xiaolü He Xiaolan",
+      null
+    ],
+    [
+      105925,
+      null,
+      "NO_MAL_ID",
+      "Kishibe Rohan wa Ugokanai Episode 16: Zangeshitsu",
+      null
+    ],
+    [
+      107411,
+      null,
+      "NO_MAL_ID",
+      "Dosanko Gal wa Namara Menkoi",
+      null
+    ],
+    [
+      108003,
+      90269,
+      "NAME_MISMATCH",
+      "PuriPuri Chi-chan!!",
+      null
+    ],
+    [
+      109398,
+      120875,
+      "NAME_MISMATCH",
+      "Yeonui Pyeonji",
+      null
+    ],
+    [
+      110167,
+      null,
+      "NO_MAL_ID",
+      "Nishikata-chan",
+      null
+    ],
+    [
+      110170,
+      null,
+      "NO_MAL_ID",
+      "Kochoki: Wakaki Nobunaga",
+      null
+    ],
+    [
+      110338,
+      null,
+      "NO_MAL_ID",
+      "Shokugeki no Souma: Le dessert",
+      null
+    ],
+    [
+      110462,
+      130216,
+      "NAME_MISMATCH",
+      "Dogul Wang",
+      null
+    ],
+    [
+      111140,
+      133163,
+      "NAME_MISMATCH",
+      "Mamma Mian",
+      null
+    ],
+    [
+      111548,
+      null,
+      "NO_MAL_ID",
+      "Ranpo Kitan: Game of Laplace",
+      null
+    ],
+    [
+      111630,
+      null,
+      "NO_MAL_ID",
+      "Keishicho Tokumu-bu Tokushu Kyoaku-han Taisaku-Shitsu Dai-Nana-ka: Tokunana",
+      null
+    ],
+    [
+      111634,
+      null,
+      "NO_MAL_ID",
+      "Eiga Doraemon Nobita no Shin Kyouryuu: Futago no Kyuu to Myuu",
+      null
+    ],
+    [
+      112132,
+      null,
+      "NO_MAL_ID",
+      "Keishicho Tokumu-bu Tokushu Kyoaku-han Taisaku-Shitsu Dai-Nana-ka: Tokunana - File.0",
+      null
+    ],
+    [
+      112526,
+      66427,
+      "NAME_MISMATCH",
+      "Sadon Desu",
+      null
+    ],
+    [
+      113485,
+      null,
+      "NO_MAL_ID",
+      "Shiye Mowang",
+      null
+    ],
+    [
+      113640,
+      null,
+      "NO_MAL_ID",
+      "Kotetsu Jeeg Hiryuden",
+      null
+    ],
+    [
+      113984,
+      127860,
+      "NAME_MISMATCH",
+      "Jii-san Baa-san Wakagaeru",
+      null
+    ],
+    [
+      114207,
+      123359,
+      "NOT_FOUND",
+      "Deku & Bakugo: Rising",
+      null
+    ],
+    [
+      114363,
+      null,
+      "NO_MAL_ID",
+      "Pikachu Tankentai",
+      null
+    ],
+    [
+      114523,
+      null,
+      "NO_MAL_ID",
+      "Baki Gaiden: Revenge Tokyo",
+      null
+    ],
+    [
+      115081,
+      null,
+      "NO_MAL_ID",
+      "Oshiri Dandy The Young",
+      null
+    ],
+    [
+      116683,
+      null,
+      "NO_MAL_ID",
+      "Tesagure! Bukatsumono: Spin-off Puru-Purun Charm to Asobou",
+      null
+    ],
+    [
+      116975,
+      null,
+      "NO_MAL_ID",
+      "SEXY Lupin III",
+      null
+    ],
+    [
+      117062,
+      null,
+      "NO_MAL_ID",
+      "Wo de Tian Jie Nüyou",
+      null
+    ],
+    [
+      117460,
+      147727,
+      "NAME_MISMATCH",
+      "Temppal",
+      null
+    ],
+    [
+      117546,
+      null,
+      "NO_MAL_ID",
+      "Girls und Panzer Gekijouban: Variante",
+      null
+    ],
+    [
+      117681,
+      null,
+      "NO_MAL_ID",
+      "Zenmeban! Wo Chuanyue Cheng Le Zui Ruoxiao Ye Guai",
+      null
+    ],
+    [
+      117834,
+      null,
+      "NO_MAL_ID",
+      "Iwa Kakeru!!: Try a new climbing",
+      null
+    ],
+    [
+      117993,
+      null,
+      "NO_MAL_ID",
+      "Mujin Wakusei Survive",
+      null
+    ],
+    [
+      118854,
+      null,
+      "NO_MAL_ID",
+      "Akudama Drive",
+      null
+    ],
+    [
+      119257,
+      132214,
+      "NAME_MISMATCH",
+      "Jeonjijeok Dokja Sijeom",
+      null
+    ],
+    [
+      119351,
+      null,
+      "NO_MAL_ID",
+      "Dali Si Rizhi",
+      null
+    ],
+    [
+      119367,
+      null,
+      "NO_MAL_ID",
+      "SHOW BY ROCK!!",
+      null
+    ],
+    [
+      120069,
+      null,
+      "NO_MAL_ID",
+      "Tongling Fei",
+      null
+    ],
+    [
+      120313,
+      null,
+      "NO_MAL_ID",
+      "Chao Neng Lifang",
+      null
+    ],
+    [
+      121256,
+      null,
+      "NO_MAL_ID",
+      "Peng Ran Xindong",
+      null
+    ],
+    [
+      121612,
+      null,
+      "NO_MAL_ID",
+      "Mi Yu Xingzhe",
+      null
+    ],
+    [
+      121991,
+      139164,
+      "NAME_MISMATCH",
+      "Ssaumdokak",
+      null
+    ],
+    [
+      123451,
+      96042,
+      "NAME_MISMATCH",
+      "Koukou Seikageki: Star Mu",
+      null
+    ],
+    [
+      123608,
+      null,
+      "NO_MAL_ID",
+      "Kodai Ouja Kyouryuu King: D-Kids Adventure - Yokuryuu Densetsu",
+      null
+    ],
+    [
+      124142,
+      null,
+      "NO_MAL_ID",
+      "Ningyo Rhapsody",
+      null
+    ],
+    [
+      125826,
+      null,
+      "NO_MAL_ID",
+      "Monsters",
+      null
+    ],
+    [
+      126135,
+      null,
+      "NO_MAL_ID",
+      "Bibliomania",
+      null
+    ],
+    [
+      126233,
+      null,
+      "NO_MAL_ID",
+      "POPEE THE PERFORMER",
+      null
+    ],
+    [
+      126244,
+      null,
+      "NO_MAL_ID",
+      "Kaguya-sama wa Kokurasetai Darkness",
+      null
+    ],
+    [
+      126297,
+      146966,
+      "NAME_MISMATCH",
+      "Iphagyongbyeong",
+      null
+    ],
+    [
+      126986,
+      147769,
+      "NAME_MISMATCH",
+      "Jibi Eopseo",
+      null
+    ],
+    [
+      127348,
+      null,
+      "NO_MAL_ID",
+      "Skate-Leading☆Stars",
+      null
+    ],
+    [
+      128395,
+      null,
+      "NO_MAL_ID",
+      "Shikaruneko",
+      null
+    ],
+    [
+      128642,
+      153714,
+      "NAME_MISMATCH",
+      "Wiheomhan Pyeonuijeom",
+      null
+    ],
+    [
+      129672,
+      null,
+      "NO_MAL_ID",
+      "SK∞",
+      null
+    ],
+    [
+      131252,
+      null,
+      "NO_MAL_ID",
+      "Mahou no Star Magical Emi",
+      null
+    ],
+    [
+      132181,
+      null,
+      "NO_MAL_ID",
+      "WIZARD!! Bakuen no Seifukusha",
+      null
+    ],
+    [
+      132212,
+      null,
+      "NO_MAL_ID",
+      "Yuu☆Yuu☆Hakusho Gaiden: TWO SHOTS",
+      null
+    ],
+    [
+      132781,
+      null,
+      "NO_MAL_ID",
+      "King of Prism by Pretty Rhythm Comic Anthology",
+      null
+    ],
+    [
+      132788,
+      null,
+      "NO_MAL_ID",
+      "King of Prism by Pretty Rhythm: Dengeki Comic Anthology",
+      null
+    ],
+    [
+      132892,
+      null,
+      "NO_MAL_ID",
+      "King of Prism by Pretty Rhythm: 4-koma Anthology Jisedai-hen",
+      null
+    ],
+    [
+      132894,
+      null,
+      "NO_MAL_ID",
+      "King of Prism by Pretty Rhythm: 4-koma Kings",
+      null
+    ],
+    [
+      132972,
+      null,
+      "NO_MAL_ID",
+      "NEEDLESS / Shinigami no Seiken",
+      null
+    ],
+    [
+      133558,
+      null,
+      "NO_MAL_ID",
+      "Lixiang Jinqu",
+      null
+    ],
+    [
+      133700,
+      null,
+      "NO_MAL_ID",
+      "Luo Xiaohei Zhan Ji",
+      null
+    ],
+    [
+      134110,
+      null,
+      "NO_MAL_ID",
+      "Get truth: Taiyou no Kiba Dougram",
+      null
+    ],
+    [
+      134184,
+      null,
+      "NO_MAL_ID",
+      "Romance Dawn",
+      null
+    ],
+    [
+      136126,
+      null,
+      "NO_MAL_ID",
+      "Honoo no Hakkyukuken: Virtua Fighter",
+      null
+    ],
+    [
+      136259,
+      131044,
+      "NOT_FOUND",
+      "Idaten Shou",
+      null
+    ],
+    [
+      136327,
+      null,
+      "NO_MAL_ID",
+      "Gekijouban Meitantei Conan: Chinmoku no 15-fun",
+      null
+    ],
+    [
+      136399,
+      null,
+      "NO_MAL_ID",
+      "Chou Denji Machine Voltes V",
+      null
+    ],
+    [
+      137278,
+      null,
+      "NO_MAL_ID",
+      "Horimiya Bangai-hen",
+      null
+    ],
+    [
+      137331,
+      null,
+      "NO_MAL_ID",
+      "NIGHT HEAD 2041",
+      null
+    ],
+    [
+      138781,
+      null,
+      "NO_MAL_ID",
+      "Boku no Kokoro no Yabai Yatsu: Twiyaba Matome",
+      null
+    ],
+    [
+      140098,
+      null,
+      "NO_MAL_ID",
+      "Kun Tun Tianxia",
+      null
+    ],
+    [
+      140294,
+      null,
+      "NO_MAL_ID",
+      "Edokko Boy: Gatten Tasuke",
+      null
+    ],
+    [
+      141232,
+      null,
+      "NO_MAL_ID",
+      "Gu-Gu Ganmo",
+      null
+    ],
+    [
+      141313,
+      null,
+      "NO_MAL_ID",
+      "Comet-san",
+      null
+    ],
+    [
+      141612,
+      null,
+      "NO_MAL_ID",
+      "Kidou Senshi Gundam F91",
+      null
+    ],
+    [
+      141957,
+      154192,
+      "NAME_MISMATCH",
+      "Eoneu Nal Jameseo Kkaeeoboni Bagelyeoga Doeeo Isseotda",
+      null
+    ],
+    [
+      142903,
+      null,
+      "NO_MAL_ID",
+      "Pokonyan",
+      null
+    ],
+    [
+      143181,
+      null,
+      "NO_MAL_ID",
+      "Layton Kyouju to Eien no Utahime",
+      null
+    ],
+    [
+      143902,
+      null,
+      "NO_MAL_ID",
+      "Yichan Xiao Heshang",
+      null
+    ],
+    [
+      144924,
+      null,
+      "NO_MAL_ID",
+      "Wo Cong Zhu Tian Wan Jie Guilai",
+      null
+    ],
+    [
+      145267,
+      null,
+      "NO_MAL_ID",
+      "Gyakuten Sekai no Denchi Shoujo",
+      null
+    ],
+    [
+      146167,
+      null,
+      "NO_MAL_ID",
+      "Turn A Gundam",
+      null
+    ],
+    [
+      147349,
+      null,
+      "NO_MAL_ID",
+      "Kidou Senshi Gundam MS IGLOO: Mokushiroku 0079",
+      null
+    ],
+    [
+      147825,
+      null,
+      "NO_MAL_ID",
+      "Fruits Basket: prelude - Special Comics",
+      null
+    ],
+    [
+      148167,
+      null,
+      "NO_MAL_ID",
+      "Go-toubun no Hanayome: 122 + 1 - Itsutsugo-chan wa Himitsu wo Gotoubun Dekinai",
+      null
+    ],
+    [
+      149793,
+      null,
+      "NO_MAL_ID",
+      "Juunsenki L-Gaim",
+      null
+    ],
+    [
+      150092,
+      null,
+      "NO_MAL_ID",
+      "Juunsenki L-Gaim: Under the Sunz",
+      null
+    ],
+    [
+      150265,
+      null,
+      "NO_MAL_ID",
+      "Giant Robo",
+      null
+    ],
+    [
+      150455,
+      null,
+      "NO_MAL_ID",
+      "Anmitsu Hime",
+      null
+    ],
+    [
+      152129,
+      null,
+      "NO_MAL_ID",
+      "Dr. STONE: TERRAFORMING",
+      null
+    ],
+    [
+      153089,
+      143975,
+      "NOT_FOUND",
+      "Angel Beats! Original Comics",
+      null
+    ],
+    [
+      153549,
+      null,
+      "NO_MAL_ID",
+      "Uma Musume: Cinderella Gray Gaiden - The mermaid left behind",
+      null
+    ],
+    [
+      153920,
+      null,
+      "NO_MAL_ID",
+      "Gyakuten Saiban: Sono \"Shinjitsu\", Igi Ari - Gyakuten Tokkyuu, Kita e",
+      null
+    ],
+    [
+      154077,
+      null,
+      "NO_MAL_ID",
+      "Miraeui Goldongpum Gage",
+      null
+    ],
+    [
+      155423,
+      null,
+      "NO_MAL_ID",
+      "Capybara-san",
+      null
+    ],
+    [
+      158215,
+      null,
+      "NO_MAL_ID",
+      "Higurashi no Naku Koro ni Kira: Ayakashisenshi-hen (Tsutomu)",
+      null
+    ],
+    [
+      158814,
+      null,
+      "NO_MAL_ID",
+      "Eiga Youkai Watch: Tanjou no Himitsu da Nyan!",
+      null
+    ],
+    [
+      158910,
+      null,
+      "NO_MAL_ID",
+      "Eiga Youkai Watch: Enma Daiou to Itsutsu no Monogatari da Nyan!",
+      null
+    ],
+    [
+      160791,
+      null,
+      "NO_MAL_ID",
+      "Nihon Chinbotsu 2020",
+      null
+    ],
+    [
+      161785,
+      null,
+      "NO_MAL_ID",
+      "Pocket Monsters: Diamond and Pearl",
+      null
+    ],
+    [
+      163811,
+      null,
+      "NO_MAL_ID",
+      "Heybot: Maruwakari Hebohebo BOOK",
+      null
+    ],
+    [
+      163827,
+      162566,
+      "NAME_MISMATCH",
+      "J⇔M",
+      null
+    ],
+    [
+      164498,
+      null,
+      "NO_MAL_ID",
+      "Anime Pocket Monsters: Liko to Roy no Bouken",
+      null
+    ],
+    [
+      165565,
+      null,
+      "NO_MAL_ID",
+      "Mojakou",
+      null
+    ],
+    [
+      167056,
+      null,
+      "NO_MAL_ID",
+      "Mecha-ude",
+      null
+    ],
+    [
+      168859,
+      null,
+      "NO_MAL_ID",
+      "Eiga Futari wa Precure Max Heart 2",
+      null
+    ],
+    [
+      171068,
+      172823,
+      "NAME_MISMATCH",
+      "Wollum Jogyonim",
+      null
+    ],
+    [
+      171267,
+      null,
+      "NO_MAL_ID",
+      "GAMERA: Rebirth",
+      null
+    ],
+    [
+      171951,
+      null,
+      "NO_MAL_ID",
+      "Casshern Sins",
+      null
+    ],
+    [
+      173933,
+      null,
+      "NO_MAL_ID",
+      "Metallic Rouge",
+      null
+    ],
+    [
+      175976,
+      null,
+      "NO_MAL_ID",
+      "Yuyukomi: UniteUp! the comic",
+      null
+    ],
+    [
+      177018,
+      null,
+      "NO_MAL_ID",
+      "Himitsu no AiPri",
+      null
+    ],
+    [
+      177133,
+      null,
+      "NO_MAL_ID",
+      "Toku: Touken Ranbu - Hanamaru - Setsugetsuka",
+      null
+    ],
+    [
+      179533,
+      null,
+      "NO_MAL_ID",
+      "Kimi no Iro",
+      null
+    ],
+    [
+      180108,
+      null,
+      "NO_MAL_ID",
+      "Kidou Butouden G Gundam: Shouen no Hate",
+      null
+    ],
+    [
+      182218,
+      null,
+      "NO_MAL_ID",
+      "Mahou Shoujo Pretty Sammy",
+      null
+    ],
+    [
+      183961,
+      null,
+      "NO_MAL_ID",
+      "Pocket Monsters: Pucchigumi SP",
+      null
+    ],
+    [
+      186242,
+      null,
+      "NO_MAL_ID",
+      "Photon",
+      null
+    ],
+    [
+      187388,
+      null,
+      "NO_MAL_ID",
+      "Onmyo Kaiten Re:verse",
+      null
+    ],
+    [
+      189404,
+      null,
+      "NO_MAL_ID",
+      "Mamonogurai no Boukensha: Ore Dake Mamono wo Kuratte Tsuyoku Naru",
+      null
+    ],
+    [
+      189873,
+      null,
+      "NO_MAL_ID",
+      "Dandelion",
+      null
+    ],
+    [
+      191930,
+      null,
+      "NO_MAL_ID",
+      "Abenobashi Mahō ☆ Shōtengai ― Abeno no Machi ni Inori o Komete ―",
+      null
+    ],
+    [
+      193860,
+      null,
+      "NO_MAL_ID",
+      "Chou Denji Machine Voltes V",
+      null
+    ],
+    [
+      194709,
+      null,
+      "NO_MAL_ID",
+      "Uma Musume: Cinderella Gray Gaiden - \"Enrai\"",
+      null
+    ],
+    [
+      195950,
+      null,
+      "NO_MAL_ID",
+      "Fushigi ‌no ‌Kuni ‌de ‌Alice to: Dive ‌in ‌Wonderland",
+      null
+    ],
+    [
+      197023,
+      null,
+      "NO_MAL_ID",
+      "Tadaima, Okaeri: Kagayaku Hi",
+      null
+    ],
+    [
+      197024,
+      null,
+      "NO_MAL_ID",
+      "Tadaima, Okaeri: Mata Ashita",
+      null
+    ],
+    [
+      198825,
+      null,
+      "NO_MAL_ID",
+      "Eternal Boys",
+      null
+    ],
+    [
+      198835,
+      null,
+      "NO_MAL_ID",
+      "Bokura no 7-kakan Sensou",
+      null
+    ],
+    [
+      199993,
+      null,
+      "NO_MAL_ID",
+      "Mouse Cursor de Genjitsu wo Sousa Dekiru You ni Natta node, Onnanoko wo Ippai Click Shimasu",
+      null
+    ],
+    [
+      200024,
+      null,
+      "NO_MAL_ID",
+      "Neko Mukashi Banashi",
+      null
+    ],
+    [
+      200232,
+      null,
+      "NO_MAL_ID",
+      "GANGLION",
+      null
+    ],
+    [
+      202214,
+      null,
+      "NO_MAL_ID",
+      "Shou 3 Ashibe QQ Goma-chan",
+      null
+    ],
+    [
+      203852,
+      null,
+      "NO_MAL_ID",
+      "Towa no Yuugure",
+      null
+    ],
+    [
+      203892,
+      null,
+      "NO_MAL_ID",
+      "Girls Band Cry: Secret Live",
+      null
+    ],
+    [
+      205732,
+      null,
+      "NO_MAL_ID",
+      "Ah, Tanuki wa Mou Dame desu",
+      null
+    ],
+    [
+      206731,
+      null,
+      "NO_MAL_ID",
+      "GIRLS BAND CRY",
+      null
+    ],
+    [
+      206732,
+      null,
+      "NO_MAL_ID",
+      "Kimi ga Shinu made Koi wo Shitai: side stories",
+      null
+    ],
+    [
+      206974,
+      null,
+      "NO_MAL_ID",
+      "MIGNON",
+      null
+    ],
+    [
+      208903,
+      null,
+      "NO_MAL_ID",
+      "Chirin no Suzu",
+      null
+    ],
+    [
+      210295,
+      null,
+      "NO_MAL_ID",
+      "Princess Session Orchestra Anthology Comic",
+      null
+    ],
+    [
+      210896,
+      null,
+      "NO_MAL_ID",
+      "FX Senshi Kurumi-chan",
+      null
+    ],
+    [
+      212489,
+      null,
+      "NO_MAL_ID",
+      "Dekai Hachi",
+      null
+    ],
+    [
+      213688,
+      null,
+      "NO_MAL_ID",
+      "Toushi Gordian",
+      null
+    ],
+    [
+      214728,
+      null,
+      "NO_MAL_ID",
+      "Ghost Meets Gal!",
+      null
+    ],
+    [
+      215743,
+      null,
+      "NO_MAL_ID",
+      "BanG Dream! Yume∞Mita: Arale∞Araburation",
+      null
+    ],
+    [
+      215902,
+      null,
+      "NO_MAL_ID",
+      "Crayon Shin-chan: Ankoku Tamatama Daitsuiseki",
+      null
+    ],
+    [
+      216461,
+      null,
+      "NO_MAL_ID",
+      "Meitantei Conan: Tantei-tachi no Requiem",
+      null
+    ],
+    [
+      216864,
+      null,
+      "NO_MAL_ID",
+      "Sayonara Lara",
+      null
+    ],
+    [
+      217998,
+      null,
+      "NO_MAL_ID",
+      "Duel Masters LOST: Danzai no Shounen",
+      null
+    ],
+    [
+      218300,
+      null,
+      "NO_MAL_ID",
+      "Eiga Youkai Watch: FOREVER FRIENDS",
+      null
+    ],
+    [
+      218423,
+      null,
+      "NO_MAL_ID",
+      "PazuDora",
+      null
+    ],
+    [
+      218980,
+      null,
+      "NO_MAL_ID",
+      "Boku no Hero Academia: Tokubetsu Yomikiri",
+      null
+    ],
+    [
+      219010,
+      null,
+      "NO_MAL_ID",
+      "Chibi Godzilla no Gyakushuu",
+      null
+    ],
+    [
+      219040,
+      null,
+      "NO_MAL_ID",
+      "Meitantei Conan: Sekigan no Flashback",
+      null
+    ],
+    [
+      219057,
+      null,
+      "NO_MAL_ID",
+      "Hibi wa Sugiredo Meshi Umashi Koushiki Comic Anthology",
+      null
+    ]
+  ],
+  "problemsColumns": [
+    "anilist",
+    "mal",
+    "status",
+    "titleOriginal",
+    "error"
+  ]
+}

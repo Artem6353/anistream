@@ -10,10 +10,12 @@ import {
   isPubliclyReadable,
   isPublicRuChapter,
   publicationIssues,
+  pluralRu,
   publicationSummary,
   publicRuChapters,
 } from '@/lib/aninova3/comics/publication';
 import type { ComicWork } from '@/lib/aninova3/comics/model';
+import { PENDING_TITLE_TEXT } from '@/lib/aninova3/comics/model';
 import { FIXTURE_EDITORIALS, FIXTURE_GRAPH } from './fixtures/aninova3-comics';
 
 /** B1-C.4: правила публикации — русское название, русские главы, права. */
@@ -69,20 +71,43 @@ describe('полная проверка публикации', () => {
     expect(isPublicRuChapter({ id: 'x', number: 1, titleRu: '', language: 'ru', pages: 5 })).toBe(true);
   });
 
-  it('непроверенное русское название закрывает публикацию', () => {
+  it('непроверенное русское название уходит в нейтральное состояние, а не в латиницу', () => {
     expect(unverified.publication.status).toBe('DRAFT');
     expect(publicationIssues(unverified)).toContain('title_unverified');
     expect(publicationIssues(unverified)).toContain('metadata_unverified');
     expect(isPubliclyReadable(unverified)).toBe(false);
     const title = comicDisplayTitle(unverified);
     expect(title.russian).toBe(false);
-    expect(title.text).toBe(unverified.titleOriginal);
+    expect(title.pending).toBe(true);
+    expect(title.text).toBe(PENDING_TITLE_TEXT);
+    /* Оригинальное название не подставляется вместо русского. */
+    expect(title.text).not.toContain(unverified.titleOriginal);
   });
 
   it('истёкшее разрешение закрывает публикацию', () => {
     expect(expired.publication.status).toBe('EXPIRED');
     expect(publicationIssues(expired)).toContain('expired');
     expect(isPubliclyReadable(expired)).toBe(false);
+  });
+
+  it('кандидат русского названия не подменяет проверенное и не виден публично', () => {
+    const withCandidate = buildComicStore(buildSourceGraph(FIXTURE_GRAPH), [FIXTURE_EDITORIALS[4]], new Map([
+      [900005, { title: 'Несверенный кандидат', source: 'shikimori' as const, url: 'https://shikimori.one/mangas/z5-x', fetchedAt: '2026-11-22' }],
+    ]));
+    const comic = withCandidate.byId.get('comic:anilist:900005');
+    if (!comic) throw new Error('fixture отсутствует');
+    expect(comic.verification).toBe('CANDIDATE');
+    expect(comic.titleRuCandidate?.title).toBe('Несверенный кандидат');
+    const title = comicDisplayTitle(comic);
+    expect(title.pending).toBe(true);
+    expect(title.text).toBe(PENDING_TITLE_TEXT);
+    expect(title.text).not.toContain('Несверенный кандидат');
+  });
+
+  it('редакционно проверенное название показывается как русское', () => {
+    const comic = byId('comic:anilist:900001');
+    const title = comicDisplayTitle(comic);
+    expect(title).toMatchObject({ text: 'Тестовая манга', russian: true, pending: false, verification: 'EDITORIALLY_VERIFIED' });
   });
 
   it('демо никогда не считается реально читаемым', () => {
@@ -113,5 +138,21 @@ describe('публичные формулировки', () => {
     expect(chaptersLine(noRights)).toBe('1 глава на русском');
     expect(chaptersLine(foreignOnly)).toContain('Русских глав нет');
     expect(chaptersLine(foreignOnly)).toContain(String(foreignOnly.totalChaptersKnown));
+  });
+});
+
+describe('русское склонение чисел', () => {
+  it('глава/главы/глав по правилам, включая 11–14 и 21', () => {
+    const forms: [string, string, string] = ['глава', 'главы', 'глав'];
+    expect([1, 21, 101].map((n) => pluralRu(n, forms))).toEqual(['глава', 'глава', 'глава']);
+    expect([2, 3, 4, 22, 34].map((n) => pluralRu(n, forms))).toEqual(['главы', 'главы', 'главы', 'главы', 'главы']);
+    expect([5, 9, 0, 11, 12, 14, 111].map((n) => pluralRu(n, forms))).toEqual([
+      'глав', 'глав', 'глав', 'глав', 'глав', 'глав', 'глав',
+    ]);
+  });
+
+  it('одна известная глава не превращается в «1 глав»', () => {
+    const oneChapter: ComicWork = { ...unverified, totalChaptersKnown: 1, chapters: [] };
+    expect(chaptersLine(oneChapter)).toBe('Русских глав нет · известно 1 глава');
   });
 });

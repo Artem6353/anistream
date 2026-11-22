@@ -8,6 +8,7 @@ import {
   hasReaderSource,
   isPubliclyReadable,
   isPublishableEntry,
+  pluralRu,
   publicRuChapters,
   publicationSummary,
 } from '@/lib/aninova3/comics/publication';
@@ -24,9 +25,10 @@ function cardRole(link: LinkedComic): string {
 /**
  * Карточка оригинального произведения.
  *
- * Показывает только проверенное: русское название — при подтверждении, автора —
- * при подтверждении, главы — только реально доступные. Кнопка чтения появляется
- * исключительно при полном прохождении публикационных проверок.
+ * Показывает только проверенное: русское название — при редакционном подтверждении
+ * (иначе нейтральный текст без оригинального названия), автора — при подтверждении,
+ * главы — только реально доступные. Кнопка чтения появляется исключительно при
+ * полном прохождении публикационных проверок.
  */
 export function A3SourceCard({ link }: { link: LinkedComic }) {
   const { comic, role } = link;
@@ -50,38 +52,37 @@ export function A3SourceCard({ link }: { link: LinkedComic }) {
           href={href}
           data-a3-focusable
           data-a3-key={`comic:${comic.id}`}
-          aria-label={`${title.text}: подробнее`}
+          aria-label={title.pending ? 'Подробнее о первоисточнике' : `${title.text}: подробнее`}
         >
           <PosterArt
             src={comic.cover}
             seed={comic.slug}
-            initials={title.text.slice(0, 1)}
-            alt={`Обложка: ${title.text}`}
+            initials={title.pending ? '•' : title.text.slice(0, 1)}
+            alt={title.pending ? 'Обложка первоисточника' : `Обложка: ${title.text}`}
             width={180}
           />
         </Link>
       ) : (
         <span className="a3-source-card__cover" aria-hidden>
-          <PosterArt src={comic.cover} seed={comic.slug} initials={title.text.slice(0, 1)} alt="" width={180} />
+          <PosterArt src={comic.cover} seed={comic.slug} initials="•" alt="" width={180} />
         </span>
       )}
 
       <div className="a3-source-card__body">
         <p className="a3-source-card__role">{cardRole(link)}</p>
-        <h3 className="a3-source-card__title">
-          {publishable ? (
+        <h3 className={`a3-source-card__title${title.pending ? ' is-pending' : ''}`}>
+          {publishable && !title.pending ? (
             <Link href={href} data-a3-focusable data-a3-key={`comic:${comic.id}:title`}>
               {title.text}
             </Link>
+          ) : title.pending ? (
+            <span>{title.text}</span>
           ) : (
             title.text
           )}
         </h3>
-        {title.russian ? null : (
-          <p className="a3-source-card__flag">Русское название не подтверждено</p>
-        )}
-        {comic.titleOriginal && comic.titleOriginal !== title.text ? (
-          <p className="a3-source-card__original">{comic.titleOriginal}</p>
+        {title.pending ? (
+          <p className="a3-source-card__meta">Русское издание ещё не сверено редакцией.</p>
         ) : null}
         <p className="a3-source-card__meta">{meta}</p>
         <p className="a3-source-card__meta">
@@ -93,7 +94,7 @@ export function A3SourceCard({ link }: { link: LinkedComic }) {
         {readable ? (
           <>
             <p className="a3-source-card__chapters a3-source-card__chapters--ok">
-              Доступно к чтению: {ruChapters.length} {ruChapters.length === 1 ? 'глава' : 'глав'} на русском
+              Доступно к чтению: {ruChapters.length} {pluralRu(ruChapters.length, ['глава', 'главы', 'глав'])} на русском
             </p>
             <Link
               className="a3-btn a3-btn--primary a3-source-card__cta"
@@ -116,7 +117,7 @@ export function A3SourceCard({ link }: { link: LinkedComic }) {
 
         {!readable && publishable ? (
           <Link className="a3-link" href={href} data-a3-focusable>
-            О первоисточнике →
+            {title.pending ? 'О первоисточнике' : 'О первоисточнике'} →
           </Link>
         ) : null}
       </div>
@@ -125,23 +126,27 @@ export function A3SourceCard({ link }: { link: LinkedComic }) {
 }
 
 /**
- * Секция «Первоисточник» на странице аниме: после сведений и серий, до рекомендаций.
- * Если подтверждённых связей нет — секция не рендерится вовсе (никаких заглушек).
+ * Секция связей на странице аниме: после сведений и серий, до рекомендаций.
+ * Заголовок зависит от состава: «Первоисточник» только если есть SOURCE-связь,
+ * иначе «Связанные комиксы». Если связей нет — секция не рендерится вовсе.
  */
 export function A3SourceSection({ links }: { links: LinkedComic[] }) {
   if (!links.length) return null;
+  const hasSource = links.some((l) => l.role === 'SOURCE');
   const multi = links.length > 1;
   return (
     <section className="a3-source-section" aria-labelledby="a3-source-title">
       <div className="a3-section__head a3-section__head--inline">
         <div>
           <h2 className="a3-h2" id="a3-source-title">
-            Первоисточник
+            {hasSource ? 'Первоисточник' : 'Связанные комиксы'}
           </h2>
           <p className="a3-muted a3-section__desc">
-            {multi
-              ? 'Подтверждённые по идентификатору AniList оригинальные произведения этого аниме.'
-              : 'Оригинальное произведение, по которому снято аниме. Связь подтверждена по идентификатору AniList, а не по совпадению названия.'}
+            {hasSource
+              ? multi
+                ? 'Подтверждённые по идентификатору AniList оригинальные произведения этого аниме.'
+                : 'Оригинальное произведение, по которому снято аниме. Связь подтверждена по идентификатору AniList, а не по совпадению названия.'
+              : 'Комиксы, подтверждённые по идентификатору AniList: первоисточник среди них не установлен.'}
           </p>
         </div>
       </div>

@@ -57,6 +57,20 @@ export interface ComicPublication {
   verifiedAt?: string;
 }
 
+/** Уровень проверки произведения. Отделён от публикационного статуса. */
+export type ComicVerification = 'UNVERIFIED' | 'CANDIDATE' | 'EDITORIALLY_VERIFIED';
+
+/** Нейтральный текст вместо непроверенного русского названия (см. §9.2 ТЗ B1-C). */
+export const PENDING_TITLE_TEXT = 'Информация о русскоязычном издании уточняется';
+
+/** Кандидат русского названия, найденный автоматически. Публично не выводится. */
+export interface ComicTitleCandidate {
+  title: string;
+  source: 'shikimori';
+  url: string | null;
+  fetchedAt: string;
+}
+
 export interface ComicExternalIds {
   anilist?: number;
   mal?: number;
@@ -93,6 +107,10 @@ export interface ComicWork {
   totalChaptersKnown?: number | null;
   externalIds: ComicExternalIds;
   publication: ComicPublication;
+  /** Уровень проверки: непроверено / автоматический кандидат / редакционная сверка. */
+  verification: ComicVerification;
+  /** Внутренний кандидат русского названия — только для ревью, не для UI. */
+  titleRuCandidate?: ComicTitleCandidate | null;
   provenance: ComicProvenance;
   /** Демо B1-B не является реальным произведением и не может быть первоисточником. */
   isDemo?: boolean;
