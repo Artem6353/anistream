@@ -36,8 +36,8 @@ B1C_CAPTURE=1 PLAYWRIGHT_BROWSERS_PATH=.cache/pw-browsers E2E_BASE=http://localh
 |---|---|
 | `tsc --noEmit` | 0 ошибок |
 | ESLint | 0 ошибок, 3 предупреждения — все pre-existing (B1-B: `opengraph-image.tsx`, `scripts/aninova3/screenshots.mjs`) |
-| Unit (vitest) | **422 passed / 6 skipped** (61 файл + 1 skipped) |
-| + к B1-B | +54 теста B1-C |
+| Unit (vitest) | **423 passed / 6 skipped** (61 файл + 1 skipped) |
+| + к B1-B | +55 тестов B1-C |
 | `next build` (webpack, preview env) | успешно; TypeScript внутри сборки проходит |
 | E2E Playwright | **39 passed / 1 skipped** (22 в профильном файле B1-C + 17 существующих) |
 | Переполнение | 0 px на 54 замерах (6 маршрутов × 9 ширин) |

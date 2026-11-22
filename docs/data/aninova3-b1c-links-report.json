@@ -1,8 +1,9 @@
 {
-  "generatedAt": "2026-11-22T03:00:12.071Z",
+  "generatedAt": "2026-11-22T04:04:00.160Z",
   "scope": "B1-C preview · реальные данные каталога и снимок relation-графа",
   "catalog": {
     "titles": 8033,
+    "animeProcessed": 8031,
     "animeWithSourceMangaType": 733,
     "animeWithAnySourceType": 1499
   },
@@ -12,6 +13,7 @@
     "edges": 5748,
     "comics": 4100,
     "animeWithEdges": 4793,
+    "uniqueAnimeWithEdges": 4793,
     "animeRequested": 8033,
     "animeReceived": 8031,
     "animeMissing": 2,
@@ -35,6 +37,35 @@
       "MANGA/CN": 136,
       "ONE_SHOT/JP": 86
     },
+    "comicsByFormat": {
+      "MANGA": 4014,
+      "ONE_SHOT": 86
+    },
+    "comicsByCountry": {
+      "JP": 3922,
+      "KR": 42,
+      "CN": 136
+    },
+    "skipped": {
+      "animeWithoutRelations": 487,
+      "nonComicNodesByType": {
+        "ANIME/MOVIE": 2417,
+        "ANIME/SPECIAL": 1594,
+        "ANIME/TV": 5839,
+        "ANIME/OVA": 1469,
+        "MANGA/NOVEL": 1262,
+        "ANIME/MUSIC": 639,
+        "ANIME/ONA": 1779,
+        "ANIME/null": 43,
+        "ANIME/TV_SHORT": 428,
+        "MANGA/null": 1
+      },
+      "sourceMissingOnAniList": 2
+    },
+    "missingAnimeIds": [
+      2265,
+      2268
+    ],
     "comicsWithMal": 3560,
     "comicsWithoutMal": 540,
     "comicsWithAuthors": 4091
@@ -210,6 +241,11 @@
   },
   "comics": {
     "total": 4100,
+    "withAniListId": 4100,
+    "withMalId": 3560,
+    "withRuChapters": 0,
+    "withAuthorMetadata": 4091,
+    "needsEditorialReview": 4099,
     "byKind": {
       "manga": 3836,
       "manhwa": 42,
@@ -2231,6 +2267,12 @@
     "comic:anilist:91154",
     "comic:anilist:91171"
   ],
+  "manualReviewQueues": {
+    "comicsWithoutEditorialVerification": 4100,
+    "comicsWithRuCandidate": 2170,
+    "comicsWithoutAnyRuData": 1930,
+    "report": "docs/data/aninova3-b1c-manual-review.json"
+  },
   "excludedFromReadingCount": 4100,
   "comicDetails": [
     {

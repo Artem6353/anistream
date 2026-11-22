@@ -177,22 +177,40 @@ async function main() {
     } else {
       const d = result.data;
       const idMatches = Number(d.id) === Number(mal);
+      /* Дополнительная защита: Shikimori сам сообщает MAL id — он обязан совпасть. */
+      const malOk = !d.myanimelist_id || Number(d.myanimelist_id) === Number(mal);
       const nameOk = titleMatches(d.name, row.comic);
-      const status = !idMatches ? 'ID_MISMATCH' : nameOk ? 'CANDIDATE' : 'NAME_MISMATCH';
+      const status = !idMatches || !malOk ? 'ID_MISMATCH' : nameOk ? 'CANDIDATE' : 'NAME_MISMATCH';
       progress[key] = {
         anilist: row.comic.anilist,
         mal,
         shikimoriId: d.id,
+        myanimelistId: d.myanimelist_id ?? null,
         status,
         name: d.name ?? null,
         titleRu: d.russian ?? null,
+        /* Официальное название русской лицензии — внутреннее свидетельство, не публичный текст. */
+        licenseNameRu: d.license_name_ru ?? null,
+        licensors: Array.isArray(d.licensors)
+          ? d.licensors.map((l) => (typeof l === 'string' ? l : (l?.name ?? null))).filter(Boolean)
+          : [],
+        publishers: Array.isArray(d.publishers)
+          ? d.publishers.map((l) => (typeof l === 'string' ? l : (l?.name ?? null))).filter(Boolean)
+          : [],
+        genres: Array.isArray(d.genres)
+          ? d.genres.map((g) => (typeof g === 'string' ? g : (g?.russian ?? g?.name ?? null))).filter(Boolean)
+          : [],
+        japanese: d.japanese ?? null,
+        english: d.english ?? null,
         kind: KIND_RU[d.kind] ?? d.kind ?? null,
         shikimoriStatus: d.status ?? null,
         year: d.aired_on ? Number(String(d.aired_on).slice(0, 4)) : null,
         volumes: d.volumes ?? null,
         chapters: d.chapters ?? null,
+        cover: d.image?.original ?? d.image?.preview ?? null,
+        score: d.score ?? null,
         url: d.url ? `https://shikimori.one${d.url}` : null,
-        descriptionRu: d.description ? String(d.description).replace(/\[[^\]]*\]/g, '').slice(0, 600) : null,
+        descriptionRu: d.description ? String(d.description).replace(/\[[^\]]*\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 600) : null,
         fetchedAt: new Date().toISOString(),
       };
     }
@@ -216,6 +234,9 @@ async function main() {
     scope: SCOPE,
     total: candidates.length,
     candidate: candidates.filter((c) => c.status === 'CANDIDATE').length,
+    withRuLicenseName: candidates.filter((c) => c.status === 'CANDIDATE' && c.licenseNameRu).length,
+    withRuDescription: candidates.filter((c) => c.status === 'CANDIDATE' && c.descriptionRu).length,
+    withCover: candidates.filter((c) => c.status === 'CANDIDATE' && c.cover).length,
     notFound: candidates.filter((c) => c.status === 'NOT_FOUND').length,
     noMalId: candidates.filter((c) => c.status === 'NO_MAL_ID').length,
     nameMismatch: candidates.filter((c) => c.status === 'NAME_MISMATCH').length,
@@ -243,6 +264,10 @@ async function main() {
         mal: c.mal,
         titleRu: c.titleRu,
         name: c.name,
+        licenseNameRu: c.licenseNameRu,
+        kind: c.kind,
+        year: c.year,
+        cover: c.cover,
         sourceUrl: c.url,
         fetchedAt: c.fetchedAt,
         verification: 'CANDIDATE',

@@ -348,9 +348,30 @@ async function main() {
       rateLimited: stats.rateLimited,
       failedBatches: stats.failedBatches.length,
       edgesKept: edgeList.length,
+      uniqueAnimeWithEdges: new Set(edgeList.map((e) => e.anime)).size,
       comicsKept: comicList.length,
+      comicsWithMal: comicList.filter((c) => Number.isFinite(c.mal)).length,
+      comicsWithAuthors: comicList.filter((c) => (c.authors?.length ?? 0) > 0).length,
+      /* Разбивка по форматам нужна отчёту: манга/ваншот считаются отдельно. */
+      comicsByFormat: comicList.reduce((acc, c) => {
+        const key = c.format ?? 'UNKNOWN';
+        acc[key] = (acc[key] ?? 0) + 1;
+        return acc;
+      }, {}),
+      comicsByCountry: comicList.reduce((acc, c) => {
+        const key = c.country ?? 'UNKNOWN';
+        acc[key] = (acc[key] ?? 0) + 1;
+        return acc;
+      }, {}),
       skippedNoRelations: stats.skippedNoRelations,
       skippedNonComicByType: stats.skippedNonComic,
+      /* Единый блок «что пропущено и почему» по требованию отчёта. */
+      skipped: {
+        animeWithoutRelations: stats.skippedNoRelations,
+        nonComicNodesByType: stats.skippedNonComic,
+        sourceMissingOnAniList: stats.missingAnimeIds.length,
+      },
+      missingAnimeIds: stats.missingAnimeIds.slice(0, 50),
       note:
         'Снимок публичного relation-графа AniList. Хранятся только комиксы (MANGA/ONE_SHOT) и рёбра relation; ' +
         'аниме-связи отброшены. Глав, страниц и текстов здесь нет — публикационные флаги ведутся в source-data.ts.',

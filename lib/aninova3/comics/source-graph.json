@@ -19,7 +19,19 @@
     "rateLimited": 13,
     "failedBatches": 0,
     "edgesKept": 5748,
+    "uniqueAnimeWithEdges": 4793,
     "comicsKept": 4100,
+    "comicsWithMal": 3560,
+    "comicsWithAuthors": 4091,
+    "comicsByFormat": {
+      "MANGA": 4014,
+      "ONE_SHOT": 86
+    },
+    "comicsByCountry": {
+      "JP": 3922,
+      "KR": 42,
+      "CN": 136
+    },
     "skippedNoRelations": 487,
     "skippedNonComicByType": {
       "ANIME/MOVIE": 2417,
@@ -33,6 +45,26 @@
       "ANIME/TV_SHORT": 428,
       "MANGA/null": 1
     },
+    "skipped": {
+      "animeWithoutRelations": 487,
+      "nonComicNodesByType": {
+        "ANIME/MOVIE": 2417,
+        "ANIME/SPECIAL": 1594,
+        "ANIME/TV": 5839,
+        "ANIME/OVA": 1469,
+        "MANGA/NOVEL": 1262,
+        "ANIME/MUSIC": 639,
+        "ANIME/ONA": 1779,
+        "ANIME/null": 43,
+        "ANIME/TV_SHORT": 428,
+        "MANGA/null": 1
+      },
+      "sourceMissingOnAniList": 2
+    },
+    "missingAnimeIds": [
+      2265,
+      2268
+    ],
     "note": "Снимок публичного relation-графа AniList. Хранятся только комиксы (MANGA/ONE_SHOT) и рёбра relation; аниме-связи отброшены. Глав, страниц и текстов здесь нет — публикационные флаги ведутся в source-data.ts."
   },
   "comics": [

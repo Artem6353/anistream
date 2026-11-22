@@ -143,6 +143,8 @@ const report = {
   scope: 'B1-C preview · реальные данные каталога и снимок relation-графа',
   catalog: {
     titles: catalog.length,
+    /* Сколько аниме реально обработано снимком графа (для честного «сколько из скольких»). */
+    animeProcessed: graph.meta?.animeReceived ?? null,
     animeWithSourceMangaType: catalog.filter((t) => t.source === 'MANGA').length,
     animeWithAnySourceType: catalog.filter((t) => Boolean(t.source)).length,
   },
@@ -152,6 +154,7 @@ const report = {
     edges: graph.edges.length,
     comics: graph.comics.length,
     animeWithEdges: graph.byAnime.size,
+    uniqueAnimeWithEdges: new Set(graph.edges.map((e) => e.animeAniListId)).size,
     animeRequested: graph.meta?.animeRequested ?? null,
     animeReceived: graph.meta?.animeReceived ?? null,
     animeMissing: graph.meta?.animeMissing ?? null,
@@ -160,6 +163,10 @@ const report = {
     failedBatches: graph.meta?.failedBatches ?? null,
     rawRelationTypes,
     graphKinds,
+    comicsByFormat: graph.meta?.comicsByFormat ?? null,
+    comicsByCountry: graph.meta?.comicsByCountry ?? null,
+    skipped: graph.meta?.skipped ?? null,
+    missingAnimeIds: graph.meta?.missingAnimeIds ?? [],
     comicsWithMal: graph.comics.filter((c) => Boolean(c.mal)).length,
     comicsWithoutMal: graph.comics.filter((c) => !c.mal).length,
     comicsWithAuthors: graph.comics.filter((c) => (c.authors?.length ?? 0) > 0).length,
@@ -177,6 +184,11 @@ const report = {
   },
   comics: {
     total: comicRows.length,
+    withAniListId: comicRows.filter((c) => Boolean(c.anilist)).length,
+    withMalId: comicRows.filter((c) => Boolean(c.mal)).length,
+    withRuChapters: comicRows.filter((c) => c.ruChapters > 0).length,
+    withAuthorMetadata: store.list.filter((c) => c.authors.length > 0).length,
+    needsEditorialReview: comicRows.filter((c) => c.verification !== 'EDITORIALLY_VERIFIED').length,
     byKind: comicsByKind,
     /* Три уровня достоверности данных — без смешивания с правами. */
     editoriallyVerified: comicRows.filter((c) => c.verification === 'EDITORIALLY_VERIFIED').length,
@@ -193,6 +205,13 @@ const report = {
   },
   needsManualReviewCount: reviews.length,
   needsManualReviewIds: reviews.slice(0, 2000).map((c) => c.id),
+  /* Очередь кандидатов на ручной разбор — отдельно от «связей» и «права». */
+  manualReviewQueues: {
+    comicsWithoutEditorialVerification: reviews.length,
+    comicsWithRuCandidate: comicRows.filter((c) => c.hasRussianCandidate).length,
+    comicsWithoutAnyRuData: comicRows.filter((c) => !c.hasRussianCandidate && !c.russianTitleVerified).length,
+    report: 'docs/data/aninova3-b1c-manual-review.json',
+  },
   excludedFromReadingCount: comicRows.filter((c) => !c.publiclyReadable).length,
   comicDetails: comicRows,
   adaptations: {
@@ -262,6 +281,17 @@ describe('машинный отчёт B1-C', () => {
       expect(comic.titleRu).toBe('');
       expect(comicDisplayTitle(comic).text).toBe(PENDING_TITLE_TEXT);
     }
+  });
+
+  it('в отчёте разделены связь, произведение, права и читаемость', () => {
+    expect(report.links.resolved).toBe(report.adaptations.resolved);
+    expect(report.comics.total).toBe(store.list.length);
+    expect(report.comics.publiclyReadable).toBe(0);
+    expect(report.comics.withRuChapters).toBe(0);
+    expect(report.comics.rightsVerified).toBe(0);
+    expect(report.manualReviewQueues.comicsWithRuCandidate).toBeGreaterThan(0);
+    expect(report.graph.uniqueAnimeWithEdges).toBeGreaterThan(0);
+    expect(report.graph.uniqueAnimeWithEdges).toBeLessThanOrEqual(Number(report.graph.animeReceived));
   });
 
   it('кандидат — не проверка: данные из Shikimori не получают verified-флаги', () => {
