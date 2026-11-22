@@ -104,6 +104,18 @@ async function capture(browser, base, shot) {
   await context.close();
 }
 
+/** Медиана по числовым полям + сырые LCP-прогоны: одиночный LCP шумит. */
+function aggregate(runs) {
+  const out = { ...runs[0], runs: runs.length };
+  for (const key of Object.keys(runs[0] ?? {})) {
+    if (typeof runs[0][key] !== 'number') continue;
+    const values = runs.map((r) => r[key]).sort((a, b) => a - b);
+    out[key] = values[Math.floor(values.length / 2)];
+  }
+  out.lcpRuns = runs.map((r) => r.lcpMs);
+  return out;
+}
+
 /** Скриншоты + замеры при уже поднятом сервере. */
 export async function captureAll(base) {
   mkdirSync(SHOTS, { recursive: true });
@@ -115,28 +127,32 @@ export async function captureAll(base) {
       generatedAt: new Date().toISOString(),
       base,
       note:
-        'Локальные значения (Chromium без троттлинга, холодный кэш на каждый маршрут), не production-метрики',
+        'Локальные значения (Chromium без троттлинга, холодный кэш на каждый маршрут, медиана из 3 прогонов), не production-метрики',
       routes: {},
     };
     for (const [key, url] of Object.entries(ROUTES)) {
-      /* Свежий контекст = холодный кэш: иначе transferSize кэшированных чанков равен 0
-         и сравнение маршрутов становится бессмысленным. */
-      const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-      await context.addInitScript(() => {
-        window.__a3Cls = [];
-        window.__a3Lcp = [];
-        new PerformanceObserver((list) => {
-          for (const entry of list.getEntries()) window.__a3Cls.push(entry);
-        }).observe({ type: 'layout-shift', buffered: true });
-        new PerformanceObserver((list) => {
-          for (const entry of list.getEntries()) window.__a3Lcp.push(entry);
-        }).observe({ type: 'largest-contentful-paint', buffered: true });
-      });
-      const page = await context.newPage();
-      await page.goto(`${base}${url}`, { waitUntil: 'load' });
-      await page.waitForTimeout(700);
-      perf.routes[key] = await measure(page);
-      await context.close();
+      const runs = [];
+      for (let i = 0; i < 3; i++) {
+        /* Свежий контекст = холодный кэш: иначе transferSize кэшированных чанков равен 0
+           и сравнение маршрутов становится бессмысленным. */
+        const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+        await context.addInitScript(() => {
+          window.__a3Cls = [];
+          window.__a3Lcp = [];
+          new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) window.__a3Cls.push(entry);
+          }).observe({ type: 'layout-shift', buffered: true });
+          new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) window.__a3Lcp.push(entry);
+          }).observe({ type: 'largest-contentful-paint', buffered: true });
+        });
+        const page = await context.newPage();
+        await page.goto(`${base}${url}`, { waitUntil: 'load' });
+        await page.waitForTimeout(700);
+        runs.push(await measure(page));
+        await context.close();
+      }
+      perf.routes[key] = aggregate(runs);
     }
     writeFileSync(PERF_OUT, `${JSON.stringify(perf, null, 2)}\n`, 'utf8');
     return { shots: SHOT_LIST.length, perf };

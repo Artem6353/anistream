@@ -2893,8 +2893,16 @@
 /* ── B1-C: уточнения карточек первоисточника ──────────────────
    Блок добавляет только новые состояния (основной первоисточник, флаг
    непроверенного названия, статичная глава) и не переопределяет токены A+C. */
+.a3-source-grid {
+  /* Карточка не растягивается на всю ширину 1440+: у первоисточника
+     естественная ширина, а не рекламный баннер. */
+  grid-template-columns: repeat(auto-fill, minmax(320px, 520px));
+}
 .a3-source-grid--multi {
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 640px));
+}
+.a3-adaptation-grid {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 340px));
 }
 .a3-source-card {
   position: relative;
@@ -2946,8 +2954,24 @@
 .a3[data-tv='true'] .a3-adaptation.is-primary {
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--a3-accent) 55%, transparent);
 }
+.a3[data-tv='true'] .a3-source-grid {
+  grid-template-columns: repeat(auto-fill, minmax(460px, 780px));
+}
+.a3[data-tv='true'] .a3-adaptation-grid {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 520px));
+}
+/* Цель для пульта: ссылка-переход не меньше 48 px по высоте и крупный текст. */
+.a3[data-tv='true'] .a3-source-card .a3-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 52px;
+  font-size: 20px;
+  padding: 0 4px;
+}
 @media (max-width: 900px) {
-  .a3-source-grid--multi {
+  .a3-source-grid--multi,
+  .a3-source-grid,
+  .a3-adaptation-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -1,71 +1,95 @@
 {
-  "generatedAt": "2026-11-22T01:36:25.117Z",
-  "base": "http://localhost:3104",
-  "note": "Локальные значения (Chromium без троттлинга, холодный кэш на каждый маршрут), не production-метрики",
+  "generatedAt": "2026-11-22T01:52:40.748Z",
+  "base": "http://localhost:3107",
+  "note": "Локальные значения (Chromium без троттлинга, холодный кэш на каждый маршрут, медиана из 3 прогонов), не production-метрики",
   "routes": {
     "animeWithSource": {
       "url": "/preview/aninova-3/anime/naruto",
-      "domNodes": 555,
-      "htmlBytes": 123642,
+      "domNodes": 553,
+      "htmlBytes": 123462,
       "resourceCount": 56,
       "jsBytesTransferred": 254232,
-      "cssBytesTransferred": 133412,
-      "totalBytesTransferred": 593878,
-      "ttfbMs": 22,
-      "domContentLoadedMs": 56,
-      "loadMs": 255,
-      "lcpMs": 176,
+      "cssBytesTransferred": 133473,
+      "totalBytesTransferred": 593931,
+      "ttfbMs": 28,
+      "domContentLoadedMs": 72,
+      "loadMs": 269,
+      "lcpMs": 192,
       "cls": 0,
       "sourceCards": 1,
-      "adaptationCards": 0
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        192,
+        192,
+        200
+      ]
     },
     "animeWithoutSource": {
       "url": "/preview/aninova-3/anime/one-piece",
-      "domNodes": 526,
-      "htmlBytes": 117060,
+      "domNodes": 534,
+      "htmlBytes": 117734,
       "resourceCount": 54,
       "jsBytesTransferred": 254232,
-      "cssBytesTransferred": 169618,
-      "totalBytesTransferred": 598158,
-      "ttfbMs": 21,
-      "domContentLoadedMs": 136,
-      "loadMs": 229,
-      "lcpMs": 164,
+      "cssBytesTransferred": 169679,
+      "totalBytesTransferred": 598221,
+      "ttfbMs": 25,
+      "domContentLoadedMs": 59,
+      "loadMs": 242,
+      "lcpMs": 184,
       "cls": 0,
       "sourceCards": 0,
-      "adaptationCards": 0
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        184,
+        188,
+        168
+      ]
     },
     "comicWithAdaptations": {
       "url": "/preview/aninova-3/comics/naruto",
-      "domNodes": 172,
-      "htmlBytes": 33627,
+      "domNodes": 164,
+      "htmlBytes": 32928,
       "resourceCount": 38,
       "jsBytesTransferred": 281489,
-      "cssBytesTransferred": 67366,
-      "totalBytesTransferred": 405484,
+      "cssBytesTransferred": 67427,
+      "totalBytesTransferred": 405542,
       "ttfbMs": 9,
-      "domContentLoadedMs": 36,
-      "loadMs": 187,
+      "domContentLoadedMs": 40,
+      "loadMs": 195,
       "lcpMs": 136,
       "cls": 0,
       "sourceCards": 0,
-      "adaptationCards": 1
+      "adaptationCards": 1,
+      "runs": 3,
+      "lcpRuns": [
+        128,
+        136,
+        140
+      ]
     },
     "comicsCatalog": {
       "url": "/preview/aninova-3/comics",
-      "domNodes": 255,
-      "htmlBytes": 43599,
+      "domNodes": 257,
+      "htmlBytes": 43785,
       "resourceCount": 46,
       "jsBytesTransferred": 250295,
-      "cssBytesTransferred": 36966,
-      "totalBytesTransferred": 323285,
-      "ttfbMs": 8,
-      "domContentLoadedMs": 37,
-      "loadMs": 190,
-      "lcpMs": 136,
+      "cssBytesTransferred": 37027,
+      "totalBytesTransferred": 323337,
+      "ttfbMs": 9,
+      "domContentLoadedMs": 50,
+      "loadMs": 208,
+      "lcpMs": 144,
       "cls": 0,
       "sourceCards": 0,
-      "adaptationCards": 0
+      "adaptationCards": 0,
+      "runs": 3,
+      "lcpRuns": [
+        144,
+        192,
+        136
+      ]
     }
   }
 }
