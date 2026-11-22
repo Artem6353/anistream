@@ -13,8 +13,12 @@ import {
   NEUTRAL_ROLE_LABEL,
   animeSideRoleLabel,
   classifyAdaptationDirection,
+  comicSideRoleLabel,
+  sourceSectionDescription,
   sourceSectionState,
+  sourceSectionTitle,
 } from '@/lib/aninova3/comics/model';
+import type { LinkedAnime, LinkedComic } from '@/lib/aninova3/comics/model';
 import { FIXTURE_EDITORIALS, FIXTURE_GRAPH, FIXTURE_TITLE_LOOKUP, fixtureTitle } from './fixtures/aninova3-comics';
 
 /** B1-C.1/B1-C.3: разрешение связей в обе стороны на fixture-графе. */
@@ -420,5 +424,88 @@ describe('производительность разрешения', () => {
     /* Граф и реестр — те же объекты: на страницу не тратятся новые индексы. */
     expect(deps.graph).toBe(graph);
     expect(deps.store).toBe(store);
+  });
+});
+
+describe('B1-D.2: подписи и описания секции связей', () => {
+  const link = (over: Partial<Pick<LinkedComic, 'role' | 'primary' | 'direction' | 'confidence' | 'basis'>>): LinkedComic =>
+    ({
+      comic: { id: 'comic:anilist:1', slug: 'x', kind: 'manga', chapters: [], totalChaptersKnown: null } as unknown as ComicWork,
+      role: 'SOURCE',
+      primary: false,
+      evidence: 'anilist-relation',
+      direction: 'comic-is-source',
+      confidence: 'confirmed',
+      basis: 'catalog-manga',
+      ...over,
+    }) as LinkedComic;
+
+  it('подтверждённый комикс-первоисточник не называется «оригиналом аниме»', () => {
+    const source = link({ primary: true });
+    expect(animeSideRoleLabel(source)).toBe('Основной первоисточник');
+    /* Подпись карточки и описание секции не должны утверждать, что это «оригинал аниме». */
+    expect(animeSideRoleLabel(source)).not.toContain('оригинал аниме');
+    expect(sourceSectionDescription([source])).not.toContain('оригинал аниме');
+  });
+
+  it('подтверждённое оригинальное аниме объясняется отдельно', () => {
+    const confirmed = link({ role: 'ADAPTATION', direction: 'comic-adapts-anime', basis: 'catalog-original' });
+    expect(animeSideRoleLabel(confirmed)).toBe('Комикс по аниме');
+    expect(sourceSectionDescription([confirmed])).toContain('Оригинальное аниме');
+  });
+
+  it('предположительная связь по датам объясняется годами выпуска', () => {
+    const dated = link({ confidence: 'inferred', basis: 'dates', primary: true });
+    expect(animeSideRoleLabel(dated)).toBe('Вероятный первоисточник');
+    expect(sourceSectionDescription([dated])).toContain('по годам выпуска');
+    expect(sourceSectionTitle(sourceSectionState([dated]))).toBe('Вероятный первоисточник');
+  });
+
+  it('предположительная связь из каталога без года не описывается как сравнение дат', () => {
+    const undated = link({ confidence: 'inferred', basis: 'catalog-manga', primary: true });
+    const description = sourceSectionDescription([undated]);
+    expect(description).not.toContain('по годам выпуска');
+    expect(description).toContain('год выпуска комикса не подтверждён');
+    expect(animeSideRoleLabel(undated)).toBe('Вероятный первоисточник');
+  });
+
+  it('неизвестное направление не получает утверждающей подписи', () => {
+    for (const basis of ['catalog-conflict', 'catalog-other-medium', 'none'] as const) {
+      const unknown = link({ confidence: 'unknown', basis, direction: null, primary: false });
+      expect(animeSideRoleLabel(unknown)).toBe(NEUTRAL_ROLE_LABEL);
+      const description = sourceSectionDescription([unknown]);
+      expect(description).not.toContain('Оригинальное произведение');
+      expect(description).not.toContain('по годам выпуска');
+      expect(sourceSectionTitle(sourceSectionState([unknown]))).toBe('Связанные комиксы');
+    }
+  });
+
+  it('описание противоречия отличается от описания нехватки данных', () => {
+    const conflict = sourceSectionDescription([link({ confidence: 'unknown', basis: 'catalog-conflict', direction: null })]);
+    const none = sourceSectionDescription([link({ confidence: 'unknown', basis: 'none', direction: null })]);
+    expect(conflict).toContain('противоречат');
+    expect(none).toContain('недостаточно');
+    expect(conflict).not.toBe(none);
+  });
+
+  it('обе стороны связи описывают подтверждённый первоисточник одинаково по смыслу', () => {
+    const animeSide = link({ primary: true });
+    const comicSide: LinkedAnime = {
+      anime: fixtureTitle({ anilistId: 1, slug: 'a', ru: 'Аниме', romaji: 'Anime' }),
+      role: 'ADAPTATION',
+      primary: true,
+      evidence: 'anilist-relation',
+      direction: 'comic-is-source',
+      confidence: 'confirmed',
+      basis: 'catalog-manga',
+    };
+    expect(animeSideRoleLabel(animeSide)).toBe('Основной первоисточник');
+    expect(comicSideRoleLabel(comicSide)).toBe('Аниме-адаптация');
+    /* Ни одна сторона не называет комикс «комиксом по аниме». */
+    expect(animeSideRoleLabel(animeSide)).not.toContain('Комикс по аниме');
+    expect(comicSideRoleLabel(comicSide)).not.toContain('Оригинальный сериал');
+
+    const reverse: LinkedAnime = { ...comicSide, direction: 'comic-adapts-anime', basis: 'catalog-original', confidence: 'inferred' };
+    expect(comicSideRoleLabel(reverse)).toBe('Вероятно, оригинальный сериал');
   });
 });

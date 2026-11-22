@@ -311,6 +311,70 @@ export function sourceSectionState(
   return 'related';
 }
 
+/** Заголовок секции связей на странице аниме: не обещает больше, чем известно. */
+export function sourceSectionTitle(state: SourceSectionState): string {
+  if (state === 'confirmed') return 'Первоисточник';
+  if (state === 'probable') return 'Вероятный первоисточник';
+  return 'Связанные комиксы';
+}
+
+/**
+ * Описание секции — по фактическому основанию (`basis`), а не по одному флагу.
+ *
+ * `catalog-manga` без года комикса даёт `inferred` вовсе не из-за сравнения дат:
+ * это данные каталога, у которых нет года выпуска. Обещать «определено по датам»
+ * в таком случае — значит объяснять пользователю неправду.
+ */
+export function sourceSectionDescription(
+  links: Pick<LinkedComic, 'role' | 'confidence' | 'basis' | 'direction'>[],
+): string {
+  const state = sourceSectionState(links);
+  const sources = links.filter((l) => l.role === 'SOURCE');
+  const bases = new Set(sources.map((l) => l.basis));
+  const multi = links.length > 1;
+
+  if (state === 'confirmed') {
+    if (multi) return 'Подтверждённые по идентификатору AniList оригинальные произведения этого аниме.';
+    if (bases.has('catalog-original')) {
+      return 'Это оригинальное аниме, поэтому комикс создан по нему: связь подтверждена по идентификатору AniList.';
+    }
+    return 'Оригинальное произведение, по которому снято аниме. Связь подтверждена по идентификатору AniList, а не по совпадению названия.';
+  }
+
+  if (state === 'probable') {
+    const onlyDates = bases.size === 1 && bases.has('dates');
+    if (onlyDates) {
+      return 'Связь подтверждена по идентификатору AniList; направление определено по годам выпуска и требует проверки.';
+    }
+    const onlyCatalog = bases.size === 1 && bases.has('catalog-manga');
+    if (onlyCatalog) {
+      return 'Связь подтверждена по идентификатору AniList. Каталог сообщает, что аниме снято по манге, но год выпуска комикса не подтверждён — направление требует проверки.';
+    }
+    return 'Связь подтверждена по идентификатору AniList. Направление определено косвенно и требует проверки.';
+  }
+
+  if (state === 'unconfirmed') {
+    if (bases.has('catalog-conflict')) {
+      return 'Связи подтверждены по идентификатору AniList, но данные каталога и годы выпуска противоречат друг другу — направление требует проверки.';
+    }
+    if (bases.has('catalog-other-medium')) {
+      return 'Аниме снято по другому первоисточнику, поэтому роль этого комикса не установлена: произведения показаны как связанные.';
+    }
+    return 'Связи подтверждены по идентификатору AniList; данных для определения направления недостаточно.';
+  }
+
+  /* Первоисточников нет, но все связи — комиксы по этому аниме. */
+  const adaptsOnly = links.length > 0 && links.every((l) => (l as { direction?: ComicDirection }).direction === 'comic-adapts-anime');
+  if (adaptsOnly) {
+    const allConfirmed = links.every((l) => l.confidence === 'confirmed');
+    return allConfirmed
+      ? 'Оригинальное аниме: комиксы созданы по нему. Связь подтверждена по идентификатору AniList.'
+      : 'Комиксы, вероятно созданные по этому аниме: связь подтверждена по идентификатору AniList, направление требует проверки.';
+  }
+
+  return 'Комиксы, подтверждённые по идентификатору AniList: первоисточник среди них не установлен.';
+}
+
 /** Причина, по которой объект нельзя показать как читаемый (внутренние документы прав сюда не попадают). */
 export type PublicationIssue =
   | 'draft'
