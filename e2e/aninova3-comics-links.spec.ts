@@ -127,6 +127,51 @@ test.describe('B1-C: страница аниме → первоисточник'
     await expect(section.getByRole('heading', { name: 'Первоисточник' })).toHaveCount(0);
     await expect(section).toContainText('первоисточник среди них не установлен');
   });
+
+  test('направление только по датам не выдаётся за подтверждённый первоисточник', async ({ page }) => {
+    /* Bouken Ou Beet: каталог не сообщает первоисточник, связь есть, манга
+       вышла раньше аниме. Максимум, что можно сказать, — «вероятный». */
+    await page.goto(`${ROOT}/anime/bouken-ou-beet`);
+    const section = page.locator('.a3-source-section');
+    await expect(section.getByRole('heading', { name: 'Вероятный первоисточник' })).toBeVisible();
+    await expect(section.getByRole('heading', { name: 'Первоисточник', exact: true })).toHaveCount(0);
+    /* Ни «основной», ни «также первоисточник» без подтверждённого направления. */
+    await expect(section.getByText('Основной первоисточник')).toHaveCount(0);
+    await expect(section.getByText('Также первоисточник')).toHaveCount(0);
+    await expect(section).toContainText('требует проверки');
+  });
+
+  test('неподтверждённое направление подписано нейтрально с обеих сторон', async ({ page }) => {
+    /* Samurai 7: аниме по другому первоисточнику (source=OTHER), поэтому
+       нельзя утверждать, что манга — его оригинал или что она по нему сделана. */
+    await page.goto(`${ROOT}/anime/samurai-7`);
+    const section = page.locator('.a3-source-section');
+    await expect(section.getByRole('heading', { name: 'Связанные комиксы' })).toBeVisible();
+    await expect(section).toContainText('Связанное произведение');
+    await expect(section).toContainText('Направление связи не подтверждено');
+    const href = await section.locator('.a3-source-card a.a3-link').first().getAttribute('href');
+    expect(href).toBeTruthy();
+
+    /* Та же связь с обратной стороны: тоже нейтрально, без «Оригинальный сериал». */
+    await page.goto(href as string);
+    const adapt = page.locator('.a3-adaptations');
+    await expect(adapt).toContainText('Связанное произведение');
+    await expect(adapt).not.toContainText('Оригинальный сериал');
+  });
+
+  test('одна и та же связь одинаково подписана на обеих страницах', async ({ page }) => {
+    /* One Piece: подтверждённая манга-первоисточник в обе стороны. */
+    await page.goto(`${ROOT}/anime/one-piece`);
+    const animeSection = page.locator('.a3-source-section');
+    await expect(animeSection.getByText('Основной первоисточник')).toHaveCount(1);
+
+    await page.goto(`${ROOT}/comics/one-piece`);
+    const adapt = page.locator('.a3-adaptations');
+    await expect(adapt).toContainText('Аниме-адаптация');
+    /* Манга не может одновременно быть «первоисточником» аниме и его адаптацией. */
+    await expect(adapt).not.toContainText('Основной первоисточник');
+    await expect(adapt).not.toContainText('Оригинальный сериал');
+  });
 });
 
 test.describe('B1-C: страница Comics → аниме-адаптации', () => {

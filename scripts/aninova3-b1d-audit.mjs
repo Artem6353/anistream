@@ -419,6 +419,9 @@ async function run() {
     ? classes.several_comics
     : [...perAnimeEdges.entries()].filter(([, list]) => new Set(list.map((e) => e.comic)).size > 1).map(([id]) => id);
 
+  const animeSourceById = new Map(catalog.map((t) => [t.anilistId, (t.source ?? '').toString().toUpperCase()]));
+  const COMIC_MEDIA = new Set(['MANGA', 'COMIC', 'DOUJINSHI']);
+
   const multiSource = multiSourceIds.map((animeId) => {
     const fact = facts?.[animeId];
     const rows = (fact ? fact.comicEdges.map((c) => ({ comic: c.comic, relation: c.relation, format: c.format, year: c.year, chapters: c.chapters, mal: c.mal, title: c.title }))
@@ -442,14 +445,20 @@ async function run() {
     }
     let verdict;
     let reason;
-    if (sources.length >= 2 && serialized.length >= 2) {
-      verdict = 'multi_source_confirmed';
+    /* Направление связи само по себе не бывает «подтверждённым» по одним годам:
+       `multi_source_catalog` — каталог говорит, что аниме снято по манге;
+       `multi_source_dated` — несколько произведений проходят фильтр по датам,
+       но основание только косвенное. */
+    const catalogManga = COMIC_MEDIA.has(animeSourceById.get(animeId) ?? '');
+    const several = sources.length >= 2;
+    if (several && serialized.length >= 2) {
+      verdict = catalogManga ? 'multi_source_catalog' : 'multi_source_dated';
       reason = 'several_serialized_sources';
-    } else if (sources.length >= 2 && serialized.length === 0) {
-      verdict = 'multi_source_confirmed';
+    } else if (several && serialized.length === 0) {
+      verdict = catalogManga ? 'multi_source_catalog' : 'multi_source_dated';
       reason = 'anthology_of_one_shots';
-    } else if (sources.length >= 2) {
-      verdict = 'multi_source_confirmed';
+    } else if (several) {
+      verdict = catalogManga ? 'multi_source_catalog' : 'multi_source_dated';
       reason = 'one_serialized_plus_one_shots';
     } else if (serialized.length === 1 && oneShots.length >= 1) {
       verdict = 'single_source_plus_prototypes';
@@ -473,12 +482,15 @@ async function run() {
       (r) => r.format !== 'ONE_SHOT' && r.chapters == null && animeYear && r.year != null && r.year >= animeYear,
     );
     if (promoLike.length) issues.push('source_same_year_without_chapters');
-    if (issues.length && verdict === 'multi_source_confirmed') verdict = 'multi_source_with_issues';
+    if (issues.length && (verdict === 'multi_source_catalog' || verdict === 'multi_source_dated')) {
+      verdict = 'multi_source_with_issues';
+    }
     return {
       anime: animeId,
       startYear: animeYearById.get(animeId) ?? fact?.startYear ?? null,
       verdict,
       reason,
+      catalogSource: animeSourceById.get(animeId) ?? null,
       issues,
       sources,
       laterAdaptations,
@@ -508,7 +520,57 @@ async function run() {
       }, {})
     : null;
 
-  /* ---------- 6. Отчёт ---------- */
+  /* ---------- 6. Очередь проверки: явный учёт уникальных случаев ---------- */
+  const multiSourceNeedsReview = multiSource.filter(
+    (r) => r.verdict === 'needs_review' || r.verdict === 'multi_source_with_issues' || (r.issues ?? []).length,
+  );
+  const queueArrays = {
+    /* Массивы разного уровня: первые два — случаи на уровне аниме, третий — рёбра. */
+    multiSourceNeedsReview,
+    comicAdaptsAnime: multiSource.filter((r) => r.verdict === 'comic_adapts_anime'),
+    adaptationAfterAnime: structural.adaptationAfterAnime,
+    duplicateMal: structural.duplicateMal,
+  };
+  const rowsPerArray = Object.fromEntries(Object.entries(queueArrays).map(([k, v]) => [k, v.length]));
+  const rowsTotal = Object.values(rowsPerArray).reduce((n, v) => n + v, 0);
+  /* Уникальность считается по аниме: в одном массиве оно может повторяться
+     (несколько рёбер), а разные массивы часто описывают одно и то же аниме. */
+  const animePerArray = Object.fromEntries(
+    Object.entries(queueArrays).map(([k, v]) => [k, new Set(v.map((r) => r.anime)).size]),
+  );
+  const animeSets = Object.entries(queueArrays)
+    .filter(([k]) => k !== 'duplicateMal')
+    .map(([k, v]) => [k, new Set(v.map((r) => r.anime))]);
+  const uniqueAnime = new Set(animeSets.flatMap(([, set]) => [...set]));
+  const edgePairs = new Set(queueArrays.adaptationAfterAnime.map((r) => `${r.anime}|${r.comic}`));
+  const overlaps = {};
+  for (let i = 0; i < animeSets.length; i += 1) {
+    for (let j = i + 1; j < animeSets.length; j += 1) {
+      const [nameA, setA] = animeSets[i];
+      const [nameB, setB] = animeSets[j];
+      const shared = [...setA].filter((id) => setB.has(id));
+      if (shared.length) overlaps[`${nameA}×${nameB}`] = shared;
+    }
+  }
+  const queueCounts = {
+    /* rowsTotal ≠ количество случаев: 85 рёбер относятся к 74 аниме. */
+    rowsPerArray,
+    rowsTotal,
+    animePerArray,
+    uniqueEdges: edgePairs.size,
+    uniqueAnime: uniqueAnime.size,
+    duplicateMalCases: queueArrays.duplicateMal.length,
+    overlaps: Object.fromEntries(Object.entries(overlaps).map(([k, v]) => [k, v.length])),
+    overlapAnime: overlaps,
+    note:
+      'Аниме может попадать в несколько массивов сразу, поэтому sum(rowsPerArray) ≠ uniqueAnime. ' +
+      'adaptationAfterAnime — это рёбра (anime+comic), их больше, чем аниме.',
+  };
+  if (rowsTotal !== queueArrays.multiSourceNeedsReview.length + queueArrays.comicAdaptsAnime.length + queueArrays.adaptationAfterAnime.length + queueArrays.duplicateMal.length) {
+    throw new Error('очередь ревью: арифметика массивов не сходится');
+  }
+
+  /* ---------- 7. Отчёт ---------- */
   const report = {
     generatedAt: new Date().toISOString(),
     source: {
@@ -576,13 +638,15 @@ async function run() {
       failedBatches: net.failedBatches.length,
       failedIds: net.failedIds.length,
     },
-    reviewQueue: [
-      ...multiSource
-        .filter((r) => r.verdict === 'needs_review' || r.verdict === 'multi_source_with_issues' || (r.issues ?? []).length)
-        .map((r) => ({ type: 'multi_source', anime: r.anime, verdict: r.verdict, reason: r.reason, sources: r.sources })),
-      ...structural.adaptationAfterAnime.map((r) => ({ type: 'adaptation_after_anime', ...r })),
-      ...structural.duplicateMal.map((r) => ({ type: 'duplicate_mal', ...r })),
-    ],
+    reviewQueue: {
+      generatedAt: new Date().toISOString(),
+      note: 'Случаи, которым нужна редакционная/техническая проверка. Связи не удалены — только помечены.',
+      counts: queueCounts,
+      multiSourceNeedsReview,
+      comicAdaptsAnime: queueArrays.comicAdaptsAnime,
+      adaptationAfterAnime: queueArrays.adaptationAfterAnime,
+      duplicateMal: queueArrays.duplicateMal,
+    },
   };
 
   /* Инварианты: аудит не имеет права выдавать несогласованные числа. */
@@ -606,7 +670,10 @@ async function run() {
     );
   }
   console.log('[b1d] многоисточниковых:', multiSource.length, JSON.stringify(multiSummary));
-  console.log('[b1d] очередь ревью:', report.reviewQueue.length);
+  console.log(
+    '[b1d] очередь: строк', rowsTotal, '| уникальных аниме', uniqueAnime.size, '| рёбер (anime+comic)', edgePairs.size,
+    '| по массивам', JSON.stringify(rowsPerArray),
+  );
   console.log('[b1d] инварианты:', report.integrity.ok ? 'OK' : JSON.stringify(problems));
 
   if (DRY) {
@@ -615,25 +682,7 @@ async function run() {
   }
   mkdirSync(path.dirname(OUT), { recursive: true });
   writeFileSync(OUT, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
-  writeFileSync(
-    REVIEW,
-    `${JSON.stringify(
-      {
-        generatedAt: report.generatedAt,
-        note: 'Случаи, которым нужна редакционная/техническая проверка. Связи не удалены — только помечены.',
-        multiSourceNeedsReview: multiSource.filter(
-          (r) => r.verdict === 'needs_review' || r.verdict === 'multi_source_with_issues' || (r.issues ?? []).length,
-        ),
-        singleRealSource: multiSource.filter((r) => r.verdict === 'single_source_plus_prototypes'),
-        comicAdaptsAnime: multiSource.filter((r) => r.verdict === 'comic_adapts_anime'),
-        adaptationAfterAnime: structural.adaptationAfterAnime,
-        duplicateMal: structural.duplicateMal,
-      },
-      null,
-      2,
-    )}\n`,
-    'utf8',
-  );
+  writeFileSync(REVIEW, `${JSON.stringify(report.reviewQueue, null, 2)}\n`, 'utf8');
   console.log(`[b1d] записано: ${path.relative(ROOT, OUT)}, ${path.relative(ROOT, REVIEW)}`);
 }
 

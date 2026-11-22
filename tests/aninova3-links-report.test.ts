@@ -53,14 +53,29 @@ interface AnimeLinkRow {
   ru: string;
   year: number | null;
   source: string | null;
-  links: { comic: string; role: WorkRelationKind; primary: boolean; direction: string | null; comicYear: number | null }[];
+  links: {
+    comic: string;
+    role: WorkRelationKind;
+    primary: boolean;
+    direction: string | null;
+    confidence: string;
+    basis: string;
+    comicYear: number | null;
+  }[];
   skipped: { comic?: number; reason: string }[];
 }
 
 const animeRows: AnimeLinkRow[] = [];
 for (const animeId of graph.byAnime.keys()) {
   const title = animeById.get(animeId);
-  const { links, skipped } = resolveAnimeSourcesDetailed(animeId, { graph, store, animeYear: title?.year ?? null });
+  const { links, skipped } = resolveAnimeSourcesDetailed(animeId, {
+    graph,
+    store,
+    animeYear: title?.year ?? null,
+    /* Тот же вход, что и у страницы аниме: без первоисточника из каталога
+       направление связи оставалось бы догадкой по годам. */
+    animeSource: title?.source ?? null,
+  });
   animeRows.push({
     anime: animeId,
     slug: title?.slug ?? '',
@@ -72,6 +87,8 @@ for (const animeId of graph.byAnime.keys()) {
       role: l.role,
       primary: l.primary,
       direction: l.direction,
+      confidence: l.confidence,
+      basis: l.basis,
       comicYear: l.comic.year,
     })),
     skipped: skipped.map((s) => ({ comic: s.evidence.comicAniListId, reason: s.reason })),
@@ -95,23 +112,46 @@ for (const row of animeRows) for (const s of row.skipped) skippedByReason[s.reas
 
 const linksByRole: Record<string, number> = {};
 const linksByDirection: Record<string, number> = {};
+const linksByConfidence: Record<string, number> = {};
+const linksByBasis: Record<string, number> = {};
 for (const row of animeRows) {
   for (const link of row.links) {
     linksByRole[link.role] = (linksByRole[link.role] ?? 0) + 1;
     const key = link.direction ?? 'unknown';
     linksByDirection[key] = (linksByDirection[key] ?? 0) + 1;
+    linksByConfidence[link.confidence] = (linksByConfidence[link.confidence] ?? 0) + 1;
+    linksByBasis[link.basis] = (linksByBasis[link.basis] ?? 0) + 1;
   }
 }
 
-/* B1-D: сколько карточек перестали быть «первоисточником», потому что комикс
-   вышел существенно позже аниме (это комикс по аниме, а не наоборот). */
-const reclassifiedByDate = animeRows.reduce(
+/* Связи, где направление не утверждается: только связь, без выводов. */
+const linksWithoutDirection = animeRows.flatMap((row) =>
+  row.links.filter((l) => l.direction === null && l.role === 'SOURCE').map((l) => ({ anime: row.anime, comic: l.comic })),
+);
+
+/* B1-D.1: сколько карточек перестали быть «первоисточником», потому что
+   это комикс по аниме (по каталогу или по датам). */
+const comicAdaptsAnimeCount = animeRows.reduce(
   (n, row) => n + row.links.filter((l) => l.direction === 'comic-adapts-anime').length,
   0,
 );
-const sourcesAfterAnime = animeRows.flatMap((row) =>
+const confirmedDirection = animeRows.reduce(
+  (n, row) => n + row.links.filter((l) => l.confidence === 'confirmed').length,
+  0,
+);
+/* Первоисточники, которые начинаются позже аниме, но всё равно называются
+   первоисточником. Такие связи допустимы только с неподтверждённым направлением
+   (противоречие уходит в очередь проверки), поэтому здесь их быть не должно. */
+const claimedSourcesAfterAnime = animeRows.flatMap((row) =>
   row.links
-    .filter((l) => l.role === 'SOURCE' && l.comicYear && row.year && l.comicYear > row.year + 1)
+    .filter(
+      (l) =>
+        l.role === 'SOURCE' &&
+        l.confidence !== 'unknown' &&
+        l.comicYear &&
+        row.year &&
+        l.comicYear > row.year + 1,
+    )
     .map((l) => ({ anime: row.anime, animeYear: row.year, comic: l.comic, comicYear: l.comicYear })),
 );
 
@@ -204,8 +244,14 @@ const report = {
     skippedByReason,
     byRole: linksByRole,
     byDirection: linksByDirection,
-    reclassifiedByDate,
-    sourcesAfterAnimeCount: sourcesAfterAnime.length,
+    /* B1-D.1: три уровня достоверности направления, а не два. */
+    byConfidence: linksByConfidence,
+    byBasis: linksByBasis,
+    comicAdaptsAnimeCount,
+    confirmedDirection,
+    linksWithoutDirection: linksWithoutDirection.length,
+    linksWithoutDirectionExamples: linksWithoutDirection.slice(0, 25),
+    sourcesAfterAnimeCount: claimedSourcesAfterAnime.length,
     animeWithoutConfirmedComic: animeRows.filter((r) => r.links.length === 0).length,
     animeWithOnlyRelated: animeWithOnlyRelated.length,
     animeWithMultiSource: multiSourceAnime.length,
@@ -333,11 +379,38 @@ describe('машинный отчёт B1-C', () => {
   });
 
   it('ни один первоисточник не начинается существенно позже самого аниме', () => {
-    /* AniList ставит ADAPTATION в обе стороны; даты — единственный признак,
-       который отличает мангу-первоисточник от манги по аниме. */
-    expect(sourcesAfterAnime).toEqual([]);
-    expect(report.links.reclassifiedByDate).toBeGreaterThan(0);
-    expect(report.links.byDirection['comic-adapts-anime']).toBe(report.links.reclassifiedByDate);
+    /* AniList ставит ADAPTATION в обе стороны; даты — косвенный признак,
+       подтверждение берётся из каталога (source аниме). Связь без подтверждённого
+       направления не утверждает, что комикс — первоисточник. */
+    expect(claimedSourcesAfterAnime).toEqual([]);
+    expect(report.links.comicAdaptsAnimeCount).toBeGreaterThan(0);
+    expect(report.links.byDirection['comic-adapts-anime']).toBe(report.links.comicAdaptsAnimeCount);
+  });
+
+  it('направление без основания не выдаётся за подтверждённое', () => {
+    /* Каждая связь имеет уровень достоверности, и «подтверждено» не бывает
+       без основания в каталоге (год начала сам по себе основанием не считается). */
+    const total = Object.values(report.links.byConfidence).reduce((n, v) => n + v, 0);
+    expect(total).toBe(report.links.resolved);
+    for (const row of animeRows) {
+      for (const link of row.links) {
+        if (link.confidence === 'confirmed') {
+          expect(['catalog-manga', 'catalog-original']).toContain(link.basis);
+        }
+        if (link.confidence === 'inferred') expect(['dates', 'catalog-manga']).toContain(link.basis);
+        if (link.confidence === 'unknown') expect(link.direction).toBeNull();
+      }
+    }
+    expect(confirmedDirection).toBeGreaterThan(0);
+  });
+
+  it('основной первоисточник не назначается без направления', () => {
+    for (const row of animeRows) {
+      for (const link of row.links) {
+        if (!link.primary) continue;
+        expect(link.confidence).not.toBe('unknown');
+      }
+    }
   });
 
   it('у каждого аниме не более одного основного первоисточника, но все связи видны', () => {

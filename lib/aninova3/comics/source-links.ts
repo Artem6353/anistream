@@ -11,8 +11,21 @@
  * 5. Никаких внешних запросов: работаем по снимку графа и реестру в памяти.
  */
 import type { Title } from '@/lib/types';
-import type { ComicSourceEvidence, ComicWork, LinkedAnime, LinkedComic, WorkRelationKind } from './model';
-import { RELATION_PRIORITY, comicAdaptsAnime, invertRelation } from './model';
+import type {
+  ComicSourceEvidence,
+  ComicWork,
+  DirectionEvidence,
+  LinkedAnime,
+  LinkedComic,
+  WorkRelationKind,
+} from './model';
+import {
+  NO_DIRECTION,
+  RELATION_PRIORITY,
+  classifyAdaptationDirection,
+  hasDirectedEvidence,
+  invertRelation,
+} from './model';
 import { comicStore, type ComicStore } from './store';
 import { EMPTY_SOURCE_GRAPH, loadSourceGraph, type SourceGraph } from './source-graph';
 
@@ -39,11 +52,15 @@ export interface AdaptationResolution {
 
 export interface ResolverDeps {
   /**
-   * Год начала аниме. Нужен, чтобы отличить первоисточник от комикса по аниме:
-   * AniList ставит `ADAPTATION` в обе стороны, и без дат манга 2026 года
-   * выглядела бы первоисточником аниме 2024 года.
+   * Год начала аниме. Вместе с `animeSource` даёт основание для направления связи:
+   * AniList ставит `ADAPTATION` в обе стороны, поэтому одного ярлыка недостаточно.
    */
   animeYear?: number | null;
+  /**
+   * Первоисточник аниме по каталогу (`MANGA`, `ORIGINAL`, `LIGHT_NOVEL`, …).
+   * Если задан, направление связи перестаёт быть догадкой по датам.
+   */
+  animeSource?: string | null;
   graph?: SourceGraph;
   store?: ComicStore;
   titles?: TitleLookup;
@@ -132,24 +149,37 @@ export function resolveAnimeSourcesDetailed(animeAniListId: number, input: Resol
       skipped.push({ evidence: row, reason: 'comic_not_found' });
       continue;
     }
-    /* Даты важнее ярлыка AniList: комикс, вышедший существенно позже аниме,
-       не первоисточник, а комикс по аниме. */
-    const adaptsAnime = comicAdaptsAnime(comic.year, input.animeYear);
-    const wasSource = row.role === 'SOURCE';
-    const role: WorkRelationKind = adaptsAnime && wasSource ? 'ADAPTATION' : row.role;
-    /* Направление имеет смысл только для отношения экранизации: продолжение,
-       вышедшее позже, — не «комикс по аниме», а продолжение. */
-    const direction = wasSource ? (adaptsAnime ? ('comic-adapts-anime' as const) : ('comic-is-source' as const)) : null;
+    /* Даты важнее ярлыка AniList, но направление всё равно может остаться
+       предположительным: решает первоисточник аниме из каталога (см. модель). */
+    const adaptationEdge = row.role === 'SOURCE';
+    const dir: DirectionEvidence = adaptationEdge
+      ? classifyAdaptationDirection({
+          animeSource: input.animeSource,
+          animeYear: input.animeYear,
+          comicYear: comic.year,
+        })
+      : NO_DIRECTION;
+    const role: WorkRelationKind = adaptationEdge && dir.direction === 'comic-adapts-anime' ? 'ADAPTATION' : row.role;
 
     const existing = byComic.get(comic.id);
     if (!existing) {
-      byComic.set(comic.id, { comic, role, primary: false, evidence: row.evidence, direction });
+      byComic.set(comic.id, {
+        comic,
+        role,
+        primary: false,
+        evidence: row.evidence,
+        direction: dir.direction,
+        confidence: dir.confidence,
+        basis: dir.basis,
+      });
       continue;
     }
     if (strongerRole(role, existing.role)) {
       existing.role = role;
       existing.evidence = row.evidence;
-      existing.direction = direction;
+      existing.direction = dir.direction;
+      existing.confidence = dir.confidence;
+      existing.basis = dir.basis;
     }
   }
 
@@ -165,11 +195,13 @@ export function resolveAnimeSourcesDetailed(animeAniListId: number, input: Resol
     return (a.comic.externalIds.anilist ?? 0) - (b.comic.externalIds.anilist ?? 0);
   });
 
-  /* Основной первоисточник один: первый SOURCE. Если первоисточника нет —
-     основным считается первая подтверждённая связь (карточка показывает её роль). */
-  const firstSource = links.find((l) => l.role === 'SOURCE');
+  /* Основной первоисточник один. Без подтверждённого или хотя бы
+     предположительного направления «основной» не назначается: данные не дают
+     права называть одно из произведений главным. */
+  const directedSources = links.filter((l) => l.role === 'SOURCE' && hasDirectedEvidence(l));
+  const firstSource = directedSources.find((l) => l.confidence === 'confirmed') ?? directedSources[0];
   if (firstSource) firstSource.primary = true;
-  else if (links.length) links[0].primary = true;
+  else if (links.length && hasDirectedEvidence(links[0])) links[0].primary = true;
 
   return { links, skipped };
 }
@@ -208,27 +240,40 @@ export function resolveComicAdaptationsDetailed(
       skipped.push({ evidence: row, reason: 'anime_not_found' });
       continue;
     }
-    /* Обратное направление считается по тем же датам: если комикс вышел позже,
-       то оригинал — аниме, и на странице комикса оно подписано соответвенно. */
-    /* row.role === 'SOURCE' — это ребро экранизации; для страницы комикса оно
-       инвертируется, но кто оригинал, всё равно решают даты. */
+    /* Обратное направление считается тем же правилом и теми же данными, что и
+       прямое: страница комикса не может утверждать больше, чем страница аниме. */
     const adaptationEdge = row.role === 'SOURCE';
-    const adaptsAnime = adaptationEdge && comicAdaptsAnime(comic.year, anime.year);
-    const role: WorkRelationKind = adaptationEdge ? (adaptsAnime ? 'SOURCE' : 'ADAPTATION') : invertRelation(row.role);
-    const direction = adaptationEdge
-      ? adaptsAnime
-        ? ('comic-adapts-anime' as const)
-        : ('comic-is-source' as const)
-      : null;
+    const dir: DirectionEvidence = adaptationEdge
+      ? classifyAdaptationDirection({
+          animeSource: input.animeSource ?? anime.source,
+          animeYear: anime.year,
+          comicYear: comic.year,
+        })
+      : NO_DIRECTION;
+    const role: WorkRelationKind = adaptationEdge
+      ? dir.direction === 'comic-adapts-anime'
+        ? 'SOURCE'
+        : 'ADAPTATION'
+      : invertRelation(row.role);
     const existing = byAnime.get(anime.anilistId);
     if (!existing) {
-      byAnime.set(anime.anilistId, { anime, role, primary: false, evidence: row.evidence, direction });
+      byAnime.set(anime.anilistId, {
+        anime,
+        role,
+        primary: false,
+        evidence: row.evidence,
+        direction: dir.direction,
+        confidence: dir.confidence,
+        basis: dir.basis,
+      });
       continue;
     }
     if (strongerRole(role, existing.role)) {
       existing.role = role;
       existing.evidence = row.evidence;
-      existing.direction = direction;
+      existing.direction = dir.direction;
+      existing.confidence = dir.confidence;
+      existing.basis = dir.basis;
     }
   }
 
@@ -240,9 +285,10 @@ export function resolveComicAdaptationsDetailed(
     return a.anime.anilistId - b.anime.anilistId;
   });
 
-  const firstAdaptation = links.find((l) => l.role === 'ADAPTATION');
+  const directedAdaptations = links.filter((l) => l.role === 'ADAPTATION' && hasDirectedEvidence(l));
+  const firstAdaptation = directedAdaptations[0];
   if (firstAdaptation) firstAdaptation.primary = true;
-  else if (links.length) links[0].primary = true;
+  else if (links.length && hasDirectedEvidence(links[0])) links[0].primary = true;
 
   return { links, skipped };
 }

@@ -37,7 +37,11 @@ export default async function A3AnimePage({ params }: Props) {
   const shown = Math.min(12, released);
   const more = Math.min(30, released) - shown;
   const similar = similarTitles(title, 10);
-  const sourceLinks = resolveAnimeSources(title.anilistId, { animeYear: title.year });
+  const sourceLinks = resolveAnimeSources(title.anilistId, {
+    animeYear: title.year,
+    /* Первоисточник аниме из каталога: без него направление связи остаётся догадкой по датам. */
+    animeSource: title.source,
+  });
   const wide = isProxiable(title.banner) ? title.banner : null;
   const firstEpisode = released > 0 ? `${ROOT}/anime/${title.slug}/1` : `${ROOT}/anime/${title.slug}`;
   const facts: [string, string | null][] = [

@@ -153,20 +153,93 @@ export interface ComicSourceEvidence {
  * Направление связи «аниме ↔ комикс», которого AniList сам не различает.
  *
  * `ADAPTATION` в обе стороны означает только «эти два произведения связаны
- * экранизацией»; кто из них первоисточник, решает дата начала:
- *  - комикс вышел до (или одновременно с) аниме → первоисточник аниме;
- *  - комикс вышел существенно позже → это комикс по аниме (манга-адаптация).
- * B1-D: на реальных данных это 85 рёбер, которые B1-C показывал как «первоисточник».
+ * экранизацией». Направление — отдельное утверждение, и оно бывает трёх уровней:
+ * подтверждённое, предположительное и неизвестное (см. `classifyAdaptationDirection`).
  */
 export type ComicDirection = 'comic-is-source' | 'comic-adapts-anime' | null;
 
-/** Допуск в годах: манга может стартовать в год выхода аниме или на следующий. */
+/**
+ * Насколько можно доверять направлению связи.
+ * - `confirmed` — есть прямое основание: каталог сообщает первоисточник аниме
+ *   (`MANGA` для комиксов, `ORIGINAL` для оригинального аниме);
+ * - `inferred` — направление следует только из годов начала выпуска;
+ * - `unknown` — данных недостаточно, направление не утверждается.
+ */
+export type DirectionConfidence = 'confirmed' | 'inferred' | 'unknown';
+
+/** На чём основано направление (для отчёта и очереди проверки). */
+export type DirectionBasis =
+  | 'catalog-manga'
+  | 'catalog-original'
+  | 'catalog-conflict'
+  | 'catalog-other-medium'
+  | 'dates'
+  | 'none';
+
+export interface DirectionEvidence {
+  direction: ComicDirection;
+  confidence: DirectionConfidence;
+  basis: DirectionBasis;
+}
+
+/** Допуск в годах: комикс может стартовать в год выхода аниме или на следующий. */
 export const SOURCE_YEAR_TOLERANCE = 1;
 
-/** Комикс вышел настолько позже аниме, что первоисточником быть не может. */
-export function comicAdaptsAnime(comicYear: number | null | undefined, animeYear: number | null | undefined): boolean {
-  if (!comicYear || !animeYear) return false;
-  return comicYear > animeYear + SOURCE_YEAR_TOLERANCE;
+/** Источники AniList, означающие «аниме снято по комиксу». */
+const COMIC_MEDIA_SOURCES = new Set(['MANGA', 'COMIC', 'DOUJINSHI']);
+
+/**
+ * Направление связи для ребра экранизации.
+ *
+ * Год выпуска сам по себе ничего не доказывает, поэтому он используется только
+ * как косвенный признак (`inferred`) и только если каталог не знает первоисточник
+ * аниме. Если каталог знает (`anime.source`), решает он:
+ *  - аниме по манге → первоисточник комикс (при согласии дат — подтверждено);
+ *  - оригинальное аниме → подтверждено, что комикс сделан по аниме;
+ *  - аниме по другому первоисточнику (ранобэ, игра) → направление не утверждаем;
+ *  - аниме по манге, но комикс вышел заметно позже → противоречие, нужна проверка.
+ * Отсутствие года не считается доводом ни в одну сторону.
+ */
+export function classifyAdaptationDirection(input: {
+  animeSource?: string | null;
+  animeYear?: number | null;
+  comicYear?: number | null;
+  yearTolerance?: number;
+}): DirectionEvidence {
+  const tolerance = input.yearTolerance ?? SOURCE_YEAR_TOLERANCE;
+  const source = (input.animeSource ?? '').trim().toUpperCase();
+  const animeYear = input.animeYear ?? null;
+  const comicYear = input.comicYear ?? null;
+  const datesKnown = Boolean(animeYear && comicYear);
+  const comicIsLater = datesKnown && (comicYear as number) > (animeYear as number) + tolerance;
+
+  if (COMIC_MEDIA_SOURCES.has(source)) {
+    if (comicIsLater) return { direction: null, confidence: 'unknown', basis: 'catalog-conflict' };
+    return {
+      direction: 'comic-is-source',
+      confidence: datesKnown ? 'confirmed' : 'inferred',
+      basis: 'catalog-manga',
+    };
+  }
+  if (source === 'ORIGINAL') {
+    return { direction: 'comic-adapts-anime', confidence: 'confirmed', basis: 'catalog-original' };
+  }
+  if (source) return { direction: null, confidence: 'unknown', basis: 'catalog-other-medium' };
+
+  if (!datesKnown) return { direction: null, confidence: 'unknown', basis: 'none' };
+  return {
+    direction: comicIsLater ? 'comic-adapts-anime' : 'comic-is-source',
+    confidence: 'inferred',
+    basis: 'dates',
+  };
+}
+
+/** Связь не про экранизацию: направление не определено и не нужно. */
+export const NO_DIRECTION: DirectionEvidence = { direction: null, confidence: 'unknown', basis: 'none' };
+
+/** Направление известно хотя бы предположительно — можно делать осторожное утверждение. */
+export function hasDirectedEvidence(evidence: DirectionEvidence): boolean {
+  return evidence.direction !== null && evidence.confidence !== 'unknown';
 }
 
 export interface LinkedComic {
@@ -175,8 +248,11 @@ export interface LinkedComic {
   /** Основной первоисточник: визуально выделяется. */
   primary: boolean;
   evidence: ComicSourceEvidence['evidence'];
-  /** Кто здесь оригинал: подтверждено датами, а не порядком в ответе API. */
+  /** Кто здесь оригинал. */
   direction: ComicDirection;
+  /** Насколько направление подтверждено. */
+  confidence: DirectionConfidence;
+  basis: DirectionBasis;
 }
 
 export interface LinkedAnime {
@@ -185,20 +261,54 @@ export interface LinkedAnime {
   primary: boolean;
   evidence: ComicSourceEvidence['evidence'];
   direction: ComicDirection;
+  confidence: DirectionConfidence;
+  basis: DirectionBasis;
 }
 
+/** Нейтральная подпись, когда направление не подтверждено. */
+export const NEUTRAL_ROLE_LABEL = 'Связанное произведение';
+
 /** Подпись роли комикса на странице аниме. */
-export function animeSideRoleLabel(link: Pick<LinkedComic, 'role' | 'primary' | 'direction'>): string {
-  if (link.primary && link.role === 'SOURCE') return 'Основной первоисточник';
-  if (link.role === 'SOURCE') return 'Также первоисточник';
-  if (link.direction === 'comic-adapts-anime') return 'Комикс по аниме';
+export function animeSideRoleLabel(
+  link: Pick<LinkedComic, 'role' | 'primary' | 'direction' | 'confidence'>,
+): string {
+  if (link.role === 'SOURCE') {
+    if (link.confidence === 'confirmed') return link.primary ? 'Основной первоисточник' : 'Также первоисточник';
+    if (link.confidence === 'inferred') return link.primary ? 'Вероятный первоисточник' : 'Возможно, первоисточник';
+    /* Направление неизвестно: заявлять «первоисточник» нельзя. */
+    return NEUTRAL_ROLE_LABEL;
+  }
+  if (link.direction === 'comic-adapts-anime') {
+    return link.confidence === 'confirmed' ? 'Комикс по аниме' : 'Вероятно, комикс по аниме';
+  }
+  if (link.role === 'ADAPTATION') return NEUTRAL_ROLE_LABEL;
   return RELATION_LABELS[link.role];
 }
 
 /** Подпись роли аниме на странице комикса. */
-export function comicSideRoleLabel(link: Pick<LinkedAnime, 'role' | 'direction'>): string {
-  if (link.direction === 'comic-adapts-anime') return 'Оригинальный сериал';
+export function comicSideRoleLabel(link: Pick<LinkedAnime, 'role' | 'direction' | 'confidence'>): string {
+  if (link.direction === 'comic-adapts-anime') {
+    return link.confidence === 'confirmed' ? 'Оригинальный сериал' : 'Вероятно, оригинальный сериал';
+  }
+  if (link.role === 'ADAPTATION') {
+    if (link.confidence === 'confirmed') return 'Аниме-адаптация';
+    return link.confidence === 'inferred' ? 'Вероятно, аниме-адаптация' : NEUTRAL_ROLE_LABEL;
+  }
+  if (link.role === 'SOURCE') return NEUTRAL_ROLE_LABEL;
   return RELATION_LABELS[link.role];
+}
+
+/** Состояние секции связей на странице аниме. */
+export type SourceSectionState = 'confirmed' | 'probable' | 'unconfirmed' | 'related';
+
+export function sourceSectionState(
+  links: Pick<LinkedComic, 'role' | 'confidence'>[],
+): SourceSectionState {
+  const sources = links.filter((l) => l.role === 'SOURCE');
+  if (sources.some((l) => l.confidence === 'confirmed')) return 'confirmed';
+  if (sources.some((l) => l.confidence === 'inferred')) return 'probable';
+  if (sources.length) return 'unconfirmed';
+  return 'related';
 }
 
 /** Причина, по которой объект нельзя показать как читаемый (внутренние документы прав сюда не попадают). */

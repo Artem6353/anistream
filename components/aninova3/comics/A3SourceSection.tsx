@@ -1,6 +1,11 @@
 import Link from 'next/link';
 import type { LinkedComic } from '@/lib/aninova3/comics/model';
-import { COMIC_KIND_LABELS, COMIC_STATUS_LABELS, animeSideRoleLabel } from '@/lib/aninova3/comics/model';
+import {
+  COMIC_KIND_LABELS,
+  COMIC_STATUS_LABELS,
+  animeSideRoleLabel,
+  sourceSectionState,
+} from '@/lib/aninova3/comics/model';
 import {
   canOpenReader,
   chaptersLine,
@@ -32,6 +37,8 @@ export function A3SourceCard({ link }: { link: LinkedComic }) {
   const title = comicDisplayTitle(comic);
   const href = `${ROOT}/comics/${comic.slug}`;
   const publishable = isPublishableEntry(comic);
+  /* Направление связи подтверждено только тогда, когда это можно утверждать. */
+  const directionConfirmed = link.confidence === 'confirmed';
   const meta = [comic.authorsVerified ? comic.authors.join(', ') : null, comic.year, COMIC_KIND_LABELS[comic.kind]]
     .filter(Boolean)
     .join(' · ');
@@ -46,13 +53,13 @@ export function A3SourceCard({ link }: { link: LinkedComic }) {
           href={href}
           data-a3-focusable
           data-a3-key={`comic:${comic.id}`}
-          aria-label={title.pending ? 'Подробнее о первоисточнике' : `${title.text}: подробнее`}
+          aria-label={title.pending ? 'Подробнее о связанном произведении' : `${title.text}: подробнее`}
         >
           <PosterArt
             src={comic.cover}
             seed={comic.slug}
             initials={title.pending ? '•' : title.text.slice(0, 1)}
-            alt={title.pending ? 'Обложка первоисточника' : `Обложка: ${title.text}`}
+            alt={title.pending ? 'Обложка связанного произведения' : `Обложка: ${title.text}`}
             width={180}
           />
         </Link>
@@ -81,7 +88,7 @@ export function A3SourceCard({ link }: { link: LinkedComic }) {
         <p className="a3-source-card__meta">{meta}</p>
         <p className="a3-source-card__meta">
           {COMIC_STATUS_LABELS[comic.status]}
-          {role === 'SOURCE' ? ' · оригинал аниме' : ''}
+          {role === 'SOURCE' && directionConfirmed ? ' · оригинал аниме' : ''}
         </p>
         <p className="a3-source-card__chapters">{chaptersLine(comic)}</p>
 
@@ -105,13 +112,16 @@ export function A3SourceCard({ link }: { link: LinkedComic }) {
           </p>
         ) : (
           <p className="a3-source-card__reason" role="note">
-            Первоисточник установлен, публикация пока недоступна: {publicationSummary(comic)}.
+            {directionConfirmed
+              ? 'Первоисточник установлен, публикация пока недоступна: '
+              : 'Публикация пока недоступна: '}
+            {publicationSummary(comic)}.
           </p>
         )}
 
         {!readable && publishable ? (
           <Link className="a3-link" href={href} data-a3-focusable>
-            {title.pending ? 'О первоисточнике' : 'О первоисточнике'} →
+            {directionConfirmed ? 'О первоисточнике' : 'Подробнее о произведении'} →
           </Link>
         ) : null}
       </div>
@@ -121,31 +131,35 @@ export function A3SourceCard({ link }: { link: LinkedComic }) {
 
 /**
  * Секция связей на странице аниме: после сведений и серий, до рекомендаций.
- * Заголовок зависит от состава: «Первоисточник» только если есть SOURCE-связь,
- * иначе «Связанные комиксы». Если связей нет — секция не рендерится вовсе.
+ *
+ * Заголовок говорит ровно то, что известно: «Первоисточник» — когда направление
+ * подтверждено, «Вероятный первоисточник» — когда оно определено только по датам,
+ * «Связанные комиксы» — когда не известно. Связи при этом показываются всегда.
  */
 export function A3SourceSection({ links }: { links: LinkedComic[] }) {
   if (!links.length) return null;
-  const hasSource = links.some((l) => l.role === 'SOURCE');
+  const state = sourceSectionState(links);
   const multi = links.length > 1;
-  /* Все карточки — комиксы, сделанные по аниме: заголовок «Первоисточник» здесь был бы ложью. */
-  const adaptsOnly = !hasSource && links.every((l) => l.direction === 'comic-adapts-anime');
+  const title =
+    state === 'confirmed' ? 'Первоисточник' : state === 'probable' ? 'Вероятный первоисточник' : 'Связанные комиксы';
+  const description =
+    state === 'confirmed'
+      ? multi
+        ? 'Подтверждённые по идентификатору AniList оригинальные произведения этого аниме.'
+        : 'Оригинальное произведение, по которому снято аниме. Связь подтверждена по идентификатору AniList, а не по совпадению названия.'
+      : state === 'probable'
+        ? 'Связь подтверждена по идентификатору AniList; что именно послужило первоисточником, определено по годам выпуска и требует проверки.'
+        : state === 'unconfirmed'
+        ? 'Связи подтверждены по идентификатору AniList. Направление связи не подтверждено, поэтому произведения показаны как связанные.'
+        : 'Комиксы, подтверждённые по идентификатору AniList: первоисточник среди них не установлен.';
   return (
     <section className="a3-source-section" aria-labelledby="a3-source-title">
       <div className="a3-section__head a3-section__head--inline">
         <div>
           <h2 className="a3-h2" id="a3-source-title">
-            {hasSource ? 'Первоисточник' : 'Связанные комиксы'}
+            {title}
           </h2>
-          <p className="a3-muted a3-section__desc">
-            {hasSource
-              ? multi
-                ? 'Подтверждённые по идентификатору AniList оригинальные произведения этого аниме.'
-                : 'Оригинальное произведение, по которому снято аниме. Связь подтверждена по идентификатору AniList, а не по совпадению названия.'
-              : adaptsOnly
-                ? 'Комиксы, созданные по этому аниме: связь подтверждена по идентификатору AniList, а даты выхода показывают, что оригинал — аниме.'
-                : 'Комиксы, подтверждённые по идентификатору AniList: первоисточник среди них не установлен.'}
-          </p>
+          <p className="a3-muted a3-section__desc">{description}</p>
         </div>
       </div>
       <div className={`a3-source-grid${multi ? ' a3-source-grid--multi' : ''}`}>

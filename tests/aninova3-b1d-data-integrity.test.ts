@@ -108,3 +108,62 @@ describe('граф и реестр согласованы', () => {
     }
   });
 });
+
+describe('очередь ручной проверки (реальные счётчики)', () => {
+  /* B1-D опубликовал «116 строк» при сумме массивов 120. Тест закрепляет
+     арифметику очереди: массивы разного уровня, поэтому строки ≠ случаи. */
+  const queue = read('docs/data/aninova3-b1d-review-queue.json') as {
+    counts: {
+      rowsPerArray: Record<string, number>;
+      rowsTotal: number;
+      animePerArray: Record<string, number>;
+      uniqueEdges: number;
+      uniqueAnime: number;
+      duplicateMalCases: number;
+      overlaps: Record<string, number>;
+    };
+    multiSourceNeedsReview: { anime: number }[];
+    comicAdaptsAnime: { anime: number }[];
+    adaptationAfterAnime: { anime: number; comic: number }[];
+    duplicateMal: { mal: number; comics: number[] }[];
+  };
+
+  it('сумма массивов совпадает с заявленным числом строк', () => {
+    const sum = Object.values(queue.counts.rowsPerArray).reduce((n, v) => n + v, 0);
+    expect(queue.counts.rowsTotal).toBe(sum);
+    expect(queue.counts.rowsPerArray.multiSourceNeedsReview).toBe(queue.multiSourceNeedsReview.length);
+    expect(queue.counts.rowsPerArray.comicAdaptsAnime).toBe(queue.comicAdaptsAnime.length);
+    expect(queue.counts.rowsPerArray.adaptationAfterAnime).toBe(queue.adaptationAfterAnime.length);
+    expect(queue.counts.rowsPerArray.duplicateMal).toBe(queue.duplicateMal.length);
+  });
+
+  it('уникальные аниме посчитаны по объединению, а не суммой', () => {
+    const union = new Set<number>([
+      ...queue.multiSourceNeedsReview.map((r) => r.anime),
+      ...queue.comicAdaptsAnime.map((r) => r.anime),
+      ...queue.adaptationAfterAnime.map((r) => r.anime),
+    ]);
+    expect(queue.counts.uniqueAnime).toBe(union.size);
+    expect(queue.counts.uniqueAnime).toBeLessThan(
+      queue.multiSourceNeedsReview.length + queue.comicAdaptsAnime.length + queue.adaptationAfterAnime.length,
+    );
+    /* Пересечения объяснены: одни и те же аниме описаны в разных массивах. */
+    for (const [key, value] of Object.entries(queue.counts.overlaps)) {
+      expect(value).toBeGreaterThan(0);
+      expect(key).toContain('×');
+    }
+  });
+
+  it('«адаптации после аниме» — это рёбра, а не аниме', () => {
+    const pairs = new Set(queue.adaptationAfterAnime.map((r) => `${r.anime}|${r.comic}`));
+    expect(queue.counts.uniqueEdges).toBe(pairs.size);
+    const anime = new Set(queue.adaptationAfterAnime.map((r) => r.anime));
+    expect(anime.size).toBeLessThan(queue.adaptationAfterAnime.length);
+    for (const row of queue.adaptationAfterAnime) expect(row.comic).toBeGreaterThan(0);
+  });
+
+  it('дубли MAL учитываются отдельно от аниме-случаев', () => {
+    expect(queue.counts.duplicateMalCases).toBe(queue.duplicateMal.length);
+    for (const row of queue.duplicateMal) expect(row.comics.length).toBeGreaterThan(1);
+  });
+});

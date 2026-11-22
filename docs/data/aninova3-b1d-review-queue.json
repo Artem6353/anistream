@@ -1,12 +1,49 @@
 {
-  "generatedAt": "2026-11-22T19:44:28.564Z",
+  "generatedAt": "2026-11-22T21:17:23.779Z",
   "note": "Случаи, которым нужна редакционная/техническая проверка. Связи не удалены — только помечены.",
+  "counts": {
+    "rowsPerArray": {
+      "multiSourceNeedsReview": 30,
+      "comicAdaptsAnime": 4,
+      "adaptationAfterAnime": 85,
+      "duplicateMal": 1
+    },
+    "rowsTotal": 120,
+    "animePerArray": {
+      "multiSourceNeedsReview": 30,
+      "comicAdaptsAnime": 4,
+      "adaptationAfterAnime": 74,
+      "duplicateMal": 1
+    },
+    "uniqueEdges": 85,
+    "uniqueAnime": 101,
+    "duplicateMalCases": 1,
+    "overlaps": {
+      "multiSourceNeedsReview×adaptationAfterAnime": 3,
+      "comicAdaptsAnime×adaptationAfterAnime": 4
+    },
+    "overlapAnime": {
+      "multiSourceNeedsReview×adaptationAfterAnime": [
+        949,
+        96,
+        2598
+      ],
+      "comicAdaptsAnime×adaptationAfterAnime": [
+        164212,
+        85,
+        9963,
+        2291
+      ]
+    },
+    "note": "Аниме может попадать в несколько массивов сразу, поэтому sum(rowsPerArray) ≠ uniqueAnime. adaptationAfterAnime — это рёбра (anime+comic), их больше, чем аниме."
+  },
   "multiSourceNeedsReview": [
     {
       "anime": 124153,
       "startYear": 2021,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -39,6 +76,7 @@
       "startYear": 2022,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "ORIGINAL",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -98,6 +136,7 @@
       "startYear": 2026,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -130,6 +169,7 @@
       "startYear": 1988,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "ORIGINAL",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -172,6 +212,7 @@
       "startYear": 2019,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "ORIGINAL",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -204,6 +245,7 @@
       "startYear": 1999,
       "verdict": "multi_source_with_issues",
       "reason": "several_serialized_sources",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -254,6 +296,7 @@
       "startYear": 2019,
       "verdict": "multi_source_with_issues",
       "reason": "several_serialized_sources",
+      "catalogSource": "ORIGINAL",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -295,6 +338,7 @@
       "startYear": 2008,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "OTHER",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -327,6 +371,7 @@
       "startYear": 2011,
       "verdict": "multi_source_with_issues",
       "reason": "several_serialized_sources",
+      "catalogSource": "ORIGINAL",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -394,6 +439,7 @@
       "startYear": 1994,
       "verdict": "multi_source_with_issues",
       "reason": "one_serialized_plus_one_shots",
+      "catalogSource": "",
       "issues": [
         "duplicate_mal_id"
       ],
@@ -499,6 +545,7 @@
       "startYear": 2025,
       "verdict": "multi_source_with_issues",
       "reason": "several_serialized_sources",
+      "catalogSource": "ORIGINAL",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -530,6 +577,7 @@
       "startYear": 2025,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -589,6 +637,7 @@
       "startYear": 2017,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "ORIGINAL",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -621,6 +670,7 @@
       "startYear": 2026,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -653,6 +703,7 @@
       "startYear": 2009,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -703,6 +754,7 @@
       "startYear": 1974,
       "verdict": "multi_source_with_issues",
       "reason": "several_serialized_sources",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -753,6 +805,7 @@
       "startYear": 1999,
       "verdict": "multi_source_with_issues",
       "reason": "several_serialized_sources",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -793,6 +846,7 @@
       "startYear": 1988,
       "verdict": "multi_source_with_issues",
       "reason": "several_serialized_sources",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -824,6 +878,7 @@
       "startYear": 1977,
       "verdict": "multi_source_with_issues",
       "reason": "several_serialized_sources",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -874,6 +929,7 @@
       "startYear": 1984,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -906,6 +962,7 @@
       "startYear": 2000,
       "verdict": "multi_source_with_issues",
       "reason": "several_serialized_sources",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -937,6 +994,7 @@
       "startYear": 2024,
       "verdict": "multi_source_with_issues",
       "reason": "several_serialized_sources",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -968,6 +1026,7 @@
       "startYear": 2006,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -1000,6 +1059,7 @@
       "startYear": 2023,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -1041,6 +1101,7 @@
       "startYear": 2005,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -1073,6 +1134,7 @@
       "startYear": 2016,
       "verdict": "multi_source_with_issues",
       "reason": "several_serialized_sources",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -1122,6 +1184,7 @@
       "startYear": 2009,
       "verdict": "multi_source_with_issues",
       "reason": "several_serialized_sources",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -1153,6 +1216,7 @@
       "startYear": 2026,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -1230,6 +1294,7 @@
       "startYear": 2006,
       "verdict": "multi_source_with_issues",
       "reason": "several_serialized_sources",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -1261,6 +1326,7 @@
       "startYear": 2023,
       "verdict": "single_source_after_date_filter",
       "reason": "other_adaptation_edges_are_later_comics",
+      "catalogSource": "",
       "issues": [
         "source_same_year_without_chapters"
       ],
@@ -1289,13 +1355,13 @@
       ]
     }
   ],
-  "singleRealSource": [],
   "comicAdaptsAnime": [
     {
       "anime": 164212,
       "startYear": 2024,
       "verdict": "comic_adapts_anime",
       "reason": "all_adaptation_edges_started_after_anime",
+      "catalogSource": "",
       "issues": [],
       "sources": [],
       "laterAdaptations": [
@@ -1325,6 +1391,7 @@
       "startYear": 1985,
       "verdict": "comic_adapts_anime",
       "reason": "all_adaptation_edges_started_after_anime",
+      "catalogSource": "",
       "issues": [],
       "sources": [],
       "laterAdaptations": [
@@ -1418,6 +1485,7 @@
       "startYear": 2011,
       "verdict": "comic_adapts_anime",
       "reason": "all_adaptation_edges_started_after_anime",
+      "catalogSource": "",
       "issues": [],
       "sources": [],
       "laterAdaptations": [
@@ -1447,6 +1515,7 @@
       "startYear": 1985,
       "verdict": "comic_adapts_anime",
       "reason": "all_adaptation_edges_started_after_anime",
+      "catalogSource": "",
       "issues": [],
       "sources": [],
       "laterAdaptations": [

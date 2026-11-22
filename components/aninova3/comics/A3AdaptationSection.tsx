@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import type { LinkedAnime } from '@/lib/aninova3/comics/model';
-import { comicSideRoleLabel } from '@/lib/aninova3/comics/model';
-import { TYPE_LABELS } from '@/lib/labels';
+import { comicSideRoleLabel } from '@/lib/aninova3/comics/model';import { TYPE_LABELS } from '@/lib/labels';
 import { PosterArt } from '@/components/anime/PosterArt';
 
 const ROOT = '/preview/aninova-3';
@@ -15,6 +14,9 @@ const ROOT = '/preview/aninova-3';
  */
 export function A3AdaptationSection({ links }: { links: LinkedAnime[] }) {
   if (!links.length) return null;
+  /* Направление хотя бы одной связи определено только по датам — говорим об этом одной строкой. */
+  const approximate = links.some((l) => l.confidence === 'inferred');
+  const undescribed = links.some((l) => l.confidence === 'unknown');
   return (
     <section className="a3-adaptations" aria-labelledby="a3-adaptations-title">
       <div className="a3-section__head a3-section__head--inline">
@@ -22,7 +24,11 @@ export function A3AdaptationSection({ links }: { links: LinkedAnime[] }) {
           <h2 className="a3-h2" id="a3-adaptations-title">
             Аниме-адаптации
           </h2>
-          <p className="a3-muted a3-section__desc">Связи подтверждены по идентификатору AniList.</p>
+          <p className="a3-muted a3-section__desc">
+            Связи подтверждены по идентификатору AniList.
+            {approximate ? ' Направление части связей определено по годам выпуска и требует проверки.' : ''}
+            {undescribed ? ' Есть связи с неподтверждённым направлением.' : ''}
+          </p>
         </div>
       </div>
       <div className="a3-adaptation-grid">
