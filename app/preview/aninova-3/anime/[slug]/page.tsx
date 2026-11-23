@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getTitle, similarTitles, toCardTitle } from '@/lib/catalog';
+import { getTitle, similarTitles, titleById, toCardTitle } from '@/lib/catalog';
+import { watchOrder } from '@/lib/franchise';
 import { episodeInfo } from '@/lib/episodes';
 import { genreLabel, SEASON_LABELS, SOURCE_LABELS, STATUS_LABELS, TYPE_LABELS } from '@/lib/labels';
 import { isProxiable } from '@/lib/img';
@@ -37,6 +38,8 @@ export default async function A3AnimePage({ params }: Props) {
   const shown = Math.min(12, released);
   const more = Math.min(30, released) - shown;
   const similar = similarTitles(title, 10);
+  /* Франшиза и порядок просмотра — существующая логика lib/franchise (BFS по связям). */
+  const franchise = watchOrder(title, titleById).filter((t) => t.anilistId !== title.anilistId).slice(0, 10);
   const sourceLinks = resolveAnimeSources(title.anilistId, {
     animeYear: title.year,
     /* Первоисточник аниме из каталога: без него направление связи остаётся догадкой по датам. */
@@ -57,6 +60,13 @@ export default async function A3AnimePage({ params }: Props) {
 
   return (
     <article className="a3-anime">
+      <div className="a3-wrap">
+        <nav className="a3-breadcrumbs" aria-label="Хлебные крошки">
+          <Link href={`${ROOT}/catalog`}>Каталог</Link>
+          <span aria-hidden>/</span>
+          <span aria-current="page">{title.ru}</span>
+        </nav>
+      </div>
       <header className={`a3-anime__hero${wide ? '' : ' a3-anime__hero--plain'}`}>
         {wide ? (
           <A3BannerImg className="a3-anime__bg" src={wide} quality={50} priority />
@@ -154,6 +164,27 @@ export default async function A3AnimePage({ params }: Props) {
           ) : (
             <p className="a3-muted">Серии ещё не вышли.</p>
           )}
+
+          <section className="a3-anime__sources" aria-labelledby="a3-sources">
+            <h2 className="a3-h2" id="a3-sources">
+              Источники и просмотр
+            </h2>
+            {/* Список источников здесь не рисуем: доступность конкретного потока
+                решает существующий плеер на странице серии. Обещать «источник есть»
+                по одному названию тайтла нельзя. */}
+            <p className="a3-muted">
+              Доступные источники и переводы проверяются на странице серии: там открывается существующий плеер, он же сообщает,
+              если потока нет. В карточке источника мы ничего не придумываем.
+            </p>
+            <div className="a3-chips a3-chips--inline">
+              <Link className="a3-btn a3-btn--ghost" href={firstEpisode} data-a3-focusable>
+                {released ? 'Открыть первую серию' : 'Страница произведения'}
+              </Link>
+              <Link className="a3-btn a3-btn--ghost" href={`${ROOT}/schedule`} data-a3-focusable>
+                Расписание эфиров
+              </Link>
+            </div>
+          </section>
         </div>
 
         <aside className="a3-anime__side" aria-labelledby="a3-facts">
@@ -188,6 +219,14 @@ export default async function A3AnimePage({ params }: Props) {
       <div className="a3-wrap">
         <A3SourceSection links={sourceLinks} />
       </div>
+
+      {franchise.length ? (
+        <A3Rail title="Франшиза" action={{ href: `${ROOT}/catalog?sort=pop`, label: 'В каталог' }} description="Порядок просмотра по связям каталога">
+          {franchise.map((t) => (
+            <A3Card key={t.slug} title={toCardTitle(t)} />
+          ))}
+        </A3Rail>
+      ) : null}
 
       {similar.length ? (
         <A3Rail title="Похожее" action={{ href: `${ROOT}/catalog?genre=${similar[0].genres[0] ?? ''}`, label: 'В каталог' }}>

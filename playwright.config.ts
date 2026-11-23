@@ -21,10 +21,31 @@ export default defineConfig({
        В обычном CI (ubuntu-latest, --with-deps) переменная не задаётся. */
     launchOptions: { args: (process.env.PW_LAUNCH_ARGS ?? '').split(/\s+/).filter(Boolean) },
   },
-  webServer: {
-    command: `npm run start -- -p ${port}`,
-    port,
-    reuseExistingServer: true,
-    timeout: 180_000,
-  },
+  /* B2-A: два сервера одной сборки — с флагом preview и без него. Второй нужен,
+     чтобы регрессия «без флага раздел закрыт» проверялась тем же прогоном, а не
+     отдельным ручным шагом. */
+  projects: [
+    { name: 'preview', testIgnore: /b2a-flag-off/ },
+    {
+      name: 'preview-off',
+      testMatch: /b2a-flag-off/,
+      use: { baseURL: `http://localhost:${port + 1}` },
+    },
+  ],
+  webServer: [
+    {
+      command: `npm run start -- -p ${port}`,
+      port,
+      reuseExistingServer: true,
+      timeout: 180_000,
+      env: { ANINOVA3_PREVIEW: '1', CATALOG_SOURCE: 'file' },
+    },
+    {
+      command: `npm run start -- -p ${port + 1}`,
+      port: port + 1,
+      reuseExistingServer: true,
+      timeout: 180_000,
+      env: { ANINOVA3_PREVIEW: '', CATALOG_SOURCE: 'file' },
+    },
+  ],
 });

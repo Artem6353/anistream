@@ -371,8 +371,14 @@ test.describe('B1-C: TV-навигация по новым блокам', () => 
     await page.keyboard.press('ArrowDown');
     const landedInClosedDetails = await page.evaluate(() => !!document.activeElement?.closest('details:not([open])'));
     expect(landedInClosedDetails).toBe(false);
+    /* B2-A: между списком серий и первоисточником появился блок «Источники и
+       просмотр» — фокус законно останавливается на нём. Проверка «не улетел
+       мимо следующего блока» сохранена: закрытые details и пустота по-прежнему запрещены. */
     const landedTooFar = await page.evaluate(
-      () => !document.activeElement?.closest('.a3-source-section') && !document.activeElement?.closest('.a3-more'),
+      () =>
+        !document.activeElement?.closest('.a3-source-section') &&
+        !document.activeElement?.closest('.a3-more') &&
+        !document.activeElement?.closest('.a3-anime__sources'),
     );
     expect(landedTooFar).toBe(false);
   });

@@ -1,0 +1,41 @@
+{
+  "base": "http://127.0.0.1:3200",
+  "routes": [
+    {
+      "route": "/",
+      "dom": 668,
+      "requests": 60,
+      "jsKb": 250,
+      "cssKb": 35,
+      "lcpMs": null,
+      "domContentLoadedMs": 226
+    },
+    {
+      "route": "/catalog",
+      "dom": 530,
+      "requests": 73,
+      "jsKb": 246,
+      "cssKb": 35,
+      "lcpMs": null,
+      "domContentLoadedMs": 158
+    },
+    {
+      "route": "/anime/one-piece",
+      "dom": 693,
+      "requests": 48,
+      "jsKb": 250,
+      "cssKb": 35,
+      "lcpMs": null,
+      "domContentLoadedMs": 62
+    },
+    {
+      "route": "/schedule",
+      "dom": 274,
+      "requests": 55,
+      "jsKb": 246,
+      "cssKb": 35,
+      "lcpMs": null,
+      "domContentLoadedMs": 75
+    }
+  ]
+}
