@@ -493,7 +493,10 @@
   bottom: 0;
   z-index: 45;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* B2-A: разделов стало пять (Каталог, Расписание, Comics…), поэтому колонки
+     задаются по числу пунктов, а не жёстко четырьмя. */
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   background: var(--a3-bg-elev);
   border-top: 1px solid var(--a3-line);
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -3056,4 +3059,296 @@
   .a3-comicrow .a3-comicrow__lang {
     display: none;
   }
+}
+
+/* ── B2-A: расписание ───────────────────────────────────────── */
+.a3-week {
+  display: flex;
+  gap: 6px;
+  margin: 18px 0 22px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x proximity;
+}
+.a3-week__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 74px;
+  padding: 10px 8px;
+  border: 1px solid var(--a3-line);
+  border-radius: var(--a3-r);
+  background: var(--a3-surface);
+  color: var(--a3-muted);
+  text-decoration: none;
+  scroll-snap-align: start;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.a3-week__day:hover {
+  color: var(--a3-text);
+  border-color: var(--a3-muted-2);
+}
+.a3-week__day.is-on {
+  color: var(--a3-text);
+  border-color: var(--a3-accent);
+  background: color-mix(in srgb, var(--a3-accent) 12%, var(--a3-surface));
+}
+.a3-week__wd {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+.a3-week__date {
+  font-size: 11.5px;
+  color: var(--a3-muted);
+}
+.a3-week__count {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--a3-muted-2);
+  font-variant-numeric: tabular-nums;
+}
+.a3-week__day.is-on .a3-week__count {
+  color: var(--a3-accent);
+}
+.a3-week__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--a3-accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--a3-accent) 60%, transparent);
+}
+.a3-sched-day {
+  margin-bottom: 12px;
+}
+.a3-sched {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.a3-sched__row {
+  display: grid;
+  grid-template-columns: 58px 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--a3-line-soft);
+  border-radius: var(--a3-r);
+}
+.a3-sched__row:hover {
+  background: var(--a3-surface);
+}
+.a3-sched--compact .a3-sched__row {
+  padding: 8px 6px;
+}
+.a3-sched__time {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--a3-text);
+  font-variant-numeric: tabular-nums;
+}
+.a3-sched__row.is-past .a3-sched__time,
+.a3-sched__row.is-past .a3-sched__title {
+  color: var(--a3-muted);
+}
+.a3-sched__row.is-now .a3-sched__time {
+  color: var(--a3-accent);
+}
+.a3-sched__art img,
+.a3-sched__art span {
+  width: 100%;
+  border-radius: 4px;
+}
+.a3-sched__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.a3-sched__title {
+  color: var(--a3-text);
+  text-decoration: none;
+  font-size: 14.5px;
+  font-weight: 550;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.a3-sched__title:hover {
+  color: var(--a3-accent);
+}
+.a3-sched__meta {
+  font-size: 12.5px;
+  color: var(--a3-muted);
+}
+.a3-sched__side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.a3-sched__badge {
+  font-size: 11.5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--a3-line);
+  color: var(--a3-muted);
+  white-space: nowrap;
+}
+.a3-sched__badge.is-now {
+  color: var(--a3-accent);
+  border-color: color-mix(in srgb, var(--a3-accent) 45%, transparent);
+}
+.a3-sched__badge.is-past {
+  color: var(--a3-muted-2);
+}
+.a3-sched__play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  /* Сенсорная цель не меньше 44 px: на телефоне по этой кнопке попадают пальцем. */
+  min-height: 44px;
+  min-width: 44px;
+  padding: 7px 10px;
+  border: 1px solid var(--a3-line);
+  border-radius: var(--a3-r);
+  color: var(--a3-text);
+  font-size: 12.5px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.a3-sched__play:hover {
+  border-color: var(--a3-accent);
+  color: var(--a3-accent);
+}
+.a3-sched__note,
+.a3-sched__source {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 14px 0 0;
+  font-size: 12.5px;
+}
+.a3-sched__source {
+  margin-top: 6px;
+}
+.a3-empty--inline {
+  padding: 18px;
+  border: 1px dashed var(--a3-line);
+  border-radius: var(--a3-r);
+  background: var(--a3-bg-elev);
+}
+
+/* ── B2-A: состояния загрузки и ошибок ──────────────────────── */
+.a3-skeleton-page {
+  padding-top: 24px;
+  min-height: 60vh;
+}
+.a3-skeleton {
+  background: linear-gradient(90deg, var(--a3-surface) 0%, var(--a3-surface-2) 50%, var(--a3-surface) 100%);
+  background-size: 200% 100%;
+  border-radius: var(--a3-r);
+  animation: a3-shimmer 1.4s ease-in-out infinite;
+}
+.a3-skeleton--hero {
+  height: 260px;
+  margin-bottom: 18px;
+}
+.a3-skeleton--line {
+  height: 18px;
+  margin-bottom: 10px;
+}
+.a3-skeleton--short {
+  width: 40%;
+  margin-bottom: 22px;
+}
+.a3-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.a3-skeleton--card {
+  aspect-ratio: 3 / 4;
+}
+@keyframes a3-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.a3-errorpage {
+  padding: 40px 0 60px;
+  max-width: 720px;
+}
+.a3-errorpage__digest {
+  margin-top: 14px;
+  font-size: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .a3-skeleton {
+    animation: none;
+  }
+}
+@media (min-width: 600px) {
+  .a3-skeleton-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .a3-sched__row {
+    grid-template-columns: 48px 34px minmax(0, 1fr);
+    gap: 9px;
+  }
+  .a3-sched__side {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+  }
+  .a3-sched__play span {
+    display: none;
+  }
+  .a3-week__day {
+    min-width: 64px;
+    padding: 9px 6px;
+  }
+}
+@media (min-width: 1700px) {
+  .a3-sched__row {
+    grid-template-columns: 72px 56px minmax(0, 1fr) auto;
+    padding: 13px 10px;
+  }
+  .a3-sched__title {
+    font-size: 17px;
+  }
+  .a3-sched__time {
+    font-size: 17px;
+  }
+  .a3-sched__meta,
+  .a3-sched__badge,
+  .a3-sched__play {
+    font-size: 14px;
+  }
+  .a3-week__day {
+    min-width: 92px;
+    padding: 12px 10px;
+  }
+  .a3-week__wd {
+    font-size: 15px;
+  }
+  .a3-week__date,
+  .a3-week__count {
+    font-size: 13px;
+  }
+}
+.a3[data-tv='true'] .a3-sched__play,
+.a3[data-tv='true'] .a3-week__day {
+  min-height: 56px;
 }

@@ -6,31 +6,24 @@ import { A3Logo } from './A3Logo';
 import { useA3Ui } from './A3Ui';
 import { A3Menu } from './A3Menu';
 import { IconSearch, IconTv, IconUser } from '@/components/ui/icons';
-
-const ROOT = '/preview/aninova-3';
-const NAV = [
-  { href: ROOT, label: 'Главная', exact: true },
-  { href: `${ROOT}/catalog`, label: 'Каталог' },
-  { href: `${ROOT}/comics`, label: 'Comics' },
-  { href: `${ROOT}/profile`, label: 'Профиль' },
-];
+import { A3_NAV, A3_ROOT as ROOT, isA3NavActive } from '@/lib/aninova3/nav';
 
 export function A3Header({ onSearch }: { onSearch: () => void }) {
   const pathname = usePathname() ?? '';
   const { tv, setTv } = useA3Ui();
-  const isActive = (href: string, exact?: boolean) => (exact ? pathname === href : pathname.startsWith(href));
 
   return (
     <header className="a3-header" data-a3-group="header">
       <div className="a3-wrap a3-header__in">
         <A3Logo />
         <nav className="a3-nav" aria-label="Основная навигация">
-          {NAV.map((item) => (
+          {A3_NAV.map((item) => (
             <Link
               key={item.href}
               className="a3-nav__link"
               href={item.href}
-              aria-current={isActive(item.href, item.exact) ? 'page' : undefined}
+              aria-current={isA3NavActive(pathname, item) ? 'page' : undefined}
+              data-a3-focusable
             >
               {item.label}
             </Link>
