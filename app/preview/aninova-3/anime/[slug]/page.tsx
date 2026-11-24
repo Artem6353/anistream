@@ -74,14 +74,13 @@ export default async function A3AnimePage({ params }: Props) {
         <div className="a3-anime__scrim" aria-hidden />
         <div className="a3-wrap a3-anime__heroin">
           <div className="a3-anime__poster">
-            <PosterArt src={title.poster} seed={title.slug} initials={title.romaji} alt={`Постер: ${title.ru}`} width={260} eager />
+            <PosterArt src={title.poster} seed={title.slug} initials={title.ru || '?'} alt={`Постер: ${title.ru}`} width={260} eager />
           </div>
           <div className="a3-anime__head">
             <p className="a3-kicker">
               {TYPE_LABELS[title.type]} · {title.year}
             </p>
             <h1 className="a3-h1 a3-anime__title">{title.ru}</h1>
-            {title.romaji && title.romaji !== title.ru ? <p className="a3-anime__orig">{title.romaji}</p> : null}
             <p className="a3-anime__meta">
               {title.score > 0 ? (
                 <span className="a3-score">

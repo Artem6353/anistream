@@ -127,7 +127,7 @@ export function A3Profile() {
                   <li key={`${h.slug}-${h.episode}-${h.updatedAt}`}>
                     <Link className="a3-history__row" href={`${ROOT}/anime/${h.slug}/${h.episode}`}>
                       <span className="a3-history__art">
-                        {row ? <PosterArt src={row.poster} seed={h.slug} initials={row.romaji} alt="" width={56} /> : null}
+                        {row ? <PosterArt src={row.poster} seed={h.slug} initials={row.ru || '?'} alt="" width={56} /> : null}
                       </span>
                       <span className="a3-history__body">
                         <span className="a3-history__title">{row?.ru ?? h.slug}</span>

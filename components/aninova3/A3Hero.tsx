@@ -49,7 +49,7 @@ export function A3Hero({ title }: { title: Title }) {
         </div>
         {!wide ? (
           <div className="a3-hero__poster" aria-hidden>
-            <PosterArt src={title.poster} seed={title.slug} initials={title.romaji} alt="" width={300} eager />
+            <PosterArt src={title.poster} seed={title.slug} initials={title.ru || '?'} alt="" width={300} eager />
           </div>
         ) : null}
       </div>

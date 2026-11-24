@@ -228,7 +228,7 @@ export default async function A3CatalogPage({
                 <li key={t.slug}>
                   <Link className="a3-row" href={`${ROOT}/anime/${t.slug}`} data-a3-focusable>
                     <span className="a3-row__art">
-                      <PosterArt src={t.poster} seed={t.slug} initials={t.romaji} alt={`Постер: ${t.ru}`} width={56} />
+                      <PosterArt src={t.poster} seed={t.slug} initials={t.ru || '?'} alt={`Постер: ${t.ru}`} width={56} />
                     </span>
                     <span className="a3-row__body">
                       <span className="a3-row__title">{t.ru}</span>

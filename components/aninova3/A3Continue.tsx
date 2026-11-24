@@ -11,7 +11,6 @@ interface Row {
   slug: string;
   ru: string;
   poster: string;
-  romaji: string;
 }
 
 /** «Продолжить просмотр» из реальной локальной истории (lib/library), не из моков. */
@@ -50,7 +49,7 @@ export function A3Continue() {
           return (
             <Link key={`${entry.slug}-${entry.episode}`} className="a3-continue" href={`${ROOT}/anime/${entry.slug}/${entry.episode}`}>
               <span className="a3-continue__art">
-                {row ? <PosterArt src={row.poster} seed={row.slug} initials={row.romaji} alt="" width={120} /> : null}
+                {row ? <PosterArt src={row.poster} seed={row.slug} initials={row.ru || '?'} alt="" width={120} /> : null}
                 <span className="a3-continue__pct">{pct}%</span>
               </span>
               <span className="a3-continue__body">

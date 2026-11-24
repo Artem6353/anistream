@@ -47,7 +47,7 @@ export function A3ScheduleList({
               {mskTimeLabel(entry.at)}
             </time>
             <span className="a3-sched__art">
-              <PosterArt src={entry.poster} seed={slug} initials={entry.romaji} alt="" width={compact ? 40 : 56} />
+              <PosterArt src={entry.poster} seed={slug} initials={entry.ru || '?'} alt="" width={compact ? 40 : 56} />
             </span>
             <span className="a3-sched__body">
               <Link className="a3-sched__title" href={`${ROOT}/anime/${slug}`} data-a3-focusable>

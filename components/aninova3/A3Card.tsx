@@ -25,7 +25,7 @@ export function A3Card({ title, size = 'grid', progress }: { title: CardTitle; s
       aria-label={`${title.ru}${title.year ? `, ${title.year}` : ''}${title.score > 0 ? `, рейтинг ${title.score.toFixed(1)}` : ''}`}
     >
       <span className="a3-card__art">
-        <PosterArt src={title.poster} seed={title.slug} initials={title.romaji} alt={`Постер: ${title.ru}`} width={size === 'wide' ? 260 : 220} />
+        <PosterArt src={title.poster} seed={title.slug} initials={title.ru || '?'} alt={`Постер: ${title.ru}`} width={size === 'wide' ? 260 : 220} />
         {badge ? <span className={`a3-badge a3-badge--${badge.tone}`}>{badge.label}</span> : null}
         {title.score > 0 ? (
           <span className="a3-card__score">

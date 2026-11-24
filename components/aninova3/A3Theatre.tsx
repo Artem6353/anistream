@@ -88,13 +88,32 @@ export function A3Theatre({
     };
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== 'n' || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
-      const target = e.target as HTMLElement | null;
-      /* Не уводим со страницы открытую форму жалобы. */
-      if (target?.closest('[role="dialog"]')) return;
-      const tag = target?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      if (!nextHref) return;
+      if (e.key.toLowerCase() !== 'n' || e.ctrlKey || e.metaKey || e.altKey) return;
+
+      /* B2-C: N — горячая клавиша сцены, а не всего сайта. PlayerShell тоже
+         слушает N на window и уводит на production-маршрут. Гасим его N
+         всегда, а переходим только когда фокус действительно в сцене. */
+      const target = (e.target as HTMLElement | null) ?? (document.activeElement as HTMLElement | null);
+      const editable = target?.closest('input, textarea, select, [contenteditable="true"]');
+      if (editable) {
+        e.stopImmediatePropagation();
+        return;
+      }
+      if (e.repeat) {
+        e.stopImmediatePropagation();
+        return;
+      }
+      if (target?.closest('[role="dialog"], dialog, [aria-modal="true"]')) {
+        e.stopImmediatePropagation();
+        return;
+      }
+
+      const active = document.activeElement as HTMLElement | null;
+      if (!active || !target || !stage.contains(active) || !stage.contains(target) || !nextHref) {
+        e.stopImmediatePropagation();
+        return;
+      }
+
       e.preventDefault();
       e.stopImmediatePropagation();
       router.push(nextHref);

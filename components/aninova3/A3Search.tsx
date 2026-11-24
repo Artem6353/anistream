@@ -12,7 +12,6 @@ interface Hit {
   year: number;
   score: number;
   poster: string;
-  romaji: string;
 }
 
 /** Поиск по реальному каталогу: /api/search, без загрузки всего каталога в браузер. */
@@ -136,7 +135,7 @@ export function A3Search({ open, onClose }: { open: boolean; onClose: () => void
                     data-a3-focusable
                   >
                     <span className="a3-search__thumb">
-                      <PosterArt src={hit.poster} seed={hit.slug} initials={hit.romaji} alt="" width={44} />
+                      <PosterArt src={hit.poster} seed={hit.slug} initials={hit.ru || '?'} alt="" width={44} />
                     </span>
                     <span className="a3-search__meta">
                       <span className="a3-search__title">{hit.ru}</span>
