@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { getMirroredSession } from './sync';
 import type { HistoryEntry, ListStatus, Settings } from './types';
 
 /**
@@ -19,7 +20,10 @@ const K_LISTS = 'anistream:lists';
     анонимная/legacy-дата живёт в базовом ключе, данные аккаунта — в ключе с суффиксом. */
 export function scopeUid(): string | null {
   try {
-    const token = localStorage.getItem('anistream:supa_token');
+    /* B2-D: cookie-вход хранит токен только в памяти таба, а не в localStorage.
+       Без запасного чтения из mirrored-сессии настройки всех аккаунтов
+       схлопывались в один базовый ключ. */
+    const token = localStorage.getItem('anistream:supa_token') ?? getMirroredSession()?.access_token ?? null;
     if (!token) return null;
     const payload = token.split('.')[1];
     if (!payload) return null;
@@ -160,6 +164,12 @@ export const library = {
   },
   clearAll() {
     commit({ bookmarks: [], history: [] });
+  },
+  /** B2-D: полное удаление локальных данных preview — закладки, история,
+   *  списки и настройки. Production-кнопка «Удалить всё» по-прежнему
+   *  использует clearAll() и не трогает настройки. */
+  clearLocalData() {
+    commit({ bookmarks: [], history: [], lists: {}, settings: { ...DEFAULT_SETTINGS } });
   },
   setListStatus(slug: string, status: ListStatus | null) {
     load();

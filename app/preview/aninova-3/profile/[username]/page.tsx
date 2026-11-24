@@ -81,7 +81,7 @@ export default async function PreviewPublicProfilePage({
       >
         {!isOwn ? (
           <div className="pheader__actions a3-public-profile__actions">
-            <FollowButton targetId={profile.user_id} />
+            <FollowButton targetId={profile.user_id} preview />
             <WriteDmButton targetId={profile.user_id} targetName={displayName} preview />
           </div>
         ) : null}

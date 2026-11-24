@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { library, useLibrary } from '@/lib/library';
 import { resetAnonSession, unsubscribePush } from '@/lib/session-reset';
 import {
@@ -13,12 +14,13 @@ import {
   SessionExpiredError,
   notifyAuthChange,
 } from '@/lib/sync';
+import { AUTH_CHANGE_EVENT } from '@/lib/auth-gate';
 import { useToast } from '@/components/ui/Toaster';
 
 /** Аккаунт и синхронизация списков/истории между устройствами (ТЗ 2.2 + refresh_token).
     Вход/регистрация — через модалку в шапке (AuthModal). Здесь только действия
     для уже залогиненного пользователя: push/pull/logout. */
-export function SyncSection() {
+export function SyncSection({ preview = false }: { preview?: boolean }) {
   const { lists, history } = useLibrary();
   const [logged, setLogged] = useState(false);
   const [busy, setBusy] = useState('');
@@ -27,13 +29,20 @@ export function SyncSection() {
   // Восстанавливаем состояние входа (SSR-safe) + молча обновляем сессию при наличии refresh_token.
   useEffect(() => {
     if (!syncConfigured()) return;
+    /* Cookie-сессия восстанавливается асинхронно в SessionBridge. Слушаем
+       изменение всегда, чтобы карточка не застревала ни во «входе», ни в «выходе». */
+    const onAuthChange = () => setLogged(isSessionValid());
+    window.addEventListener(AUTH_CHANGE_EVENT, onAuthChange);
     if (isSessionValid()) {
       /* Hydration-safe восстановление входа из localStorage (после гидратации). */
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLogged(true);
-      return;
+    } else {
+      void refreshAccessToken().then((t) => {
+        if (t) setLogged(true);
+      });
     }
-    void refreshAccessToken().then((t) => setLogged(Boolean(t)));
+    return () => window.removeEventListener(AUTH_CHANGE_EVENT, onAuthChange);
   }, []);
 
   if (!syncConfigured()) {
@@ -72,8 +81,17 @@ export function SyncSection() {
       <p className="settings__note">
         {logged
           ? 'Вы вошли. Списки и история могут синхронизироваться между устройствами.'
-          : 'Войдите через кнопку «Войти» в шапке — после этого кнопки «Отправить» и «Скачать» станут активны.'}
+          : preview
+            ? 'Войдите в preview, чтобы отправлять и скачивать списки между устройствами.'
+            : 'Войдите через кнопку «Войти» в шапке — после этого кнопки «Отправить» и «Скачать» станут активны.'}
       </p>
+      {!logged && preview ? (
+        <p>
+          <Link className="a3-link" href={`/preview/aninova-3/auth?reason=protected&next=${encodeURIComponent('/preview/aninova-3/profile/settings')}`}>
+            Войти в preview →
+          </Link>
+        </p>
+      ) : null}
       <div className="settings__actions">
         <button
           className="btn btn--primary btn--md"
