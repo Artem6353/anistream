@@ -25,10 +25,10 @@ export default defineConfig({
      чтобы регрессия «без флага раздел закрыт» проверялась тем же прогоном, а не
      отдельным ручным шагом. */
   projects: [
-    { name: 'preview', testIgnore: /b2a-flag-off/ },
+    { name: 'preview', testIgnore: /b2[ab]-flag-off/ },
     {
       name: 'preview-off',
-      testMatch: /b2a-flag-off/,
+      testMatch: /b2[ab]-flag-off/,
       use: { baseURL: `http://localhost:${port + 1}` },
     },
   ],

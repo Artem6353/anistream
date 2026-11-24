@@ -1464,144 +1464,760 @@
   font-size: 13px;
 }
 
-/* ── Плеер ─────────────────────────────────────────────────── */
+/* ── Кинозал: страница серии и сцена ───────────────────────── */
+/* Глобальный body оставляет 70 px под фиксированную мобильную навигацию;
+   на странице кинозала этот отступ не должен вспыхивать светлой полосой. */
+body:has(.a3-watch) {
+  background-color: #0c0c0e;
+}
+.a3-watch {
+  padding-bottom: 8px;
+}
 .a3-watchhead {
-  padding-top: 10px;
+  padding-top: 2px;
 }
 .a3-watchhead__row {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 14px;
+  gap: 14px 24px;
+  padding-bottom: 18px;
+}
+.a3-watchhead__copy {
+  min-width: 0;
 }
 .a3-watchhead__title {
   margin: 0;
-  font-size: clamp(22px, 2.8vw, 34px);
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  font-size: clamp(23px, 1.2rem + 1.6vw, 38px);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.a3-watchhead__sep {
+  color: var(--a3-muted-2);
+  font-weight: 400;
+}
+.a3-watchhead__ep {
+  white-space: nowrap;
+}
+.a3-watchhead__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 10px 0 0;
+  color: var(--a3-muted);
+  font-size: 13px;
+}
+.a3-watchhead__meta > span + span::before {
+  content: '·';
+  margin-right: 7px;
+  color: var(--a3-muted-2);
+}
+.a3-watchhead__epname {
+  color: var(--a3-text);
+  font-weight: 600;
 }
 .a3-watchhead__nav {
   display: flex;
-  gap: 6px;
   flex-wrap: wrap;
+  gap: 8px;
 }
 .a3-watchhead__nav .a3-btn {
-  min-height: 38px;
-  font-size: 12.5px;
+  min-height: 44px;
+  padding-inline: 14px;
+  font-size: 13.5px;
+  white-space: nowrap;
 }
+
+/* Сцена: тёмный кинозал, мягкий индиго-свет, без «карточки в карточке» */
 .a3-theatre {
-  background: #000;
-  border-top: 1px solid #1b1b20;
-  border-bottom: 1px solid #1b1b20;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background:
+    radial-gradient(80% 120% at 50% -20%, rgba(108, 90, 255, 0.16), transparent 60%),
+    #050506;
 }
 .a3-stage {
+  /* PlayerShell и его панели используют глобальные токены темы: внутри сцены
+     принудительно держим тёмную палитру, чтобы preview не зависел от темы сайта. */
+  --bg: var(--a3-bg);
+  --bg-elev: var(--a3-bg-elev);
+  --surface: var(--a3-surface);
+  --line: var(--a3-line);
+  --line-strong: #35353f;
+  --text: var(--a3-text);
+  --muted: var(--a3-muted);
+  --muted-2: var(--a3-muted-2);
+  --accent: var(--a3-accent);
+  --accent-text: var(--a3-accent);
+  --accent-2-text: var(--a3-accent);
+  --danger: var(--a3-danger);
+  --warn-text: var(--a3-warn);
+  --success: var(--a3-ok);
+  --grad: linear-gradient(90deg, #6c5aff, #9a8dff);
   position: relative;
+  max-width: 1640px;
   margin: 0 auto;
-  max-width: 1500px;
+  overflow: hidden;
   background: #000;
+  isolation: isolate;
+}
+@media (min-width: 1700px) {
+  /* На широком экране сцена выравнивается по контентной колонке шапки,
+     а не уезжает на собственный max-width. */
+  .a3-stage {
+    max-width: calc(var(--a3-max) - 2 * var(--a3-gut));
+  }
 }
 .a3-stage:focus-visible {
   outline: 3px solid var(--a3-focus);
   outline-offset: -3px;
 }
-.a3-stage__loading {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 16 / 9;
-  color: #9b9ba5;
-  font-size: 14px;
-}
-.a3-stage .player {
-  max-height: min(82vh, calc(100vh - 130px));
-  background: transparent;
-}
 .a3-stage__poster {
   position: absolute;
-  inset: 0;
+  inset: -48px;
   z-index: 0;
-  filter: blur(26px) brightness(0.34) saturate(0.85);
-  transform: scale(1.06);
+  overflow: hidden;
   pointer-events: none;
 }
 .a3-stage__poster img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  object-position: center 32%;
+  filter: blur(46px) brightness(0.3) saturate(0.85);
+  transform: scale(1.06);
+  opacity: 0.62;
+}
+.a3-stage__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 0%, transparent 30%, rgba(0, 0, 0, 0.6) 100%);
+}
+.a3-stage__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  background: #050506;
+  color: var(--a3-muted);
+  font-size: 14px;
 }
 .a3-stage .player-layout {
   position: relative;
   z-index: 1;
+  width: 100%;
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr) clamp(300px, 24vw, 360px);
+  gap: 0;
+  align-items: stretch;
+}
+.a3-stage .player-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* Компактная полоса над кадром: назад, «серия N из M», статус источников */
+.a3-stage .player-bar.container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 8px 14px;
+  gap: 10px;
+  background: rgba(8, 9, 12, 0.78);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+}
+.a3-stage .player-bar > .icon-btn {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+}
+.a3-stage .player-bar__title strong {
+  display: none;
+}
+.a3-stage .player-bar__title span {
+  color: var(--a3-muted);
+  font-size: 12.5px;
+}
+.a3-stage .player-flag {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--a3-muted);
+}
+.a3-stage .player-flag--ok {
+  border-color: rgba(99, 214, 160, 0.32);
+  background: rgba(99, 214, 160, 0.12);
+  color: #9fe9c3;
+}
+.a3-stage .player {
+  background: transparent;
 }
 .a3-stage .player__video {
-  background: #0b0d11;
+  background: transparent;
+}
+/* Пока источник не выбран, в кадре стоит постер-баннер. Он широкий, и
+   object-fit: contain оставлял огромные чёрные поля — для заглушки кадра
+   кадрируем постер по 16:9. Во время воспроизведения остаётся contain:
+   пропорции реального видео не меняются. */
+.a3-stage .player__video:not([src]) {
   object-fit: cover;
 }
-.a3-stage .player-side {
-  background: #0b0d11;
-  border-left: 1px solid #1d202a;
-  color: var(--a3-text);
+/* Ошибки и пустые состояния остаются читаемыми: их не «прячем» декорацией */
+.a3-stage .player__status {
+  background: rgba(5, 6, 9, 0.72);
+  color: #c9ccd6;
+  font-size: 14.5px;
 }
-.a3-stage .profile-tabs {
-  background: #0f1218;
-  border: 1px solid #262a34;
+.a3-stage .player__status--error {
+  color: #ff9b9b;
 }
-.a3-stage .player-side .profile-tabs button,
-.a3-stage .profile-tabs button {
-  background: #12151c;
-  border-color: #262a34;
-  color: #c9ced8;
+.a3-stage .player__controls {
+  gap: 10px;
 }
-.a3-stage .profile-tabs button.is-active,
-.a3-stage .profile-tabs button[aria-selected='true'] {
-  background: var(--a3-accent-fill);
-  border-color: var(--a3-accent-fill);
+.a3-stage .player .icon-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  background: rgba(8, 8, 12, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+.a3-stage .player .icon-btn:hover {
+  background: rgba(20, 20, 27, 0.82);
+  border-color: rgba(255, 255, 255, 0.22);
   color: #fff;
 }
-.a3-stage .settings__note {
-  color: #a2a9b6;
+.a3-stage .player__ui {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0) 18%,
+    rgba(0, 0, 0, 0.1) 48%,
+    rgba(0, 0, 0, 0.78) 100%
+  );
 }
-.a3-stage .epbar__item {
-  background: #141720;
-  border-color: #262a34;
-  color: #c9ced8;
+.a3-stage .player__time {
+  color: #f1f1f4;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
-.a3-stage .epbar__item.is-active,
-.a3-stage .epbar__item[aria-current='true'] {
-  background: var(--a3-accent-fill);
-  border-color: var(--a3-accent-fill);
-  color: #fff;
+/* Полоса перемотки: видимая дорожка остаётся тонкой, но зона попадания
+   по высоте 44 px — на телефоне в неё можно уверенно попасть пальцем.
+   Отрицательные поля сохраняют прежнюю высоту блока управления. */
+.a3-stage .player__seek {
+  height: 44px;
+  margin: -13px 0;
+}
+.a3-stage .player__seek::before,
+.a3-stage .player__seek .player__buffered,
+.a3-stage .player__seek .player__progress {
+  top: 50%;
+  transform: translateY(-50%);
+}
+.a3-stage .player__progress {
+  background: linear-gradient(90deg, #6c5aff, #a294ff);
+}
+.a3-stage .player__handle {
+  background: #d6d0ff;
 }
 .a3-stage .btn {
-  background: #171a22;
-  border-color: #2a2e39;
-  color: var(--a3-text);
-}
-.a3-stage .btn--outline {
-  background: transparent;
+  min-height: 44px;
 }
 .a3-stage .btn--primary {
   background: var(--a3-accent-fill);
+  box-shadow: 0 6px 20px rgba(108, 90, 255, 0.32);
+}
+.a3-stage .btn--primary:hover {
+  background: var(--a3-accent-fill-hover);
+  box-shadow: 0 10px 26px rgba(108, 90, 255, 0.4);
+}
+.a3-stage .btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.a3-stage .player-bar .source-pill {
+  min-height: 36px;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #c9ccd6;
+}
+.a3-stage .player-bar .source-pill.is-active {
+  background: var(--a3-accent-fill);
   border-color: var(--a3-accent-fill);
   color: #fff;
 }
-.a3-stage .player-bar__title span {
-  color: #8f97a8;
+.a3-stage .player__embed-footer {
+  padding: 10px 14px;
+  background: rgba(8, 9, 12, 0.8);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Боковая панель — часть сцены, а не отдельная карточка */
+.a3-stage .player-side {
+  position: relative;
+  top: auto;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+  padding: 12px;
+  gap: 10px;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0;
+  background: rgba(9, 10, 14, 0.88);
+  backdrop-filter: blur(14px);
+  color: var(--a3-text);
+}
+.a3-stage .player-side .profile-tabs {
+  width: 100%;
+  margin: 0;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.a3-stage .player-side .profile-tabs button {
+  flex: 1 1 0;
+  min-height: 44px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--a3-muted);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.a3-stage .player-side .profile-tabs button.is-active {
+  background: var(--a3-accent-fill);
+  border-color: var(--a3-accent-fill);
+  color: #fff;
+}
+.a3-stage .sources-panel,
+.a3-stage .episodes-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a33 transparent;
+}
+.a3-stage .sources-group__head {
+  color: var(--a3-accent);
+}
+.a3-stage .source-row {
+  min-height: 44px;
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--a3-muted);
+  font-size: 13px;
+}
+.a3-stage .source-row:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--a3-text);
+}
+.a3-stage .source-row.is-active {
+  border-color: var(--a3-accent-fill);
+  background: var(--a3-accent-fill);
+  color: #fff;
+}
+.a3-stage .episode-row {
+  min-height: 44px;
+  color: var(--a3-muted);
+}
+.a3-stage .episode-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--a3-text);
+}
+.a3-stage .episode-row.is-active {
+  background: color-mix(in srgb, var(--a3-accent) 30%, transparent);
+  box-shadow: inset 2px 0 0 var(--a3-accent);
+  color: #fff;
+}
+.a3-stage .player-side__foot {
+  margin-top: auto;
+  padding-top: 8px;
+}
+.a3-stage .player-side__foot {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.a3-stage .player-side__foot .btn {
+  width: 100%;
+  justify-content: center;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: var(--a3-muted);
+}
+.a3-stage .player-side__foot .btn:hover {
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--a3-text);
+}
+.a3-stage .sources-skeleton__row {
+  background: linear-gradient(90deg, #15161c 25%, #242633 37%, #15161c 63%);
+  background-size: 400% 100%;
+}
+
+/* Бар серий под кадром */
+.a3-stage .epbar-wrap {
+  padding: 0 10px;
+  gap: 6px;
+  background: rgba(8, 9, 12, 0.8);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.a3-stage .epbar {
+  gap: 6px;
+  padding: 10px 0;
+}
+.a3-stage .epbar__nav {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  flex: 0 0 auto;
+}
+.a3-stage .epbar__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-color: rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--a3-muted);
+}
+.a3-stage .epbar__item:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--a3-text);
+}
+.a3-stage .epbar__item.is-active {
+  border-color: var(--a3-accent-fill);
+  background: var(--a3-accent-fill);
+  color: #fff;
+}
+
+/* Информация о серии + окно серий под сценой */
+.a3-watchbody {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 18px;
+  padding-top: 22px;
+  padding-bottom: 8px;
+}
+.a3-watchbody__main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.a3-watchcard {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--a3-line);
+  border-radius: var(--a3-r-lg);
+  background: linear-gradient(180deg, var(--a3-bg-elev), var(--a3-surface));
+}
+.a3-watchcard .a3-kicker {
+  margin: 0;
+}
+.a3-watchcard__title {
+  margin: 0;
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.a3-watchcard__facts {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 0;
+}
+.a3-watchcard__facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--a3-line);
+}
+.a3-watchcard__facts dt {
+  color: var(--a3-muted);
+  font-size: 12.5px;
+}
+.a3-watchcard__facts dd {
+  margin: 0;
+  font-size: 13px;
+  text-align: right;
+}
+.a3-watchcard__link {
+  min-height: 44px;
+  justify-content: center;
+  margin-top: 10px;
+}
+.a3-watch-eps {
+  padding: 16px;
+  border: 1px solid var(--a3-line);
+  border-radius: var(--a3-r-lg);
+  background: var(--a3-bg-elev);
+}
+.a3-watch-eps__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.a3-watch-eps__head .a3-h2 {
+  margin: 0;
+  font-size: 19px;
+}
+.a3-watch-eps__list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.a3-watch-eps__item {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 46px;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 1px solid var(--a3-line);
+  border-radius: 8px;
+  background: var(--a3-surface);
+  color: var(--a3-muted);
+  font-size: 13.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  transition:
+    color 0.16s ease,
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+.a3-watch-eps__item:hover {
+  border-color: var(--a3-muted-2);
+  background: var(--a3-surface-2);
+  color: var(--a3-text);
+}
+.a3-watch-eps__item.is-active {
+  border-color: var(--a3-accent-fill);
+  background: var(--a3-accent-fill);
+  color: #fff;
+}
+.a3-watch-eps__hint {
+  margin: 10px 0 0;
+  font-size: 12.5px;
 }
 .a3-watchnote {
   display: grid;
-  gap: 4px;
-  padding-top: 14px;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--a3-line);
+  border-left: 2px solid var(--a3-accent-fill);
+  border-radius: var(--a3-r-lg);
+  background: rgba(124, 107, 255, 0.06);
+  color: var(--a3-muted);
+  font-size: 13px;
 }
 .a3-watchnote p {
   margin: 0;
+}
+.a3-watchnote code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--a3-text);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 12px;
 }
 .a3-watchnote kbd {
   display: inline-block;
   padding: 0 5px;
   border: 1px solid var(--a3-line);
   border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--a3-text);
   font-size: 11px;
+}
+
+@media (max-width: 980px) {
+  .a3-stage .player-layout {
+    width: calc(100% - 24px);
+    margin-inline: auto;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .a3-stage .player-side {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    padding: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 0;
+  }
+  .a3-stage .sources-panel,
+  .a3-stage .episodes-panel {
+    max-height: 46vh;
+  }
+  .a3-stage .player-side__foot {
+    margin-top: 0;
+  }
+  .a3-stage .player-side__foot .btn {
+    width: auto;
+  }
+}
+@media (max-width: 900px) {
+  .a3-watchbody {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 18px;
+  }
+}
+@media (max-width: 760px) {
+  .a3-watchhead__nav {
+    width: 100%;
+  }
+  .a3-watchhead__nav .a3-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding-inline: 10px;
+    font-size: 13px;
+  }
+  .a3-watchhead__meta {
+    font-size: 12.5px;
+  }
+  .a3-watchhead__title {
+    font-size: clamp(22px, 5.6vw, 30px);
+  }
+}
+/* Ниже 1024 px — сенсорные экраны: увеличиваем площадь мелких ссылок
+   и стрелок рельсов, не меняя их вид. */
+@media (max-width: 1024px) {
+  .a3-watch .a3-breadcrumbs a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .a3-watchbody .a3-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .a3-watchbody .a3-iconbtn--sm {
+    width: 44px;
+    height: 44px;
+  }
+}
+@media (max-width: 640px) {
+  .a3-stage .player-layout {
+    width: calc(100% - 16px);
+  }
+  .a3-stage .player-bar.container {
+    padding: 6px 8px;
+    gap: 8px;
+  }
+  .a3-stage .player-bar__title span {
+    font-size: 11.5px;
+  }
+  .a3-stage .epbar-wrap {
+    padding: 0 4px;
+    gap: 4px;
+  }
+  .a3-stage .epbar {
+    padding: 8px 0;
+  }
+  .a3-watch-eps {
+    padding: 12px;
+  }
+  .a3-watchbody {
+    gap: 12px;
+  }
+  .a3-watchhead__meta > span + span::before {
+    margin-right: 5px;
+  }
+}
+.a3[data-tv='true'] .a3-stage .icon-btn,
+.a3[data-tv='true'] .a3-stage .source-row,
+.a3[data-tv='true'] .a3-stage .epbar__item,
+.a3[data-tv='true'] .a3-stage .btn {
+  min-height: 52px;
+}
+.a3[data-tv='true'] .a3-stage .player .icon-btn {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+}
+.a3[data-tv='true'] .a3-stage .player-side .profile-tabs button {
+  min-height: 48px;
+  font-size: 16px;
+}
+.a3[data-tv='true'] .a3-stage .source-row,
+.a3[data-tv='true'] .a3-stage .settings__note,
+.a3[data-tv='true'] .a3-stage .sources-group__kind {
+  font-size: 16px;
+}
+.a3[data-tv='true'] .a3-stage .epbar__item {
+  font-size: 16px;
+}
+.a3[data-tv='true'] .a3-stage .player-bar__title span {
+  font-size: 16px;
+}
+.a3[data-tv='true'] .a3-stage .player__time {
+  font-size: 17px;
+}
+.a3[data-tv='true'] .a3-stage .player__status {
+  font-size: 17px;
+}
+.a3[data-tv='true'] .a3-watch-eps__item {
+  min-height: 52px;
+  min-width: 52px;
+  font-size: 15px;
+}
+.a3[data-tv='true'] .a3-watchhead__nav .a3-btn {
+  min-height: 52px;
+  font-size: 16px;
+}
+.a3[data-tv='true'] .a3-watchhead__title {
+  font-size: 46px;
+}
+.a3[data-tv='true'] .a3-watchcard__facts dd,
+.a3[data-tv='true'] .a3-watchcard__facts dt,
+.a3[data-tv='true'] .a3-watch-eps__hint,
+.a3[data-tv='true'] .a3-watchnote {
+  font-size: 15px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a3-stage__poster img {
+    transform: none;
+  }
+  .a3-stage .sources-skeleton__row {
+    animation: none;
+  }
+  .a3-watch-eps__item {
+    transition: none;
+  }
 }
 
 /* ── Комиксы ───────────────────────────────────────────────── */
