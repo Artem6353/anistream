@@ -29,6 +29,9 @@ const analyticsScriptSrc = analyticsHosts.map((h) => `https://${h}`).join(' ');
    без них в connect-src/script-src браузер резал запросы CSP-ошибками в консоли. */
 const metrikaSrc = process.env.NEXT_PUBLIC_METRIKA_ID ? 'https://mc.yandex.ru https://mc.yandex.com' : '';
 const metrikaWsSrc = process.env.NEXT_PUBLIC_METRIKA_ID ? 'wss://mc.yandex.ru wss://mc.yandex.com' : '';
+/* B2-C: только для изолированного Playwright-теста Supabase. В обычной сборке
+   переменная пуста, CSP не расширяется. */
+const e2eSupabaseOrigin = process.env.ANINOVA3_E2E_SUPABASE_ORIGIN || '';
 const CSP_DIRECTIVES = [
   "default-src 'self'",
   "object-src 'none'",
@@ -53,7 +56,7 @@ const CSP_DIRECTIVES = [
   "worker-src 'self'",
   /* Direct-HLS CVH: hls.js тянет плейлист и сегменты через fetch, а не <video>,
      поэтому okcdn/vkuser обязаны быть в connect-src (media-src их не покрывает). */
-  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graphql.anilist.co https://shikimori.io https://shikimori.one https://api.jikan.moe https://api.aniskip.com https://challenges.cloudflare.com https://plapi.cdnvideohub.com https://*.okcdn.ru https://*.vkuser.net https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io ${analyticsScriptSrc} ${metrikaSrc} ${metrikaWsSrc}`.trim(),
+  `connect-src 'self' ${e2eSupabaseOrigin} https://*.supabase.co wss://*.supabase.co https://graphql.anilist.co https://shikimori.io https://shikimori.one https://api.jikan.moe https://api.aniskip.com https://challenges.cloudflare.com https://plapi.cdnvideohub.com https://*.okcdn.ru https://*.vkuser.net https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io ${analyticsScriptSrc} ${metrikaSrc} ${metrikaWsSrc}`.trim(),
   /* баг 29.09: embed CVH реально живёт на animego.me (cdn-iframe), а не animego.org —
      без .me enforce-CSP блокировал плеер («This content is blocked»). */
   `frame-src https://kodik.info https://kodikplayer.com https://animego.org https://cdn.animego.org https://animego.me https://cdn.animego.me https://aniboom.one https://www.youtube.com https://challenges.cloudflare.com ${metrikaSrc}`.trim(),
