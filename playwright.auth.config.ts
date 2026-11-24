@@ -6,7 +6,7 @@ const base = process.env.B2C_BASE ?? 'http://127.0.0.1:3202';
 
 export default defineConfig({
   testDir: 'e2e',
-  testMatch: /b2c-configured/,
+  testMatch: /b2[cd]-configured/,
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,

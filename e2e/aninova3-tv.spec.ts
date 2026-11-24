@@ -41,11 +41,9 @@ test.describe('AniNova 3.0 TV UX', () => {
     await page.goto(`${HOME}/catalog?tv=1`);
     const firstRow = page.locator('.a3-row').first();
     await expect(firstRow).toBeVisible();
-    for (let i = 0; i < 30; i++) {
-      const a = await active(page);
-      if (a?.cls.includes('a3-row')) break;
-      await page.keyboard.press('ArrowDown');
-    }
+    // Фокус на строке каталога, затем пульт ведёт по строкам вниз.
+    await firstRow.focus();
+    await page.keyboard.press('ArrowDown');
     const focusedRow = page.locator('.a3-row:focus');
     await expect(focusedRow).toHaveCount(1);
     const href = await focusedRow.getAttribute('href');

@@ -54,12 +54,15 @@ test.describe('B2-A: оболочка и главная', () => {
     await expect(today.getByRole('link', { name: 'Всё расписание →' })).toHaveAttribute('href', `${ROOT}/schedule`);
   });
 
-  test('футер повторяет разделы и ведёт на текущий сайт', async ({ page }) => {
+  test('футер повторяет разделы и не уводит на production', async ({ page }) => {
     await page.goto(`${ROOT}/catalog`);
     const footer = page.locator('.a3-footer');
     await expect(footer).toContainText('Расписание');
-    await expect(footer.getByRole('link', { name: 'Каталог аниме' })).toHaveAttribute('href', `${ROOT}/catalog`);
-    await expect(footer.getByRole('link', { name: /Текущий сайт/ })).toHaveAttribute('href', '/');
+    await expect(footer.getByRole('link', { name: 'Все аниме' })).toHaveAttribute('href', `${ROOT}/catalog`);
+    await expect(footer.getByRole('link', { name: 'Главная' })).toHaveAttribute('href', ROOT);
+    const hrefs = await footer.locator('a').evaluateAll((links) => links.map((a) => a.getAttribute('href') ?? ''));
+    expect(hrefs.length).toBeGreaterThan(4);
+    expect(hrefs.every((href) => href.startsWith(ROOT))).toBe(true);
   });
 });
 

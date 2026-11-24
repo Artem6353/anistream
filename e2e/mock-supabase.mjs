@@ -42,12 +42,119 @@ const users = {
   },
 };
 
+users.carol = {
+  id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+  email: 'carol@example.com',
+  created_at: '2025-09-01T10:00:00.000Z',
+  username: 'carol',
+  bio: 'Тестовый третий участник для проверки RLS личных сообщений.',
+  banner: 'grad:2',
+  pinned: [],
+  lists: [],
+  history: [],
+  followers: 0,
+  following: 0,
+};
+
 const byId = new Map(Object.values(users).map((u) => [u.id, u]));
 const byEmail = new Map(Object.values(users).map((u) => [u.email, u]));
 const sessions = new Map(); // access_token -> user key
 
+/* B2-D: только тестовые диалоги. Это не production-данные и не реальные люди. */
+const DM_THREAD_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const dmThreads = [
+  {
+    id: DM_THREAD_ID,
+    user_a: users.alice.id,
+    user_b: users.bob.id,
+    updated_at: '2026-01-22T12:05:00.000Z',
+    created_at: '2026-01-20T09:00:00.000Z',
+  },
+];
+const dmMessages = [
+  { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1', thread_id: DM_THREAD_ID, sender_id: users.alice.id, text: 'Привет! Это тестовый диалог B2-D.', ts: '2026-01-22T12:00:00.000Z', read_at: '2026-01-22T12:01:00.000Z' },
+  { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2', thread_id: DM_THREAD_ID, sender_id: users.bob.id, text: 'Привет, вижу сообщение. Проверяем список и отправку.', ts: '2026-01-22T12:05:00.000Z', read_at: null },
+];
+
+const initialDmThreads = structuredClone(dmThreads);
+const initialDmMessages = structuredClone(dmMessages);
+
+function resetDmFixtures() {
+  dmThreads.splice(0, dmThreads.length, ...structuredClone(initialDmThreads));
+  dmMessages.splice(0, dmMessages.length, ...structuredClone(initialDmMessages));
+}
+
+function isParticipant(thread, user) {
+  return Boolean(user && thread && (thread.user_a === user.id || thread.user_b === user.id));
+}
+
+function quotedList(value) {
+  const inner = value.replace(/^in\.\(/, '').replace(/\)$/, '');
+  return [...inner.matchAll(/(?:"([^"]+)"|([^,]+))/g)].map((m) => m[1] || m[2]).filter(Boolean);
+}
+
+function eqFilter(params, key) {
+  return params.get(key)?.replace(/^eq\./, '') ?? null;
+}
+
+function filterDmThreads(rows, params, user) {
+  let result = rows.filter((t) => isParticipant(t, user));
+  const id = eqFilter(params, 'id');
+  if (id) result = result.filter((t) => t.id === id);
+  const a = eqFilter(params, 'user_a');
+  const b = eqFilter(params, 'user_b');
+  if (a) result = result.filter((t) => t.user_a === a);
+  if (b) result = result.filter((t) => t.user_b === b);
+  const or = params.get('or');
+  if (or) {
+    const allowed = [...or.matchAll(/(?:user_a|user_b)\.eq\.([0-9a-f-]+)/gi)].map((m) => m[1]);
+    if (allowed.length) result = result.filter((t) => allowed.includes(t.user_a) || allowed.includes(t.user_b));
+  }
+  const order = params.get('order');
+  if (order === 'updated_at.desc') result = [...result].sort((x, y) => y.updated_at.localeCompare(x.updated_at));
+  return result;
+}
+
+function filterDmMessages(rows, params, user) {
+  let result = rows.filter((m) => {
+    const thread = dmThreads.find((t) => t.id === m.thread_id);
+    return isParticipant(thread, user);
+  });
+  const rawThread = params.get('thread_id');
+  const threadEq = rawThread?.startsWith('eq.') ? rawThread.slice(3) : null;
+  const threadIn = rawThread?.startsWith('in.') ? quotedList(rawThread) : null;
+  if (threadEq) result = result.filter((m) => m.thread_id === threadEq);
+  if (threadIn) result = result.filter((m) => threadIn.includes(m.thread_id));
+  const senderEq = eqFilter(params, 'sender_id');
+  if (senderEq) result = result.filter((m) => m.sender_id === senderEq);
+  if (params.get('sender_id')?.startsWith('neq.')) {
+    const senderNeq = params.get('sender_id').slice(4);
+    result = result.filter((m) => m.sender_id !== senderNeq);
+  }
+  if (params.get('read_at') === 'is.null') result = result.filter((m) => m.read_at == null);
+  const order = params.get('order');
+  if (order === 'ts.desc') result = [...result].sort((x, y) => y.ts.localeCompare(x.ts));
+  else if (order === 'ts.asc') result = [...result].sort((x, y) => x.ts.localeCompare(y.ts));
+  const limit = Number(params.get('limit') || 0);
+  if (limit > 0) result = result.slice(0, limit);
+  return result;
+}
+
 function tokenFor(user, suffix = '') {
-  return `mock-${user.username}-${suffix || 'access'}`;
+  /* JWT-форма важна: клиент и lib/library читают sub из payload, чтобы
+     разделять локальные данные аккаунтов. Подпись mock не проверяет. */
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const payload = Buffer.from(
+    JSON.stringify({
+      sub: user.id,
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: user.email,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      jti: suffix || 'access',
+    }),
+  ).toString('base64url');
+  return `${header}.${payload}.mock-signature`;
 }
 
 function authUser(user) {
@@ -145,12 +252,20 @@ function countFor(table, params) {
 function restRows(path, params, user) {
   if (path === 'profiles') {
     const rows = Object.values(users).map(profileRow);
-    const wantedId = params.get('user_id')?.replace(/^eq\./, '');
+    const rawId = params.get('user_id');
+    const wantedIds = rawId?.startsWith('in.') ? quotedList(rawId) : rawId ? [rawId.replace(/^eq\./, '')] : [];
     const wantedName = params.get('username')?.replace(/^eq\./, '');
-    if (wantedId && !user) return [];
-    return rows.filter((r) => (!wantedId || r.user_id === wantedId) && (!wantedName || r.username === wantedName));
+
+    if (wantedIds.length && !user) return [];
+    return rows.filter(
+      (r) =>
+        (!wantedIds.length || wantedIds.includes(r.user_id)) &&
+        (!wantedName || r.username === wantedName),
+    );
   }
   if (!user) return [];
+  if (path === 'dm_threads') return filterDmThreads(dmThreads, params, user);
+  if (path === 'dm_messages') return filterDmMessages(dmMessages, params, user);
   if (path === 'profile_lists') {
     const wanted = params.get('user_id')?.replace(/^eq\./, '');
     return !wanted || wanted === user.id ? user.lists : [];
@@ -171,6 +286,10 @@ async function handle(req, res) {
   const params = url.searchParams;
 
   if (path === '/health') return json(res, 200, { ok: true });
+  if (path === '/__test/reset' && req.method === 'POST') {
+    resetDmFixtures();
+    return json(res, 200, { ok: true });
+  }
 
   if (path === '/auth/v1/token') {
     const grant = params.get('grant_type');
@@ -291,8 +410,50 @@ async function handle(req, res) {
     }
 
     if (req.method === 'POST' || req.method === 'PATCH') {
-      await readBody(req);
-      const current = user || users.alice;
+      const body = await readBody(req);
+      const current = user;
+      if (!current) return json(res, 401, { message: 'JWT required' });
+
+      if (table === 'dm_threads' && req.method === 'POST') {
+        const a = String(body.user_a || '');
+        const b = String(body.user_b || '');
+        if (![a, b].includes(current.id) || !byId.has(a) || !byId.has(b) || a === b) {
+          return json(res, 400, { message: 'invalid participants' });
+        }
+        const existing = dmThreads.find((t) => (t.user_a === a && t.user_b === b) || (t.user_a === b && t.user_b === a));
+        if (existing) return json(res, 200, [existing]);
+        const now = new Date().toISOString();
+        const row = { id: crypto.randomUUID(), user_a: a, user_b: b, updated_at: now, created_at: now };
+        dmThreads.push(row);
+        return json(res, 201, [row], { 'content-range': '0-0/1' });
+      }
+
+      if (table === 'dm_messages' && req.method === 'POST') {
+        const thread = dmThreads.find((t) => t.id === body.thread_id);
+        if (!isParticipant(thread, current)) return json(res, 403, { message: 'not a participant' });
+        const text = String(body.text || '').trim().slice(0, 2000);
+        if (!text) return json(res, 400, { message: 'text required' });
+        const row = { id: crypto.randomUUID(), thread_id: thread.id, sender_id: current.id, text, ts: new Date().toISOString(), read_at: null };
+        dmMessages.push(row);
+        return json(res, 201, [row], { 'content-range': '0-0/1' });
+      }
+
+      if (table === 'dm_threads' && req.method === 'PATCH') {
+        const wanted = eqFilter(params, 'id');
+        const thread = dmThreads.find((t) => t.id === wanted);
+        if (!isParticipant(thread, current)) return json(res, 403, { message: 'not a participant' });
+        if (body.updated_at) thread.updated_at = String(body.updated_at);
+        return json(res, 200, [thread]);
+      }
+
+      if (table === 'dm_messages' && req.method === 'PATCH') {
+        const thread = dmThreads.find((t) => t.id === eqFilter(params, 'thread_id'));
+        if (!isParticipant(thread, current)) return json(res, 403, { message: 'not a participant' });
+        const rows = filterDmMessages(dmMessages, params, current);
+        for (const m of rows) m.read_at = String(body.read_at || new Date().toISOString());
+        return json(res, 200, rows);
+      }
+
       const row = profileRow(current);
       return json(res, 201, row, { 'content-range': '0-0/1' });
     }

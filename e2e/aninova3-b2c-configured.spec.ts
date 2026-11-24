@@ -224,12 +224,14 @@ test.describe('B2-C: публичный профиль', () => {
     await expect(page.getByRole('button', { name: /Написать сообщение/ })).toHaveCount(0);
   });
 
-  test('гостю и участнику не уводит в production-сообщения', async ({ page }) => {
+  test('участник открывает реальный preview-тред, а не production', async ({ page }) => {
     await login(page);
     await page.goto(`${ROOT}/profile/bob`);
     await page.getByRole('button', { name: /Написать сообщение/ }).click();
-    await expect(page).toHaveURL(`${ROOT}/profile/bob`);
-    await expect(page.getByText('Сообщения появятся в одном из следующих этапов')).toBeVisible();
+    await page.waitForURL(new RegExp(`${ROOT}/messages/[0-9a-f-]+$`));
+    expect(new URL(page.url()).pathname.startsWith(`${ROOT}/messages/`)).toBe(true);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Чат с bob');
+    await expect(page.locator('.a3-dm')).toContainText('тестовый диалог B2-D');
   });
 
   test('несуществующий пользователь — честный 404 preview', async ({ page }) => {
