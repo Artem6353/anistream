@@ -25,6 +25,29 @@ export const A3_NAV: readonly A3NavItem[] = [
   { href: `${A3_ROOT}/profile`, label: 'Профиль' },
 ];
 
+/** B2-D: поиск, рейтинги, жанры, сезоны и подборки. */
+export const A3_SEARCH_PATH = `${A3_ROOT}/search`;
+export const A3_UTILITY_NAV = [
+  { href: `${A3_ROOT}/top`, label: 'ТОП-250' },
+  { href: `${A3_ROOT}/genres`, label: 'Жанры' },
+  { href: `${A3_ROOT}/season`, label: 'Сезоны' },
+  { href: `${A3_ROOT}/collections`, label: 'Подборки' },
+] as const;
+
+export const A3_ACCOUNT_NAV = [
+  { href: `${A3_ROOT}/profile`, label: 'Личный кабинет' },
+  { href: `${A3_ROOT}/profile/settings`, label: 'Настройки' },
+  { href: `${A3_ROOT}/messages`, label: 'Сообщения' },
+  { href: `${A3_ROOT}/auth`, label: 'Вход и регистрация' },
+] as const;
+
+export const A3_LEGAL_NAV = [
+  { href: `${A3_ROOT}/privacy`, label: 'Конфиденциальность' },
+  { href: `${A3_ROOT}/terms`, label: 'Соглашение' },
+  { href: `${A3_ROOT}/disclaimer`, label: 'Отказ от ответственности' },
+  { href: `${A3_ROOT}/dmca`, label: 'DMCA' },
+] as const;
+
 /** Активен ли раздел для текущего пути. Query и хеш не влияют на подсветку. */
 export function isA3NavActive(pathname: string, item: A3NavItem): boolean {
   const path = (pathname ?? '').split(/[?#]/)[0] ?? '';

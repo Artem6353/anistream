@@ -11,7 +11,7 @@ import { A3Menu } from './A3Menu';
 import { IconSearch, IconTv, IconUser } from '@/components/ui/icons';
 import { A3_NAV, A3_ROOT as ROOT, isA3NavActive } from '@/lib/aninova3/nav';
 
-export function A3Header({ onSearch }: { onSearch: () => void }) {
+export function A3Header({ onSearch, searchOpen = false }: { onSearch: () => void; searchOpen?: boolean }) {
   const pathname = usePathname() ?? '';
   const { tv, setTv } = useA3Ui();
   // null — ещё не знаем; так вошедший человек не видит вспышку «Войти».
@@ -42,7 +42,16 @@ export function A3Header({ onSearch }: { onSearch: () => void }) {
           ))}
         </nav>
         <div className="a3-header__actions">
-          <button className="a3-iconbtn" type="button" onClick={onSearch} aria-label="Поиск по каталогу" aria-keyshortcuts="/">
+          <button
+            className="a3-iconbtn"
+            type="button"
+            onClick={onSearch}
+            aria-label="Поиск по каталогу"
+            aria-keyshortcuts="/"
+            aria-haspopup="dialog"
+            aria-controls="a3-search-dialog"
+            aria-expanded={searchOpen}
+          >
             <IconSearch size={18} />
             <span className="a3-iconbtn__label">Поиск</span>
           </button>

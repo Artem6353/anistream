@@ -1,7 +1,9 @@
 import Link from 'next/link';
-import { A3_ROOT } from '@/lib/aninova3/nav';
+import {
+  A3_ACCOUNT_NAV, A3_LEGAL_NAV, A3_ROOT, A3_SEARCH_PATH, A3_UTILITY_NAV,
+} from '@/lib/aninova3/nav';
 
-/** Футер B2-A: те же разделы, что в шапке, плюс вход и переход на текущий сайт. */
+/** Футер B2-D: все внутренние ссылки ведут в preview; production-переходов нет. */
 export function A3Footer() {
   return (
     <footer className="a3-footer">
@@ -11,27 +13,24 @@ export function A3Footer() {
           <p className="a3-muted">
             Каталог аниме, расписание эфиров и комиксы на русском. Тёмная тема, плотный каталог, кинематографичная сцена.
           </p>
+          <p className="a3-footer__mini">
+            <Link href={A3_ROOT}>Главная</Link> · <Link href={`${A3_ROOT}/schedule`}>Расписание</Link> · <Link href={`${A3_ROOT}/comics`}>Comics</Link>
+          </p>
         </div>
-        <nav aria-label="Разделы">
-          <p className="a3-footer__title">Разделы</p>
-          <Link href={A3_ROOT}>Главная</Link>
-          <Link href={`${A3_ROOT}/catalog`}>Каталог аниме</Link>
-          <Link href={`${A3_ROOT}/schedule`}>Расписание</Link>
-          <Link href={`${A3_ROOT}/comics`}>Comics</Link>
+        <nav aria-label="Каталог и подборки">
+          <p className="a3-footer__title">Каталог</p>
+          <Link href={A3_SEARCH_PATH}>Поиск</Link>
+          <Link href={`${A3_ROOT}/catalog`}>Все аниме</Link>
+          {A3_UTILITY_NAV.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
         </nav>
         <nav aria-label="Аккаунт">
           <p className="a3-footer__title">Аккаунт</p>
-          <Link href={`${A3_ROOT}/profile`}>История и закладки</Link>
-          <Link href={`${A3_ROOT}/auth`}>Вход в preview</Link>
-          <Link href="/auth">Текущий вход</Link>
+          {A3_ACCOUNT_NAV.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
         </nav>
         <div>
-          <p className="a3-footer__title">О прототипе</p>
-          <p className="a3-muted">
-            B2-A · Nova Minimal. Каталог и расписание — реальные данные, комиксы — ранняя реализация. Новый интерфейс включается
-            только флагом <code>ANINOVA3_PREVIEW=1</code>.
-          </p>
-          <Link href="/">Текущий сайт →</Link>
+          <p className="a3-footer__title">Документы</p>
+          {A3_LEGAL_NAV.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
+          <p className="a3-footer__mini">B2-D · Nova Minimal. Preview включается флагом <code>ANINOVA3_PREVIEW=1</code>.</p>
         </div>
       </div>
     </footer>

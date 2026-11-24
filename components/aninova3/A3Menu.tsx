@@ -4,17 +4,21 @@ import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useFocusTrap } from './remote/focus';
 import { useA3Ui } from './A3Ui';
-import { IconGrid, IconHome, IconFilm, IconUser, IconX, IconSettings } from '@/components/ui/icons';
+import {
+  IconGrid, IconHome, IconFilm, IconUser, IconX, IconSettings, IconSearch,
+  IconStar, IconCalendar, IconList, IconBookmark, IconClock,
+} from '@/components/ui/icons';
+import { A3_ACCOUNT_NAV, A3_LEGAL_NAV, A3_NAV, A3_ROOT as ROOT, A3_SEARCH_PATH, A3_UTILITY_NAV } from '@/lib/aninova3/nav';
 
-const ROOT = '/preview/aninova-3';
+const PRIMARY_ICONS = {
+  [`${ROOT}`]: IconHome,
+  [`${ROOT}/catalog`]: IconGrid,
+  [`${ROOT}/schedule`]: IconCalendar,
+  [`${ROOT}/comics`]: IconFilm,
+} as Record<string, typeof IconHome>;
 
-const LINKS = [
-  { href: ROOT, label: 'Главная', icon: IconHome },
-  { href: `${ROOT}/catalog`, label: 'Каталог аниме', icon: IconGrid },
-  { href: `${ROOT}/comics`, label: 'Comics · только RU', icon: IconFilm },
-  { href: `${ROOT}/profile`, label: 'Профиль и история', icon: IconUser },
-  { href: `${ROOT}/auth`, label: 'Вход и регистрация', icon: IconSettings },
-];
+const UTILITY_ICONS = [IconStar, IconGrid, IconCalendar, IconList];
+const ACCOUNT_ICONS = [IconUser, IconSettings, IconBookmark, IconUser];
 
 /** Мобильное меню-лист: разделы всегда доступны, фокус удерживается внутри. */
 export function A3Menu() {
@@ -68,13 +72,57 @@ export function A3Menu() {
               </button>
             </div>
             <nav className="a3-menu__list" aria-label="Разделы">
-              {LINKS.map(({ href, label, icon: Icon }) => (
-                <Link key={href} className="a3-menu__item" href={href} onClick={close}>
-                  <Icon size={20} />
-                  <span>{label}</span>
+              <Link className="a3-menu__item" href={A3_SEARCH_PATH} onClick={close}>
+                <IconSearch size={20} />
+                <span>Поиск по каталогу</span>
+              </Link>
+              {A3_NAV.slice(0, 4).map((item) => {
+                const Icon = PRIMARY_ICONS[item.href] ?? IconGrid;
+                return (
+                  <Link key={item.href} className="a3-menu__item" href={item.href} onClick={close}>
+                    <Icon size={20} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <p className="a3-menu__group">Каталог</p>
+            <nav className="a3-menu__list" aria-label="Каталог и подборки">
+              {A3_UTILITY_NAV.map((item, i) => {
+                const Icon = UTILITY_ICONS[i] ?? IconGrid;
+                return (
+                  <Link key={item.href} className="a3-menu__item" href={item.href} onClick={close}>
+                    <Icon size={20} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <p className="a3-menu__group">Аккаунт</p>
+            <nav className="a3-menu__list" aria-label="Аккаунт">
+              {A3_ACCOUNT_NAV.map((item, i) => {
+                const Icon = ACCOUNT_ICONS[i] ?? IconUser;
+                return (
+                  <Link key={item.href} className="a3-menu__item" href={item.href} onClick={close}>
+                    <Icon size={20} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <p className="a3-menu__group">Документы</p>
+            <nav className="a3-menu__list" aria-label="Правовые документы">
+              {A3_LEGAL_NAV.map((item) => (
+                <Link key={item.href} className="a3-menu__item" href={item.href} onClick={close}>
+                  <IconClock size={20} />
+                  <span>{item.label}</span>
                 </Link>
               ))}
             </nav>
+
             <label className="a3-switch a3-menu__tv">
               <span>
                 <strong>ТВ-режим</strong>
@@ -82,7 +130,7 @@ export function A3Menu() {
               </span>
               <input type="checkbox" checked={tv} onChange={(e) => setTv(e.target.checked)} />
             </label>
-            <p className="a3-muted">Preview B1-B: интерфейс за флагом, данные — реальный каталог.</p>
+            <p className="a3-muted">Preview B2-D: интерфейс за флагом, данные — реальный каталог и API.</p>
           </div>
         </div>
       ) : null}

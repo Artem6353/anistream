@@ -33,7 +33,7 @@ export function A3Shell({ children }: { children: React.ReactNode }) {
       <a className="a3-skip" href="#a3-content" data-a3-skip-focus>
         К содержанию
       </a>
-      {immersive ? null : <A3Header onSearch={() => setSearch(true)} />}
+      {immersive ? null : <A3Header onSearch={() => setSearch(true)} searchOpen={search} />}
       <main id="a3-content" className="a3-main">
         {children}
       </main>
