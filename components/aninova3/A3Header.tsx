@@ -1,7 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { AUTH_CHANGE_EVENT } from '@/lib/auth-gate';
+import { isSessionValid } from '@/lib/sync';
 import { A3Logo } from './A3Logo';
 import { useA3Ui } from './A3Ui';
 import { A3Menu } from './A3Menu';
@@ -11,6 +14,15 @@ import { A3_NAV, A3_ROOT as ROOT, isA3NavActive } from '@/lib/aninova3/nav';
 export function A3Header({ onSearch }: { onSearch: () => void }) {
   const pathname = usePathname() ?? '';
   const { tv, setTv } = useA3Ui();
+  // null — ещё не знаем; так вошедший человек не видит вспышку «Войти».
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const sync = () => setSignedIn(isSessionValid());
+    sync();
+    window.addEventListener(AUTH_CHANGE_EVENT, sync);
+    return () => window.removeEventListener(AUTH_CHANGE_EVENT, sync);
+  }, []);
 
   return (
     <header className="a3-header" data-a3-group="header">
@@ -49,9 +61,11 @@ export function A3Header({ onSearch }: { onSearch: () => void }) {
             <span className="a3-iconbtn__label">Профиль</span>
           </Link>
           <A3Menu />
-          <Link className="a3-btn a3-btn--ghost a3-header__login" href={`${ROOT}/auth`}>
-            Войти
-          </Link>
+          {signedIn === false ? (
+            <Link className="a3-btn a3-btn--ghost a3-header__login" href={`${ROOT}/auth`}>
+              Войти
+            </Link>
+          ) : null}
         </div>
       </div>
     </header>

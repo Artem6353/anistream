@@ -16,6 +16,11 @@ let client: SupabaseClient | null = null;
 
 export function getBrowserSupabase(): SupabaseClient | null {
   if (!supabaseConfigured()) return null;
-  client ??= createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // B2-C: callback сам обменивает PKCE-код на сессию. Авто-обмен в SDK
+  // срабатывает раньше эффекта страницы и съедает code_verifier — тогда
+  // ручной exchange падает, хотя cookie уже записана.
+  client ??= createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { detectSessionInUrl: false },
+  });
   return client;
 }

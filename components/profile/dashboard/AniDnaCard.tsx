@@ -18,12 +18,15 @@ export function AniDnaCard({
   lists,
   history,
   cards,
+  preview = false,
 }: {
   dna: AniDna;
   displayName: string;
   lists: ListRow[];
   history: HistoryRow[];
   cards: Map<string, TitleCard>;
+  /** B2-C: в preview карточка живёт на Nova-графите, а не на цветах архетипа. */
+  preview?: boolean;
 }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
@@ -71,7 +74,7 @@ export function AniDnaCard({
     <div className="dna">
       <section
         className="dna__card"
-        style={{ backgroundImage: `linear-gradient(150deg, ${dna.archetype.colors[0]}, ${dna.archetype.colors[1]})` }}
+        style={preview ? undefined : { backgroundImage: `linear-gradient(150deg, ${dna.archetype.colors[0]}, ${dna.archetype.colors[1]})` }}
         aria-label={`AniDNA: ${dna.archetype.title}`}
       >
         <div className="dna__noise" aria-hidden="true" />

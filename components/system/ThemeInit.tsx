@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { trackEvent } from '@/lib/achievements';
 import { useLibrary } from '@/lib/library';
 import { ACCENTS } from '@/lib/labels';
@@ -14,7 +15,8 @@ const PRE_HYDRATE = `
     var s = JSON.parse(localStorage.getItem('anistream:settings') || '{}');
     var root = document.documentElement;
     var theme = s.theme || 'system';
-    var dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var preview = window.location.pathname.indexOf('/preview/aninova-3') === 0;
+    var dark = preview || theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     root.dataset.theme = dark ? 'dark' : 'light';
     var hex = /^#[0-9a-f]{6}$/i.test(s.customAccent || '') ? s.customAccent : null;
     if (hex) { root.style.setProperty('--accent', hex); root.style.setProperty('--accent-2', hex); }
@@ -25,6 +27,8 @@ const PRE_HYDRATE = `
 /** Применяет акцент, кастомный цвет и reduce-motion из локальных настроек к <html>. */
 export function ThemeInit() {
   const { settings } = useLibrary();
+  const pathname = usePathname() ?? '';
+  const preview = pathname.startsWith('/preview/aninova-3');
   const firstTheme = useRef(true);
   useEffect(() => {
     if (firstTheme.current) firstTheme.current = false;
@@ -33,7 +37,8 @@ export function ThemeInit() {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const applyTheme = () => {
       const mode = settings.theme ?? 'system';
-      root.dataset.theme = mode === 'system' ? (mq.matches ? 'dark' : 'light') : mode;
+      // B2-C: preview — всегда тёмный, независимо от настроек production-темы.
+      root.dataset.theme = preview ? 'dark' : mode === 'system' ? (mq.matches ? 'dark' : 'light') : mode;
     };
     applyTheme();
     mq.addEventListener('change', applyTheme);
@@ -43,6 +48,6 @@ export function ThemeInit() {
     root.style.setProperty('--accent-2', hex ?? accent.b);
     root.dataset.reduceMotion = settings.reduceMotion ? 'true' : 'false';
     return () => mq.removeEventListener('change', applyTheme);
-  }, [settings.accent, settings.customAccent, settings.reduceMotion, settings.theme]);
+  }, [preview, settings.accent, settings.customAccent, settings.reduceMotion, settings.theme]);
   return <script dangerouslySetInnerHTML={{ __html: PRE_HYDRATE }} />;
 }

@@ -22,7 +22,15 @@ const ACCEPTED_AVATAR_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
  * браузер грузит его напрямую в Storage по сессионной cookie, поэтому лишних
  * копий и токенов в нашем коде нет.
  */
-export function AccountSettings({ profile, email }: { profile: ProfileRow | null; email: string | null }) {
+export function AccountSettings({
+  profile,
+  email,
+  preview = false,
+}: {
+  profile: ProfileRow | null;
+  email: string | null;
+  preview?: boolean;
+}) {
   const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -216,18 +224,23 @@ export function AccountSettings({ profile, email }: { profile: ProfileRow | null
       <section className="ds-card ds-card--pad settings__block">
         <h2 className="settings__title">Тема интерфейса</h2>
         <div className="ds-segment settings__theme" role="group" aria-label="Тема оформления">
-          {(['dark', 'light', 'system'] as Theme[]).map((option) => (
+          {(preview ? (['dark'] as Theme[]) : (['dark', 'light', 'system'] as Theme[])).map((option) => (
             <button
               key={option}
               type="button"
-              className={`ds-segment__item${theme === option ? ' is-active' : ''}`}
-              aria-pressed={theme === option}
+              className={`ds-segment__item${preview || theme === option ? ' is-active' : ''}`}
+              aria-pressed={preview || theme === option}
               onClick={() => applyTheme(option)}
             >
               {option === 'dark' ? 'Тёмная' : option === 'light' ? 'Светлая' : 'Как в системе'}
             </button>
           ))}
         </div>
+        {preview ? (
+          <p className="ds-muted settings__theme-note">
+            В preview зафиксирована тёмная тема Nova Minimal. Переключение света появится после решения владельца.
+          </p>
+        ) : null}
       </section>
     </div>
   );

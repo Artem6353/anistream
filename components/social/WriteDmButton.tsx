@@ -9,7 +9,18 @@ import { useToast } from '@/components/ui/Toaster';
 /** «✉️ Написать сообщение» на чужом профиле (ТЗ 20.3, фикс бага 4):
     находит существующий тред или создаёт новый, редиректит в чат,
     все ошибки — тостами. На своём профиле кнопка не рендерится. */
-export function WriteDmButton({ targetId, targetName, compact }: { targetId: string; targetName: string; compact?: boolean }) {
+export function WriteDmButton({
+  targetId,
+  targetName,
+  compact,
+  preview = false,
+}: {
+  targetId: string;
+  targetName: string;
+  compact?: boolean;
+  /** B2-C: чаты ещё не портированы в preview — не уводим туда из прототипа. */
+  preview?: boolean;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [me, setMe] = useState<string | null | undefined>(undefined); // undefined = ещё не знаем
@@ -30,6 +41,10 @@ export function WriteDmButton({ targetId, targetName, compact }: { targetId: str
   if (me === targetId) return null; // свой профиль — кнопка не нужна
 
   const open = async () => {
+    if (preview) {
+      toast('Сообщения появятся в одном из следующих этапов');
+      return;
+    }
     setBusy(true);
     try {
       const uid = me ?? (await supaWhoami().catch(() => null));

@@ -20,13 +20,16 @@ export interface AuthPageClientProps {
   reason?: 'protected' | 'expired' | null;
   /** Серверная заготовка: OAuth вернулся с ошибкой (?error=...). */
   oauthError?: string | null;
+  /** Preview-страница уже содержит H1 в hero — форма не должна дублировать заголовок. */
+  preview?: boolean;
 }
 
 const passwordTone = ['ds-meter__fill--weak', 'ds-meter__fill--weak', 'ds-meter__fill--meh', 'ds-meter__fill--ok', 'ds-meter__fill--strong'];
 
 /** Форма входа и регистрации (Supabase Auth: email+пароль и Google OAuth). */
-export function AuthPageClient({ next, reason, oauthError }: AuthPageClientProps) {
+export function AuthPageClient({ next, reason, oauthError, preview = false }: AuthPageClientProps) {
   const router = useRouter();
+  const Title = preview ? 'h2' : 'h1';
   const toast = useToast();
   const configured = supabaseConfigured();
 
@@ -45,8 +48,11 @@ export function AuthPageClient({ next, reason, oauthError }: AuthPageClientProps
   const strength = useMemo(() => checkPassword(password), [password]);
 
   useEffect(() => {
-    emailRef.current?.focus();
-  }, [mode]);
+    // B2-C: на узком preview-экране автофокус прокручивал страницу сразу к форме,
+    // и заголовок с преимуществами оставался выше вьюпорта.
+    if (preview && !window.matchMedia('(min-width: 900px)').matches) return;
+    emailRef.current?.focus({ preventScroll: preview });
+  }, [mode, preview]);
 
   const finish = useCallback(
     (message: string) => {
@@ -154,12 +160,12 @@ export function AuthPageClient({ next, reason, oauthError }: AuthPageClientProps
   if (!configured) {
     return (
       <div className="ds-card ds-card--pad auth-card">
-        <h1 className="auth-card__title">Вход пока не настроен</h1>
+        <Title className="auth-card__title">Вход пока не настроен</Title>
         <p className="ds-muted">
           В этой сборке нет <code>NEXT_PUBLIC_SUPABASE_URL</code> и <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
           Добавьте их в <code>.env.local</code> (или в панели Vercel) и перезапустите приложение.
         </p>
-        <Link className="ds-btn ds-btn--ghost" href="/">
+        <Link className="ds-btn ds-btn--ghost" href={preview ? '/preview/aninova-3' : '/'}>
           На главную
         </Link>
       </div>
@@ -170,7 +176,7 @@ export function AuthPageClient({ next, reason, oauthError }: AuthPageClientProps
     return (
       <div className="ds-card ds-card--pad auth-card">
         <div className="auth-card__badge" aria-hidden="true">✉️</div>
-        <h1 className="auth-card__title">Проверьте почту</h1>
+        <Title className="auth-card__title">Проверьте почту</Title>
         <p className="ds-muted">
           Мы отправили письмо на <strong>{sentTo}</strong>. Перейдите по ссылке из него — и вы внутри.
         </p>
@@ -189,7 +195,7 @@ export function AuthPageClient({ next, reason, oauthError }: AuthPageClientProps
   return (
     <div className="ds-card ds-card--pad auth-card">
       <header className="auth-card__head">
-        <h1 className="auth-card__title">{mode === 'login' ? 'С возвращением' : 'Создать аккаунт'}</h1>
+        <Title className="auth-card__title">{mode === 'login' ? 'С возвращением' : 'Создать аккаунт'}</Title>
         <p className="ds-muted">
           {mode === 'login'
             ? 'Списки, история и прогресс синхронизируются между устройствами.'

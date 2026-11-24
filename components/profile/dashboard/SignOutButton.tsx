@@ -8,7 +8,7 @@ import { notifyAuthChange } from '@/lib/auth-gate';
 import { useToast } from '@/components/ui/Toaster';
 
 /** Выход из аккаунта: серверный route чистит httpOnly-cookies, клиент — legacy-токены. */
-export function SignOutButton() {
+export function SignOutButton({ redirectTo = '/' }: { redirectTo?: string }) {
   const [busy, setBusy] = useState(false);
   const toast = useToast();
   const router = useRouter();
@@ -29,7 +29,7 @@ export function SignOutButton() {
           clearLegacySession();
           notifyAuthChange();
           toast('Вы вышли из аккаунта');
-          router.replace('/');
+          router.replace(redirectTo);
           router.refresh();
         } catch {
           toast.error('Не удалось выйти — попробуйте ещё раз');

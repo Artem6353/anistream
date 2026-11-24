@@ -10,11 +10,14 @@
  * состояние «вход не настроен», а не падают с 500.
  */
 
-const readEnv = (key: string): string => (process.env[key] ?? '').trim();
+/* Прямые обращения к process.env нужны, чтобы Next подставил значения в
+   клиентский бандл. Динамический process.env[key] в браузере пуст, из-за
+   чего форма входа считала сборку ненастроенной. */
+const readEnv = (value: string | undefined): string => (value ?? '').trim();
 
-export const SUPABASE_URL = readEnv('NEXT_PUBLIC_SUPABASE_URL');
+export const SUPABASE_URL = readEnv(process.env.NEXT_PUBLIC_SUPABASE_URL);
 export const SUPABASE_ANON_KEY =
-  readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') || readEnv('NEXT_PUBLIC_SUPABASE_URL_ANON_KEY');
+  readEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) || readEnv(process.env.NEXT_PUBLIC_SUPABASE_URL_ANON_KEY);
 
 /** Настроен ли Supabase Auth в этой сборке. */
 export function supabaseConfigured(): boolean {

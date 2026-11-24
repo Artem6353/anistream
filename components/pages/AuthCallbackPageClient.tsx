@@ -17,6 +17,9 @@ import { mirrorSessionToLegacy } from '@/lib/auth/session-bridge';
  */
 export default function AuthCallbackPage({ next = '/profile' }: { next?: string }) {
   const router = useRouter();
+  /* B2-C: ошибку OAuth/подтверждения, возвращённую в preview, показываем в
+     оболочке preview. Production-путь и адрес callback не меняются. */
+  const preview = next.startsWith('/preview/aninova-3');
   const done = useRef(false);
   const [error, setError] = useState('');
 
@@ -72,19 +75,22 @@ export default function AuthCallbackPage({ next = '/profile' }: { next?: string 
   }, [router, next]);
 
   return (
-    <div className="container empty-state">
+    <div className={preview ? 'a3-wrap a3-auth-callback' : 'container empty-state'}>
       {error ? (
         <>
-          <h1>Не удалось завершить вход</h1>
-          <p>{error}</p>
-          <Link className="btn btn--outline" href="/auth">
+          <h1 className={preview ? 'a3-h1' : undefined}>Не удалось завершить вход</h1>
+          <p className={preview ? 'a3-muted' : undefined}>{error}</p>
+          <Link
+            className={preview ? 'a3-btn a3-btn--primary' : 'btn btn--outline'}
+            href={preview ? `/preview/aninova-3/auth?next=${encodeURIComponent(next)}` : '/auth'}
+          >
             Попробовать снова
           </Link>
         </>
       ) : (
         <>
-          <h1>Завершаем вход…</h1>
-          <p>Секунду — проверяем ответ провайдера.</p>
+          <h1 className={preview ? 'a3-h1' : undefined}>Завершаем вход…</h1>
+          <p className={preview ? 'a3-muted' : undefined}>Секунду — проверяем ответ провайдера.</p>
         </>
       )}
     </div>

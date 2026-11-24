@@ -29,6 +29,10 @@ export interface ProfileDashboardProps {
   titleCards: TitleCard[];
   dna: AniDna;
   dataError: string | null;
+  /** B2-C: префикс preview-маршрута. По умолчанию пустой — production-поведение не меняется. */
+  routeBase?: string;
+  /** B2-C: в preview фиксируем тёмную тему и не уводим ссылки в production. */
+  preview?: boolean;
 }
 
 const LIST_ORDER = ['watching', 'completed', 'planned', 'on_hold', 'rewatching', 'dropped'] as const;
@@ -40,6 +44,13 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
 
   const displayName = props.profile?.username || props.email?.split('@')[0] || 'анимешник';
   const joinedDay = formatDay(props.createdAt);
+  const base = props.routeBase ?? '';
+  const catalogHref = `${base}/catalog`;
+  const animeHref = (slug: string, episode?: number) =>
+    `${base}/anime/${slug}${episode ? `/${episode}` : ''}`;
+  const publicProfileHref = props.profile?.username
+    ? `${base}/profile/${props.profile.username}`
+    : `${base}/profile`;
 
   return (
     <div className="dash">
@@ -66,13 +77,13 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
 
         <div className="dash__head-actions">
           {props.profile?.username ? (
-            <Link className="ds-btn ds-btn--ghost ds-btn--sm" href={`/profile/${props.profile.username}`}>
+            <Link className="ds-btn ds-btn--ghost ds-btn--sm" href={publicProfileHref}>
               Публичный профиль
             </Link>
           ) : (
             <span className="ds-muted">Ник не задан — публичной страницы пока нет</span>
           )}
-          <SignOutButton />
+          <SignOutButton redirectTo={base ? `${base}/` : '/'} />
         </div>
 
         <dl className="dash__stats">
@@ -122,25 +133,32 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
       <div className="dash__panel" role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} tabIndex={-1}>
         {tab === 'overview' && (
           <ErrorBoundary label="AniDNA">
-            <AniDnaCard dna={props.dna} displayName={displayName} lists={props.lists} history={props.history} cards={cards} />
+            <AniDnaCard
+              dna={props.dna}
+              displayName={displayName}
+              lists={props.lists}
+              history={props.history}
+              cards={cards}
+              preview={props.preview}
+            />
           </ErrorBoundary>
         )}
 
         {tab === 'lists' && (
           <ErrorBoundary label="Мои списки">
-            <ListsPanel lists={props.lists} cards={cards} />
+            <ListsPanel lists={props.lists} cards={cards} catalogHref={catalogHref} animeHref={animeHref} />
           </ErrorBoundary>
         )}
 
         {tab === 'history' && (
           <ErrorBoundary label="История">
-            <HistoryPanel history={props.history} cards={cards} />
+            <HistoryPanel history={props.history} cards={cards} catalogHref={catalogHref} animeHref={animeHref} />
           </ErrorBoundary>
         )}
 
         {tab === 'settings' && (
           <ErrorBoundary label="Настройки">
-            <AccountSettings profile={props.profile} email={props.email} />
+            <AccountSettings profile={props.profile} email={props.email} preview={props.preview} />
           </ErrorBoundary>
         )}
       </div>
@@ -149,7 +167,17 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
 }
 
 /** Списки по статусам: смотрю / просмотрено / в планах и остальные. */
-function ListsPanel({ lists, cards }: { lists: ListRow[]; cards: Map<string, TitleCard> }) {
+function ListsPanel({
+  lists,
+  cards,
+  catalogHref,
+  animeHref,
+}: {
+  lists: ListRow[];
+  cards: Map<string, TitleCard>;
+  catalogHref: string;
+  animeHref: (slug: string, episode?: number) => string;
+}) {
   const grouped = useMemo(() => {
     const map = new Map<string, ListRow[]>();
     for (const row of lists) {
@@ -171,7 +199,7 @@ function ListsPanel({ lists, cards }: { lists: ListRow[]; cards: Map<string, Tit
         <p className="dash__empty-emoji" aria-hidden="true">📚</p>
         <h2>Списки пока пустые</h2>
         <p className="ds-muted">Добавьте тайтл в «Смотрю» на странице аниме — он появится здесь и синхронизируется.</p>
-        <Link className="ds-btn ds-btn--primary" href="/catalog">Открыть каталог</Link>
+        <Link className="ds-btn ds-btn--primary" href={catalogHref}>Открыть каталог</Link>
       </div>
     );
   }
@@ -188,7 +216,7 @@ function ListsPanel({ lists, cards }: { lists: ListRow[]; cards: Map<string, Tit
               const card = cards.get(row.slug);
               return (
                 <li key={row.slug} className="dash__card">
-                  <Link href={`/anime/${row.slug}`} className="dash__card-link">
+                  <Link href={animeHref(row.slug)} className="dash__card-link">
                     <span className="dash__poster">
                       {card?.poster ? (
                         <Image src={card.poster} alt="" width={64} height={92} sizes="64px" />
@@ -212,14 +240,24 @@ function ListsPanel({ lists, cards }: { lists: ListRow[]; cards: Map<string, Tit
 }
 
 /** История: последние серии с прогресс-баром «сколько просмотрено». */
-function HistoryPanel({ history, cards }: { history: HistoryRow[]; cards: Map<string, TitleCard> }) {
+function HistoryPanel({
+  history,
+  cards,
+  catalogHref,
+  animeHref,
+}: {
+  history: HistoryRow[];
+  cards: Map<string, TitleCard>;
+  catalogHref: string;
+  animeHref: (slug: string, episode?: number) => string;
+}) {
   if (!history.length) {
     return (
       <div className="ds-card ds-card--pad dash__empty">
         <p className="dash__empty-emoji" aria-hidden="true">🕘</p>
         <h2>История пуста</h2>
         <p className="ds-muted">Как только вы включите серию, она появится здесь с прогрессом.</p>
-        <Link className="ds-btn ds-btn--primary" href="/catalog">Выбрать что посмотреть</Link>
+        <Link className="ds-btn ds-btn--primary" href={catalogHref}>Выбрать что посмотреть</Link>
       </div>
     );
   }
@@ -234,7 +272,7 @@ function HistoryPanel({ history, cards }: { history: HistoryRow[]; cards: Map<st
         const left = duration > 0 ? Math.max(0, Math.round((duration - position) / 60)) : 0;
         return (
           <li key={`${row.slug}:${row.episode}`} className="dash__history-row">
-            <Link href={`/anime/${row.slug}/${row.episode}`} className="dash__history-main">
+            <Link href={animeHref(row.slug, row.episode)} className="dash__history-main">
               <span className="dash__card-name">
                 {card?.name ?? row.slug} · серия {row.episode}
               </span>
