@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * B3-C disposable PGlite canary. Applies the committed migrations, runs the
- * B3-A/B/B3-C SQL contracts, exercises rollback + reapply, inserts a 20-work
- * canary plan and verifies quality/relation/adult/author gates. No network,
- * no Supabase, no production database and no public publication.
+ * B3-C/C.1 disposable PGlite canary. Applies the committed migrations, runs the
+ * B3-A/B/B3-C/C.1 SQL contracts, exercises C.1 and B3-C rollback + reapply,
+ * checks append-only observations under service_role, inserts a 20-work canary
+ * plan and verifies quality/relation/adult/author gates. No network, no
+ * Supabase, no production database and no public publication.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -42,12 +43,13 @@ async function bootstrap() {
   `);
 }
 
-async function applyMigrationsThroughB3C() {
+async function applyMigrationsThroughB3C1() {
   for (const file of [
     'supabase/migrations/20261123_comics_foundation.sql',
     'supabase/migrations/20261123_comics_rls.sql',
     'supabase/migrations/20261124_comics_b3b_chapter_urls_evidence.sql',
     'supabase/migrations/20261125_comics_b3c_quality_relations.sql',
+    'supabase/migrations/20261126_comics_b3c1_integrity_hardening.sql',
   ]) await applyFile(file);
 }
 
@@ -55,6 +57,7 @@ async function runContracts() {
   await applyFile('supabase/tests/b3a_comics_rls.sql');
   await applyFile('supabase/tests/b3b_comics_gates.sql');
   await applyFile('supabase/tests/b3c_comics_quality.sql');
+  await applyFile('supabase/tests/b3c1_integrity_hardening.sql');
 }
 
 async function seedTitles() {
@@ -105,23 +108,61 @@ async function snapshot() {
   return { tables: out, ...gates };
 }
 
-async function main() {
-  await bootstrap();
-  await applyMigrationsThroughB3C();
-  await runContracts();
-  console.log('SQL_CONTRACTS_OK');
+async function expectReject(sql, pattern) {
+  try {
+    await db.query(sql);
+  } catch (error) {
+    const message = String(error instanceof Error ? error.message : error);
+    if (!pattern.test(message)) throw new Error(`unexpected rejection (${message}) for: ${sql}`);
+    return message;
+  }
+  throw new Error(`expected rejection for: ${sql}`);
+}
 
-  await applyFile('supabase/rollback/20261125_comics_b3c_rollback.sql');
-  const rolledBack = await scalar(`select
+async function assertC1ObjectsAbsent(stage) {
+  const row = await scalar(`select
+    (select count(*)::int from pg_trigger where tgname = 'comic_source_observations_no_update_delete') as obs_trigger,
+    (select count(*)::int from pg_trigger where tgname = 'comic_source_observations_no_truncate') as truncate_trigger,
+    (select count(*)::int from pg_trigger where tgname = 'comic_people_validate_name_bucket') as people_trigger,
+    (select count(*)::int from pg_proc where proname = 'comic_source_observations_append_only') as obs_function,
+    (select count(*)::int from pg_proc where proname = 'comic_people_validate_name_bucket') as people_function,
+    (select count(*)::int from pg_constraint where conname = 'comic_people_source_identified_provenance_check') as source_gate,
+    (select count(*)::int from pg_constraint where conname = 'comic_people_manually_verified_provenance_check') as manual_gate,
+    (select confdeltype::text from pg_constraint where conname = 'comic_source_observations_work_id_fkey') as delete_rule`);
+  if (Object.entries(row).some(([key, value]) => key === 'delete_rule' ? value !== 'c' : Number(value) !== 0)) {
+    throw new Error(`${stage}: C.1 objects were not fully rolled back: ${JSON.stringify(row)}`);
+  }
+}
+
+async function assertB3CObjectsAbsent() {
+  const row = await scalar(`select
     (select count(*)::int from information_schema.tables where table_schema='public' and table_name='comic_source_observations') as observations,
     (select count(*)::int from information_schema.columns where table_schema='public' and table_name='comic_works' and column_name='content_rating_status') as rating,
     (select count(*)::int from information_schema.columns where table_schema='public' and table_name='comic_people' and column_name='identity_status') as identity,
     (select count(*)::int from information_schema.columns where table_schema='public' and table_name='comic_adaptations' and column_name='normalized_relation_type') as normalized`);
-  if (Number(rolledBack.observations) !== 0 || Number(rolledBack.rating) !== 0 || Number(rolledBack.identity) !== 0 || Number(rolledBack.normalized) !== 0) {
-    throw new Error(`rollback left B3-C objects: ${JSON.stringify(rolledBack)}`);
+  if (Object.values(row).some((value) => Number(value) !== 0)) {
+    throw new Error(`B3-C rollback left objects: ${JSON.stringify(row)}`);
   }
+}
+
+async function main() {
+  await bootstrap();
+  await applyMigrationsThroughB3C1();
+  await runContracts();
+  console.log('SQL_CONTRACTS_OK');
+
+  await applyFile('supabase/rollback/20261126_comics_b3c1_rollback.sql');
+  await assertC1ObjectsAbsent('C.1 rollback');
+  await applyFile('supabase/migrations/20261126_comics_b3c1_integrity_hardening.sql');
+  await applyFile('supabase/tests/b3c1_integrity_hardening.sql');
+  console.log('C1_ROLLBACK_REAPPLY_OK');
+
+  await applyFile('supabase/rollback/20261126_comics_b3c1_rollback.sql');
+  await applyFile('supabase/rollback/20261125_comics_b3c_rollback.sql');
+  await assertB3CObjectsAbsent();
   await applyFile('supabase/migrations/20261125_comics_b3c_quality_relations.sql');
-  await applyFile('supabase/tests/b3c_comics_quality.sql');
+  await applyFile('supabase/migrations/20261126_comics_b3c1_integrity_hardening.sql');
+  await runContracts();
   console.log('ROLLBACK_REAPPLY_OK');
 
   await seedTitles();
@@ -138,6 +179,80 @@ async function main() {
   const first = await snapshot();
   const secondInserted = await applyPlan(canary);
   const second = await snapshot();
+
+  await applyFile('supabase/migrations/20261126_comics_b3c1_integrity_hardening.sql');
+  const reapplied = await snapshot();
+  if (JSON.stringify(reapplied) !== JSON.stringify(second)) {
+    throw new Error('C.1 reapply changed existing data');
+  }
+  console.log('C1_REAPPLY_WITH_DATA_OK');
+
+  const observation = await scalar(`select id::text, work_id::text
+    from public.comic_source_observations order by id limit 1`);
+  if (!observation?.id || !observation?.work_id) throw new Error('canary has no observation for append-only checks');
+  const appendOnly = {};
+  await db.exec('set role service_role');
+  try {
+    appendOnly.serviceSelect = (await scalar('select count(*)::int as n from public.comic_source_observations')).n > 0;
+    appendOnly.serviceUpdate = await expectReject(
+      `update public.comic_source_observations set confidence = 0.5 where id = '${observation.id}'`,
+      /permission denied|append-only/i,
+    );
+    appendOnly.serviceDelete = await expectReject(
+      `delete from public.comic_source_observations where id = '${observation.id}'`,
+      /permission denied|append-only/i,
+    );
+    appendOnly.serviceTruncate = await expectReject(
+      'truncate table public.comic_source_observations',
+      /permission denied|append-only/i,
+    );
+  } finally {
+    await db.exec('reset role');
+  }
+
+  await db.exec('begin');
+  try {
+    await db.exec('set local role service_role');
+    const inserted = await db.query(
+      `insert into public.comic_source_observations
+        (id, work_id, field_name, source_name, observed_at, confidence, verification_status,
+         source_payload_hash, value_json, is_conflict)
+       values ('f3000000-0000-4000-8000-000000000001', $1, 'kind', 'manual', now(), 0.5,
+         'recorded', repeat('c', 64), '"MANGA"'::jsonb, false)`,
+      [observation.work_id],
+    );
+    appendOnly.serviceInsert = (inserted.affectedRows ?? 0) === 1;
+    await db.exec('rollback');
+  } catch (error) {
+    await db.exec('rollback');
+    throw error;
+  }
+
+  appendOnly.ownerUpdate = await expectReject(
+    `update public.comic_source_observations set confidence = 0.5 where id = '${observation.id}'`,
+    /append-only/i,
+  );
+  appendOnly.ownerDelete = await expectReject(
+    `delete from public.comic_source_observations where id = '${observation.id}'`,
+    /append-only/i,
+  );
+  appendOnly.ownerTruncate = await expectReject(
+    'truncate table public.comic_source_observations',
+    /append-only/i,
+  );
+  appendOnly.workDelete = await expectReject(
+    `delete from public.comic_works where id = '${observation.work_id}'`,
+    /foreign key|restrict/i,
+  );
+
+  const beforeC1Rollback = await snapshot();
+  await applyFile('supabase/rollback/20261126_comics_b3c1_rollback.sql');
+  const afterC1Rollback = await snapshot();
+  if (JSON.stringify(afterC1Rollback) !== JSON.stringify(beforeC1Rollback)) {
+    throw new Error('C.1 rollback deleted or changed observation data');
+  }
+  await applyFile('supabase/migrations/20261126_comics_b3c1_integrity_hardening.sql');
+  console.log('C1_ROLLBACK_WITH_DATA_OK');
 
   const quality = await scalar(`select
     (select count(*)::int from public.comic_source_observations where is_conflict) as conflicts,
@@ -191,6 +306,7 @@ async function main() {
     first,
     second,
     idempotent: JSON.stringify(first) === JSON.stringify(second) && secondInserted === 0,
+    appendOnly,
     quality,
     b1d,
     newReasons,
@@ -208,6 +324,15 @@ async function main() {
   if (Number(quality.promoted_adaptations) !== 0) throw new Error('canary promoted an adaptation');
   if (Number(quality.duplicate_mal) !== 0) throw new Error('ambiguous MAL/Shikimori id was attached');
   if (Number(quality.public_original_aliases) !== 0) throw new Error('original/native alias is public');
+  if (!appendOnly.serviceSelect || !appendOnly.serviceInsert) {
+    throw new Error(`service_role lost SELECT/INSERT on source observations: ${JSON.stringify(appendOnly)}`);
+  }
+  if (!appendOnly.serviceUpdate || !appendOnly.serviceDelete || !appendOnly.serviceTruncate) {
+    throw new Error(`service_role can mutate source observations: ${JSON.stringify(appendOnly)}`);
+  }
+  if (!appendOnly.ownerUpdate || !appendOnly.ownerDelete || !appendOnly.ownerTruncate || !appendOnly.workDelete) {
+    throw new Error(`append-only trigger/FK did not block owner mutation: ${JSON.stringify(appendOnly)}`);
+  }
   if (first.public_works !== 0 || first.public_chapters !== 0) throw new Error('canary became public');
   if (first.rights !== 0 || first.chapters !== 0 || first.sources !== 0) throw new Error('canary created rights/chapters/sources');
   if (!report.canaryCoverage.work_ids.includes(131323)) throw new Error('canary misses the known duplicate');

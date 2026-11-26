@@ -65,11 +65,12 @@ values
    'anilist', 'https://anilist.co/manga/30011', 'source_verified', 1.00);
 
 insert into public.comic_people (id, canonical_name, display_name_ru, name_status,
-  source_name, source_person_id, source_url, verification_status, confidence, is_public,
+  source_name, source_person_id, source_url, checked_at, verification_status, confidence, is_public,
   identity_status)
 values
-  ('90000000-0000-4000-8000-000000000001', 'Test Author', 'Тестовый Автор', 'editorially_verified',
-   'manual', 'p1', null, 'editorially_verified', 1.00, true, 'source_identified');
+  ('90000000-0000-4000-8000-000000000001', 'Test Author', 'Тестовый Автор', 'source_verified',
+   'manual', 'p1', 'https://example.test/people/p1', now(), 'source_verified', 1.00, true,
+   'source_identified');
 
 insert into public.comic_credits (work_id, person_id, role, billing_order, source_name,
   verification_status, confidence, is_public)
@@ -212,8 +213,10 @@ begin
   end;
 
   begin
-    insert into public.comic_people (canonical_name, source_name, source_person_id, identity_status)
-    values ('Test Author', 'manual', 'p1', 'source_identified');
+    insert into public.comic_people (canonical_name, name_status, source_name,
+      source_person_id, source_url, checked_at, verification_status, identity_status)
+    values ('Test Author', 'source_verified', 'manual', 'p1',
+      'https://example.test/people/p1', now(), 'source_verified', 'source_identified');
     raise exception 'duplicate source person id was accepted';
   exception when unique_violation then null;
   end;

@@ -1,11 +1,17 @@
 # B3-C — качество данных, конфликты и adult-gate
 
-Статус: **DONE** для local/disposable dry-run и PGlite-проверок.
+Статус: B3-C — **DONE**; B3-C.1 integrity hardening — **DONE** для
+local/disposable dry-run и PGlite-проверок.
 
 Production/Supabase apply, PostgREST и live JWT/RLS: **NOT TESTED**.
 
-Ветка: `data/aninova-3-b3-c-quality-relations-2026-11`.
-База: `d89674fe28dacbdfd090c96189e63b2d36bbc32b`.
+Ветка B3-C.1: `data/aninova-3-b3-c1-integrity-hardening-2026-11`.
+База B3-C.1: `d4407bc4bae44e05399503b9611a4556f070137a` (верхушка B3-C).
+
+B3-C.1 — аддитивный финишный проход: source observations стали append-only,
+а author identity gates усилены без переклассификации 9 007 существующих
+name buckets. Архитектура B3-C, миграции B3-A/B/B3-C и production Supabase
+не переписывались.
 
 ## 1. Что исправлено после B3-B
 
@@ -66,6 +72,27 @@ Production/Supabase apply, PostgREST и live JWT/RLS: **NOT TESTED**.
 Всего ready observations: **45 188** (включая `title_original` из graph). Уникальность:
 `(work_id, field_name, source_name, source_payload_hash)`. Повторный прогон
 не создаёт дублей.
+
+B3-C.1 делает таблицу **append-only**:
+
+- `service_role` сохраняет `SELECT`/`INSERT`, но не имеет
+  `UPDATE`/`DELETE`/`TRUNCATE`;
+- триггеры `BEFORE UPDATE OR DELETE` и `BEFORE TRUNCATE` отклоняют мутацию
+  даже для владельца таблицы;
+- FK `work_id` заменён с `ON DELETE CASCADE` на `ON DELETE RESTRICT`:
+  удаление работы с историей наблюдений невозможно;
+- новое значение источника — только новая строка; старые observations не
+  перезаписываются и не удаляются.
+
+Импорт и повторный dry-run не содержат `UPDATE` observations: planner
+формирует только `INSERT ... ON CONFLICT DO NOTHING`. Это проверяется
+unit-тестом плана и canary-идемпотентностью.
+
+Rollback B3-C.1 возвращает старые права и CASCADE, но **не удаляет и не
+перезаписывает** observations; он явно предупреждает, что после отката
+удаление работы снова сможет каскадно удалить историю. Откат B3-C остаётся
+разрушительным и документирован отдельно; в canary он выполняется только
+после B3-C.1 rollback.
 
 ### 3.1. Политика конфликтов
 
@@ -131,9 +158,23 @@ AniList id не подписывается как Shikimori id.
   `name_status='unverified'`,
   `identity_status='unidentified_name_bucket'`, `is_public=false`.
 - Bucket key: `work_id + нормализованное имя`; одинаковые имена в разных
-  работах не сливаются.
-- `source_identified`/`manually_verified` требуют реального source person id
-  или ручного подтверждения.
+  работах не сливаются. CHECK требует непустой ключ, а trigger проверяет,
+  что ключ действительно равен `internal_key` существующей работы плюс
+  нормализованное имя.
+- `source_identified` требует `source_person_id`, HTTPS `source_url`,
+  `name_status='source_verified'`, `verification_status='source_verified'`
+  и `checked_at`.
+- `manually_verified` требует HTTPS evidence URL, `checked_at`,
+  `name_status='editorially_verified'` и
+  `verification_status='editorially_verified'`.
+- Публичность не отменяет эти условия: `is_public=true` для
+  `source_identified`/`manually_verified` возможна только при полном
+  provenance; name bucket всегда `is_public=false`.
+
+Важно: SQL CHECK проверяет **наличие и форму** доказательств, а не
+подлинность внешнего ID. Он не может доказать, что `source_person_id`
+выдан указанным источником, или что URL действительно подтверждает
+личность. Это остаётся обязанностью редакционного review.
 
 | Метрика | Значение |
 |---|---:|
@@ -146,6 +187,10 @@ AniList id не подписывается как Shikimori id.
 1 536 review items `ambiguous_people_identity` требуют ручной проверки, а не
 слияния по имени. `authorNameRecords=5 115` — это имена, не люди;
 `authorNameBuckets=9 007` — наблюдения, не профили.
+
+Для всех 9 007 buckets проверено: prefix совпадает с `internal_key`
+существующей работы, suffix — с PostgreSQL `lower(btrim(canonical_name))`;
+расхождений 0. Это проверка формы ключа, а не идентичности автора.
 
 ## 6. Adult-статус
 
@@ -196,14 +241,21 @@ B3-C добавил reason-коды `source_metadata_conflict`, `kind_unknown`,
 - 0 adult classifications; adult-gate проверен синтетическими SQL/canary
   fixtures, а не реальными данными.
 - 0 identified authors; 1 536 имён требуют ручной identity-проверки.
+  9 007 buckets не повышены и не выданы за личности.
+- SQL identity gates не подтверждают подлинность внешних source person IDs
+  и evidence URL; они предотвращают только структурно недоказанные статусы.
 - `metadata-verified.json` заявляет 2 444 records, фактически 2 265;
   используется измеренное значение, warning сохранён.
 - Supabase/PostgREST/live JWT/RLS не проверялись: **NOT TESTED**.
 
 ## 9. Проверки
 
-- `tests/aninova3-comics-b3c.test.ts` — 10 tests.
-- `supabase/tests/b3c_comics_quality.sql` — schema/RLS/public-gate contract.
-- `scripts/comics-b3c-canary.mjs` — B3-A/B3-B/B3-C SQL, rollback/reapply,
-  canary, idempotency, adult gate.
+- `tests/aninova3-comics-b3c.test.ts` — 11 tests, включая append-only
+  plan и bucket key.
+- `supabase/tests/b3c_comics_quality.sql` — B3-C schema/RLS/public-gate contract.
+- `supabase/tests/b3c1_integrity_hardening.sql` — B3-C.1 append-only,
+  FK RESTRICT и все три author identity statuses, включая negative cases.
+- `scripts/comics-b3c-canary.mjs` — B3-A/B3-B/B3-C/B3-C.1 SQL,
+  C.1 rollback/reapply на данных без удаления observations, B3-C rollback/reapply,
+  canary, `service_role` append-only, idempotency, adult gate.
 - Dry-run: `npm run comics:b3c:dry-run -- --now=2026-11-25T00:00:00.000Z`.

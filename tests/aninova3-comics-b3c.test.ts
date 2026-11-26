@@ -535,4 +535,22 @@ describe('B3-C relation quality', () => {
       row.row?.reason === 'source_conflict' && row.row.item_ref === 'multiple-primary-adaptations'))
       .toBe(true);
   });
+
+  it('plans source observations as inserts only and keeps author buckets tied to a work and normalized name', () => {
+    const { plan } = planFor({
+      comics: [comic(913, { authors: ['Bucket Author'] })],
+    });
+    const observationOps = plan.operations.filter((operation) => operation.table === 'comic_source_observations');
+    expect(observationOps.length).toBeGreaterThan(0);
+    expect(observationOps.every((operation) => operation.op === 'INSERT')).toBe(true);
+
+    const person = plan.people.find((operation) => operation.row?.canonical_name === 'Bucket Author')?.row;
+    expect(person).toMatchObject({
+      identity_status: 'unidentified_name_bucket',
+      source_person_id: null,
+      name_status: 'unverified',
+      is_public: false,
+      name_bucket_key: 'comic:anilist:913:bucket author',
+    });
+  });
 });

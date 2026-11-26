@@ -1,13 +1,15 @@
-# B3-C — import report
+# B3-C/B3-C.1 — import report
 
-Статус: **DONE** для dry-run, local SQL contracts и PGlite canary.
+Статус: B3-C — **DONE**; B3-C.1 integrity hardening — **DONE** для
+dry-run, local SQL contracts и PGlite canary.
 
 **Не production-ready.** Production/Supabase apply, PostgREST, live JWT/RLS:
 **NOT TESTED**. PR/merge/deploy не выполнялись.
 
-- Ветка: `data/aninova-3-b3-c-quality-relations-2026-11`
-- База: `d89674fe28dacbdfd090c96189e63b2d36bbc32b`
+- Ветка B3-C.1: `data/aninova-3-b3-c1-integrity-hardening-2026-11`
+- База B3-C.1: `d4407bc4bae44e05399503b9611a4556f070137a`
 - Режим: dry-run only; canary применяется только в disposable PGlite.
+- B3-C.1 не меняет план, counts или сущности; это schema/integrity hardening.
 
 ## 1. Артефакты
 
@@ -20,7 +22,11 @@
 | SQL contract | `supabase/tests/b3c_comics_quality.sql` |
 | PGlite canary | `scripts/comics-b3c-canary.mjs` |
 | Unit tests | `tests/aninova3-comics-b3c.test.ts` |
-| ADR | `docs/comics/adr/0003-b3c-quality-policy.md` |
+| ADR B3-C | `docs/comics/adr/0003-b3c-quality-policy.md` |
+| B3-C.1 migration | `supabase/migrations/20261126_comics_b3c1_integrity_hardening.sql` |
+| B3-C.1 rollback | `supabase/rollback/20261126_comics_b3c1_rollback.sql` |
+| B3-C.1 SQL contract | `supabase/tests/b3c1_integrity_hardening.sql` |
+| B3-C.1 ADR | `docs/comics/adr/0004-b3c1-integrity-hardening.md` |
 
 `planHash`: `bc97255db9c212bbb4d5af409eb8c211097329509ab069491ac5415b8e2e1fd3`
 
@@ -48,6 +54,29 @@
 
 Canary first apply: 715 inserted; second apply: 0 inserted;
 `idempotent=true`. Public works/chapters: 0. Non-draft works: 0. Rights: 0.
+
+## 2.1. B3-C.1 integrity hardening
+
+B3-C.1 — аддитивная миграция поверх B3-C, без переписывания B3-A/B/B3-C.
+
+- `comic_source_observations` append-only: `service_role` имеет только
+  `SELECT`/`INSERT`; триггеры блокируют `UPDATE`/`DELETE`/`TRUNCATE`
+  даже для owner; FK заменён на `ON DELETE RESTRICT`.
+- `unidentified_name_bucket`: обязательный непустой `name_bucket_key`,
+  `source_person_id=NULL`, `is_public=false`, `name_status='unverified'`;
+  trigger сверяет ключ с work `internal_key` + нормализованным именем.
+- `source_identified`: обязательные `source_person_id`, HTTPS URL,
+  `source_verified` name/record и `checked_at`.
+- `manually_verified`: обязательные HTTPS evidence URL,
+  `editorially_verified` name/record и `checked_at`.
+- 9 007 buckets не повышены; identified authors — 0; public authors — 0.
+- Rollback B3-C.1 не удаляет observations, но возвращает старые права/CASCADE
+  и явно это предупреждает.
+
+Проверено: C.1 apply → contracts → rollback → reapply → повторное применение
+на заполненной canary-базе; `service_role` update/delete/truncate получают
+`permission denied`, owner — `append-only`; FK RESTRICT не даёт удалить
+работу с observations.
 
 ## 3. Что исправлено после B3-B
 
@@ -169,22 +198,33 @@ URL сохранены.
 |---|---|
 | `npm run typecheck` | DONE |
 | `npm run lint` | DONE: 0 errors, 3 pre-existing warnings |
-| `npm test` | DONE: 541 passed, 6 skipped |
+| `npm test` | DONE: 542 passed, 6 skipped |
 | `npm run build` | DONE: 804 static pages |
-| B3-C unit tests (10) | DONE |
+| B3-C/B3-C.1 unit tests (11) | DONE |
 | `supabase/tests/b3a_comics_rls.sql` | DONE в PGlite canary |
 | `supabase/tests/b3b_comics_gates.sql` | DONE в PGlite canary |
 | `supabase/tests/b3c_comics_quality.sql` | DONE в PGlite canary |
+| `supabase/tests/b3c1_integrity_hardening.sql` | DONE: identity gates + append-only + FK RESTRICT |
+| B3-C.1 apply → rollback → reapply | DONE (`C1_ROLLBACK_REAPPLY_OK`) |
+| B3-C.1 reapply on populated canary | DONE (`C1_REAPPLY_WITH_DATA_OK`) |
+| B3-C.1 rollback on populated canary | DONE (`C1_ROLLBACK_WITH_DATA_OK`): observations unchanged |
+| `service_role` append-only / owner trigger | DONE: update/delete/truncate rejected |
 | Migration → rollback → reapply | DONE (`ROLLBACK_REAPPLY_OK`) |
 | Canary idempotency | DONE (`B3C_CANARY_OK`) |
-| Deterministic rerun | DONE: report/checksums byte-for-byte |
-| `SQL_CONTRACTS_OK` / `ROLLBACK_REAPPLY_OK` / `B3C_CANARY_OK` | DONE |
+| Deterministic rerun | DONE: report/checksums byte-for-byte, hashes unchanged |
+| `SQL_CONTRACTS_OK` / `C1_ROLLBACK_REAPPLY_OK` / `ROLLBACK_REAPPLY_OK` / `B3C_CANARY_OK` | DONE |
 | Supabase/PostgREST/live JWT/RLS | **NOT TESTED** |
 
 `metadata-verified.json` warning: declared 2 444, measured 2 265;
 используется measured.
 
 ## 11. Rollback
+
+`supabase/rollback/20261126_comics_b3c1_rollback.sql` возвращает B3-C
+поведение (права, `FOR ALL` policy, CASCADE, старый identity CHECK), но
+**не удаляет и не перезаписывает** observations. Он предназначен только для
+disposable/local базы и содержит явное предупреждение: после отката удаление
+работы снова сможет каскадировать историю.
 
 `supabase/rollback/20261125_comics_b3c_rollback.sql` **разрушителен**:
 
@@ -199,7 +239,9 @@ Rollback проверен только на disposable PGlite. На production d
 
 ## 12. Решение
 
-B3-C готов как локальный проверенный слой данных и review evidence.
+B3-C/B3-C.1 готовы как локальный проверенный слой данных и review evidence.
 Импорт **не является production-ready**: нет Supabase apply, live RLS/JWT,
-прав, глав, adult classification и идентифицированных авторов.
-Остановиться после push ветки; PR/merge/deploy не выполнять.
+прав, глав, adult classification и идентифицированных авторов. B3-C.1
+усиливает append-only и identity gates, но не доказывает подлинность внешних
+person ID/evidence URL. Остановиться после push ветки; PR/merge/deploy не
+выполнять.

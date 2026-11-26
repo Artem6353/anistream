@@ -41,9 +41,11 @@ values
    'kind', 'shikimori', '30001', '30001', 'https://shikimori.one/mangas/30001', now(), 0.9,
    'source_verified', repeat('b', 64), '"manhwa"'::jsonb, true, 'b3c-ok:kind');
 
-insert into public.comic_people (id, canonical_name, name_status, source_name, source_person_id, is_public)
+insert into public.comic_people (id, canonical_name, name_status, source_name,
+  source_person_id, identity_status, name_bucket_key, is_public)
 values
-  ('b0000000-0000-4000-8000-000000000001', 'Same Name Author', 'unverified', 'anilist', null, false);
+  ('b0000000-0000-4000-8000-000000000001', 'Same Name Author', 'unverified', 'anilist',
+   null, 'unidentified_name_bucket', 'comic:test:b3c-ok:same name author', false);
 
 insert into public.comic_adaptations (id, anime_id, comic_work_id, raw_relation_type,
   normalized_relation_type, direction, confidence_level, basis, source_name, source_url)
