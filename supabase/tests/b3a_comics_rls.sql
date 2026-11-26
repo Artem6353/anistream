@@ -92,67 +92,68 @@ values
 -- Reading sources: one per mode plus negative cases.
 insert into public.comic_reading_sources (id, work_id, source_name, reading_mode,
   language, source_url, embed_url, attribution_text, terms_url, terms_review_status,
-  terms_checked_at, is_active)
+  terms_checked_at, terms_reviewed_by, is_active)
 values
   ('10000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
    'Example Publisher', 'external_link', 'ru', 'https://example.test/ch/1', null,
-   'Источник: Example Publisher', 'https://example.test/terms', 'approved', now(), true),
+   'Источник: Example Publisher', 'https://example.test/terms', 'approved', now(), 'fixture-terms-reviewer', true),
   ('20000000-0000-4000-8000-000000000002', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
    'Embed Publisher', 'permitted_embed', 'ru', 'https://example.test/reader/1',
    'https://example.test/embed/1', 'Источник: Embed Publisher', 'https://example.test/terms',
-   'approved', now(), true),
+   'approved', now(), 'fixture-terms-reviewer', true),
   ('30000000-0000-4000-8000-000000000003', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
    'Unknown Rights', 'permitted_embed', 'ru', 'https://example.test/reader/2',
    'https://example.test/embed/2', 'Источник: Unknown Rights', 'https://example.test/terms',
-   'approved', now(), true),
+   'approved', now(), 'fixture-terms-reviewer', true),
   ('40000000-0000-4000-8000-000000000004', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
    'Hosted Publisher', 'licensed_hosted', 'ru', null, null, 'Источник: Hosted Publisher',
-   'https://example.test/terms', 'approved', now(), true),
+   'https://example.test/terms', 'approved', now(), 'fixture-terms-reviewer', true),
   ('50000000-0000-4000-8000-000000000005', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
    'Expired Embed', 'permitted_embed', 'ru', 'https://example.test/reader/3',
    'https://example.test/embed/3', 'Источник: Expired Embed', 'https://example.test/terms',
-   'approved', now(), true),
+   'approved', now(), 'fixture-terms-reviewer', true),
   ('60000000-0000-4000-8000-000000000006', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
    'Pending Terms', 'external_link', 'ru', 'https://example.test/ch/4', null,
-   'Источник: Pending Terms', 'https://example.test/terms', 'pending_review', null, true),
+   'Источник: Pending Terms', 'https://example.test/terms', 'pending_review', null, null, true),
   ('70000000-0000-4000-8000-000000000007', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
    'No Pages', 'external_link', 'ru', 'https://example.test/ch/5', null,
-   'Источник: No Pages', 'https://example.test/terms', 'approved', now(), true),
+   'Источник: No Pages', 'https://example.test/terms', 'approved', now(), 'fixture-terms-reviewer', true),
   ('80000000-0000-4000-8000-000000000008', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
    'Draft Source', 'external_link', 'ru', 'https://example.test/draft/1', null,
-   'Источник: Draft Source', 'https://example.test/terms', 'approved', now(), true);
+   'Источник: Draft Source', 'https://example.test/terms', 'approved', now(), 'fixture-terms-reviewer', true);
 
 insert into public.comic_rights (work_id, reading_source_id, permission, status,
-  valid_from, valid_until, reviewed_by, reviewed_at)
+  valid_from, valid_until, evidence_ref, reviewed_by, reviewed_at)
 values
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', null, 'metadata', 'approved', current_date - 30, null, 'fixture-reviewer', now()),
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', null, 'cover', 'approved', current_date - 30, null, 'fixture-reviewer', now()),
-  ('abababab-abab-4bab-8bab-abababababab', null, 'metadata', 'approved', current_date - 30, null, 'fixture-reviewer', now()),
-  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', null, 'metadata', 'unknown', null, null, null, null),
-  ('dddddddd-dddd-4ddd-8ddd-dddddddddddd', null, 'metadata', 'approved', current_date - 30, null, 'fixture-reviewer', now()),
-  ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', null, 'metadata', 'approved', current_date - 30, current_date - 1, 'fixture-reviewer', now()),
-  ('bcbcbcbc-bcbc-4cbc-8cbc-bcbcbcbcbcbc', null, 'metadata', 'approved', current_date - 30, null, 'fixture-reviewer', now()),
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '10000000-0000-4000-8000-000000000001', 'chapter_link', 'approved', current_date - 30, null, 'fixture-reviewer', now()),
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '20000000-0000-4000-8000-000000000002', 'embed', 'approved', current_date - 30, null, 'fixture-reviewer', now()),
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '30000000-0000-4000-8000-000000000003', 'embed', 'unknown', null, null, null, null),
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '40000000-0000-4000-8000-000000000004', 'hosting', 'approved', current_date - 30, null, 'fixture-reviewer', now()),
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '50000000-0000-4000-8000-000000000005', 'embed', 'approved', current_date - 30, current_date - 1, 'fixture-reviewer', now()),
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '60000000-0000-4000-8000-000000000006', 'chapter_link', 'approved', current_date - 30, null, 'fixture-reviewer', now());
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', null, 'metadata', 'approved', current_date - 30, null, 'https://example.test/rights/metadata', 'fixture-reviewer', now()),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', null, 'cover', 'approved', current_date - 30, null, 'https://example.test/rights/cover', 'fixture-reviewer', now()),
+  ('abababab-abab-4bab-8bab-abababababab', null, 'metadata', 'approved', current_date - 30, null, 'https://example.test/rights/metadata-b', 'fixture-reviewer', now()),
+  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', null, 'metadata', 'unknown', null, null, null, null, null),
+  ('dddddddd-dddd-4ddd-8ddd-dddddddddddd', null, 'metadata', 'approved', current_date - 30, null, 'https://example.test/rights/metadata-d', 'fixture-reviewer', now()),
+  ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', null, 'metadata', 'approved', current_date - 30, current_date - 1, 'https://example.test/rights/metadata-e', 'fixture-reviewer', now()),
+  ('bcbcbcbc-bcbc-4cbc-8cbc-bcbcbcbcbcbc', null, 'metadata', 'approved', current_date - 30, null, 'https://example.test/rights/metadata-c', 'fixture-reviewer', now()),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '10000000-0000-4000-8000-000000000001', 'chapter_link', 'approved', current_date - 30, null, 'https://example.test/rights/chapter-link', 'fixture-reviewer', now()),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '20000000-0000-4000-8000-000000000002', 'embed', 'approved', current_date - 30, null, 'https://example.test/rights/embed', 'fixture-reviewer', now()),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '30000000-0000-4000-8000-000000000003', 'embed', 'unknown', null, null, null, null, null),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '40000000-0000-4000-8000-000000000004', 'hosting', 'approved', current_date - 30, null, 'https://example.test/rights/hosting', 'fixture-reviewer', now()),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '50000000-0000-4000-8000-000000000005', 'embed', 'approved', current_date - 30, current_date - 1, 'https://example.test/rights/embed-expired', 'fixture-reviewer', now()),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '60000000-0000-4000-8000-000000000006', 'chapter_link', 'approved', current_date - 30, null, 'https://example.test/rights/chapter-link-pending', 'fixture-reviewer', now());
 
 insert into public.comic_chapters (id, work_id, reading_source_id, chapter_number,
   chapter_number_text, chapter_kind, volume_number, volume_text, title_ru, language,
-  page_count, published_at, date_precision, availability, source_chapter_ref, source_url)
+  page_count, published_at, date_precision, availability, source_chapter_ref, source_url,
+  embed_url)
 values
-  ('a1000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '10000000-0000-4000-8000-000000000001', 1, '1', 'regular', 1, '1', 'Глава 1', 'ru', 20, '2020-01-01', 'day', 'public', 'ch-1', 'https://example.test/ch/1'),
-  ('a2000000-0000-4000-8000-000000000002', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '20000000-0000-4000-8000-000000000002', 2, '2', 'regular', 1, '1', 'Глава 2', 'ru', 20, null, 'unknown', 'public', 'ch-2', null),
-  ('a3000000-0000-4000-8000-000000000003', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '40000000-0000-4000-8000-000000000004', 3, '3', 'regular', 1, '1', 'Глава 3', 'ru', 20, null, 'unknown', 'public', 'ch-3', null),
-  ('a4000000-0000-4000-8000-000000000004', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '30000000-0000-4000-8000-000000000003', 4, '4', 'regular', 1, '1', 'Глава 4', 'ru', 20, null, 'unknown', 'public', 'ch-4', null),
-  ('a5000000-0000-4000-8000-000000000005', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '50000000-0000-4000-8000-000000000005', 5, '5', 'regular', 1, '1', 'Глава 5', 'ru', 20, null, 'unknown', 'public', 'ch-5', null),
-  ('a6000000-0000-4000-8000-000000000006', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '60000000-0000-4000-8000-000000000006', 6, '6', 'regular', 1, '1', 'Глава 6', 'ru', 20, null, 'unknown', 'public', 'ch-6', null),
-  ('a7000000-0000-4000-8000-000000000007', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '70000000-0000-4000-8000-000000000007', 7, '7', 'regular', 1, '1', 'Глава 7', 'ru', 0, null, 'unknown', 'public', 'ch-7', null),
-  ('a9000000-0000-4000-8000-000000000009', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '80000000-0000-4000-8000-000000000008', 1, '1', 'regular', null, null, 'Глава 1', 'ru', 20, null, 'unknown', 'public', 'ch-9', null),
-  ('aa000000-0000-4000-8000-000000000010', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '80000000-0000-4000-8000-000000000008', 1.5, '1.5', 'regular', null, null, 'Глава 1.5', 'ru', 20, null, 'unknown', 'hidden', 'ch-1.5', null),
-  ('ab000000-0000-4000-8000-000000000011', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '80000000-0000-4000-8000-000000000008', null, 'SP1', 'special', null, null, 'Спешл', 'ru', 10, null, 'unknown', 'hidden', 'sp-1', null);
+  ('a1000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '10000000-0000-4000-8000-000000000001', 1, '1', 'regular', 1, '1', 'Глава 1', 'ru', 20, '2020-01-01', 'day', 'public', 'ch-1', 'https://example.test/chapters/1', null),
+  ('a2000000-0000-4000-8000-000000000002', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '20000000-0000-4000-8000-000000000002', 2, '2', 'regular', 1, '1', 'Глава 2', 'ru', 20, null, 'unknown', 'public', 'ch-2', null, 'https://example.test/chapters/2-embed'),
+  ('a3000000-0000-4000-8000-000000000003', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '40000000-0000-4000-8000-000000000004', 3, '3', 'regular', 1, '1', 'Глава 3', 'ru', 20, null, 'unknown', 'public', 'ch-3', null, null),
+  ('a4000000-0000-4000-8000-000000000004', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '30000000-0000-4000-8000-000000000003', 4, '4', 'regular', 1, '1', 'Глава 4', 'ru', 20, null, 'unknown', 'public', 'ch-4', null, null),
+  ('a5000000-0000-4000-8000-000000000005', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '50000000-0000-4000-8000-000000000005', 5, '5', 'regular', 1, '1', 'Глава 5', 'ru', 20, null, 'unknown', 'public', 'ch-5', null, null),
+  ('a6000000-0000-4000-8000-000000000006', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '60000000-0000-4000-8000-000000000006', 6, '6', 'regular', 1, '1', 'Глава 6', 'ru', 20, null, 'unknown', 'public', 'ch-6', null, null),
+  ('a7000000-0000-4000-8000-000000000007', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '70000000-0000-4000-8000-000000000007', 7, '7', 'regular', 1, '1', 'Глава 7', 'ru', 0, null, 'unknown', 'public', 'ch-7', null, null),
+  ('a9000000-0000-4000-8000-000000000009', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '80000000-0000-4000-8000-000000000008', 1, '1', 'regular', null, null, 'Глава 1', 'ru', 20, null, 'unknown', 'public', 'ch-9', null, null),
+  ('aa000000-0000-4000-8000-000000000010', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '80000000-0000-4000-8000-000000000008', 1.5, '1.5', 'regular', null, null, 'Глава 1.5', 'ru', 20, null, 'unknown', 'hidden', 'ch-1.5', null, null),
+  ('ab000000-0000-4000-8000-000000000011', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '80000000-0000-4000-8000-000000000008', null, 'SP1', 'special', null, null, 'Спешл', 'ru', 10, null, 'unknown', 'hidden', 'sp-1', null, null);
 
 insert into public.comic_sync_runs (source_name, run_kind, adapter_version, status,
   started_at, finished_at, source_snapshot_at, terms_review_status, records_seen,
@@ -363,6 +364,26 @@ begin
   end if;
   if (select count(*) from public.comic_public_chapters) <> 2 then
     raise exception 'anon public chapters: expected 2, got %', (select count(*) from public.comic_public_chapters);
+  end if;
+  if not exists (
+    select 1 from public.comic_public_chapters
+    where id = 'a1000000-0000-4000-8000-000000000001'
+      and reading_url = 'https://example.test/chapters/1'
+  ) then
+    raise exception 'external chapter did not use its own URL';
+  end if;
+  if not exists (
+    select 1 from public.comic_public_chapters
+    where id = 'a2000000-0000-4000-8000-000000000002'
+      and reading_url = 'https://example.test/chapters/2-embed'
+  ) then
+    raise exception 'embed chapter did not use its own URL';
+  end if;
+  if exists (
+    select 1 from public.comic_public_chapters
+    where reading_url in ('https://example.test/ch/1', 'https://example.test/embed/1')
+  ) then
+    raise exception 'public chapter leaked a work-level source URL';
   end if;
   if exists (select 1 from public.comic_public_chapters where reading_mode not in ('external_link', 'permitted_embed')) then
     raise exception 'anon saw unsupported reading mode';

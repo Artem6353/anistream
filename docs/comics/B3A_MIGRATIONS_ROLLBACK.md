@@ -1,6 +1,7 @@
 # B3-A — миграции, применение и rollback
 
-Статус: **DONE** для local/disposable PGlite 0.6.0.
+Статус: **DONE** для local/disposable PGlite 0.6.0; B3-B добавляет
+аддитивную миграцию и отдельный rollback.
 
 **NOT TESTED** для Supabase CLI/PostgREST/Storage и production.
 
@@ -11,7 +12,10 @@
 | `supabase/migrations/20261123_comics_foundation.sql` | 14 таблиц, индексы, CHECK/FK, trigger | 605 |
 | `supabase/migrations/20261123_comics_rls.sql` | RLS, grants, политики, public views | 279 |
 | `supabase/tests/b3a_comics_rls.sql` | транзакционные SQL-тесты | 501 |
-| `supabase/rollback/20261123_comics_rollback.sql` | local-only rollback | 28 |
+| `supabase/rollback/20261123_comics_rollback.sql` | local-only rollback B3-A | 28 |
+| `supabase/migrations/20261124_comics_b3b_chapter_urls_evidence.sql` | главы: `embed_url`; terms/rights evidence; views | 244 |
+| `supabase/tests/b3b_comics_gates.sql` | гейты URL/evidence/expiry | 184 |
+| `supabase/rollback/20261124_comics_b3b_rollback.sql` | rollback B3-B к B3-A views/constraints | 167 |
 
 Rollback намеренно лежит **вне** `supabase/migrations/`, чтобы Supabase CLI не
 применил его как миграцию.
@@ -34,6 +38,11 @@ Rollback намеренно лежит **вне** `supabase/migrations/`, что
 
 1. `20261123_comics_foundation.sql`
 2. `20261123_comics_rls.sql`
+3. `20261124_comics_b3b_chapter_urls_evidence.sql`
+
+B3-B зависит от обеих B3-A миграций (`comic_chapters`, `comic_rights`,
+`comic_public_*`). Порядок обязателен: B3-B заменяет public views и добавляет
+колонки/CHECK, но не пересоздаёт таблицы.
 
 Зависимости:
 
@@ -57,8 +66,14 @@ RLS-файл зависит от всех таблиц foundation и созда�
 2. Сохранить `pg_dump` схем `public` и `auth` (без секретов в логах).
 3. Зафиксировать counts `public.titles`, `auth.users`, существующих social-таблиц.
 4. Проверить, что нет объектов `comic_*`/`user_comic_*`.
-5. Применить в staging/disposable копии; прогнать `b3a_comics_rls.sql`.
-6. Только после успеха — production, с окном maintenance и планом rollback.
+5. Применить в staging/disposable копии; прогнать `b3a_comics_rls.sql` и
+   `b3b_comics_gates.sql`.
+6. B3-B preflight: убедиться, что нет approved rights без непустого
+   `evidence_ref`/`reviewed_by`/`reviewed_at`, approved terms без
+   `terms_url`/`terms_checked_at`/`terms_reviewed_by`, и что у публичных глав
+   есть собственный URL. Иначе миграция/публикация должна остановиться, а не
+   ослаблять гейт.
+7. Только после успеха — production, с окном maintenance и планом rollback.
 
 Для пустых новых таблиц backup нужен прежде всего из-за user-таблиц и на случай
 последующих B4-данных. Rollback удаляет новые данные; без backup они теряются.
@@ -105,6 +120,21 @@ AFTER {"tables":0,"views":0,"funcs":0,"titles":1}
 REAPPLY_TABLES 12
 ```
 
+B3-B PGlite 0.6.0 (disposable):
+
+```
+APPLIED 20261123_comics_foundation.sql
+APPLIED 20261123_comics_rls.sql
+APPLIED 20261124_comics_b3b_chapter_urls_evidence.sql
+B3A_RLS_TEST_OK
+B3B_GATES_TEST_OK
+B3B_ROLLBACK_OK
+B3B_REAPPLY_OK
+```
+
+B3-B rollback возвращает B3-A views/constraint, удаляет `terms_reviewed_by` и
+`comic_chapters.embed_url`; повторное применение снова проходит.
+
 `REAPPLY_TABLES 12` — это количество таблиц с префиксом `comic_*`; ещё две
 user-таблицы начинаются с `user_comic_*` и в этот счётчик не входят. Всего 14.
 
@@ -149,6 +179,16 @@ user-таблицы начинаются с `user_comic_*` и в этот счё
 - `authenticated` не читает `comic_review_queue` (модераторской роли нет);
 - `comic_public_chapters` не отдаёт `licensed_hosted`.
 
+`supabase/tests/b3b_comics_gates.sql` дополнительно проверяет:
+
+- `reading_url` — URL конкретной главы, без work-level fallback;
+- глава без собственного URL не публикуется;
+- expired `chapter_link`/`embed` и expired terms закрывают доступ;
+- approved rights без evidence/reviewer/time отклоняются;
+- approved terms без `terms_url`/reviewer отклоняются;
+- chapter `embed_url` обязан быть HTTPS;
+- rejected rights без evidence совместимы.
+
 Это **PGlite**, не Supabase. `auth.uid()` в тесте замокан через
 `current_setting('request.jwt.claim.sub')`; реальный PostgREST JWT не проверялся.
 
@@ -158,6 +198,9 @@ user-таблицы начинаются с `user_comic_*` и в этот счё
 select count(*) from public.comic_works;
 select count(*) from public.comic_public_works;
 select count(*) from public.comic_public_chapters;
+select column_name from information_schema.columns
+where table_schema = 'public' and table_name = 'comic_chapters'
+  and column_name = 'embed_url';
 select relname, relrowsecurity
 from pg_class
 where relnamespace = 'public'::regnamespace
@@ -174,6 +217,9 @@ order by relname;
 - `supabase db push`/CLI: **NOT TESTED** (CLI отсутствует).
 - PostgREST/RLS behavior с реальным JWT: **NOT TESTED**.
 - Supabase Storage policies: **NOT TESTED** (Storage не используется).
+- B3-B apply на Supabase/Postgres (не PGlite): **NOT TESTED**.
+- B3-B canary на реальной local Postgres/Supabase: **NOT TESTED**; проверен
+  только disposable PGlite.
 - Production schema/apply/rollback: **NOT TESTED**, не выполнялись.
 - Поведение под конкурентной нагрузкой/большими объёмами: **NOT TESTED**.
 - `pg_dump`/restore: **NOT TESTED** (нет `pg_dump`/`psql`).

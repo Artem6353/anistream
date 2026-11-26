@@ -245,18 +245,23 @@
 | `source_name` | text | NOT NULL, 1..120 | Человекочитаемое имя/attribution |
 | `reading_mode` | text | NOT NULL | `external_link/permitted_embed/licensed_hosted` |
 | `language` | text | NOT NULL, `ru` | |
-| `source_url` | text | NULL | HTTPS; обязателен для external_link |
-| `embed_url` | text | NULL | HTTPS; обязателен для permitted_embed |
+| `source_url` | text | NULL | HTTPS; work-level landing/metadata, **не** URL главы |
+| `embed_url` | text | NULL | HTTPS; work-level landing/metadata, **не** URL главы |
 | `attribution_text` | text | NULL | Требуемая атрибуция |
-| `terms_url` | text | NULL | HTTPS |
+| `terms_url` | text | NULL | HTTPS; обязателен при approved |
 | `terms_review_status` | text | NOT NULL, `unknown` | `unknown/pending_review/approved/rejected/expired` |
 | `terms_checked_at` | timestamptz | NULL | Обязателен при approved |
+| `terms_reviewed_by` | text | NULL | Именованный reviewer; обязателен при approved (B3-B) |
 | `is_active` | boolean | NOT NULL, false | По умолчанию выключен |
 | `notes_internal` | text | NULL | ≤4000; без секретов |
 | `created_at/updated_at` | timestamptz | NOT NULL | |
 
 Уникальность: `(work_id, source_name, reading_mode, language)` +
 `(work_id, id)` для composite FK.
+
+С B3-B work-level `source_url`/`embed_url` не обязательны: destination главы
+хранится в `comic_chapters.source_url`/`embed_url`. Approved terms требуют
+`terms_url`, `terms_checked_at` и непустой `terms_reviewed_by`.
 
 ### 3.9 `comic_rights` — пять независимых прав
 
@@ -279,8 +284,11 @@
 
 - `metadata`/`cover` — work-level (`reading_source_id IS NULL`).
 - `chapter_link`/`embed`/`hosting` — source-level (`reading_source_id NOT NULL`).
-- `approved`/`rejected` требуют `reviewed_by` и `reviewed_at`.
+- `approved` требует `reviewed_by`, `reviewed_at` и непустой `evidence_ref`
+  (B3-B); `rejected` требует reviewer/time, evidence не обязателен.
 - `expired` требует `valid_until`.
+- Public views защитно повторяют проверку evidence/reviewer/time, даже если
+  строка попала в БД в обход CHECK.
 - `valid_until >= valid_from`.
 - Один ряд на scope (история не ведётся отдельными строками): partial unique
   `(work_id, permission)` для work-level и
@@ -307,7 +315,8 @@
 | `date_precision` | text | NOT NULL, `unknown` | `day/month/year/unknown` |
 | `availability` | text | NOT NULL, `hidden` | `public/hidden` |
 | `source_chapter_ref` | text | NULL | ≤200 |
-| `source_url` | text | NULL | HTTPS |
+| `source_url` | text | NULL | HTTPS; URL **этой** главы (B3-B) |
+| `embed_url` | text | NULL | HTTPS; embed **этой** главы (B3-B) |
 | `first_seen_at` | timestamptz | NOT NULL, now | |
 | `last_checked_at` | timestamptz | NULL | |
 | `created_at/updated_at` | timestamptz | NOT NULL | |
@@ -318,6 +327,9 @@
 - `unique nulls not distinct (work_id, language, chapter_number_text, reading_source_id)`.
 - `chapter_number_text` — источник истины для дробных/спецглав.
 - `page_count` не является доказательством наличия страниц; pages table нет.
+- `reading_url` public view берётся только из `comic_chapters.source_url`
+  (external_link) или `comic_chapters.embed_url` (permitted_embed). Work-level
+  URL источника не подставляется и не конкатенируется.
 
 ### 3.11 `comic_sync_runs` — аудит импорта
 
@@ -400,8 +412,8 @@ public grants; `anon`/`authenticated` получают `insufficient_privilege`.
 | Два id одного источника у работы | `unique (work_id, source_name)`; выбрать primary вручную, queue |
 | Дубликат MAL | queue `duplicate_external_id`/`ambiguous_external_id`; не авто-merge |
 | Alias совпал | `unique` по normalized; queue `duplicate_alias`; не удалять чужой alias |
-| Сырой тип связи неизвестен | `source_relation_type` сохранить, normalized `RELATED` только с verification |
-| AniList `ADAPTATION` | `comic_adaptations` с `confidence_level='unknown'`/`inferred`; не confirmed без basis |
+| Сырой тип связи неизвестен | сохранить `raw_relation_type`; не превращать молча в `RELATED` |
+| Любое AniList anime↔comic ребро | B3-B пишет unconfirmed link в `comic_adaptations` с raw type, `direction='unknown'`, `confidence_level='unknown'`, `is_primary=false`, `is_public=false`; `ADAPTATION` не подтверждает первоисточник |
 | Два primary adaptation | partial unique; вручную выбрать один |
 | Права изменились | обновить существующий scope; `reviewed_by/at`; не плодить дубли |
 | Право истекло | `status='expired'` + `valid_until`; views и так отсекают по дате |
@@ -424,17 +436,19 @@ public grants; `anon`/`authenticated` получают `insufficient_privilege`.
 Статусы: `unknown` (default), `pending_review`, `approved`, `rejected`, `expired`.
 
 Для `comic_public_works` нужны пункты 1–3; `cover_url` выдаётся только при 4.
-Для `comic_public_chapters` нужны 1–3 и 5–7; пункт 4 не требуется.
+Для `comic_public_chapters` нужны 1–3 и 5–8; пункт 4 не требуется.
 
 1. `comic_works.publication_status='approved'` и `published_at <= now()`;
 2. verified русское название и `is_adult=false`;
-3. `metadata` approved и действует;
-4. для обложки — `cover` approved и действует;
+3. `metadata` approved, действует, с непустым evidence/reviewer/time;
+4. для обложки — `cover` approved и действует, с evidence/reviewer/time;
 5. для главы — `availability='public'`, `language='ru'`, `page_count>0`;
-6. source active + terms approved/checked;
-7. `chapter_link` или `embed` approved и действует.
+6. source active + terms approved + `terms_url` + `terms_checked_at` +
+   `terms_reviewed_by`;
+7. `chapter_link` или `embed` approved и действует, с evidence/reviewer/time;
+8. у главы есть собственный `source_url`/`embed_url`; иначе глава не публична.
 
-`licensed_hosted` никогда не попадает в `comic_public_chapters` в B3-A: нет
+`licensed_hosted` никогда не попадает в `comic_public_chapters` в B3-A/B3-B: нет
 `comic_chapter_pages`, нет Storage-политики, нет legal review.
 
 ## 7. Public projections
@@ -455,7 +469,9 @@ volume_number, volume_text, title_ru, language, page_count, published_at,
 reading_source_id, source_name, attribution_text, reading_mode, reading_url`.
 
 `reading_mode` — только `external_link` или `permitted_embed`; `reading_url` —
-`source_url`/`embed_url` соответствующего режима. Hosted не отдаётся.
+`comic_chapters.source_url` для external_link или `comic_chapters.embed_url`
+для permitted_embed. Work-level `comic_reading_sources.source_url`/`embed_url`
+в `reading_url` не попадают. Hosted не отдаётся.
 
 Оба view: `security_invoker=false`, `security_barrier=true`, owner — migration
 role (`postgres`). Это осознанный definer-surface; threat review — в ADR.
@@ -480,19 +496,24 @@ role (`postgres`). Это осознанный definer-surface; threat review �
 
 ## 9. Интерфейс source adapter
 
+B3-B реализует `SourceAdapter` (`lib/aninova3/comics/import/adapters.ts`):
+`read(raw)` → `validate(value)` → `normalize(value, context)`.
+
 Adapter обязан возвращать/фиксировать:
 
 - `source_name` (стабильный lower snake case);
 - `external_id`;
 - `source_url`;
 - `fetched_at`;
+- `source_snapshot_at` (снимок артефакта);
 - `terms_review_status`;
 - `attribution_requirements` (текст/URL);
 - `confidence` (0..1 или NULL);
 - `verification_status`;
 - `raw_relation_type` для связей;
-- `source_payload_hash` (SHA-256), если сохраняется ссылка на payload;
-- `source_snapshot_at` для run.
+- `source_payload_hash` (SHA-256) для provenance.
+
+Adapter читает только уже сохранённые JSON-артефакты; сетевых вызовов нет.
 
 Запрещено:
 
@@ -523,6 +544,9 @@ MangaDex можно рассматривать только после пров�
 | Alice/Bob isolation | DONE (PGlite) |
 | Private queue denial | DONE (PGlite) |
 | Rights unknown/expired/hosted exclusion | DONE (PGlite) |
+| B3-B chapter-specific URL + evidence gates | DONE (PGlite, transactional tests) |
+| B3-B adapters/normalization/dedup/dry-run | DONE (Vitest) |
+| B3-B canary apply/idempotency | DONE (disposable PGlite) |
 | Supabase CLI/PostgREST/Storage | NOT TESTED |
 | Production apply | NOT TESTED / not performed |
 | Public UI/routes | NOT TESTED / out of scope |
@@ -535,3 +559,6 @@ MangaDex можно рассматривать только после пров�
 - Нет автоматического merge дублей; только очередь.
 - `metadata-verified.json` содержит расхождение `meta.total`/`records`; импорт
   должен доверять измеренным records.
+- B3-B персоны — name-only из `authors` AniList, `source_person_id=NULL`,
+  `name_status='unverified'`; это не подтверждённые личности и не public.
+- B3-B не применяет план к БД и не создаёт права/главы/reading sources.

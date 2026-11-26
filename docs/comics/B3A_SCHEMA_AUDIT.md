@@ -168,12 +168,25 @@ Production-база, Supabase CLI, PostgREST и Storage в B3-A **не изме�
 - Существующие таблицы, колонки, политики и данные не изменялись.
 - Production, Storage, Redis, Vercel, MangaDex и массовый импорт не затрагивались.
 
+## 7a. Что исправлено в B3-B
+
+- `comic_chapters` получил собственный `embed_url`; `reading_url` public view
+  берётся из URL конкретной главы, а не из work-level reading source.
+- Approved rights требует непустые `evidence_ref`, `reviewed_by`, `reviewed_at`.
+- Approved terms требует `terms_url`, `terms_checked_at`, `terms_reviewed_by`.
+- Public views защитно повторяют evidence/reviewer/time predicates.
+- Добавлены transactional PGlite tests на chapter URL, expiry и evidence;
+  B3-B rollback/reapply проверен.
+- Импорт B3-B — только dry-run; 0 rights, 0 chapters, 0 reading sources,
+  0 public works создано.
+
 ## 8. Ограничения аудита
 
 - Production-схема не перепроверялась: **NOT TESTED**.
 - Supabase CLI/PostgREST/Storage: **NOT TESTED** (в окружении нет `supabase`, Docker, `psql`).
 - Локальная проверка SQL/RLS выполнена на PGlite 0.6.0; это не Supabase и не доказывает поведение PostgREST.
 - Числа 8 033/2 137 и т. п. — из файловых артефактов и отчётов, не из production SQL-запроса.
+- B3-B canary проверен на disposable PGlite, не на Supabase/Postgres.
 
 ## 9. Ссылки
 
