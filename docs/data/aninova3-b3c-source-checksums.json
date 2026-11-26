@@ -1,0 +1,50 @@
+{
+  "generated_at": "2026-11-25T00:00:00.000Z",
+  "plan_hash": "bc97255db9c212bbb4d5af409eb8c211097329509ab069491ac5415b8e2e1fd3",
+  "canary_hash": "fbea2f08207b7d080423807fe2a6eae9ecb534c3ec28f9bba6732e23697a0079",
+  "sources": [
+    {
+      "source_name": "anilist",
+      "artifact_path": "lib/aninova3/comics/source-graph.json",
+      "checksum": "e7e98f865478cff0ef3489761b37adc3b8d0dd51987526580136afaff953fb35",
+      "terms_review_status": "unknown",
+      "attribution_requirements": [],
+      "records_read": 4100,
+      "meta_total": 4100
+    },
+    {
+      "source_name": "shikimori",
+      "artifact_path": "lib/aninova3/comics/metadata-verified.json",
+      "checksum": "a23de510d751e34aeaf6e70caaf6a5f08abb39eba1e2dd7d866a7eec558d1188",
+      "terms_review_status": "unknown",
+      "attribution_requirements": [],
+      "records_read": 2265,
+      "meta_total": 2444
+    },
+    {
+      "source_name": "shikimori_candidates",
+      "artifact_path": "lib/aninova3/comics/metadata-candidates.json",
+      "checksum": "61b78f9291a135edfa75b98d478d1732443e969cb6d7f1ef850e44b5cf0f13be",
+      "terms_review_status": "unknown",
+      "attribution_requirements": [],
+      "records_read": 2170,
+      "meta_total": 2444
+    },
+    {
+      "source_name": "b1d_review_queue",
+      "artifact_path": "docs/data/aninova3-b1d-review-queue.json",
+      "checksum": "6c9a0d1b9ec4d1af8ec5a2749ddfea85c7cecc717bbcafe5d37c4e173a6dc87e",
+      "terms_review_status": "unknown",
+      "attribution_requirements": [],
+      "records_read": 120,
+      "meta_total": null
+    }
+  ],
+  "checksums": {
+    "lib/aninova3/comics/source-graph.json": "e7e98f865478cff0ef3489761b37adc3b8d0dd51987526580136afaff953fb35",
+    "lib/aninova3/comics/metadata-verified.json": "a23de510d751e34aeaf6e70caaf6a5f08abb39eba1e2dd7d866a7eec558d1188",
+    "lib/aninova3/comics/metadata-candidates.json": "61b78f9291a135edfa75b98d478d1732443e969cb6d7f1ef850e44b5cf0f13be",
+    "docs/data/aninova3-b1d-review-queue.json": "6c9a0d1b9ec4d1af8ec5a2749ddfea85c7cecc717bbcafe5d37c4e173a6dc87e",
+    "lib/data/titles.json": "1b002163278627192bfa7bd0d80ff39b9264ac7aaa42d7fd9ab23ce729938d1f"
+  }
+}
