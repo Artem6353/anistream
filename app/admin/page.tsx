@@ -56,6 +56,15 @@ export default async function AdminPage() {
       </header>
 
       <section className="panel" style={{ marginTop: 12 }}>
+        <h2 className="section-title">Comics · review operations</h2>
+        <p className="panel__note">
+          B3-D read-only: качество каталога, очередь проверки, конфликты источников и связи Anime ↔ Comics.
+          Никаких изменений review queue, rights и публикационных gate.
+        </p>
+        <p><Link className="badge badge--accent" href="/admin/comics/review">Открыть review operations</Link></p>
+      </section>
+
+      <section className="panel" style={{ marginTop: 12 }}>
         <h2 className="section-title">Очередь модерации ({queue.length})</h2>
         <p className="panel__note">Тайтлы, у которых нет ни одного реального источника (только тест-поток) — проверить связи, дозапустить hydrate или bridge.</p>
         <ul className="admin-list">

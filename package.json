@@ -51,7 +51,8 @@
     "ru:b1c": "node scripts/aninova3-ru-metadata.mjs",
     "comics:b3b:dry-run": "node scripts/comics-b3b-dry-run.mjs",
     "comics:b3c:dry-run": "node scripts/comics-b3c-dry-run.mjs",
-    "comics:b3c:canary": "node scripts/comics-b3c-canary.mjs"
+    "comics:b3c:canary": "node scripts/comics-b3c-canary.mjs",
+    "comics:b3d:report": "node scripts/comics-b3d-report.mjs"
   },
   "dependencies": {
     "@sentry/browser": "^11.0.0",
