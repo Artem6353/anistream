@@ -5,7 +5,7 @@ import { buildRelationInspection, type RelationInspection, type RelationLink } f
 import { summarizeReviewItems } from './review';
 import type { CatalogSnapshot, ReviewItemRow } from './model';
 
-export const B3D_REPORT_SCHEMA_VERSION = 'b3d.1';
+export const B3D_REPORT_SCHEMA_VERSION = 'b3d.2';
 export const B3D_CATALOG_SCHEMA_VERSION = 'b3c.1';
 
 export function canonicalize(value: unknown): unknown {
@@ -65,7 +65,7 @@ export interface QualityReport {
   schema_version: string;
   catalog_schema_version: string;
   generated_at: string;
-  commit_sha: string;
+  source_code_commit_sha: string;
   source_mode: string;
   dashboard: Dashboard;
   review_queue: {
@@ -163,12 +163,16 @@ export function buildQualityReport(input: {
   snapshot: CatalogSnapshot;
   previous?: QualityReport | null;
   generatedAt: string;
-  commitSha: string;
+  sourceCodeCommitSha: string;
   inputChecksums: Record<string, string>;
   warnings?: string[];
   errors?: string[];
 }): QualityReport {
   const { snapshot } = input;
+  const sourceCodeCommitSha = input.sourceCodeCommitSha.trim().toLowerCase();
+  if (!/^[a-f0-9]{7,40}$/.test(sourceCodeCommitSha)) {
+    throw new Error('sourceCodeCommitSha must be a 7..40 character hex commit SHA');
+  }
   const dashboard = buildDashboard(snapshot);
   const summary = summarizeReviewItems(snapshot.review_items);
   const conflictGroups = buildSourceConflicts(snapshot.observations, snapshot.review_items);
@@ -184,7 +188,7 @@ export function buildQualityReport(input: {
     schema_version: B3D_REPORT_SCHEMA_VERSION,
     catalog_schema_version: B3D_CATALOG_SCHEMA_VERSION,
     generated_at: input.generatedAt,
-    commit_sha: input.commitSha,
+    source_code_commit_sha: sourceCodeCommitSha,
     source_mode: snapshot.source,
     dashboard,
     review_queue: {

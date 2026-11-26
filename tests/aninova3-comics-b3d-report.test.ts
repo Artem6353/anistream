@@ -10,14 +10,14 @@ import {
 } from '../lib/aninova3/comics/operations/report';
 import { observation, review, snapshot, work } from './fixtures/b3d-operations';
 
-const COMMIT = 'e1f752490a761aa1c86d4cf608b687591ae3042b';
+const COMMIT = '04ec86c3f914063af833ac897683aca3248f113c';
 
 function build(over: Parameters<typeof buildQualityReport>[0]['snapshot'] = snapshot(), previous: QualityReport | null = null) {
   return buildQualityReport({
     snapshot: over,
     previous,
     generatedAt: over.generated_at,
-    commitSha: COMMIT,
+    sourceCodeCommitSha: COMMIT,
     inputChecksums: { 'plan.json': 'abc', 'b3c-report.json': 'def' },
   });
 }
@@ -30,11 +30,27 @@ describe('B3-D quality report', () => {
     expect(reportFileContent(first)).toBe(reportFileContent(second));
     expect(first.schema_version).toBe(B3D_REPORT_SCHEMA_VERSION);
     expect(first.catalog_schema_version).toBe(B3D_CATALOG_SCHEMA_VERSION);
-    expect(first.commit_sha).toBe(COMMIT);
+    expect(first.source_code_commit_sha).toBe(COMMIT);
+    expect(first).not.toHaveProperty('commit_sha');
     expect(first.generated_at).toBe(snapshot().generated_at);
     expect(first.report_checksum).toMatch(/^[a-f0-9]{64}$/);
     expect(canonicalJson({ b: 1, a: 2 })).toBe('{"a":2,"b":1}');
     expect(sha256Hex('a')).toBe('ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb');
+  });
+
+  it('rejects a missing or non-SHA source code provenance value', () => {
+    expect(() => buildQualityReport({
+      snapshot: snapshot(),
+      generatedAt: snapshot().generated_at,
+      sourceCodeCommitSha: 'HEAD',
+      inputChecksums: {},
+    })).toThrow(/sourceCodeCommitSha/);
+    expect(() => buildQualityReport({
+      snapshot: snapshot(),
+      generatedAt: snapshot().generated_at,
+      sourceCodeCommitSha: '   ',
+      inputChecksums: {},
+    })).toThrow(/sourceCodeCommitSha/);
   });
 
   it('explicitly marks comparison unavailable when no previous report is supplied', () => {

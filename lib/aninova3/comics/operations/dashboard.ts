@@ -23,9 +23,11 @@ export interface Dashboard {
     works_by_status: Record<string, number>;
     works_by_kind: Record<string, number>;
     unknown_kind: number;
-    verified_ru_titles: number;
-    missing_ru_titles: number;
-    name_mismatch_works: number;
+    ru_titles_present: number;
+    ru_titles_verified: number;
+    ru_titles_unverified: number;
+    ru_titles_missing: number;
+    ru_titles_name_mismatch: number;
     external_ids: number;
     aliases: number;
     people: number;
@@ -38,8 +40,6 @@ export interface Dashboard {
     source_conflict_items: number;
     observation_conflicts: number;
     ambiguous_external_ids: number;
-    missing_ru_titles: number;
-    name_mismatch_works: number;
     unidentified_author_buckets: number;
     identified_authors: number;
     ambiguous_people_identities: number;
@@ -182,6 +182,40 @@ export function countPublishableWorks(
   }).length;
 }
 
+export interface RuTitleMetrics {
+  present: number;
+  verified: number;
+  unverified: number;
+  missing: number;
+  nameMismatch: number;
+}
+
+/**
+ * RU title buckets are exhaustive and non-overlapping:
+ * present = verified + unverified; missing is disjoint. nameMismatch is a
+ * sub-counter of unverified (a mismatch is by definition not verified).
+ */
+export function countRuTitleMetrics(works: CatalogSnapshot['works']): RuTitleMetrics {
+  let present = 0;
+  let verified = 0;
+  let unverified = 0;
+  let missing = 0;
+  let nameMismatch = 0;
+  for (const work of works) {
+    const hasTitle = work.title_ru !== null && work.title_ru.trim().length > 0;
+    if (!hasTitle) {
+      missing += 1;
+      continue;
+    }
+    present += 1;
+    const isVerified = work.title_ru_status === 'source_verified' || work.title_ru_status === 'editorially_verified';
+    if (isVerified) verified += 1;
+    else unverified += 1;
+    if (work.title_ru_status === 'name_mismatch') nameMismatch += 1;
+  }
+  return { present, verified, unverified, missing, nameMismatch };
+}
+
 export function buildDashboard(snapshot: CatalogSnapshot): Dashboard {
   const { works, people, review_items: reviewItems, adaptations, observations, approved_rights: rights } = snapshot;
   const reasons = countReasons(reviewItems);
@@ -189,11 +223,7 @@ export function buildDashboard(snapshot: CatalogSnapshot): Dashboard {
   const severities = countSeverities(reviewItems);
   const worksByStatus = countBy(works, (work) => work.publication_status);
   const worksByKind = countBy(works, (work) => work.kind);
-  const verifiedRuTitles = works.filter(
-    (work) => work.title_ru !== null && (work.title_ru_status === 'source_verified' || work.title_ru_status === 'editorially_verified'),
-  ).length;
-  const missingRuTitles = works.length - verifiedRuTitles;
-  const nameMismatchWorks = works.filter((work) => work.title_ru_status === 'name_mismatch').length;
+  const ruTitles = countRuTitleMetrics(works);
   const observationConflictWorkIds = new Set(observations.filter((row) => row.is_conflict).map((row) => row.work_id));
   const sourceConflictWorkIds = new Set(
     reviewItems.filter((item) => hasAnyReason(item, SOURCE_CONFLICT_REASONS) && item.work_id).map((item) => item.work_id as string),
@@ -222,9 +252,11 @@ export function buildDashboard(snapshot: CatalogSnapshot): Dashboard {
       works_by_status: worksByStatus,
       works_by_kind: worksByKind,
       unknown_kind: works.filter((work) => work.kind === 'unknown').length,
-      verified_ru_titles: verifiedRuTitles,
-      missing_ru_titles: missingRuTitles,
-      name_mismatch_works: nameMismatchWorks,
+      ru_titles_present: ruTitles.present,
+      ru_titles_verified: ruTitles.verified,
+      ru_titles_unverified: ruTitles.unverified,
+      ru_titles_missing: ruTitles.missing,
+      ru_titles_name_mismatch: ruTitles.nameMismatch,
       external_ids: snapshot.counts.external_ids,
       aliases: snapshot.counts.aliases,
       people: people.length,
@@ -237,8 +269,6 @@ export function buildDashboard(snapshot: CatalogSnapshot): Dashboard {
       source_conflict_items: sourceConflictItems,
       observation_conflicts: snapshot.counts.source_observation_conflicts,
       ambiguous_external_ids: reviewItems.filter((item) => hasAnyReason(item, AMBIGUOUS_EXTERNAL_ID_REASONS)).length,
-      missing_ru_titles: missingRuTitles,
-      name_mismatch_works: nameMismatchWorks,
       unidentified_author_buckets: unidentifiedBuckets.size,
       identified_authors: identifiedAuthors,
       ambiguous_people_identities: reasons.ambiguous_people_identity,

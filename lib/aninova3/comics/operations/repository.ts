@@ -64,7 +64,7 @@ const RIGHTS_SELECT = [
 ].join(',');
 
 const PAGE_SIZE = 1000;
-const MAX_ROWS = 60000;
+export const MAX_ROWS = 60000;
 const REQUEST_TIMEOUT_MS = 15000;
 
 export class CatalogReadConfigurationError extends Error {
@@ -81,6 +81,45 @@ export class CatalogReadError extends Error {
     this.name = 'CatalogReadError';
     this.status = status;
   }
+}
+
+export class CatalogReadIncompleteError extends CatalogReadError {
+  readonly table: string;
+  readonly fetched: number;
+  readonly total: number | null;
+  readonly maxRows: number;
+  constructor(table: string, fetched: number, total: number | null, maxRows: number) {
+    super(
+      `Supabase read ${table} is incomplete: fetched ${fetched} rows, reported total ${total === null ? 'unknown' : total}, limit ${maxRows}`,
+    );
+    this.name = 'CatalogReadIncompleteError';
+    this.table = table;
+    this.fetched = fetched;
+    this.total = total;
+    this.maxRows = maxRows;
+  }
+}
+
+export interface SelectionCompleteness {
+  table: string;
+  fetched: number;
+  total: number | null;
+  lastPageSize: number;
+  pageSize: number;
+  maxRows: number;
+}
+
+/**
+ * Fail-closed completeness check. A known total must be fully fetched and must
+ * not exceed MAX_ROWS. With an unknown total, the only trustworthy end is a
+ * short last page below MAX_ROWS; hitting the limit is never success.
+ */
+export function assertCompleteSelection(input: SelectionCompleteness): void {
+  const { table, fetched, total, lastPageSize, pageSize, maxRows } = input;
+  if (total !== null && total > maxRows) throw new CatalogReadIncompleteError(table, fetched, total, maxRows);
+  if (total !== null && fetched !== total) throw new CatalogReadIncompleteError(table, fetched, total, maxRows);
+  if (total === null && fetched >= maxRows) throw new CatalogReadIncompleteError(table, fetched, total, maxRows);
+  if (total === null && lastPageSize >= pageSize) throw new CatalogReadIncompleteError(table, fetched, total, maxRows);
 }
 
 interface ReadConfig {
@@ -147,15 +186,22 @@ export async function fetchAll<T>(
 ): Promise<T[]> {
   const rows: T[] = [];
   let offset = 0;
+  let total: number | null = null;
+  let lastPageSize = 0;
   while (offset < MAX_ROWS) {
     const params = new URLSearchParams({ select, order });
     for (const [key, value] of Object.entries(filters)) params.set(key, value);
     const result = await request(table, params, offset, PAGE_SIZE);
+    if (result.total !== null) total = result.total;
+    lastPageSize = result.rows.length;
     rows.push(...(result.rows as T[]));
-    if (result.rows.length < PAGE_SIZE) break;
-    if (result.total !== null && offset + result.rows.length >= result.total) break;
-    offset += PAGE_SIZE;
+    if (total !== null && total > MAX_ROWS) break;
+    if (rows.length >= MAX_ROWS) break;
+    if (lastPageSize < PAGE_SIZE) break;
+    if (total !== null && rows.length >= total) break;
+    offset = rows.length;
   }
+  assertCompleteSelection({ table, fetched: rows.length, total, lastPageSize, pageSize: PAGE_SIZE, maxRows: MAX_ROWS });
   return rows;
 }
 

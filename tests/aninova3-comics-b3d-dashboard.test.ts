@@ -3,6 +3,7 @@ import {
   buildDashboard,
   collectContradictoryAnimeIds,
   countPublishableWorks,
+  countRuTitleMetrics,
   reviewQueueDelta,
 } from '../lib/aninova3/comics/operations/dashboard';
 import { REVIEW_REASONS, REVIEW_SEVERITIES, REVIEW_STATUSES } from '../lib/aninova3/comics/operations/model';
@@ -17,8 +18,11 @@ describe('B3-D quality dashboard', () => {
     expect(dashboard.metadata.works_by_status).toEqual({ draft: 2, approved: 1 });
     expect(Object.values(dashboard.metadata.works_by_status).reduce((sum, value) => sum + value, 0)).toBe(3);
     expect(dashboard.metadata.unknown_kind).toBe(1);
-    expect(dashboard.metadata.verified_ru_titles).toBe(2);
-    expect(dashboard.metadata.missing_ru_titles).toBe(1);
+    expect(dashboard.metadata.ru_titles_present).toBe(2);
+    expect(dashboard.metadata.ru_titles_verified).toBe(2);
+    expect(dashboard.metadata.ru_titles_unverified).toBe(0);
+    expect(dashboard.metadata.ru_titles_missing).toBe(1);
+    expect(dashboard.metadata.ru_titles_name_mismatch).toBe(0);
     expect(dashboard.metadata.external_ids).toBe(3);
     expect(dashboard.metadata.aliases).toBe(2);
     expect(dashboard.metadata.people).toBe(3);
@@ -59,6 +63,33 @@ describe('B3-D quality dashboard', () => {
     for (const reason of REVIEW_REASONS) expect(dashboard.review.by_reason[reason]).toBeGreaterThanOrEqual(0);
     for (const severity of REVIEW_SEVERITIES) expect(dashboard.review.by_severity[severity]).toBeGreaterThanOrEqual(0);
     expect(dashboard.review.by_status).toEqual({ open: 7, in_review: 1, resolved: 1, dismissed: 0 });
+  });
+
+  it('classifies RU titles as present/missing and verified/unverified without overlap', () => {
+    const metrics = countRuTitleMetrics([
+      work('t1', { title_ru: null, title_ru_status: 'source_verified' }),
+      work('t2', { title_ru: '   ', title_ru_status: 'unverified' }),
+      work('t3', { title_ru: 'Черновик', title_ru_status: 'candidate' }),
+      work('t4', { title_ru: 'Не совпало', title_ru_status: 'name_mismatch' }),
+      work('t5', { title_ru: 'Проверено', title_ru_status: 'source_verified' }),
+      work('t6', { title_ru: 'Проверено редактором', title_ru_status: 'editorially_verified' }),
+    ]);
+    expect(metrics).toEqual({ present: 4, verified: 2, unverified: 2, missing: 2, nameMismatch: 1 });
+    expect(metrics.present).toBe(metrics.verified + metrics.unverified);
+    expect(metrics.verified + metrics.unverified + metrics.missing).toBe(6);
+    // name_mismatch is a sub-bucket of unverified, not a fourth bucket.
+    expect(metrics.nameMismatch).toBeLessThanOrEqual(metrics.unverified);
+
+    const dashboard = buildDashboard(snapshot({
+      works: [
+        work('m1', { title_ru: null }),
+        work('m2', { title_ru: 'Не подтверждено', title_ru_status: 'unverified' }),
+        work('m3', { title_ru: 'Mismatch', title_ru_status: 'name_mismatch' }),
+      ],
+    }));
+    expect(dashboard.metadata.ru_titles_missing).toBe(1);
+    expect(dashboard.metadata.ru_titles_unverified).toBe(2);
+    expect(dashboard.metadata.ru_titles_present).toBe(2);
   });
 
   it('only treats two conflicting B1D direction hints as contradictory', () => {

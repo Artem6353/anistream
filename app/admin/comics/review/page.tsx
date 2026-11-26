@@ -151,8 +151,11 @@ function DashboardView({ dashboard }: { dashboard: Dashboard }) {
           <Stat label="люди" value={dashboard.metadata.people} hint={`${fmt(dashboard.metadata.credits)} credits`} />
           <Stat label="связи adaptations" value={dashboard.metadata.adaptations} hint="только записи, не подтверждение" />
           <Stat label="source observations" value={dashboard.metadata.source_observations} hint={`${fmt(dashboard.quality.observation_conflicts)} конфликтных строк`} />
-          <Stat label="RU-название подтверждено" value={dashboard.metadata.verified_ru_titles} tone="good" />
-          <Stat label="RU-название не подтверждено" value={dashboard.metadata.missing_ru_titles} tone="warn" />
+          <Stat label="RU-название есть" value={dashboard.metadata.ru_titles_present} />
+          <Stat label="RU-название подтверждено" value={dashboard.metadata.ru_titles_verified} tone="good" />
+          <Stat label="RU-название не подтверждено" value={dashboard.metadata.ru_titles_unverified} tone="warn" />
+          <Stat label="RU-название отсутствует" value={dashboard.metadata.ru_titles_missing} tone="warn" />
+          <Stat label="name mismatch" value={dashboard.metadata.ru_titles_name_mismatch} tone="warn" />
           <Stat label="kind неизвестен" value={dashboard.metadata.unknown_kind} tone="warn" />
         </div>
         <div className={styles.distribution}>
@@ -170,7 +173,6 @@ function DashboardView({ dashboard }: { dashboard: Dashboard }) {
           <Stat label="работ с конфликтом источника" value={dashboard.quality.source_conflict_works} tone="warn" hint={`${fmt(dashboard.quality.source_conflict_items)} review items`} />
           <Stat label="ambiguous external ID (items)" value={dashboard.quality.ambiguous_external_ids} tone="warn" />
           <Stat label="duplicate candidate (items)" value={dashboard.quality.duplicate_candidates} tone="warn" />
-          <Stat label="name mismatch" value={dashboard.quality.name_mismatch_works} tone="warn" />
           <Stat label="identity автора не определена" value={dashboard.quality.unidentified_author_buckets} hint={`${fmt(dashboard.quality.identified_authors)} source-identified`} />
           <Stat label="неоднозначная identity" value={dashboard.quality.ambiguous_people_identities} tone="warn" />
           <Stat label="нет provenance" value={dashboard.quality.missing_provenance_items} tone="warn" />

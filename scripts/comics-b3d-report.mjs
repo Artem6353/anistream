@@ -16,25 +16,58 @@ import { createServer } from 'vite';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_OUT = path.join(ROOT, 'docs/data/aninova3-b3d-quality-report.json');
+const REQUIRED_SOURCE_PATHS = [
+  'lib/aninova3/comics/operations/dashboard.ts',
+  'lib/aninova3/comics/operations/model.ts',
+  'lib/aninova3/comics/operations/review.ts',
+  'lib/aninova3/comics/operations/conflicts.ts',
+  'lib/aninova3/comics/operations/relations.ts',
+  'lib/aninova3/comics/operations/report.ts',
+  'lib/aninova3/comics/operations/from-plan.ts',
+  'lib/aninova3/comics/operations/repository.ts',
+  'scripts/comics-b3d-report.mjs',
+];
 
 function fail(message) {
   console.error(`comics:b3d:report: ${message}`);
   process.exitCode = 2;
 }
 
-function currentCommit() {
+function git(args) {
+  return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+}
+
+/**
+ * The report must name the code that produced it, not the commit that later
+ * stores the JSON. Resolve the supplied SHA, prove every B3-D module exists
+ * in that tree, and refuse to generate from a dirty copy of those modules.
+ */
+function resolveSourceCommit(sha) {
+  let resolved;
   try {
-    return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    resolved = git(['rev-parse', '--verify', `${sha}^{commit}`]);
   } catch {
-    return 'UNKNOWN';
+    throw new Error(`--commit is not a local git commit: ${sha}`);
   }
+  const tree = new Set(git(['ls-tree', '-r', '--name-only', resolved]).split(/\r?\n/).filter(Boolean));
+  const missing = REQUIRED_SOURCE_PATHS.filter((file) => !tree.has(file));
+  if (missing.length > 0) {
+    throw new Error(`--commit ${resolved} is missing B3-D source files: ${missing.join(', ')}`);
+  }
+  try {
+    git(['diff', '--quiet', resolved, '--', ...REQUIRED_SOURCE_PATHS]);
+  } catch {
+    throw new Error(`working tree B3-D source differs from --commit ${resolved}; commit the generator/code first`);
+  }
+  return resolved;
 }
 
 function parseArgs(argv) {
-  const options = { out: DEFAULT_OUT, previous: null, now: null, commit: currentCommit() };
+  const options = { out: DEFAULT_OUT, previous: null, now: null, commit: null };
   for (const arg of argv) {
     if (arg === '--help' || arg === '-h') {
-      console.log('Usage: node scripts/comics-b3d-report.mjs [--out=FILE] [--previous=FILE] [--now=ISO] [--commit=SHA]');
+      console.log('Usage: node scripts/comics-b3d-report.mjs --commit=SHA [--out=FILE] [--previous=FILE] [--now=ISO]');
+      console.log('The SHA is the committed source version that must be present in the working tree; it is not the report commit.');
       console.log('Read-only: builds counters from the deterministic B3-C dry-run plan. --apply/--execute are refused.');
       process.exit(0);
     }
@@ -55,6 +88,8 @@ function parseArgs(argv) {
       throw new Error(`unknown argument: ${arg}`);
     }
   }
+  if (!options.commit) throw new Error('--commit=<SHA> is required so the report cannot inherit an unrelated branch SHA');
+  options.commit = resolveSourceCommit(options.commit);
   return options;
 }
 
@@ -103,7 +138,7 @@ async function main() {
       snapshot,
       previous,
       generatedAt: dryRun.generated_at,
-      commitSha: options.commit,
+      sourceCodeCommitSha: options.commit,
       inputChecksums,
       warnings: dryRun.warnings,
       errors: dryRun.errors,
@@ -113,7 +148,7 @@ async function main() {
     console.log(JSON.stringify({
       report: path.relative(ROOT, options.out),
       generated_at: report.generated_at,
-      commit_sha: report.commit_sha,
+      source_code_commit_sha: report.source_code_commit_sha,
       report_checksum: report.report_checksum,
       works: report.dashboard.metadata.works_total,
       review_items: report.review_queue.total,
