@@ -73,12 +73,13 @@ describe('B3-D quality dashboard', () => {
       work('t4', { title_ru: 'Не совпало', title_ru_status: 'name_mismatch' }),
       work('t5', { title_ru: 'Проверено', title_ru_status: 'source_verified' }),
       work('t6', { title_ru: 'Проверено редактором', title_ru_status: 'editorially_verified' }),
+      work('t7', { title_ru: null, title_ru_status: 'name_mismatch' }),
     ]);
-    expect(metrics).toEqual({ present: 4, verified: 2, unverified: 2, missing: 2, nameMismatch: 1 });
+    expect(metrics).toEqual({ present: 4, verified: 2, unverified: 2, missing: 3, nameMismatch: 2 });
     expect(metrics.present).toBe(metrics.verified + metrics.unverified);
-    expect(metrics.verified + metrics.unverified + metrics.missing).toBe(6);
-    // name_mismatch is a sub-bucket of unverified, not a fourth bucket.
-    expect(metrics.nameMismatch).toBeLessThanOrEqual(metrics.unverified);
+    expect(metrics.present + metrics.missing).toBe(7);
+    // name_mismatch is a diagnostic status, not a fourth bucket; it can overlap missing.
+    expect(metrics.nameMismatch).toBe(2);
 
     const dashboard = buildDashboard(snapshot({
       works: [

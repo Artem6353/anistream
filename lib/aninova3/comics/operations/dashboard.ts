@@ -193,7 +193,8 @@ export interface RuTitleMetrics {
 /**
  * RU title buckets are exhaustive and non-overlapping:
  * present = verified + unverified; missing is disjoint. nameMismatch is a
- * sub-counter of unverified (a mismatch is by definition not verified).
+ * diagnostic status counter, not a bucket: it may describe a present or a
+ * missing title and must never be added to the present total.
  */
 export function countRuTitleMetrics(works: CatalogSnapshot['works']): RuTitleMetrics {
   let present = 0;
@@ -203,6 +204,7 @@ export function countRuTitleMetrics(works: CatalogSnapshot['works']): RuTitleMet
   let nameMismatch = 0;
   for (const work of works) {
     const hasTitle = work.title_ru !== null && work.title_ru.trim().length > 0;
+    if (work.title_ru_status === 'name_mismatch') nameMismatch += 1;
     if (!hasTitle) {
       missing += 1;
       continue;
@@ -211,7 +213,6 @@ export function countRuTitleMetrics(works: CatalogSnapshot['works']): RuTitleMet
     const isVerified = work.title_ru_status === 'source_verified' || work.title_ru_status === 'editorially_verified';
     if (isVerified) verified += 1;
     else unverified += 1;
-    if (work.title_ru_status === 'name_mismatch') nameMismatch += 1;
   }
   return { present, verified, unverified, missing, nameMismatch };
 }
