@@ -145,6 +145,9 @@ non-conflict observations; это нужно, чтобы не потерять �
 - Внешние URL не загружаются сервером и не проксируются; это обычные ссылки.
 - `loadReviewWorkspace`/`loadConflictWorkspace`/`loadRelationWorkspace`
   используют только `fetchAll`/`fetchCount` (GET).
+- `fetchAll()` не возвращает частичную выборку: превышение `MAX_ROWS`,
+  несовпадение known total или неизвестный total на лимите дают
+  `CatalogReadIncompleteError`, а не пустой/усечённый экран.
 - Нет изменения `comic_review_queue`, observations, adaptations, rights.
 - Нет автоматического dedupe, canonical selection или закрытия review.
 

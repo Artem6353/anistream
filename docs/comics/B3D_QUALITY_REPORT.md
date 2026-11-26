@@ -11,17 +11,19 @@ Production Supabase / PostgREST / JWT / RLS: **NOT TESTED**. Цифры ниже
 | Поле | Значение |
 |---|---|
 | Файл | `docs/data/aninova3-b3d-quality-report.json` |
-| Schema | `b3d.1` |
+| Schema | `b3d.2` |
 | Catalog schema | `b3c.1` |
-| Сгенерирован | `2026-11-26T22:51:03.315Z` |
-| Commit SHA при генерации | `e1f752490a761aa1c86d4cf608b687591ae3042b` |
+| Сгенерирован | `2026-11-26T23:16:30.000Z` |
+| Source code commit SHA | `2e3439194cea1592929dc38921324d8f30e0a4e6` |
 | Plan hash | `bc97255db9c212bbb4d5af409eb8c211097329509ab069491ac5415b8e2e1fd3` |
-| Report checksum | `51e1a2073b99c576445e4b44e4891f1f132f8757cbf6ae0c7f18bd9a533a9070` |
+| Report checksum | `c9f21ef669f656fef43f9cd7f5b4b5e5f1fad3c778d59de73767cb417c6bf9d3` |
 | Errors / warnings | `0` / `3` |
 
-`commit_sha` — `HEAD` на момент генерации. Файл отчёта коммитится следующим
-коммитом, поэтому его собственный SHA в отчёте не указан (иначе поле было бы
-невозможно заполнить детерминированно).
+`source_code_commit_sha` — SHA закоммиченной версии B3-D кода, из которой
+сгенерирован отчёт. Это не SHA коммита, сохраняющего данный JSON: файл отчёта
+коммитится отдельно и не указывает сам себя. Перед генерацией проверяются
+наличие всех B3-D модулей в указанном commit tree и совпадение рабочей копии
+этих модулей с этим SHA. `--commit` обязателен; fallback на `HEAD` удалён.
 
 ### Input checksums
 
@@ -47,15 +49,29 @@ Production Supabase / PostgREST / JWT / RLS: **NOT TESTED**. Цифры ниже
 | comic | 20 |
 | manhua | 16 |
 | manhwa | 10 |
+| RU title присутствует | 2 137 |
 | RU title подтверждён | 2 137 |
-| RU title не подтверждён | 1 963 |
-| name mismatch | 67 |
+| RU title не подтверждён | 0 |
+| RU title отсутствует | 1 963 |
+| name mismatch (cross-cutting status) | 67 |
 | external IDs | 9 917 |
 | aliases | 10 519 |
 | people | 9 007 |
 | credits | 9 007 |
 | adaptations | 5 748 |
 | source observations | 45 188 |
+
+RU title buckets:
+
+```text
+2 137 present = 2 137 verified + 0 unverified
+2 137 present + 1 963 missing = 4 100 works
+```
+
+`name mismatch` (67) — счётчик статуса `name_mismatch`, а не отдельная bucket.
+Он не суммируется с present/verified/unverified/missing. В текущем снимке все
+67 mismatch-работ входят в `missing`, а все 2 137 присутствующих названий
+подтверждены. Отсутствующее название не считается неподтверждённым названием.
 
 ## 3. Quality / identity
 
@@ -189,7 +205,7 @@ SPIN_OFF не превращаются в RELATED; ADAPTATION не объявл�
 История не выдумывается. Для следующего запуска:
 
 ```bash
-npm run comics:b3d:report -- --previous=docs/data/aninova3-b3d-quality-report.json
+npm run comics:b3d:report -- --commit=<FULL_SHA> --previous=docs/data/aninova3-b3d-quality-report.json
 ```
 
 При наличии previous отчёт добавляет review-queue delta, new/resolved conflict
@@ -200,6 +216,10 @@ keys и eligibility changes.
 - `generated_at` — единственное намеренно изменяемое поле; run metadata отделена.
 - `report_checksum` — SHA-256 канонического JSON без самого поля checksum.
 - Одинаковые source artifacts + `--now` + `--commit` дают одинаковый checksum.
+- `--commit` обязателен, разрешается в полный SHA и проверяется по commit tree;
+  fallback на `HEAD` и SHA предыдущей ветки невозможны.
+- Повторная генерация с `--now=2026-11-26T23:30:00.000Z` и тем же source SHA
+  дала идентичные файлы и `report_checksum` (проверено на двух запусках).
 - `errors=0`; warnings: несовпадение `meta.total` (2 444 vs 2 265), то же
   предупреждение из pipeline и 4 contradictory anime ids.
 - Отчёт не делает внешних запросов и не применяет SQL.

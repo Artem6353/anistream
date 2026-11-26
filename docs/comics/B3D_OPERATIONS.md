@@ -42,6 +42,18 @@ app/admin/comics/review/page.tsx       server component, admin-only UI
 `repository.ts` использует только `GET`. Запросы идут с `Prefer: count=exact`,
 `Range` и таймаутом 15 секунд; POST/PATCH/DELETE в модуле отсутствуют.
 
+`fetchAll()` имеет жёсткий предел `MAX_ROWS = 60 000` и проверяет полноту
+выборки отдельной функцией `assertCompleteSelection()`:
+
+- известный total больше лимита → `CatalogReadIncompleteError`;
+- известный total не равен фактически полученному → ошибка;
+- известный total ровно 60 000 и получен полностью → успех;
+- total неизвестен и достигнут лимит → ошибка;
+- total неизвестен, но последняя страница короткая и лимит не достигнут → успех.
+
+Неполная выборка никогда не возвращается как полная: dashboard, queue,
+conflicts и relations получают ошибку, а не частичные счётчики.
+
 ### Источники данных
 
 | Режим | Источник | Назначение |
@@ -89,10 +101,24 @@ B3-D — кодовая (только GET), а не отдельная read-only
 | `works_total` | число `comic_works` |
 | `works_by_status` / `by_kind` | распределение по `publication_status` / `kind` |
 | `unknown_kind` | работы с `kind='unknown'` |
-| `verified_ru_titles` | `title_ru` не пуст и `title_ru_status in (source_verified, editorially_verified)` |
-| `missing_ru_titles` | `works_total - verified_ru_titles` |
-| `name_mismatch_works` | работы с `title_ru_status='name_mismatch'` |
+| `ru_titles_present` | непустой `title_ru` после `trim()` |
+| `ru_titles_verified` | `ru_titles_present` и `title_ru_status in (source_verified, editorially_verified)` |
+| `ru_titles_unverified` | `ru_titles_present` и статус не входит в verified-набор |
+| `ru_titles_missing` | `title_ru IS NULL` или пустая строка после `trim()` |
+| `ru_titles_name_mismatch` | работы с `title_ru_status='name_mismatch'`; диагностический счётчик, может относиться и к missing, и к present |
 | `external_ids`, `aliases`, `people`, `credits`, `adaptations`, `source_observations` | фактические счётчики таблиц; observations — все строки, включая конфликтные |
+
+Классификация RU title:
+
+```text
+ru_titles_present = ru_titles_verified + ru_titles_unverified
+ru_titles_present + ru_titles_missing = works_total
+```
+
+`ru_titles_name_mismatch` — не отдельная bucket и не слагаемое: это счётчик
+статуса `name_mismatch`, который может пересекаться с `missing` или
+`unverified`. Поэтому `present + mismatch` не является осмысленной суммой.
+Отсутствующее название никогда не считается неподтверждённым названием.
 
 ### 4.2 Quality sources / identity
 
@@ -167,10 +193,17 @@ detail — observations/external IDs/aliases/adaptations выбранной ра
 ## 7. Отчёт
 
 ```bash
-npm run comics:b3d:report
+# SHA обязателен и должен указывать на уже закоммиченную версию B3-D кода
+npm run comics:b3d:report -- --commit=<FULL_SHA>
+
 # сравнение с предыдущим снимком:
-npm run comics:b3d:report -- --previous=docs/data/aninova3-b3d-quality-report.json
+npm run comics:b3d:report -- --commit=<FULL_SHA> --previous=docs/data/aninova3-b3d-quality-report.json
 ```
+
+Генератор не подставляет `HEAD` по умолчанию. Он разрешает указанный SHA,
+проверяет наличие всех B3-D модулей в этом commit tree и требует, чтобы
+рабочая копия этих модулей совпадала с указанным коммитом. JSON отчёта
+коммитится отдельно и не становится `source_code_commit_sha` самого себя.
 
 Подробности и текущие значения — `B3D_QUALITY_REPORT.md`.
 

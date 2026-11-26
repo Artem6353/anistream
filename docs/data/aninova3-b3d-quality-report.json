@@ -1,8 +1,8 @@
 {
-  "schema_version": "b3d.1",
+  "schema_version": "b3d.2",
   "catalog_schema_version": "b3c.1",
-  "generated_at": "2026-11-26T22:51:03.315Z",
-  "commit_sha": "e1f752490a761aa1c86d4cf608b687591ae3042b",
+  "generated_at": "2026-11-26T23:16:30.000Z",
+  "source_code_commit_sha": "2e3439194cea1592929dc38921324d8f30e0a4e6",
   "source_mode": "dry-run-plan",
   "dashboard": {
     "metadata": {
@@ -18,9 +18,11 @@
         "manhwa": 10
       },
       "unknown_kind": 3980,
-      "verified_ru_titles": 2137,
-      "missing_ru_titles": 1963,
-      "name_mismatch_works": 67,
+      "ru_titles_present": 2137,
+      "ru_titles_verified": 2137,
+      "ru_titles_unverified": 0,
+      "ru_titles_missing": 1963,
+      "ru_titles_name_mismatch": 67,
       "external_ids": 9917,
       "aliases": 10519,
       "people": 9007,
@@ -33,8 +35,6 @@
       "source_conflict_items": 690,
       "observation_conflicts": 1558,
       "ambiguous_external_ids": 9,
-      "missing_ru_titles": 1963,
-      "name_mismatch_works": 67,
       "unidentified_author_buckets": 9007,
       "identified_authors": 0,
       "ambiguous_people_identities": 1536,
@@ -2064,5 +2064,5 @@
     "plan_hash": "bc97255db9c212bbb4d5af409eb8c211097329509ab069491ac5415b8e2e1fd3",
     "source_observations": "45188"
   },
-  "report_checksum": "51e1a2073b99c576445e4b44e4891f1f132f8757cbf6ae0c7f18bd9a533a9070"
+  "report_checksum": "c9f21ef669f656fef43f9cd7f5b4b5e5f1fad3c778d59de73767cb417c6bf9d3"
 }
