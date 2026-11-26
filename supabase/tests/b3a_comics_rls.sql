@@ -19,35 +19,36 @@ on conflict (id) do nothing;
 insert into public.comic_works (id, internal_key, slug, title_ru, title_ru_status,
   kind, country_code, publication_year, release_date, release_date_precision,
   publishing_status, description_ru, cover_url, total_chapters_known, volumes_known,
-  genres, is_adult, publication_status, published_at, origin_source_name)
+  genres, is_adult, content_rating_status, content_rating_source, content_rating_checked_at,
+  publication_status, published_at, origin_source_name)
 values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'comic:anilist:30011', 'testovyy-komiks',
    'Тестовый комикс', 'source_verified', 'manga', 'JP', 2020, '2020-01-01', 'day',
    'ongoing', 'Тестовое описание.', 'https://example.test/cover.jpg', 12, 2,
-   '{Тест}', false, 'approved', now() - interval '2 days', 'anilist'),
+   '{Тест}', false, 'verified_non_adult', 'manual', now(), 'approved', now() - interval '2 days', 'anilist'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'comic:mal:999', 'chernovik',
    'Черновик', 'source_verified', 'manga', 'JP', 2021, null, 'unknown',
    'unknown', null, 'https://example.test/draft.jpg', null, null,
-   '{}', false, 'draft', null, 'manual'),
+   '{}', false, 'unknown', null, null, 'draft', null, 'manual'),
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'comic:anilist:30013', 'bez-prav',
    'Без прав', 'source_verified', 'manga', 'JP', 2022, null, 'unknown',
-   'unknown', null, null, null, null, '{}', false, 'approved', now() - interval '1 day', 'anilist'),
+   'unknown', null, null, null, null, '{}', false, 'verified_non_adult', 'manual', now(), 'approved', now() - interval '1 day', 'anilist'),
   ('dddddddd-dddd-4ddd-8ddd-dddddddddddd', 'comic:anilist:30014', 'vzroslyy',
    'Взрослый', 'source_verified', 'manga', 'JP', 2023, null, 'unknown',
-   'unknown', null, null, null, null, '{}', true, 'approved', now() - interval '1 day', 'anilist'),
+   'unknown', null, null, null, null, '{}', true, 'adult', 'manual', now(), 'approved', now() - interval '1 day', 'anilist'),
   ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', 'comic:anilist:30015', 'istekshiy',
    'Истёкший', 'source_verified', 'manga', 'JP', 2024, null, 'unknown',
-   'unknown', null, null, null, null, '{}', false, 'approved', now() - interval '1 day', 'anilist'),
+   'unknown', null, null, null, null, '{}', false, 'verified_non_adult', 'manual', now(), 'approved', now() - interval '1 day', 'anilist'),
   ('ffffffff-ffff-4fff-8fff-ffffffffffff', 'comic:anilist:30016', 'bez-nazvaniya',
    'Bez nazvaniya', 'candidate', 'manga', 'JP', 2025, null, 'unknown',
-   'unknown', null, null, null, null, '{}', false, 'approved', now() - interval '1 day', 'anilist'),
+   'unknown', null, null, null, null, '{}', false, 'unknown', null, null, 'approved', now() - interval '1 day', 'anilist'),
   ('abababab-abab-4bab-8bab-abababababab', 'comic:anilist:30017', 'bez-oblozhki',
    'Без обложки', 'source_verified', 'manga', 'JP', 2020, null, 'unknown',
    'unknown', null, 'https://example.test/no-cover-right.jpg', null, null,
-   '{}', false, 'approved', now() - interval '1 day', 'anilist'),
+   '{}', false, 'verified_non_adult', 'manual', now(), 'approved', now() - interval '1 day', 'anilist'),
   ('bcbcbcbc-bcbc-4cbc-8cbc-bcbcbcbcbcbc', 'comic:anilist:30018', 'ne-opublikovan',
    'Не опубликован', 'source_verified', 'manga', 'JP', 2020, null, 'unknown',
-   'unknown', null, null, null, null, '{}', false, 'approved', null, 'anilist');
+   'unknown', null, null, null, null, '{}', false, 'verified_non_adult', 'manual', now(), 'approved', null, 'anilist');
 
 insert into public.comic_external_ids (work_id, source_name, external_id, source_url,
   is_primary, verification_status, confidence)
@@ -64,10 +65,11 @@ values
    'anilist', 'https://anilist.co/manga/30011', 'source_verified', 1.00);
 
 insert into public.comic_people (id, canonical_name, display_name_ru, name_status,
-  source_name, source_person_id, source_url, verification_status, confidence, is_public)
+  source_name, source_person_id, source_url, verification_status, confidence, is_public,
+  identity_status)
 values
   ('90000000-0000-4000-8000-000000000001', 'Test Author', 'Тестовый Автор', 'editorially_verified',
-   'manual', 'p1', null, 'editorially_verified', 1.00, true);
+   'manual', 'p1', null, 'editorially_verified', 1.00, true, 'source_identified');
 
 insert into public.comic_credits (work_id, person_id, role, billing_order, source_name,
   verification_status, confidence, is_public)
@@ -210,8 +212,8 @@ begin
   end;
 
   begin
-    insert into public.comic_people (canonical_name, source_name, source_person_id)
-    values ('Test Author', 'manual', 'p1');
+    insert into public.comic_people (canonical_name, source_name, source_person_id, identity_status)
+    values ('Test Author', 'manual', 'p1', 'source_identified');
     raise exception 'duplicate source person id was accepted';
   exception when unique_violation then null;
   end;

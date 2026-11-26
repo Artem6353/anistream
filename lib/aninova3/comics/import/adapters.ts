@@ -134,6 +134,7 @@ export class AniListGraphAdapter implements SourceAdapter {
       records.push({
         source_name: 'anilist',
         external_id: String(anilist),
+        join_key: String(anilist),
         source_url: `${GRAPH_URL}${anilist}`,
         fetched_at: snapshot,
         source_snapshot_at: snapshot,
@@ -164,6 +165,7 @@ export class AniListGraphAdapter implements SourceAdapter {
       relations.push({
         source_name: 'anilist',
         external_id: `${anime}:${comic}`,
+        join_key: String(anime),
         source_url: `${ANIME_URL}${anime}`,
         fetched_at: snapshot,
         source_snapshot_at: snapshot,
@@ -261,7 +263,8 @@ export class ShikimoriMetadataAdapter implements SourceAdapter {
       const checkedAt = asIsoDate(item.checkedAt, artifactSnapshot) ?? artifactSnapshot;
       records.push({
         source_name: 'shikimori',
-        external_id: String(anilist),
+        external_id: asPositiveInt(item.shikimoriId) ? String(asPositiveInt(item.shikimoriId)) : null,
+        join_key: String(anilist),
         source_url: isHttpsUrl(item.sourceUrl) ? item.sourceUrl : null,
         fetched_at: checkedAt,
         source_snapshot_at: checkedAt,
@@ -323,8 +326,8 @@ function verifiedSourceStatus(status: VerifiedMetadataRecord['status']): Verifie
 }
 
 export class MetadataCandidatesAdapter implements SourceAdapter {
-  readonly source_name = 'anilist_candidates' as const;
-  readonly adapter_version = 'shikimori-candidates.b3b.1';
+  readonly source_name = 'shikimori_candidates' as const;
+  readonly adapter_version = 'shikimori-candidates.b3c.1';
   readonly artifact_path = 'lib/aninova3/comics/metadata-candidates.json';
 
   read(raw: unknown): unknown {
@@ -365,8 +368,9 @@ export class MetadataCandidatesAdapter implements SourceAdapter {
       if (!anilist || !title) continue;
       const checkedAt = asIsoDate(item.fetchedAt, snapshot) ?? snapshot;
       records.push({
-        source_name: 'anilist_candidates',
-        external_id: String(anilist),
+        source_name: 'shikimori_candidates',
+        external_id: null,
+        join_key: String(anilist),
         source_url: isHttpsUrl(item.sourceUrl) ? item.sourceUrl : null,
         fetched_at: checkedAt,
         source_snapshot_at: checkedAt,
@@ -378,6 +382,8 @@ export class MetadataCandidatesAdapter implements SourceAdapter {
         anilist_id: anilist,
         mal_id: asPositiveInt(item.mal),
         title_ru: title,
+        kind: asString(item.kind)?.toLowerCase() ?? null,
+        year: asPositiveInt(item.year),
         status: asString(item.verification) ?? 'CANDIDATE',
         reason: asString(item.verificationReason),
         checked_at: checkedAt,
@@ -407,7 +413,39 @@ export class B1DReviewQueueAdapter implements SourceAdapter {
   validate(value: unknown): ValidationIssue[] {
     if (!isObject(value)) return [issue('error', 'queue_shape', 'B1D review queue must be an object')];
     const issues: ValidationIssue[] = [];
-    if (!Array.isArray(value.duplicateMal)) issues.push(issue('warning', 'queue_duplicate_mal', 'B1D queue has no duplicateMal array'));
+    const categories = ['multiSourceNeedsReview', 'comicAdaptsAnime', 'adaptationAfterAnime', 'duplicateMal'] as const;
+    let rows = 0;
+    for (const category of categories) {
+      if (!Array.isArray(value[category])) {
+        issues.push(issue('warning', `queue_${category}`, `B1D queue has no ${category} array`));
+        continue;
+      }
+      rows += (value[category] as unknown[]).length;
+      for (const [index, item] of (value[category] as unknown[]).entries()) {
+        if (!isObject(item)) {
+          issues.push(issue('error', 'queue_row', `${category}[${index}] is not an object`));
+          continue;
+        }
+        if (category !== 'duplicateMal' && !asPositiveInt(item.anime)) {
+          issues.push(issue('warning', 'queue_anime', `${category}[${index}] has no anime id`));
+        }
+        const comicIds = category === 'duplicateMal'
+          ? (Array.isArray(item.comics) ? item.comics : [])
+          : category === 'adaptationAfterAnime'
+            ? [item.comic]
+            : [
+                ...(Array.isArray(item.sources) ? item.sources : []),
+                ...(Array.isArray(item.otherEdges) ? item.otherEdges : []),
+                ...(Array.isArray(item.laterAdaptations) ? item.laterAdaptations : []),
+              ].map((edge) => (isObject(edge) ? edge.comic : null));
+        if (comicIds.length === 0) issues.push(issue('warning', 'queue_comic', `${category}[${index}] has no comic id`));
+      }
+    }
+    const counts = isObject(value.counts) ? value.counts : {};
+    const declared = asPositiveInt(counts.rowsTotal);
+    if (declared && declared !== rows) {
+      issues.push(issue('warning', 'queue_total_mismatch', `counts.rowsTotal=${declared} but rows=${rows}`));
+    }
     return issues;
   }
 
@@ -415,28 +453,50 @@ export class B1DReviewQueueAdapter implements SourceAdapter {
     const raw = this.read(value) as Record<string, unknown>;
     const snapshot = asIsoDate(raw.generatedAt, context.now) ?? context.now;
     const hints: ReviewHintRecord[] = [];
-    const items = Array.isArray(raw.duplicateMal) ? raw.duplicateMal : [];
-    for (const item of items) {
-      if (!isObject(item)) continue;
-      const mal = asPositiveInt(item.mal);
-      const anilistIds = Array.isArray(item.comics)
-        ? item.comics.map(asPositiveInt).filter((id): id is number => id !== null)
-        : [];
-      if (!mal || anilistIds.length < 2) continue;
-      hints.push({
-        source_name: 'b1d_review_queue',
-        external_id: String(mal),
-        source_url: null,
-        fetched_at: snapshot,
-        source_snapshot_at: snapshot,
-        terms_review_status: TERMS_UNKNOWN,
-        attribution_requirements: ATTRIBUTION_NONE,
-        confidence: 1,
-        verification_status: 'recorded',
-        source_payload_hash: hashObject(item),
-        duplicate_mal: [{ mal_id: mal, anilist_ids: anilistIds }],
-        row_count: 1,
-      });
+    const categories = ['multiSourceNeedsReview', 'comicAdaptsAnime', 'adaptationAfterAnime', 'duplicateMal'] as const;
+    for (const category of categories) {
+      const items = Array.isArray(raw[category]) ? raw[category] : [];
+      for (const item of items) {
+        if (!isObject(item)) continue;
+        const animeIds = category === 'adaptationAfterAnime'
+          ? [asPositiveInt(item.anime)].filter((id): id is number => id !== null)
+          : category === 'duplicateMal'
+            ? []
+            : [asPositiveInt(item.anime)].filter((id): id is number => id !== null);
+        const comicIds = category === 'duplicateMal'
+          ? (Array.isArray(item.comics) ? item.comics.map(asPositiveInt) : [])
+          : category === 'adaptationAfterAnime'
+            ? [asPositiveInt(item.comic)]
+            : [
+                ...(Array.isArray(item.sources) ? item.sources : []),
+                ...(Array.isArray(item.otherEdges) ? item.otherEdges : []),
+                ...(Array.isArray(item.laterAdaptations) ? item.laterAdaptations : []),
+              ].map((edge) => (isObject(edge) ? asPositiveInt(edge.comic) : null));
+        const cleanComicIds = uniqueStrings(comicIds.filter((id): id is number => id !== null).map(String)).map(Number).sort((a, b) => a - b);
+        // The queue can contain more than one hint for the same anime/category;
+        // the payload hash keeps every original row addressable instead of
+        // silently collapsing it during review de-duplication.
+        const key = `${category}:${animeIds.join('-') || 'na'}:${cleanComicIds.join('-') || 'na'}:${hashObject(item).slice(0, 12)}`;
+        hints.push({
+          source_name: 'b1d_review_queue',
+          external_id: key,
+          join_key: animeIds.length === 1 ? String(animeIds[0]) : null,
+          source_url: null,
+          fetched_at: snapshot,
+          source_snapshot_at: snapshot,
+          terms_review_status: TERMS_UNKNOWN,
+          attribution_requirements: ATTRIBUTION_NONE,
+          confidence: 1,
+          verification_status: 'recorded',
+          source_payload_hash: hashObject(item),
+          category,
+          anime_ids: animeIds,
+          comic_anilist_ids: cleanComicIds,
+          payload: item,
+          link_status: 'unverified',
+          row_count: 1,
+        });
+      }
     }
     return {
       records: [],
@@ -448,12 +508,13 @@ export class B1DReviewQueueAdapter implements SourceAdapter {
   }
 }
 
-export const B3B_ADAPTERS: SourceAdapter[] = [
+export const B3C_ADAPTERS: SourceAdapter[] = [
   new AniListGraphAdapter(),
   new ShikimoriMetadataAdapter(),
   new MetadataCandidatesAdapter(),
   new B1DReviewQueueAdapter(),
 ];
+export const B3B_ADAPTERS = B3C_ADAPTERS;
 
 export function normalizeArtifact(adapter: SourceAdapter, raw: unknown, context: AdapterContext): AdapterBatch {
   const read = adapter.read(raw);

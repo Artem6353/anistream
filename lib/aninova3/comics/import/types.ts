@@ -4,7 +4,8 @@
  * They do not represent public API models and must not be imported by UI code.
  */
 
-export const B3B_PIPELINE_VERSION = 'b3b.1' as const;
+export const B3C_PIPELINE_VERSION = 'b3c.1' as const;
+export const B3B_PIPELINE_VERSION = B3C_PIPELINE_VERSION;
 
 export type TermsReviewStatus = 'unknown' | 'pending_review' | 'approved' | 'rejected' | 'expired';
 export type SourceVerificationStatus =
@@ -15,11 +16,17 @@ export type SourceVerificationStatus =
   | 'disputed'
   | 'rejected';
 
-export type SourceName = 'anilist' | 'shikimori' | 'mal' | 'b1d_review_queue' | 'anilist_candidates';
+export type SourceName = 'anilist' | 'shikimori' | 'mal' | 'b1d_review_queue' | 'shikimori_candidates';
+export type WorkKind = 'manga' | 'manhwa' | 'manhua' | 'webtoon' | 'comic' | 'one_shot' | 'unknown';
+export type AdultStatus = 'unknown' | 'verified_non_adult' | 'adult';
+export type PersonIdentityStatus = 'unidentified_name_bucket' | 'source_identified' | 'manually_verified';
 
 export interface SourceEnvelope {
   source_name: SourceName;
-  external_id: string;
+  /** Identifier issued by this exact source, or null when the source has none. */
+  external_id: string | null;
+  /** Cross-source resolution key (AniList id here); never presented as a source id. */
+  join_key: string | null;
   source_url: string | null;
   fetched_at: string;
   source_snapshot_at: string;
@@ -74,13 +81,28 @@ export interface CandidateRecord extends SourceEnvelope {
   anilist_id: number;
   mal_id: number | null;
   title_ru: string | null;
+  kind: string | null;
+  year: number | null;
   status: string;
   reason: string | null;
   checked_at: string | null;
 }
 
+export type B1DReviewCategory =
+  | 'multiSourceNeedsReview'
+  | 'comicAdaptsAnime'
+  | 'adaptationAfterAnime'
+  | 'duplicateMal';
+
+export type B1DLinkStatus = 'unverified' | 'matched' | 'partial' | 'unmatched';
+
+/** One original B1D review row. The full source payload is retained verbatim. */
 export interface ReviewHintRecord extends SourceEnvelope {
-  duplicate_mal: Array<{ mal_id: number; anilist_ids: number[] }>;
+  category: B1DReviewCategory;
+  anime_ids: number[];
+  comic_anilist_ids: number[];
+  payload: Record<string, unknown>;
+  link_status: B1DLinkStatus;
   row_count: number;
 }
 
@@ -120,7 +142,6 @@ export interface SourceAdapter {
   normalize(value: unknown, context: AdapterContext): AdapterBatch;
 }
 
-export type WorkKind = 'manga' | 'manhwa' | 'manhua' | 'webtoon' | 'comic' | 'one_shot';
 export type TitleStatus =
   | 'unverified'
   | 'candidate'
@@ -137,6 +158,8 @@ export interface NormalizedWork {
   title_ru: string | null;
   title_ru_status: TitleStatus;
   kind: WorkKind;
+  /** Raw source format, preserved separately from the normalized kind. */
+  source_kind_raw: string;
   country_code: string | null;
   publication_year: number | null;
   release_date: null;
@@ -148,6 +171,10 @@ export interface NormalizedWork {
   volumes_known: number | null;
   genres: string[];
   is_adult: false;
+  content_rating_status: AdultStatus;
+  content_rating_source: string | null;
+  content_rating_checked_at: string | null;
+  content_rating_evidence_url: string | null;
   publication_status: 'draft';
   published_at: null;
   origin_source_name: 'anilist';
@@ -191,6 +218,8 @@ export interface NormalizedPerson {
   canonical_name: string;
   display_name_ru: null;
   name_status: 'unverified';
+  identity_status: PersonIdentityStatus;
+  name_bucket_key: string;
   source_name: 'anilist';
   source_person_id: null;
   source_url: string;
@@ -199,6 +228,63 @@ export interface NormalizedPerson {
   confidence: number;
   verification_status: 'recorded';
   is_public: false;
+}
+
+export type NormalizedRelationType =
+  | 'ADAPTATION'
+  | 'ALTERNATIVE'
+  | 'CHARACTER'
+  | 'PARENT'
+  | 'PREQUEL'
+  | 'SEQUEL'
+  | 'SIDE_STORY'
+  | 'SPIN_OFF'
+  | 'OTHER'
+  | 'unknown';
+
+export type ObservationField =
+  | 'kind'
+  | 'publication_year'
+  | 'chapters'
+  | 'volumes'
+  | 'mal_id'
+  | 'shikimori_id'
+  | 'title_ru'
+  | 'title_original'
+  | 'adult_status';
+
+export interface NormalizedSourceObservation {
+  id: string;
+  work_id: string;
+  field_name: ObservationField;
+  source_name: SourceName;
+  external_id: string | null;
+  join_key: string | null;
+  source_url: string | null;
+  observed_at: string;
+  confidence: number | null;
+  verification_status: SourceVerificationStatus;
+  source_payload_hash: string;
+  value_json: string | number | boolean;
+  is_conflict: boolean;
+  conflict_group: string | null;
+}
+
+export interface WorkConflict {
+  work_id: string;
+  anilist_id: number;
+  field: ObservationField;
+  conflict_group: string;
+  values: Array<{
+    source_name: SourceName;
+    external_id: string | null;
+    join_key: string | null;
+    value: string | number | boolean;
+    source_url: string | null;
+    observed_at: string;
+    confidence: number | null;
+    source_payload_hash: string;
+  }>;
 }
 
 export interface NormalizedCredit {
@@ -221,12 +307,13 @@ export interface NormalizedAdaptation {
   anime_id: number;
   comic_work_id: string;
   raw_relation_type: string;
+  normalized_relation_type: NormalizedRelationType;
   direction: 'unknown';
   confidence_level: 'unknown';
   basis: 'anilist_relation_only';
   is_primary: false;
   source_name: 'anilist';
-  source_url: string;
+  source_url: string | null;
   observed_at: string;
   checked_at: null;
   verification_status: 'recorded';
@@ -247,8 +334,14 @@ export interface NormalizedReviewItem {
     | 'rights_unknown'
     | 'rights_expired'
     | 'source_conflict'
+    | 'source_metadata_conflict'
     | 'unsupported_relation'
     | 'unsupported_reading_mode'
+    | 'kind_unknown'
+    | 'duplicate_public_title'
+    | 'relation_evidence_conflict'
+    | 'ambiguous_people_identity'
+    | 'missing_provenance'
     | 'manual';
   severity: 'low' | 'medium' | 'high';
   status: 'open';
@@ -281,13 +374,46 @@ export interface WorkAnnotations {
   candidate_title: string | null;
 }
 
+export interface RelationQualityIssue {
+  code:
+    | 'missing_anime'
+    | 'missing_comic'
+    | 'duplicate_edge'
+    | 'contradictory_direction'
+    | 'multiple_primary'
+    | 'unknown_relation_type'
+    | 'missing_evidence';
+  anime_id: number | null;
+  comic_anilist_id: number | null;
+  raw_relation_type: string | null;
+  detail: string;
+}
+
+export interface RelationQuality {
+  totalEdges: number;
+  insertedEdges: number;
+  missingAnime: number;
+  missingComic: number;
+  duplicateEdges: number;
+  contradictoryDirections: number;
+  multiplePrimary: number;
+  unknownRawTypes: number;
+  missingEvidence: number;
+  unknownRawTypeNames: string[];
+  issues: RelationQualityIssue[];
+}
+
 export interface NormalizedCatalog extends NormalizedBatch {
   annotations: Map<number, WorkAnnotations>;
   queue_hints: ReviewHintRecord[];
+  source_observations: NormalizedSourceObservation[];
+  conflicts: WorkConflict[];
+  relation_quality: RelationQuality;
 }
 
 export interface NormalizedBatch {
   works: NormalizedWork[];
+  source_observations: NormalizedSourceObservation[];
   external_ids: NormalizedExternalId[];
   aliases: NormalizedAlias[];
   people: NormalizedPerson[];
@@ -302,6 +428,7 @@ export interface ImportPlan {
   operations: Array<ImportOperation<Record<string, unknown>>>;
   workIds: number[];
   works: Array<InsertOperation<NormalizedWork>>;
+  sourceObservations: Array<InsertOperation<NormalizedSourceObservation>>;
   externalIds: Array<InsertOperation<NormalizedExternalId>>;
   aliases: Array<InsertOperation<NormalizedAlias>>;
   people: Array<InsertOperation<NormalizedPerson>>;
@@ -314,6 +441,7 @@ export interface ImportPlan {
   rights: Array<ImportOperation<never>>;
   generatedAt: string;
   planHash: string;
+  relationQuality: RelationQuality;
 }
 
 export interface ExternalIdGroup {
@@ -343,6 +471,7 @@ export interface ReportCounts {
   verifiedMetaDeclaredTotal: number;
   normalizedWorks: number;
   readyWorks: number;
+  readySourceObservations: number;
   readyExternalIds: number;
   readyAliases: number;
   readyPeople: number;
@@ -350,10 +479,29 @@ export interface ReportCounts {
   readyAdaptations: number;
   skippedOperations: number;
   requiresReview: number;
+  reviewItems: number;
   duplicateCandidates: number;
   rejectedWorks: number;
   approvedRights: number;
   publicChapters: number;
+  worksWithVerifiedRuTitle: number;
+  worksUnknownKind: number;
+  worksWithSourceConflicts: number;
+  worksAdultUnknown: number;
+  worksVerifiedNonAdult: number;
+  worksAdult: number;
+  ambiguousExternalIds: number;
+  b1dHintsTotal: number;
+  b1dHintsQueued: number;
+  b1dHintsUnmatched: number;
+  b1dHintsByCategory: Record<string, number>;
+  authorNameRecords: number;
+  authorNameBuckets: number;
+  identifiedAuthors: number;
+  relationMissingAnime: number;
+  relationMissingComic: number;
+  relationDuplicateEdges: number;
+  relationUnknownTypes: number;
 }
 
 export interface SourceReviewRecord {
@@ -383,5 +531,21 @@ export interface ImportReport {
   canary: ImportPlan;
   planHash: string;
   canaryHash: string;
+  relationQuality: RelationQuality;
+  canaryCoverage: CanaryCoverage;
   sourceReview: SourceReviewRecord[];
+}
+
+export interface CanaryCoverage {
+  work_ids: number[];
+  unknown_kind: number[];
+  kr_manhwa_review: number[];
+  cn_manhua_review: number[];
+  year_conflict: number[];
+  chapters_conflict: number[];
+  volumes_conflict: number[];
+  mal_conflict: number[];
+  repeated_author_names: string[];
+  b1d_by_category: Record<string, number[]>;
+  adult_statuses: Record<AdultStatus, number[]>;
 }

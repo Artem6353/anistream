@@ -23,7 +23,7 @@ function comic(anilist: number, overrides: Partial<GraphComicRecord> = {}): Grap
     source_name: 'anilist', external_id: String(anilist), source_url: `https://anilist.co/manga/${anilist}`,
     fetched_at: NOW, source_snapshot_at: NOW, terms_review_status: 'unknown',
     attribution_requirements: [], confidence: 0.9, verification_status: 'recorded',
-    source_payload_hash: HASH, anilist_id: anilist, mal_id: null, format: 'MANGA',
+    source_payload_hash: HASH, join_key: String(anilist), anilist_id: anilist, mal_id: null, format: 'MANGA',
     country: 'JP', title_original: `Original ${anilist}`, title_native: null, year: 2020,
     status: 'FINISHED', chapters: 10, volumes: 2, cover_url: null, authors: [],
     anilist, mal: null, titleOriginal: `Original ${anilist}`, titleNative: null, cover: null,
@@ -36,7 +36,7 @@ function relation(anime: number, comicId: number, raw: string): GraphRelationRec
     source_name: 'anilist', external_id: `${anime}:${comicId}`,
     source_url: `https://anilist.co/anime/${anime}`, fetched_at: NOW, source_snapshot_at: NOW,
     terms_review_status: 'unknown', attribution_requirements: [], confidence: 0.9,
-    verification_status: 'recorded', source_payload_hash: HASH, anime_id: anime,
+    verification_status: 'recorded', source_payload_hash: HASH, join_key: String(anime), anime_id: anime,
     comic_anilist_id: comicId, raw_relation_type: raw, observed_at: NOW,
     anime, comic: comicId, raw,
   };
@@ -47,7 +47,7 @@ function verified(anilist: number, overrides: Partial<VerifiedMetadataRecord> = 
     source_name: 'shikimori', external_id: String(anilist),
     source_url: `https://shikimori.one/mangas/${anilist}`, fetched_at: NOW, source_snapshot_at: NOW,
     terms_review_status: 'unknown', attribution_requirements: [], confidence: 1,
-    verification_status: 'source_verified', source_payload_hash: HASH, anilist_id: anilist,
+    verification_status: 'source_verified', source_payload_hash: HASH, join_key: String(anilist), anilist_id: anilist,
     status: 'SOURCE_VERIFIED', mal_id: null, shikimori_id: null, title_ru: `Русский ${anilist}`,
     license_name_ru: null, genres: [], kind: 'manga', year: 2020, volumes: null, chapters: null,
     cover_url: null, checked_at: NOW, defects: [], anime_ids: [],
@@ -57,11 +57,11 @@ function verified(anilist: number, overrides: Partial<VerifiedMetadataRecord> = 
 
 function candidate(anilist: number): CandidateRecord {
   return {
-    source_name: 'anilist_candidates', external_id: String(anilist),
+    source_name: 'shikimori_candidates', external_id: null,
     source_url: `https://shikimori.one/mangas/${anilist}`, fetched_at: NOW, source_snapshot_at: NOW,
     terms_review_status: 'unknown', attribution_requirements: [], confidence: 0.4,
     verification_status: 'candidate', source_payload_hash: HASH, anilist_id: anilist,
-    mal_id: null, title_ru: `Кандидат ${anilist}`, status: 'CANDIDATE', reason: null, checked_at: NOW,
+    join_key: String(anilist), mal_id: null, title_ru: `Кандидат ${anilist}`, kind: null, year: null, status: 'CANDIDATE', reason: null, checked_at: NOW,
   };
 }
 

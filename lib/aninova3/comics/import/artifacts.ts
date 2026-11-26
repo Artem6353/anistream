@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { sha256 } from './canonical';
-import { B3B_ADAPTERS, normalizeArtifact } from './adapters';
+import { B3C_ADAPTERS, normalizeArtifact } from './adapters';
 import type {
   AdapterBatch,
   SourceAdapter,
@@ -67,12 +67,12 @@ function loadArtifact(
 
 export function loadArtifacts(repoRoot: string, now: string): LoadedArtifacts {
   const checksums: Record<string, string> = {};
-  const graphAdapter = B3B_ADAPTERS.find((adapter) => adapter.source_name === 'anilist');
-  const metadataAdapter = B3B_ADAPTERS.find((adapter) => adapter.source_name === 'shikimori');
-  const candidatesAdapter = B3B_ADAPTERS.find((adapter) => adapter.source_name === 'anilist_candidates');
-  const queueAdapter = B3B_ADAPTERS.find((adapter) => adapter.source_name === 'b1d_review_queue');
+  const graphAdapter = B3C_ADAPTERS.find((adapter) => adapter.source_name === 'anilist');
+  const metadataAdapter = B3C_ADAPTERS.find((adapter) => adapter.source_name === 'shikimori');
+  const candidatesAdapter = B3C_ADAPTERS.find((adapter) => adapter.source_name === 'shikimori_candidates');
+  const queueAdapter = B3C_ADAPTERS.find((adapter) => adapter.source_name === 'b1d_review_queue');
   if (!graphAdapter || !metadataAdapter || !candidatesAdapter || !queueAdapter) {
-    throw new Error('B3-B adapter registry is incomplete');
+    throw new Error('B3-C adapter registry is incomplete');
   }
   const graph = loadArtifact(repoRoot, graphAdapter, now, checksums);
   const metadata = loadArtifact(repoRoot, metadataAdapter, now, checksums);

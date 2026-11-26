@@ -4,12 +4,13 @@
 begin;
 
 insert into public.comic_works (id, internal_key, slug, title_ru, title_ru_status,
-  kind, publication_status, published_at, origin_source_name)
+  kind, content_rating_status, content_rating_source, content_rating_checked_at,
+  publication_status, published_at, origin_source_name)
 values
   ('d0000000-0000-4000-8000-000000000001', 'comic:test:b3b-gate', 'b3b-gate',
-   'Тестовый комикс B3B', 'source_verified', 'manga', 'approved', now(), 'aninova'),
+   'Тестовый комикс B3B', 'source_verified', 'manga', 'verified_non_adult', 'manual', now(), 'approved', now(), 'aninova'),
   ('d0000000-0000-4000-8000-000000000002', 'comic:test:b3b-evidence', 'b3b-evidence',
-   'Тестовый комикс B3B 2', 'source_verified', 'manga', 'draft', null, 'aninova');
+   'Тестовый комикс B3B 2', 'source_verified', 'manga', 'verified_non_adult', 'manual', now(), 'draft', null, 'aninova');
 
 insert into public.comic_reading_sources (id, work_id, source_name, reading_mode,
   language, source_url, embed_url, attribution_text, terms_url, terms_review_status,
