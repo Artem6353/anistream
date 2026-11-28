@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { titleById } from '@/lib/catalog';
 import { demoChapters, findDemoComic } from '@/lib/aninova3/comics-demo';
-import { getComicByLegacySlug, getComicBySlug } from '@/lib/aninova3/comics/store';
-import { catalogRoleFor, CATALOG_ROLE_LABELS } from '@/lib/aninova3/comics/catalog';
-import { resolveComicAdaptations } from '@/lib/aninova3/comics/source-links';
+import { CATALOG_ROLE_LABELS } from '@/lib/aninova3/comics/catalog';
+import {
+  ComicsCatalogUnavailableError,
+  readComicBySlug,
+  type ComicBySlugRead,
+} from '@/lib/aninova3/comics/public-catalog';
 import { COMIC_KIND_LABELS, COMIC_STATUS_LABELS } from '@/lib/aninova3/comics/model';
 import {
   canOpenReader,
@@ -32,8 +34,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const demo = findDemoComic(slug);
   if (demo) return { title: demo.title, robots: { index: false, follow: false } };
-  const comic = getComicBySlug(slug) ?? getComicByLegacySlug(slug);
-  return { title: comic ? comicDisplayTitle(comic).text : 'Комикс не найден', robots: { index: false, follow: false } };
+  try {
+    const read = await readComicBySlug(slug);
+    if (read.status === 'found') {
+      return { title: comicDisplayTitle(read.entry.comic).text, robots: { index: false, follow: false } };
+    }
+  } catch {
+    /* Метаданные не должны падать из-за недоступной БД — страница покажет состояние. */
+  }
+  return { title: 'Комикс не найден', robots: { index: false, follow: false } };
 }
 
 export default async function A3ComicPage({ params }: Props) {
@@ -41,17 +50,20 @@ export default async function A3ComicPage({ params }: Props) {
   const demo = findDemoComic(slug);
   if (demo) return <DemoComicPage slug={slug} />;
 
-  const comic = getComicBySlug(slug);
-  if (!comic) {
-    /* Старые ссылки на слаг из оригинального названия ведут на канонический адрес:
-       сам слаг больше не строится из иностранного названия. */
-    const legacy = getComicByLegacySlug(slug);
-    if (!legacy) notFound();
-    redirect(`${ROOT}/comics/${legacy.slug}`);
+  let read: ComicBySlugRead;
+  try {
+    read = await readComicBySlug(slug);
+  } catch (error) {
+    if (error instanceof ComicsCatalogUnavailableError) return <ComicUnavailable reason={error.message} />;
+    throw error;
   }
 
-  const adaptations = resolveComicAdaptations(comic, { titles: titleById });
-  const role = catalogRoleFor(comic, (id) => titleById.get(id));
+  if (read.status === 'moved') redirect(`${ROOT}/comics/${read.slug}`);
+  if (read.status === 'not-found') notFound();
+
+  const { comic } = read.entry;
+  const role = read.entry.role;
+  const adaptations = read.adaptations;
   const ruChapters = publicRuChapters(comic);
   const readable = canOpenReader(comic);
   const publishable = isPublishableEntry(comic);
@@ -65,6 +77,12 @@ export default async function A3ComicPage({ params }: Props) {
         <span aria-hidden>/</span>
         <span aria-current="page">{title.text}</span>
       </nav>
+
+      {read.notice ? (
+        <p className="a3-demo-note" role="status">
+          {read.notice.message}
+        </p>
+      ) : null}
 
       <header className="a3-comic__hero">
         <div className="a3-comic__cover">
@@ -87,7 +105,9 @@ export default async function A3ComicPage({ params }: Props) {
             <p className="a3-muted">Подтверждённая связь с аниме есть, но русскоязычное издание пока не сверено.</p>
           ) : comic.verification === 'SOURCE_VERIFIED' ? (
             <p className="a3-muted">
-              Название и метаданные сверены с источником по идентификатору. Прав на публикацию и русских глав нет.
+              {comic.publication.rightsVerified
+                ? 'Название и метаданные сверены с источником; права на публикацию глав подтверждены отдельно.'
+                : 'Название и метаданные прошли публичный гейт каталога. Права на публикацию глав не подтверждены.'}
             </p>
           ) : null}
           {/* Лицензионное название источника публично не выводится: официального
@@ -172,6 +192,20 @@ export default async function A3ComicPage({ params }: Props) {
                     <span className="a3-muted">{ch.publishedAt ?? ''}</span>
                     <IconChevronRight size={16} />
                   </Link>
+                ) : ch.readingUrl ? (
+                  /* Официальная ссылка из БД: не читалка, но и не выдуманный источник. */
+                  <a
+                    className="a3-chapter"
+                    href={ch.readingUrl}
+                    rel="nofollow noopener noreferrer"
+                    target="_blank"
+                    data-a3-focusable
+                  >
+                    <span className="a3-chapter__num">{ch.number}</span>
+                    <span className="a3-chapter__title">{ch.titleRu}</span>
+                    <span className="a3-muted">{ch.sourceName ? `Официальный источник: ${ch.sourceName}` : 'Официальный источник'}</span>
+                    <IconChevronRight size={16} />
+                  </a>
                 ) : (
                   <span className="a3-chapter a3-chapter--static">
                     <span className="a3-chapter__num">{ch.number}</span>
@@ -185,6 +219,21 @@ export default async function A3ComicPage({ params }: Props) {
         </section>
       ) : null}
     </article>
+  );
+}
+
+function ComicUnavailable({ reason }: { reason: string }) {
+  return (
+    <div className="a3-wrap">
+      <nav className="a3-breadcrumbs" aria-label="Хлебные крошки">
+        <Link href={`${ROOT}/comics`}>Комиксы</Link>
+      </nav>
+      <h1 className="a3-h1">Карточка недоступна</h1>
+      <div className="a3-publication-state" role="alert">
+        <strong>Причина:</strong>
+        <span>{reason}</span>
+      </div>
+    </div>
   );
 }
 

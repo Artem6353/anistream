@@ -14,6 +14,7 @@ import type { Title } from '@/lib/types';
 import type {
   ComicSourceEvidence,
   ComicWork,
+  DirectionConflict,
   DirectionEvidence,
   LinkedAnime,
   LinkedComic,
@@ -115,6 +116,36 @@ function strongerRole(next: WorkRelationKind, current: WorkRelationKind): boolea
 }
 
 /**
+ * B3-E: проигравшее ребро не выбрасывается.
+ *
+ * Дедупликация выбирает самую сильную роль, но конкурирующее направление —
+ * это доказательство для review, а не мусор. Конфликт фиксируется, когда
+ * направления расходятся; одинаковые наблюдения конфликтом не считаются.
+ */
+interface ConflictTarget {
+  direction: DirectionEvidence['direction'];
+  conflicts?: DirectionConflict[];
+  disputed?: boolean;
+}
+
+function recordConflict(target: ConflictTarget, dir: DirectionEvidence, row: ComicSourceEvidence): void {
+  const conflict: DirectionConflict = {
+    basis: dir.basis,
+    direction: dir.direction,
+    confidence: dir.confidence,
+    rawRelation: row.rawRelation,
+    evidence: row.evidence,
+    observedAt: row.observedAt,
+    note: row.note,
+  };
+  const conflicts = [...(target.conflicts ?? []), conflict];
+  target.conflicts = conflicts;
+  target.disputed = conflicts.some(
+    (item) => item.direction !== null && item.direction !== target.direction,
+  );
+}
+
+/**
  * Вес произведения как первоисточника.
  *
  * Сериализованное произведение (манга/манхва/маньхуа/вебтун) важнее ваншота:
@@ -122,7 +153,7 @@ function strongerRole(next: WorkRelationKind, current: WorkRelationKind): boolea
  * прототип-ваншот. Меньше — выше в списке.
  */
 function sourceWeight(comic: ComicWork): number {
-  const prototype = comic.kind === 'comic' ? 1 : 0;
+  const prototype = comic.kind === 'one_shot' || comic.kind === 'comic' ? 1 : 0;
   const oneShot = comic.totalChaptersKnown === 1 && comic.chapters.length === 0 ? 0.5 : 0;
   return prototype + oneShot;
 }
@@ -136,6 +167,9 @@ export function resolveAnimeSourcesDetailed(animeAniListId: number, input: Resol
   const evidence = graph.byAnime.get(animeAniListId) ?? [];
   const skipped: ResolutionSkip[] = [];
   const byComic = new Map<string, LinkedComic>();
+  /* Обе стороны связи обязаны считать направление по одним данным: год и
+     первоисточник берём из каталога, если вызывающий их не передал. */
+  const animeTitle = input.titles?.get(animeAniListId);
 
   for (const row of evidence) {
     const resolved = resolveComicRef(row, graph, store);
@@ -154,8 +188,8 @@ export function resolveAnimeSourcesDetailed(animeAniListId: number, input: Resol
     const adaptationEdge = row.role === 'SOURCE';
     const dir: DirectionEvidence = adaptationEdge
       ? classifyAdaptationDirection({
-          animeSource: input.animeSource,
-          animeYear: input.animeYear,
+          animeSource: input.animeSource ?? animeTitle?.source,
+          animeYear: input.animeYear ?? animeTitle?.year,
           comicYear: comic.year,
         })
       : NO_DIRECTION;
@@ -171,9 +205,12 @@ export function resolveAnimeSourcesDetailed(animeAniListId: number, input: Resol
         direction: dir.direction,
         confidence: dir.confidence,
         basis: dir.basis,
+        conflicts: [],
+        disputed: false,
       });
       continue;
     }
+    recordConflict(existing, dir, row);
     if (strongerRole(role, existing.role)) {
       existing.role = role;
       existing.evidence = row.evidence;
@@ -195,13 +232,15 @@ export function resolveAnimeSourcesDetailed(animeAniListId: number, input: Resol
     return (a.comic.externalIds.anilist ?? 0) - (b.comic.externalIds.anilist ?? 0);
   });
 
-  /* Основной первоисточник один. Без подтверждённого или хотя бы
-     предположительного направления «основной» не назначается: данные не дают
-     права называть одно из произведений главным. */
-  const directedSources = links.filter((l) => l.role === 'SOURCE' && hasDirectedEvidence(l));
-  const firstSource = directedSources.find((l) => l.confidence === 'confirmed') ?? directedSources[0];
+  /* Основной первоисточник один.
+     B3-E: primary — это порядок показа, но назначается он только ребру с
+     подтверждённым направлением: «основной» без доказанного направления был бы
+     утверждением, которого нет в данных. Спорное ребро не становится основным. */
+  const sourceCandidates = links.filter((l) => l.role === 'SOURCE' && !l.disputed);
+  const firstSource =
+    sourceCandidates.find((l) => l.confidence === 'confirmed') ??
+    sourceCandidates.find((l) => hasDirectedEvidence(l));
   if (firstSource) firstSource.primary = true;
-  else if (links.length && hasDirectedEvidence(links[0])) links[0].primary = true;
 
   return { links, skipped };
 }
@@ -265,9 +304,12 @@ export function resolveComicAdaptationsDetailed(
         direction: dir.direction,
         confidence: dir.confidence,
         basis: dir.basis,
+        conflicts: [],
+        disputed: false,
       });
       continue;
     }
+    recordConflict(existing, dir, row);
     if (strongerRole(role, existing.role)) {
       existing.role = role;
       existing.evidence = row.evidence;
@@ -285,10 +327,12 @@ export function resolveComicAdaptationsDetailed(
     return a.anime.anilistId - b.anime.anilistId;
   });
 
-  const directedAdaptations = links.filter((l) => l.role === 'ADAPTATION' && hasDirectedEvidence(l));
-  const firstAdaptation = directedAdaptations[0];
+  /* B3-E: primary — только направленное ребро (см. resolveAnimeSourcesDetailed). */
+  const adaptationCandidates = links.filter((l) => l.role === 'ADAPTATION' && !l.disputed);
+  const firstAdaptation =
+    adaptationCandidates.find((l) => l.confidence === 'confirmed') ??
+    adaptationCandidates.find((l) => hasDirectedEvidence(l));
   if (firstAdaptation) firstAdaptation.primary = true;
-  else if (links.length && hasDirectedEvidence(links[0])) links[0].primary = true;
 
   return { links, skipped };
 }

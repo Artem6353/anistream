@@ -1,16 +1,18 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { titleById } from '@/lib/catalog';
-import { comicStore } from '@/lib/aninova3/comics/store';
 import {
   CATALOG_ROLE_LABELS,
   CATALOG_SORTS,
   catalogHref,
-  catalogIndex,
-  queryCatalog,
   type CatalogEntry,
   type CatalogSort,
 } from '@/lib/aninova3/comics/catalog';
+import { parseComicsCatalogQuery } from '@/lib/aninova3/comics/catalog-params';
+import {
+  ComicsCatalogUnavailableError,
+  readComicsCatalog,
+  type ComicsCatalogRead,
+} from '@/lib/aninova3/comics/public-catalog';
 import { COMIC_KIND_LABELS } from '@/lib/aninova3/comics/model';
 import { comicDisplayTitle, pluralRu, volumeLine } from '@/lib/aninova3/comics/publication';
 import { DEMO_COMICS } from '@/lib/aninova3/comics-demo';
@@ -29,26 +31,33 @@ const SORT_LABELS: Record<CatalogSort, string> = {
   anime: 'По связям с аниме',
 };
 
-const one = (value: string | string[] | undefined): string => (typeof value === 'string' ? value : '');
-
 export default async function A3ComicsPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const query = {
-    q: one(sp.q),
-    genre: one(sp.genre),
-    kind: one(sp.kind),
-    role: one(sp.role),
-    sort: one(sp.sort),
-    page: Number.parseInt(one(sp.page) || '1', 10),
-  };
+  const query = parseComicsCatalogQuery(sp);
 
-  const entries = catalogIndex(comicStore(), (id) => titleById.get(id));
-  const result = queryCatalog(entries, query);
-  const totalVerified = entries.length;
+  let result: ComicsCatalogRead;
+  try {
+    result = await readComicsCatalog(query);
+  } catch (error) {
+    if (error instanceof ComicsCatalogUnavailableError) {
+      return <CatalogUnavailable reason={error.message} />;
+    }
+    throw error;
+  }
+
+  const hrefQuery = {
+    q: query.q,
+    genre: query.genre,
+    kind: query.kind ?? '',
+    role: query.role ?? '',
+    sort: query.sort,
+    page: query.page,
+  };
+  const totalVerified = result.facets.roles.reduce((sum, role) => sum + role.count, 0);
   const sort = (result.applied.sort as CatalogSort) ?? 'title';
 
   return (
@@ -61,6 +70,12 @@ export default async function A3ComicsPage({
           русских глав пока нет: карточки информационные, читалка закрыта.
         </p>
       </header>
+
+      {result.notice ? (
+        <p className="a3-demo-note" role="status">
+          {result.notice.message}
+        </p>
+      ) : null}
 
       <form className="a3-comics__search" action={`${ROOT}/comics`} method="get" role="search">
         <label className="a3-visually-hidden" htmlFor="comics-q">
@@ -87,7 +102,7 @@ export default async function A3ComicsPage({
       <nav className="a3-chips" aria-label="Роль произведения">
         <Link
           className={`a3-chip${!result.applied.role ? ' is-on' : ''}`}
-          href={catalogHref(query, { role: '', page: 1 })}
+          href={catalogHref(hrefQuery, { role: '', page: 1 })}
           aria-current={!result.applied.role ? 'true' : undefined}
           data-a3-focusable
         >
@@ -97,7 +112,7 @@ export default async function A3ComicsPage({
           <Link
             key={role.value}
             className={`a3-chip${result.applied.role === role.value ? ' is-on' : ''}`}
-            href={catalogHref(query, { role: role.value, page: 1 })}
+            href={catalogHref(hrefQuery, { role: role.value, page: 1 })}
             aria-current={result.applied.role === role.value ? 'true' : undefined}
             data-a3-focusable
           >
@@ -110,7 +125,7 @@ export default async function A3ComicsPage({
         <nav className="a3-chips a3-chips--sm" aria-label="Тип произведения">
           <Link
             className={`a3-chip a3-chip--sm${!result.applied.kind ? ' is-on' : ''}`}
-            href={catalogHref(query, { kind: '', page: 1 })}
+            href={catalogHref(hrefQuery, { kind: '', page: 1 })}
             aria-current={!result.applied.kind ? 'true' : undefined}
             data-a3-focusable
           >
@@ -120,7 +135,7 @@ export default async function A3ComicsPage({
             <Link
               key={kind.value}
               className={`a3-chip a3-chip--sm${result.applied.kind === kind.value ? ' is-on' : ''}`}
-              href={catalogHref(query, { kind: kind.value, page: 1 })}
+              href={catalogHref(hrefQuery, { kind: kind.value, page: 1 })}
               aria-current={result.applied.kind === kind.value ? 'true' : undefined}
               data-a3-focusable
             >
@@ -134,7 +149,7 @@ export default async function A3ComicsPage({
         <nav className="a3-chips a3-chips--sm" aria-label="Жанры комиксов">
           <Link
             className={`a3-chip a3-chip--sm${!result.applied.genre ? ' is-on' : ''}`}
-            href={catalogHref(query, { genre: '', page: 1 })}
+            href={catalogHref(hrefQuery, { genre: '', page: 1 })}
             aria-current={!result.applied.genre ? 'true' : undefined}
             data-a3-focusable
           >
@@ -144,7 +159,7 @@ export default async function A3ComicsPage({
             <Link
               key={genre.value}
               className={`a3-chip a3-chip--sm${result.applied.genre === genre.value ? ' is-on' : ''}`}
-              href={catalogHref(query, { genre: genre.value, page: 1 })}
+              href={catalogHref(hrefQuery, { genre: genre.value, page: 1 })}
               aria-current={result.applied.genre === genre.value ? 'true' : undefined}
               data-a3-focusable
             >
@@ -164,7 +179,7 @@ export default async function A3ComicsPage({
             <Link
               key={value}
               className={`a3-chip a3-chip--sm${sort === value ? ' is-on' : ''}`}
-              href={catalogHref(query, { sort: value, page: 1 })}
+              href={catalogHref(hrefQuery, { sort: value, page: 1 })}
               aria-current={sort === value ? 'true' : undefined}
               data-a3-focusable
             >
@@ -195,7 +210,7 @@ export default async function A3ComicsPage({
       {result.pages > 1 ? (
         <nav className="a3-pager" aria-label="Страницы каталога">
           {result.page > 1 ? (
-            <Link className="a3-btn" href={catalogHref(query, { page: result.page - 1 })} data-a3-focusable rel="prev">
+            <Link className="a3-btn" href={catalogHref(hrefQuery, { page: result.page - 1 })} data-a3-focusable rel="prev">
               Назад
             </Link>
           ) : (
@@ -207,7 +222,7 @@ export default async function A3ComicsPage({
             {result.page} / {result.pages}
           </span>
           {result.page < result.pages ? (
-            <Link className="a3-btn" href={catalogHref(query, { page: result.page + 1 })} data-a3-focusable rel="next">
+            <Link className="a3-btn" href={catalogHref(hrefQuery, { page: result.page + 1 })} data-a3-focusable rel="next">
               Дальше
             </Link>
           ) : (
@@ -250,6 +265,29 @@ export default async function A3ComicsPage({
           ))}
         </ul>
       </section>
+    </div>
+  );
+}
+
+function CatalogUnavailable({ reason }: { reason: string }) {
+  return (
+    <div className="a3-wrap">
+      <header className="a3-pagehead">
+        <p className="a3-kicker">Comics</p>
+        <h1 className="a3-h1">Каталог недоступен</h1>
+        <p className="a3-pagehead__lead">
+          Публичный каталог комиксов читается из базы данных, а подключение не настроено или недоступно. Пустой список
+          не подставляется: это честное состояние, а не «комиксов нет».
+        </p>
+      </header>
+      <div className="a3-publication-state" role="alert">
+        <strong>Причина:</strong>
+        <span>{reason}</span>
+        <span>Проверьте NEXT_PUBLIC_SUPABASE_URL и анонимный ключ; service-ключ здесь запрещён.</span>
+      </div>
+      <Link className="a3-btn" href={ROOT} data-a3-focusable>
+        На главную AniNova-3
+      </Link>
     </div>
   );
 }

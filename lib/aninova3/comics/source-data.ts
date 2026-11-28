@@ -51,6 +51,8 @@ export interface EditorialComic {
   cover?: string | null;
   /** Внутренняя заметка для отчёта (не выводится публично). */
   note?: string;
+  /** Демо-произведение B1-B: не реальный первоисточник, в каталог не попадает. */
+  isDemo?: boolean;
 }
 
 export const EDITORIAL_COMICS: EditorialComic[] = [

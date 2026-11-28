@@ -52,7 +52,7 @@ function catalogSource(): 'db' | 'file' {
   return SUPA_URL && SUPA_KEY ? 'db' : 'file';
 }
 
-type DbTitle = {
+export type DbTitle = {
   id: number;
   slug: string;
   anilist_id: number;
@@ -83,7 +83,8 @@ type DbTitle = {
   hidden: boolean | null;
 };
 
-function fromDbRow(r: DbTitle): Title & { hidden?: boolean } {
+/** Единственный маппер строки public.titles → Title. B3-E переиспользует его для связей. */
+export function titleFromDbRow(r: DbTitle): Title & { hidden?: boolean } {
   return {
     anilistId: r.anilist_id ?? r.id,
     slug: r.slug,
@@ -166,7 +167,7 @@ export function primeCatalogFromDb(): Promise<number> {
           complete = true;
           break;
         }
-        for (const r of rows) out.push(fromDbRow(r));
+        for (const r of rows) out.push(titleFromDbRow(r));
         from += rows.length;
       }
       /* Сюда можно попасть только после пустой страницы; явная проверка защищает

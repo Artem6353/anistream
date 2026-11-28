@@ -22,8 +22,8 @@ import type {
 } from './model';
 import { hasPublicRussianTitle } from './model';
 import {
+  classifyComicKind,
   comicInternalId,
-  comicKindFrom,
   comicStatusFrom,
   loadSourceGraph,
   relationFromRaw,
@@ -183,7 +183,15 @@ function coalesceComic(
   candidate?: ComicTitleCandidate,
   verified?: VerifiedMetadataRecord,
 ): ComicWork {
-  const kind: ComicKind = editorial?.kind ?? comicKindFrom(raw.format, raw.country);
+  /* B3-E: тип определяется только доказательствами (редакция → явный тип
+     источника → формат → unknown). Страна происхождения тип не доказывает. */
+  const kindClassification = classifyComicKind({
+    format: raw.format,
+    sourceKind: verified?.kind,
+    country: raw.country,
+    editorial: editorial?.kind,
+  });
+  const kind: ComicKind = kindClassification.kind;
   const status: ComicPublishingStatus = editorial?.status ?? comicStatusFrom(raw.status);
   const authorsVerified = Boolean(editorial?.authorsVerified);
   const authors = authorsVerified && editorial?.authorsRu?.length ? editorial.authorsRu : (raw.authors ?? []);
@@ -206,6 +214,7 @@ function coalesceComic(
     titleRu: editorial?.titleRu?.trim() || verifiedTitle,
     titleOriginal: raw.titleNative?.trim() || raw.titleOriginal,
     kind,
+    kindEvidence: kindClassification.evidence,
     authors,
     authorsVerified,
     year: editorial?.year ?? raw.year ?? null,
@@ -259,6 +268,8 @@ function coalesceComic(
     provenance: editorial
       ? { source: 'editorial', observedAt: editorial.verifiedAt, verification: 'editorial' }
       : { source: 'anilist-relation', verification: 'recorded' },
+    isDemo: editorial?.isDemo ?? false,
+    dataSource: 'json-preview',
   };
 }
 

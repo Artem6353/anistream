@@ -25,6 +25,9 @@ data/vapid.json
 .cache/img/
 
 screenshots/
+# B3-E: отчёты монитора официальных анонсов — локальные артефакты и CI-выгрузка,
+# не источник правды: очередь проверки живёт в Supabase.
+artifacts/
 
 __pycache__/
 *.pyc

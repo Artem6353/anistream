@@ -108,7 +108,10 @@ export function buildCatalogIndex(store: ComicStore, getTitle: TitleLookupFn): C
       roleLabel: CATALOG_ROLE_LABELS[role],
       genres: comic.genres,
       sourceAnimeCount: comic.animeIds.length,
-      search: normalizeQuery(`${comic.titleRu} ${comic.genres.join(' ')}`),
+      /* B3-E: поиск — только по названию (в DB-режиме ещё и по подтверждённым",
+         русским алиасам). Жанры ищутся фильтром, а не текстом: иначе одинаковый
+         запрос в JSON- и DB-режиме давал бы разные результаты. */
+      search: normalizeQuery(comic.titleRu),
     });
   }
   entries.sort(

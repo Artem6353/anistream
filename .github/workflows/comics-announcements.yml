@@ -1,0 +1,49 @@
+name: Comics announcement monitor (dry run)
+
+# B3-E: read-only check of official feeds. The job never receives Supabase
+# credentials and never confirms an adaptation: it fetches allowlisted feeds,
+# detects adaptation wording and uploads a review report as an artifact.
+# Writing to the review queue is a separate manual action:
+#   COMICS_MONITOR_APPLY=1 SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
+#     node scripts/comics-b3e-monitor.mjs --apply
+# It is intentionally not wired to CI.
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/comics-announcements.yml'
+      - 'scripts/comics-b3e-monitor.mjs'
+      - 'scripts/lib/comics-announcements.mjs'
+      - 'data/comics/announcement-sources.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: comics-announcements
+  cancel-in-progress: false
+
+jobs:
+  dry-run:
+    name: Fetch official feeds and report candidates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run monitor (no writes)
+        run: node scripts/comics-b3e-monitor.mjs --out artifacts/comics-announcements
+      - name: Upload review report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: comics-announcements-${{ github.run_id }}
+          path: artifacts/comics-announcements/
+          retention-days: 14
+          if-no-files-found: warn

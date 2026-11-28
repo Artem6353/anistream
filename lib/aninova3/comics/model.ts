@@ -7,8 +7,29 @@
  */
 import type { Title } from '@/lib/types';
 
-/** Вид оригинального комикса. */
-export type ComicKind = 'manga' | 'manhwa' | 'manhua' | 'webtoon' | 'comic';
+/**
+ * Вид оригинального комикса.
+ *
+ * B3-E: набор приведён к B3-схеме (`comic_works_kind_check`). `unknown` —
+ * легальное состояние, когда источник не даёт достаточного доказательства типа:
+ * AniList сообщает только `MANGA` для японской манги, корейской манхвы и
+ * китайской маньхуа, поэтому формат/страна сами по себе тип не подтверждают.
+ */
+export type ComicKind = 'manga' | 'manhwa' | 'manhua' | 'webtoon' | 'comic' | 'one_shot' | 'unknown';
+
+/**
+ * Доказательство типа произведения.
+ *
+ * `sourceFormat` — сырой формат источника (AniList MANGA/ONE_SHOT), `sourceKind` —
+ * нормализованный тип источника, если он прямо назван (например `MANHWA`).
+ * `countryCode` сохраняется как справка, но НЕ участвует в выводе типа.
+ */
+export interface ComicKindEvidence {
+  sourceFormat: string | null;
+  sourceKind: string | null;
+  countryCode: string | null;
+  basis: 'source-format' | 'source-kind' | 'editorial' | 'unknown';
+}
 
 export type ComicPublishingStatus = 'ongoing' | 'completed' | 'hiatus' | 'cancelled' | 'unknown';
 
@@ -56,6 +77,13 @@ export interface ComicChapter {
   availability?: 'public' | 'hidden';
   /** Когда глава последний раз менялась — для журнала изменений. */
   updatedAt?: string | null;
+  /**
+   * B3-E: официальная ссылка на главу из public.comic_public_chapters.
+   * Это НЕ страницы читалки: внутренняя читалка по-прежнему требует pageImages.
+   */
+  readingUrl?: string | null;
+  /** Название источника главы (издатель/партнёр) — для подписи ссылки. */
+  sourceName?: string | null;
 }
 
 /** Разрешённые источники глав: пиратские сайты сюда не входят по определению. */
@@ -117,6 +145,9 @@ export interface ComicMetadataEvidence {
 /** Нейтральный текст вместо непроверенного русского названия (см. §9.2 ТЗ B1-C). */
 export const PENDING_TITLE_TEXT = 'Информация о русскоязычном издании уточняется';
 
+/** Источник данных для публичного comics-слоя. */
+export type ComicDataSource = 'json-preview' | 'db-public';
+
 /** Кандидат русского названия, найденный автоматически. Публично не выводится. */
 export interface ComicTitleCandidate {
   title: string;
@@ -176,6 +207,10 @@ export interface ComicWork {
   provenance: ComicProvenance;
   /** Демо B1-B не является реальным произведением и не может быть первоисточником. */
   isDemo?: boolean;
+  /** Источник данных: curated JSON preview или DB public view. */
+  dataSource: ComicDataSource;
+  /** На чём основан `kind`: источник назвал тип, редакция или тип неизвестен. */
+  kindEvidence?: ComicKindEvidence;
 }
 
 /** Сырой тип связи из AniList relation-графа (для аудита, не для UI). */
@@ -224,24 +259,47 @@ export type ComicDirection = 'comic-is-source' | 'comic-adapts-anime' | null;
  * Насколько можно доверять направлению связи.
  * - `confirmed` — есть прямое основание: каталог сообщает первоисточник аниме
  *   (`MANGA` для комиксов, `ORIGINAL` для оригинального аниме);
- * - `inferred` — направление следует только из годов начала выпуска;
+ * - `inferred` — направление следует из неполного, но прямого основания:
+ *   каталог говорит «аниме по манге», однако год комикса не подтверждён;
  * - `unknown` — данных недостаточно, направление не утверждается.
  */
 export type DirectionConfidence = 'confirmed' | 'inferred' | 'unknown';
 
-/** На чём основано направление (для отчёта и очереди проверки). */
+/**
+ * На чём основано направление (для отчёта и очереди проверки).
+ *
+ * B3-E: ветка `dates` удалена. Порядок годов больше не назначает направление:
+ * он сохраняется как `dates-insufficient` и означает «годы известны, но это не
+ * доказательство». Любое неподтверждённое направление остаётся `unknown`.
+ */
 export type DirectionBasis =
   | 'catalog-manga'
   | 'catalog-original'
   | 'catalog-conflict'
   | 'catalog-other-medium'
-  | 'dates'
+  | 'dates-insufficient'
   | 'none';
 
 export interface DirectionEvidence {
   direction: ComicDirection;
   confidence: DirectionConfidence;
   basis: DirectionBasis;
+}
+
+/**
+ * Конкурирующее доказательство направления.
+ *
+ * B3-E: конфликтующие наблюдения не отбрасываются молча. Каждое ребро, которое
+ * не победило при дедупликации, сохраняется здесь и уходит в review.
+ */
+export interface DirectionConflict {
+  basis: DirectionBasis;
+  direction: ComicDirection;
+  confidence: DirectionConfidence;
+  rawRelation?: RawRelationType;
+  evidence: ComicSourceEvidence['evidence'];
+  observedAt?: string;
+  note?: string;
 }
 
 /** Допуск в годах: комикс может стартовать в год выхода аниме или на следующий. */
@@ -253,14 +311,18 @@ const COMIC_MEDIA_SOURCES = new Set(['MANGA', 'COMIC', 'DOUJINSHI']);
 /**
  * Направление связи для ребра экранизации.
  *
- * Год выпуска сам по себе ничего не доказывает, поэтому он используется только
- * как косвенный признак (`inferred`) и только если каталог не знает первоисточник
- * аниме. Если каталог знает (`anime.source`), решает он:
- *  - аниме по манге → первоисточник комикс (при согласии дат — подтверждено);
+ * Годы выпуска НЕ являются доказательством направления (B3-E, требование A3):
+ * последовательность дат не различает «манга → аниме» и «аниме → манга-адаптацию»
+ * и не должна превращать догадку в факт. Годы используются только для поиска
+ * противоречия, когда направление уже следует из каталога.
+ *
+ * Решает каталог (`anime.source`):
+ *  - аниме по манге → первоисточник комикс (при согласии дат — подтверждено,
+ *    без года комикса — `inferred`);
  *  - оригинальное аниме → подтверждено, что комикс сделан по аниме;
  *  - аниме по другому первоисточнику (ранобэ, игра) → направление не утверждаем;
- *  - аниме по манге, но комикс вышел заметно позже → противоречие, нужна проверка.
- * Отсутствие года не считается доводом ни в одну сторону.
+ *  - аниме по манге, но комикс вышел заметно позже → противоречие, нужна проверка;
+ *  - каталог не знает первоисточник → направление `unknown` при любых годах.
  */
 export function classifyAdaptationDirection(input: {
   animeSource?: string | null;
@@ -288,11 +350,11 @@ export function classifyAdaptationDirection(input: {
   }
   if (source) return { direction: null, confidence: 'unknown', basis: 'catalog-other-medium' };
 
-  if (!datesKnown) return { direction: null, confidence: 'unknown', basis: 'none' };
+  /* Каталог не сообщает первоисточник. Одни годы направление не доказывают. */
   return {
-    direction: comicIsLater ? 'comic-adapts-anime' : 'comic-is-source',
-    confidence: 'inferred',
-    basis: 'dates',
+    direction: null,
+    confidence: 'unknown',
+    basis: datesKnown ? 'dates-insufficient' : 'none',
   };
 }
 
@@ -315,6 +377,10 @@ export interface LinkedComic {
   /** Насколько направление подтверждено. */
   confidence: DirectionConfidence;
   basis: DirectionBasis;
+  /** Все проигравшие при дедупликации доказательства: конфликт уходит в review. */
+  conflicts?: DirectionConflict[];
+  /** Есть конкурирующие доказательства направления. */
+  disputed?: boolean;
 }
 
 export interface LinkedAnime {
@@ -325,6 +391,10 @@ export interface LinkedAnime {
   direction: ComicDirection;
   confidence: DirectionConfidence;
   basis: DirectionBasis;
+  /** Все проигравшие при дедупликации доказательства: конфликт уходит в review. */
+  conflicts?: DirectionConflict[];
+  /** Есть конкурирующие доказательства направления. */
+  disputed?: boolean;
 }
 
 /** Нейтральная подпись, когда направление не подтверждено. */
@@ -404,10 +474,6 @@ export function sourceSectionDescription(
   }
 
   if (state === 'probable') {
-    const onlyDates = bases.size === 1 && bases.has('dates');
-    if (onlyDates) {
-      return 'Связь подтверждена по идентификатору AniList; направление определено по годам выпуска и требует проверки.';
-    }
     const onlyCatalog = bases.size === 1 && bases.has('catalog-manga');
     if (onlyCatalog) {
       return 'Связь подтверждена по идентификатору AniList. Каталог сообщает, что аниме снято по манге, но год выпуска комикса не подтверждён — направление требует проверки.';
@@ -416,6 +482,9 @@ export function sourceSectionDescription(
   }
 
   if (state === 'unconfirmed') {
+    if (bases.has('dates-insufficient')) {
+      return 'Связь подтверждена по идентификатору AniList, но направление по годам выпуска не определяется: нужен официальный источник или подтверждённый первоисточник.';
+    }
     if (bases.has('catalog-conflict')) {
       return 'Связи подтверждены по идентификатору AniList, но данные каталога и годы выпуска противоречат друг другу — направление требует проверки.';
     }
@@ -473,6 +542,8 @@ export const COMIC_KIND_LABELS: Record<ComicKind, string> = {
   manhua: 'Маньхуа',
   webtoon: 'Вебтун',
   comic: 'Комикс',
+  one_shot: 'Ваншот',
+  unknown: 'Тип уточняется',
 };
 
 /** Сила связи при дедупликации одного и того же комикса из нескольких рёбер. */

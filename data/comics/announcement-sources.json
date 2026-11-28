@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "checkedAt": "2026-11-26",
+  "note": "Allowlist of official feeds. Every item is queued for review; ingestion never confirms an adaptation. Domains were verified by fetching the feed and reading valid RSS on the checkedAt date.",
+  "sources": [
+    {
+      "slug": "seven-seas",
+      "name": "Seven Seas Entertainment",
+      "kind": "rss",
+      "url": "https://sevenseasentertainment.com/feed/",
+      "domain": "sevenseasentertainment.com",
+      "language": "en",
+      "isOfficial": true,
+      "isEnabled": true
+    },
+    {
+      "slug": "kodansha-usa",
+      "name": "Kodansha USA",
+      "kind": "rss",
+      "url": "https://kodansha.us/feed/",
+      "domain": "kodansha.us",
+      "language": "en",
+      "isOfficial": true,
+      "isEnabled": true
+    },
+    {
+      "slug": "mappa",
+      "name": "MAPPA",
+      "kind": "rss",
+      "url": "https://www.mappa.co.jp/feed/",
+      "domain": "mappa.co.jp",
+      "language": "ja",
+      "isOfficial": true,
+      "isEnabled": true
+    },
+    {
+      "slug": "bones",
+      "name": "BONES",
+      "kind": "rss",
+      "url": "https://www.bones.co.jp/feed/",
+      "domain": "bones.co.jp",
+      "language": "ja",
+      "isOfficial": true,
+      "isEnabled": true
+    },
+    {
+      "slug": "shueisha",
+      "name": "Shueisha",
+      "kind": "rss",
+      "url": "https://www.shueisha.co.jp/feed/",
+      "domain": "shueisha.co.jp",
+      "language": "ja",
+      "isOfficial": true,
+      "isEnabled": true
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type {
   ComicKind,
+  ComicKindEvidence,
   ComicPublishingStatus,
   ComicSourceEvidence,
   RawRelationType,
@@ -117,23 +118,80 @@ export function isComicFormat(format: string | null | undefined): boolean {
   return f === 'MANGA' || f === 'ONE_SHOT';
 }
 
+/** Тип, если источник прямо его называет. Ключи — нормализованные значения. */
+const EXPLICIT_KINDS: Record<string, ComicKind> = {
+  MANGA: 'manga',
+  MANHWA: 'manhwa',
+  MANHUA: 'manhua',
+  WEBTOON: 'webtoon',
+  COMIC: 'comic',
+  ONE_SHOT: 'one_shot',
+  ONESHOT: 'one_shot',
+};
+
+export interface ComicKindInput {
+  /** Сырой формат источника (AniList: MANGA, ONE_SHOT, …). */
+  format?: string | null;
+  /** Тип, прямо названный источником (Shikimori: manga, manhwa, manhua, …). */
+  sourceKind?: string | null;
+  /** Страна происхождения. Сохраняется как справка и НЕ доказывает тип. */
+  country?: string | null;
+  /** Редакционное уточнение. Имеет приоритет над эвристикой. */
+  editorial?: ComicKind | null;
+}
+
+export interface ComicKindClassification {
+  kind: ComicKind;
+  evidence: ComicKindEvidence;
+}
+
 /**
- * Вид произведения: страна происхождения приоритетнее формата, потому что
- * манхва/маньхуа — это те же MANGA в терминах AniList.
- * Вебтун выставляется только редакционно (в AniList отдельного формата нет),
- * поэтому здесь он не угадывается.
+ * Тип произведения по доказательствам, а не по стране.
+ *
+ * B3-E (требование A2): страна и язык сами по себе тип не доказывают. AniList
+ * рапортует `MANGA` и для японской манги, и для корейской манхвы, и для китайской
+ * маньхуа, поэтому формат `MANGA` без явного типа источника даёт `unknown`
+ * (см. комментарий к `comic_works.kind` в B3-C), а `ONE_SHOT` — `one_shot`,
+ * потому что это форма выпуска, а не страна.
+ *
+ * Приоритет: редакция → явный тип источника → формат → `unknown`.
+ * Ни одно из полей не перезаписывается: исходные значения остаются в evidence.
  */
-export function comicKindFrom(format?: string | null, country?: string | null): ComicKind {
-  if ((format ?? '').toUpperCase() === 'ONE_SHOT') return 'comic';
-  switch ((country ?? '').toUpperCase()) {
-    case 'KR':
-      return 'manhwa';
-    case 'CN':
-    case 'TW':
-      return 'manhua';
-    default:
-      return 'manga';
+export function classifyComicKind(input: ComicKindInput): ComicKindClassification {
+  const sourceFormat = (input.format ?? '').trim().toUpperCase() || null;
+  const sourceKind = (input.sourceKind ?? '').trim().toUpperCase() || null;
+  const countryCode = (input.country ?? '').trim().toUpperCase() || null;
+
+  if (input.editorial) {
+    return {
+      kind: input.editorial,
+      evidence: { sourceFormat, sourceKind, countryCode, basis: 'editorial' },
+    };
   }
+  const explicitSource = sourceKind ? EXPLICIT_KINDS[sourceKind] : undefined;
+  if (explicitSource) {
+    return {
+      kind: explicitSource,
+      evidence: { sourceFormat, sourceKind, countryCode, basis: 'source-kind' },
+    };
+  }
+  /* ONE_SHOT — подтверждённая форма выпуска, а не догадка по стране. */
+  if (sourceFormat === 'ONE_SHOT' || sourceFormat === 'ONESHOT') {
+    return {
+      kind: 'one_shot',
+      evidence: { sourceFormat, sourceKind, countryCode, basis: 'source-format' },
+    };
+  }
+  /* MANGA без явного типа источника не различает мангу/манхву/маньхуа. */
+  return {
+    kind: 'unknown',
+    evidence: { sourceFormat, sourceKind, countryCode, basis: 'unknown' },
+  };
+}
+
+/** Совместимый вход: по умолчанию второй аргумент — явный тип источника. */
+export function comicKindFrom(format?: string | null, sourceKind?: string | null): ComicKind {
+  return classifyComicKind({ format, sourceKind }).kind;
 }
 
 export function comicStatusFrom(raw: string | null | undefined): ComicPublishingStatus {

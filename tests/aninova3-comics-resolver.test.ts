@@ -131,9 +131,11 @@ describe('манга → аниме-адаптации', () => {
   });
 });
 
-describe('направление связи по датам (B1-D)', () => {
-  /* AniList ставит ADAPTATION в обе стороны: манга 2026 года и аниме 2024 года
-     связаны одинаково с мангой 1999 года и аниме 2002 года. Различает дата. */
+describe('годы выпуска не доказывают направление (B3-E)', () => {
+  /* AniList ставит ADAPTATION в обе стороны. B1-D различал направление по датам,
+     но дата публикации — не доказательство: манга может выйти позже аниме и при
+     этом быть первоисточником (переиздание, дорисовка). B3-E оставляет роль по
+     relationType, а направление — только при доказательстве из каталога. */
   const timeGraph = buildSourceGraph({
     meta: { generatedAt: 'fixture', generator: 'FIXTURE', note: 'direction' },
     comics: [
@@ -151,23 +153,27 @@ describe('направление связи по датам (B1-D)', () => {
   const timeStore = buildComicStore(timeGraph, []);
   const timeDeps = { graph: timeGraph, store: timeStore, animeYear: 2014 };
 
-  it('манга, вышедшая после аниме, не считается первоисточником', () => {
+  it('даты не превращают ребро ADAPTATION в доказанный первоисточник', () => {
     const links = resolveAnimeSources(3001, timeDeps);
     const older = links.find((l) => l.comic.id === 'comic:anilist:920001');
     const later = links.find((l) => l.comic.id === 'comic:anilist:920002');
-    expect(older?.role).toBe('SOURCE');
-    expect(older?.direction).toBe('comic-is-source');
-    expect(later?.role).toBe('ADAPTATION');
-    expect(later?.direction).toBe('comic-adapts-anime');
-    expect(older?.primary).toBe(true);
+    for (const link of [older, later]) {
+      expect(link?.role).toBe('SOURCE');
+      expect(link?.direction).toBeNull();
+      expect(link?.confidence).toBe('unknown');
+      expect(link?.basis).toBe('dates-insufficient');
+    }
+    /* Без доказанного направления основной первоисточник не назначается. */
+    expect(older?.primary).toBe(false);
     expect(later?.primary).toBe(false);
   });
 
-  it('манга в год выхода аниме или годом позже остаётся первоисточником', () => {
+  it('совпадение года с аниме тоже не назначает направление', () => {
     const links = resolveAnimeSources(3002, timeDeps);
     const sameYear = links.find((l) => l.comic.id === 'comic:anilist:920003');
     expect(sameYear?.role).toBe('SOURCE');
-    expect(sameYear?.direction).toBe('comic-is-source');
+    expect(sameYear?.direction).toBeNull();
+    expect(sameYear?.basis).toBe('dates-insufficient');
   });
 
   it('без года аниме решает только relationType', () => {
@@ -175,7 +181,7 @@ describe('направление связи по датам (B1-D)', () => {
     expect(links.find((l) => l.comic.id === 'comic:anilist:920002')?.role).toBe('SOURCE');
   });
 
-  it('на странице комикса аниме-оригинал подписан как первоисточник', () => {
+  it('без первоисточника в каталоге годы не назначают направление', () => {
     const comic = timeStore.byId.get('comic:anilist:920002');
     if (!comic) throw new Error('fixture отсутствует');
     const links = resolveComicAdaptations(comic, {
@@ -189,23 +195,27 @@ describe('направление связи по датам (B1-D)', () => {
       },
     });
     const older = links.find((l) => l.anime.anilistId === 3001);
-    expect(older?.direction).toBe('comic-adapts-anime');
-    /* Каталог не сообщает первоисточник: вывод сделан только по датам. */
-    expect(older?.confidence).toBe('inferred');
-    expect(older?.basis).toBe('dates');
+    /* B3-E: последовательность дат не доказывает направление. */
+    expect(older?.direction).toBeNull();
+    expect(older?.confidence).toBe('unknown');
+    expect(older?.basis).toBe('dates-insufficient');
+    expect(older?.role).not.toBe('SOURCE');
+    expect(older?.primary).toBe(false);
   });
 
-  it('одинаковые годы без данных каталога дают только предположение', () => {
+  it('одинаковые годы без данных каталога не дают направления', () => {
     const evidence = classifyAdaptationDirection({ animeYear: 2014, comicYear: 2014 });
-    expect(evidence.direction).toBe('comic-is-source');
-    expect(evidence.confidence).toBe('inferred');
+    expect(evidence).toEqual({ direction: null, confidence: 'unknown', basis: 'dates-insufficient' });
   });
 
-  it('разные годы без данных каталога дают только предположение', () => {
+  it('разные годы без данных каталога не дают направления', () => {
     const later = classifyAdaptationDirection({ animeYear: 2014, comicYear: 2026 });
-    expect(later.direction).toBe('comic-adapts-anime');
-    expect(later.confidence).toBe('inferred');
-    expect(later.basis).toBe('dates');
+    expect(later).toEqual({ direction: null, confidence: 'unknown', basis: 'dates-insufficient' });
+  });
+
+  it('поздний комикс при манге-первоисточнике остаётся противоречием', () => {
+    const conflict = classifyAdaptationDirection({ animeSource: 'MANGA', animeYear: 2014, comicYear: 2026 });
+    expect(conflict).toEqual({ direction: null, confidence: 'unknown', basis: 'catalog-conflict' });
   });
 
   it('отсутствие года не считается доводом ни в одну сторону', () => {
@@ -393,7 +403,21 @@ describe('несколько первоисточников (реальный с
     ],
   });
   const multiStore = buildComicStore(multiGraph, []);
-  const multiDeps = { graph: multiGraph, store: multiStore, titles: FIXTURE_TITLE_LOOKUP, animeYear: 1999 };
+  /* Каталог подтверждает, что аниме снято по манге: без этого направления нет. */
+  const multiTitles = {
+    get: (id: number) =>
+      id === 2001
+        ? fixtureTitle({
+            anilistId: 2001,
+            slug: 'fixture-multi-anime',
+            ru: 'Фикстура с несколькими первоисточниками',
+            romaji: 'Multi Source Fixture',
+            year: 1999,
+            source: 'MANGA',
+          })
+        : undefined,
+  };
+  const multiDeps = { graph: multiGraph, store: multiStore, titles: multiTitles, animeYear: 1999 };
 
   it('показывает все подтверждённые произведения, основной — сериализованная манга', () => {
     const links = resolveAnimeSources(2001, multiDeps);
@@ -405,10 +429,14 @@ describe('несколько первоисточников (реальный с
     expect(links[1].comic.id).toBe('comic:anilist:910002');
   });
 
-  it('ваншот не отбирает роль основного первоисточника у манги', () => {
+  it('ваншот не отбирает роль основного первоисточника у сериализованной манги', () => {
     const links = resolveAnimeSources(2001, multiDeps);
     const primary = links.find((l) => l.primary);
-    expect(primary?.comic.kind).toBe('manga');
+    expect(primary?.comic.id).toBe('comic:anilist:910001');
+    /* B3-E: формат AniList MANGA сам по себе не различает мангу/манхву/маньхуа,
+       поэтому без явного типа источника kind остаётся unknown — это не регресс
+       выбора, а правило доказательств. */
+    expect(primary?.comic.kind).toBe('unknown');
   });
 });
 
@@ -454,11 +482,11 @@ describe('B1-D.2: подписи и описания секции связей',
     expect(sourceSectionDescription([confirmed])).toContain('Оригинальное аниме');
   });
 
-  it('предположительная связь по датам объясняется годами выпуска', () => {
-    const dated = link({ confidence: 'inferred', basis: 'dates', primary: true });
-    expect(animeSideRoleLabel(dated)).toBe('Вероятный первоисточник');
-    expect(sourceSectionDescription([dated])).toContain('по годам выпуска');
-    expect(sourceSectionTitle(sourceSectionState([dated]))).toBe('Вероятный первоисточник');
+  it('связь с известными годами без первоисточника объясняется как неподтверждённая', () => {
+    const dated = link({ confidence: 'unknown', basis: 'dates-insufficient', direction: null, primary: false });
+    expect(animeSideRoleLabel(dated)).toBe('Связанное произведение');
+    expect(sourceSectionDescription([dated])).toContain('по годам выпуска не определяется');
+    expect(sourceSectionTitle(sourceSectionState([dated]))).toBe('Связанные комиксы');
   });
 
   it('предположительная связь из каталога без года не описывается как сравнение дат', () => {

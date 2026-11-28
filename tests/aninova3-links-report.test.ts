@@ -436,7 +436,7 @@ describe('машинный отчёт B1-C', () => {
         if (link.confidence === 'confirmed') {
           expect(['catalog-manga', 'catalog-original']).toContain(link.basis);
         }
-        if (link.confidence === 'inferred') expect(['dates', 'catalog-manga']).toContain(link.basis);
+        if (link.confidence === 'inferred') expect(['catalog-manga']).toContain(link.basis);
         if (link.confidence === 'unknown') expect(link.direction).toBeNull();
       }
     }

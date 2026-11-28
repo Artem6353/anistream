@@ -8,6 +8,7 @@ import {
 } from '@/lib/aninova3/comics/model';
 import {
   buildSourceGraph,
+  classifyComicKind,
   comicInternalId,
   comicKindFrom,
   comicStatusFrom,
@@ -69,23 +70,51 @@ describe('relationType AniList → роль произведения', () => {
     for (const kind of Object.keys(RELATION_PRIORITY) as WorkRelationKind[]) {
       expect(RELATION_LABELS[kind]?.length).toBeGreaterThan(0);
     }
-    for (const kind of ['manga', 'manhwa', 'manhua', 'webtoon', 'comic'] as const) {
+    for (const kind of ['manga', 'manhwa', 'manhua', 'webtoon', 'comic', 'one_shot', 'unknown'] as const) {
       expect(COMIC_KIND_LABELS[kind]?.length).toBeGreaterThan(0);
     }
   });
 });
 
-describe('вид комикса и статус', () => {
-  it('страна происхождения важнее формата AniList', () => {
-    expect(comicKindFrom('MANGA', 'KR')).toBe('manhwa');
-    expect(comicKindFrom('MANGA', 'CN')).toBe('manhua');
-    expect(comicKindFrom('MANGA', 'TW')).toBe('manhua');
-    expect(comicKindFrom('MANGA', 'JP')).toBe('manga');
-    expect(comicKindFrom('ONE_SHOT', 'JP')).toBe('comic');
+describe('вид комикса и статус (B3-E: страна тип не доказывает)', () => {
+  it('формат MANGA без явного типа источника даёт unknown', () => {
+    expect(comicKindFrom('MANGA', 'KR')).toBe('unknown');
+    expect(comicKindFrom('MANGA', 'CN')).toBe('unknown');
+    expect(comicKindFrom('MANGA', 'TW')).toBe('unknown');
+    expect(comicKindFrom('MANGA', 'JP')).toBe('unknown');
+    expect(comicKindFrom(null, null)).toBe('unknown');
   });
 
-  it('вебтун не угадывается по формату', () => {
+  it('явный тип источника принимается, страна остаётся справкой', () => {
+    expect(comicKindFrom('MANGA', 'MANHWA')).toBe('manhwa');
+    expect(comicKindFrom('MANGA', 'MANHUA')).toBe('manhua');
+    expect(comicKindFrom('MANGA', 'WEBTOON')).toBe('webtoon');
+    const classified = classifyComicKind({ format: 'MANGA', sourceKind: 'manhwa', country: 'JP' });
+    expect(classified.kind).toBe('manhwa');
+    expect(classified.evidence).toEqual({
+      sourceFormat: 'MANGA',
+      sourceKind: 'MANHWA',
+      countryCode: 'JP',
+      basis: 'source-kind',
+    });
+  });
+
+  it('ONE_SHOT — форма выпуска, а не комикс и не манга', () => {
+    expect(comicKindFrom('ONE_SHOT', 'JP')).toBe('one_shot');
+    expect(comicKindFrom('ONE_SHOT', 'KR')).toBe('one_shot');
+  });
+
+  it('редакционное уточнение важнее эвристики и сохраняет доказательства', () => {
+    const classified = classifyComicKind({ format: 'MANGA', country: 'KR', editorial: 'manhwa' });
+    expect(classified.kind).toBe('manhwa');
+    expect(classified.evidence.basis).toBe('editorial');
+    expect(classified.evidence.sourceFormat).toBe('MANGA');
+    expect(classified.evidence.countryCode).toBe('KR');
+  });
+
+  it('вебтун не угадывается по формату или стране', () => {
     expect(comicKindFrom('MANGA', 'KR')).not.toBe('webtoon');
+    expect(comicKindFrom('MANGA', 'JP')).not.toBe('webtoon');
   });
 
   it('статусы AniList маппятся без выдумок', () => {
